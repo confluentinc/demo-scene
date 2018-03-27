@@ -426,6 +426,8 @@ curl -X "POST" "http://localhost:8083/connectors/" \
 
 === Explore and visualise the data in Kibana
 
+(Import `kibana_objects.json` for pre-built dashboard & viz)
+
 image:images/es01.png[Kibana]
 
 
