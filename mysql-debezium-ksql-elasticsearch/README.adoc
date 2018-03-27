@@ -338,3 +338,145 @@ Persist this and show the timestamp:
 CREATE TABLE RATINGS_PER_CUSTOMER_PER_MINUTE AS SELECT FULL_NAME,COUNT(*) AS RATINGS_COUNT FROM RATINGS_ENRICHED WINDOW TUMBLING (SIZE 1 MINUTE) GROUP BY FULL_NAME;
 SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') , FULL_NAME, RATINGS_COUNT FROM RATINGS_PER_CUSTOMER_PER_MINUTE;
 ----
+
+
+== Showing denormalised data in Elasticsearch
+
+Tested on Elasticsearch 6.2.3.
+
+=== Start Elasticsearch (if not done through screen)
+
+[source,bash]
+----
+brew install elasticsearch
+brew install kibana
+----
+
+[source,bash]
+----
+elasticsearch
+kibana
+----
+
+=== Set up Elasticsearch dynamic mapping template
+
+[source,bash]
+----
+curl -XDELETE "http://localhost:9200/*"
+----
+
+[source,bash]
+----
+PUT /_template/kafkaconnect/
+{
+  "index_patterns": "*",
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0
+  },
+  "mappings": {
+    "_default_": {
+      "dynamic_templates": [
+        {
+          "dates": {
+            "match": "EXTRACT_TS",
+            "mapping": {
+              "type": "date"
+            }
+          }
+        },
+        {
+          "non_analysed_string_template": {
+            "match": "*",
+            "match_mapping_type": "string",
+            "mapping": {
+              "type": "keyword"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+----
+
+=== Set up Elasticsearch Kafka Connect connector
+
+[source,bash]
+----
+curl -X "POST" "http://localhost:8083/connectors/" \
+     -H "Content-Type: application/json" \
+     -d '{
+  "name": "es_sink_RATINGS_ENRICHED",
+  "config": {
+    "topics": "'RATINGS_ENRICHED'",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "key.ignore": "true",
+    "schema.ignore": "false",
+    "type.name": "type.name=kafkaconnect",
+    "topic.index.map": "'RATINGS_ENRICHED':'ratings_enriched'",
+    "connection.url": "http://localhost:9200",
+    "transforms": "ExtractTimestamp",
+    "transforms.ExtractTimestamp.type": "org.apache.kafka.connect.transforms.InsertField$Value",
+    "transforms.ExtractTimestamp.timestamp.field" : "EXTRACT_TS"
+  }
+}'
+----
+
+=== Explore and visualise the data in Kibana
+
+image:images/es01.png[Kibana]
+
+
+==== Notes : Elasticsearch doc mapping woes
+
+Without the index template, fields are sent through as `text` (and therefore not available for aggregate analysis). With the index template the connector fails with
+
+  {"type":"illegal_argument_exception","reason":"Rejecting mapping update to [ratings_enriched] as the final mapping would have more than 1 type: [type.name=kafkaconnect, kafkaconnect]"},
+
+Or:
+
+  org.apache.kafka.connect.errors.ConnectException: Cannot create mapping {"type.name=kafkaconnect":{"properties":{"RATING_ID":{"type":"long"},"CHANNEL":{"type":"text"},"MESSAGE":{"type":"text"},"ID":{"type":"integer"},"FULL_NAME":{"type":"text"},"EXTRACT_TS":{"type":"date"}}}} -- {"root_cause":[{"type":"illegal_argument_exception","reason":"Rejecting mapping update to [ratings_enriched] as the final mapping would have more than 1 type: [foo, type.name=kafkaconnect]"}],"type":"illegal_argument_exception","reason":"Rejecting mapping update to [ratings_enriched] as the final mapping would have more than 1 type: [foo, type.name=kafkaconnect]"}
+
+
+    `"index": "not_analyzed"` will cause failure in ES6 ( `{"type":"mapper_parsing_exception","reason":"failed to parse","caused_by":{"type":"illegal_argument_exception","reason":"Could not convert [CHANNEL.index] to boolean","caused_by":{"type":"illegal_argument_exception","reason":"Failed to parse value [not_analyzed] as only [true] or [false] are allowed."}}},`) - but simply removing it seems to work
+
+  This works for ES6
+----
+  PUT /_template/kafkaconnect/
+  {
+    "index_patterns": "*",
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "_default_": {
+        "dynamic_templates": [
+          {
+            "dates": {
+              "match": "EXTRACT_TS",
+              "mapping": {
+                "type": "date"
+              }
+            }
+          },
+          {
+            "non_analysed_string_template": {
+              "match": "*",
+              "match_mapping_type": "string",
+              "mapping": {
+                "type": "keyword"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+----
+
+
+
+  N.b. it grumbles about depreciated options. Switching out `templates` for  `"index_patterns": "*",` is fine, but changing the `_default_` value seems to screw things up (and may have been the cause of my problems above - `Rejecting mapping update to [ratings_enriched] as the final mapping would have more than 1 type: [type.name=kafkaconnect, kafkaconnect]"}]`)
