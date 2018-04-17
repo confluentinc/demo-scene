@@ -1,5 +1,24 @@
 [
   {
+    "_id": "02028f30-424c-11e8-af19-1188a9332246",
+    "_type": "dashboard",
+    "_source": {
+      "title": "Ratings Data",
+      "hits": 0,
+      "description": "",
+      "panelsJSON": "[{\"panelIndex\":\"1\",\"gridData\":{\"x\":0,\"y\":2,\"w\":6,\"h\":5,\"i\":\"1\"},\"version\":\"6.2.3\",\"type\":\"visualization\",\"id\":\"0c118530-31d5-11e8-a6be-09f3e3eb4b97\"},{\"panelIndex\":\"2\",\"gridData\":{\"x\":0,\"y\":0,\"w\":12,\"h\":2,\"i\":\"2\"},\"version\":\"6.2.3\",\"type\":\"visualization\",\"id\":\"39803a20-31d5-11e8-a6be-09f3e3eb4b97\"},{\"panelIndex\":\"3\",\"gridData\":{\"x\":6,\"y\":2,\"w\":6,\"h\":5,\"i\":\"3\"},\"version\":\"6.2.3\",\"type\":\"search\",\"id\":\"11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97\"}]",
+      "optionsJSON": "{\"darkTheme\":false,\"useMargins\":true,\"hidePanelTitles\":false}",
+      "version": 1,
+      "timeRestore": false,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"lucene\"},\"filter\":[],\"highlightAll\":true,\"version\":true}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
     "_id": "11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97",
     "_type": "search",
     "_source": {
