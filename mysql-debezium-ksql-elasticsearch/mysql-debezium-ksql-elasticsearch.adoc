@@ -122,11 +122,6 @@ brew install kibana
 
 ==== Set up Elasticsearch dynamic mapping template
 
-**This will delete everything in Elasticsearch -- don't use it if on a shared environment!**
-[source,bash]
-----
-curl -XDELETE "http://localhost:9200/*"
-----
 
 [source,bash]
 ----
