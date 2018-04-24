@@ -1,3 +1,30 @@
+[source,bash]
+----
+mysql demo -uroot < ~/git/demo-scene/mysql-debezium-ksql-elasticsearch/customers.sql
+----
+
+[source,bash]
+----
+confluent start
+----
+
+[source,bash]
+----
+screen -d -m -S CP_demo -t bash watch date
+screen -S CP_demo -p 0 -X screen -t Elasticsearch elasticsearch
+screen -S CP_demo -p 0 -X screen -t Kibana kibana
+screen -S CP_demo -p 0 -X screen -t mysql mysql -uroot demo
+screen -S CP_demo -p 0 -X screen -t ksql ksql
+screen -S CP_demo -p 0 -X screen -t datagen ksql-datagen quickstart=ratings format=avro topic=ratings maxInterval=500
+----
+
+[source,bash]
+----
+~/git/demo-scene/mysql-debezium-ksql-elasticsearch/create-dynamic-mapping.sh
+~/git/demo-scene/mysql-debezium-ksql-elasticsearch/add-connectors.sh
+----
+
+
 == Pre-flight checklist
 
 Is the stack up?
