@@ -1,3 +1,5 @@
+#!/bin/sh
+
 curl -i -X POST -H "Accept:application/json" \
   -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
   -d '{
@@ -63,37 +65,3 @@ curl -i -X POST -H "Accept:application/json" \
                 "transforms.InsertSourceDetails.static.value":"Oracle 12.2 on asgard"
         }
 }'
-
-
-curl -X "POST" "http://localhost:8083/connectors/" \
-     -H "Content-Type: application/json" \
-     -d '{
-  "name": "es_sink_LOGON_ENRICHED",
-  "config": {
-    "topics": "LOGON_ENRICHED",
-    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
-    "key.ignore": "true",
-    "schema.ignore": "false",
-    "type.name": "type.name=kafkaconnect",
-    "topic.index.map": "LOGON_ENRICHED:'logon_enriched'",
-    "connection.url": "http://localhost:9200"
-  }
-}'
-
-curl -X "POST" "http://localhost:8083/connectors/" \
-     -H "Content-Type: application/json" \
-     -d '{
-  "name": "es_sink_ora-soe-ORDERS",
-  "config": {
-    "topics": "ora-soe-ORDERS",
-    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
-    "key.ignore": "true",
-    "schema.ignore": "false",
-    "type.name": "type.name=kafkaconnect",
-    "topic.index.map": "ora-soe-ORDERS:'orders'",
-    "connection.url": "http://localhost:9200"
-  }
-}'
-
