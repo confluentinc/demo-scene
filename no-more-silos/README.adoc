@@ -1,0 +1,227 @@
+# No More Silos: Integrating Databases and Apache Kafka
+Robin Moffatt <robin@confluent.io>
+v0.01, 23 May 2018
+
+## Demo Install (once)
+
+Create Debezium user (this is also used for the JDBC connection)
+
+###  mysql JDBC driver
+https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-8.0.11.zip
+
+tar -xvf ~/Downloads/mysql-connector-java-5.1.45.tar.gz -C /tmp/
+mv /tmp/mysql-connector-java-5.1.45/mysql-connector-java-5.1.45-bin.jar ~/cp/confluent-4.1.1/share/java/kafka-connect-jdbc/
+
+
+## Demo Pre-flight (each time)
+
+[source,bash]
+----
+confluent destroy
+confluent start
+----
+
+Reset data in mysql
+
+[source,bash]
+----
+mysql demo -uroot < ~/git/demo-scene/no-more-silos/customers.sql
+----
+
+## Demo - JDBC
+
+Inspect data in mysql:
+
+[source,bash]
+----
+mysql demo -uroot
+----
+
+[source,sql]
+----
+SHOW TABLES;
+SELECT * FROM CUSTOMERS;
+----
+
+Set up JDBC connector:
+
+[source,bash]
+----
+~/git/demo-scene/no-more-silos/add-jdbc-connector.sh
+----
+
+Show topic created
+
+[source,bash]
+----
+$ kafka-topics --zookeeper localhost:2181 --list|grep customers
+mysql-jdbc-customers
+----
+
+Show the messages
+
+[source,bash]
+----
+$ kafka-avro-console-consumer \
+   --bootstrap-server localhost:9092 \
+   --property schema.registry.url=http://localhost:8081 \
+   --topic mysql-jdbc-customers \
+   --from-beginning \
+   | jq  '.'
+
+[...]
+{
+  "id": 8,
+  "first_name": {
+    "string": "Ruperto"
+  },
+  "last_name": {
+    "string": "Matteotti"
+  },
+  "email": {
+    "string": "rmatteotti7@diigo.com"
+  },
+  "gender": {
+    "string": "Male"
+  },
+  "comments": {
+    "string": "Diverse client-server conglomeration"
+  },
+  "create_ts": 1527086662000,
+  "update_ts": 1527086662000
+}
+----
+
+
+Split screen and show `INSERT` and `UPDATE` in MySQL, with corresponding messages in the Kafka console consumer:
+
+[source,sql]
+----
+INSERT INTO CUSTOMERS (id,first_name,last_name) VALUES (42,'Rick','Astley');
+UPDATE CUSTOMERS SET FIRST_NAME='Norma' WHERE ID=1;
+----
+
+Note that a `DELETE` is not captured:
+
+[source,sql]
+----
+DELETE FROM CUSTOMERS WHERE ID=42;
+----
+
+== Demo - Debezium
+
+Set up Debezium connector:
+
+[source,bash]
+----
+~/git/demo-scene/no-more-silos/add-debezium-connectors.sh
+----
+
+Check status
+
+[source,bash]
+----
+$ curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+jdbc_source_mysql_foobar_01      |  RUNNING  |  RUNNING
+mysql-source-demo-customers      |  RUNNING  |  RUNNING
+mysql-source-demo-customers-raw  |  RUNNING  |  RUNNING
+----
+
+Show topic created
+
+[source,bash]
+----
+$ kafka-topics --zookeeper localhost:2181 --list|grep customers
+asgard.demo.customers
+asgard.demo.customers-raw
+mysql-jdbc-customers
+----
+
+Show some data - flattened
+
+[source,bash]
+----
+$ kafka-avro-console-consumer \
+   --bootstrap-server localhost:9092 \
+   --property schema.registry.url=http://localhost:8081 \
+   --topic mysql-jdbc-customers \
+   --from-beginning \
+  asgard.demo.customers | jq  '.'
+[...]
+{
+  "id": 1,
+  "first_name": {
+    "string": "Norma"
+  },
+  "last_name": {
+    "string": "Argabrite"
+  },
+  "email": {
+    "string": "bargabrite0@google.com.hk"
+  },
+  "gender": {
+    "string": "Female"
+  },
+  "comments": {
+    "string": "Reactive exuding productivity"
+  },
+  "create_ts": 1527086662000,
+  "update_ts": 1527087531000
+}
+----
+
+Split-screen, `INSERT` a row:
+
+[source,sql]
+----
+INSERT INTO CUSTOMERS (id,first_name,last_name) VALUES (43,'Bat','man');
+----
+
+Now show some data - un-flattened
+
+[source,bash]
+----
+$ kafka-avro-console-consumer \
+   --bootstrap-server localhost:9092 \
+   --property schema.registry.url=http://localhost:8081 \
+   --topic asgard.demo.customers-raw \
+   --from-beginning \
+   | jq  '.'
+[...]
+{
+  "id": 1,
+  "first_name": {
+    "string": "Norma"
+  },
+  "last_name": {
+    "string": "Argabrite"
+  },
+  "email": {
+    "string": "bargabrite0@google.com.hk"
+  },
+  "gender": {
+    "string": "Female"
+  },
+  "comments": {
+    "string": "Reactive exuding productivity"
+  },
+  "create_ts": 1527086662000,
+  "update_ts": 1527087531000
+}
+----
+
+and `DELETE` a row:
+
+[source,sql]
+----
+DELETE FROM CUSTOMERS WHERE ID=42;
+----
+
+## Bonus: KSQL
+
+### Tables and Streams
+
+[source,sql]
+----
+
+----
