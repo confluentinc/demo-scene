@@ -219,9 +219,80 @@ DELETE FROM CUSTOMERS WHERE ID=42;
 
 ## Bonus: KSQL
 
+### Explore the data (easier & more powerful than console-consumer+`jq`)
+
+Explore topics
+
+[source,sql]
+----
+PRINT 'asgard.demo.customers' FROM BEGINNING;
+----
+
+[source,sql]
+----
+CREATE STREAM CUSTOMERS_STREAM WITH (KAFKA_TOPIC='asgard.demo.customers', VALUE_FORMAT='AVRO');
+SET 'AUTO.OFFSET.RESET' = 'earliest';
+SELECT * FROM CUSTOMERS_STREAM;
+----
+
+Filter the data:
+
+[source,sql]
+----
+SELECT FIRST_NAME, EMAIL FROM CUSTOMERS_STREAM WHERE EMAIL LIKE '%.com';
+----
+
+### Create a derived stream
+
+[source,sql]
+----
+CREATE STREAM EMAIL_DOTCOM AS \
+SELECT * FROM CUSTOMERS_STREAM \
+WHERE EMAIL LIKE '%.com';
+----
+
+Select from the stream to show current records:
+
+[source,sql]
+----
+SELECT FIRST_NAME, EMAIL FROM EMAIL_DOTCOM;
+----
+
+Split screen, load some more records, note how the matching ones are picked up in the stream
+
+[source,bash]
+----
+mysql demo -uroot < ~/git/demo-scene/no-more-silos/customers_1k.sql
+----
+
+Show that this is just a Kafka topic:
+
+[source,sql]
+----
+PRINT 'EMAIL_DOTCOM' FROM BEGINNING;
+----
+
 ### Tables and Streams
 
 [source,sql]
 ----
+CREATE STREAM CUST_REKEYED AS SELECT * FROM CUSTOMERS_STREAM PARTITION BY ID;
+CREATE TABLE CUSTOMERS WITH (KAFKA_TOPIC='CUST_REKEYED', VALUE_FORMAT='AVRO', KEY='ID');
+----
 
+Show stream for a record that's changed
+
+[source,sql]
+----
+SELECT FIRST_NAME, LAST_NAME FROM CUSTOMERS_STREAM WHERE ID=1;
+Norma | Argabrite
+Bibby | Argabrite
+----
+
+Show table for a record that's changed
+
+[source,sql]
+----
+SELECT FIRST_NAME, LAST_NAME FROM CUSTOMERS WHERE ID=1;
+Bibby | Argabrite
 ----
