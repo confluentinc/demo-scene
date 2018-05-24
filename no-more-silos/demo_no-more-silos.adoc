@@ -2,15 +2,18 @@
 Robin Moffatt <robin@confluent.io>
 v0.01, 23 May 2018
 
-## Demo Install (once)
+## Demo Install (once) - TODO
 
 Create Debezium user (this is also used for the JDBC connection)
 
 ###  mysql JDBC driver
 https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-8.0.11.zip
 
+[source,bash]
+----
 tar -xvf ~/Downloads/mysql-connector-java-5.1.45.tar.gz -C /tmp/
 mv /tmp/mysql-connector-java-5.1.45/mysql-connector-java-5.1.45-bin.jar ~/cp/confluent-4.1.1/share/java/kafka-connect-jdbc/
+----
 
 
 ## Demo Pre-flight (each time)
@@ -144,9 +147,9 @@ Show some data - flattened
 $ kafka-avro-console-consumer \
    --bootstrap-server localhost:9092 \
    --property schema.registry.url=http://localhost:8081 \
-   --topic mysql-jdbc-customers \
+   --topic asgard.demo.customers \
    --from-beginning \
-  asgard.demo.customers | jq  '.'
+   | jq  '.'
 [...]
 {
   "id": 1,

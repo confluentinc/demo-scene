@@ -20,8 +20,8 @@ screen -S CP_demo -p 0 -X screen -t datagen ksql-datagen quickstart=ratings form
 
 [source,bash]
 ----
-~/git/demo-scene/mysql-debezium-ksql-elasticsearch/create-dynamic-mapping.sh
-~/git/demo-scene/mysql-debezium-ksql-elasticsearch/add-connectors.sh
+~/git/demo-scene/mysql-debezium-ksql-elasticsearch/add-es-connector.sh
+~/git/demo-scene/mysql-debezium-ksql-elasticsearch/add-debezium-connector.sh
 ----
 
 
