@@ -46,22 +46,3 @@ curl -i -X POST -H "Accept:application/json" \
             "transforms.addTopicSuffix.regex":"(.*)",
             "transforms.addTopicSuffix.replacement":"$1-raw"       }
     }'
-curl -X "POST" "http://localhost:8083/connectors/" \
-     -H "Content-Type: application/json" \
-     -d '{
-  "name": "es_sink_RATINGS_ENRICHED",
-  "config": {
-    "topics": "'RATINGS_ENRICHED'",
-    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
-    "key.ignore": "true",
-    "schema.ignore": "false",
-    "type.name": "type.name=kafkaconnect",
-    "topic.index.map": "'RATINGS_ENRICHED':'ratings_enriched'",
-    "connection.url": "http://localhost:9200",
-    "transforms": "ExtractTimestamp",
-    "transforms.ExtractTimestamp.type": "org.apache.kafka.connect.transforms.InsertField$Value",
-    "transforms.ExtractTimestamp.timestamp.field" : "EXTRACT_TS"
-  }
-}'
-
