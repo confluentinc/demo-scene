@@ -2,9 +2,10 @@
 Robin Moffatt <robin@confluent.io>
 v0.01, 23 May 2018
 
-## Demo Install (once) - TODO
+## Demo setup
 
-Create Debezium user (this is also used for the JDBC connection)
+
+    docker-compose -f docker-compose/docker-compose.yml up
 
 ###  mysql JDBC driver
 https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-8.0.11.zip
@@ -16,28 +17,13 @@ mv /tmp/mysql-connector-java-5.1.45/mysql-connector-java-5.1.45-bin.jar ~/cp/con
 ----
 
 
-## Demo Pre-flight (each time)
-
-[source,bash]
-----
-confluent destroy
-confluent start
-----
-
-Reset data in mysql
-
-[source,bash]
-----
-mysql demo -uroot < ~/git/demo-scene/no-more-silos/customers.sql
-----
-
 ## Demo - JDBC
 
 Inspect data in mysql:
 
 [source,bash]
 ----
-mysql demo -uroot
+docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
 ----
 
 [source,sql]
@@ -57,7 +43,7 @@ Show topic created
 
 [source,bash]
 ----
-$ kafka-topics --zookeeper localhost:2181 --list|grep customers
+$ docker-compose exec kafka kafka-topics --zookeeper zookeeper:2181 --list
 mysql-jdbc-customers
 ----
 
@@ -65,7 +51,7 @@ Show the messages
 
 [source,bash]
 ----
-$ kafka-avro-console-consumer \
+$ docker-compose exec kafka-connect-cp kafka-avro-console-consumer \
    --bootstrap-server localhost:9092 \
    --property schema.registry.url=http://localhost:8081 \
    --topic mysql-jdbc-customers \
@@ -117,7 +103,7 @@ Set up Debezium connector:
 
 [source,bash]
 ----
-~/git/demo-scene/no-more-silos/add-debezium-connectors.sh
+./add-debezium-connectors.sh
 ----
 
 Check status
@@ -134,7 +120,7 @@ Show topic created
 
 [source,bash]
 ----
-$ kafka-topics --zookeeper localhost:2181 --list|grep customers
+$ docker-compose exec kafka kafka-topics --zookeeper zookeeper:2181 --list
 asgard.demo.customers
 asgard.demo.customers-raw
 mysql-jdbc-customers
