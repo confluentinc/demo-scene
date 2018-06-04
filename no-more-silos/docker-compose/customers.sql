@@ -1,5 +1,12 @@
+GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'replicator' IDENTIFIED BY 'replpass';
+GRANT SELECT, RELOAD, SHOW DATABASES, REPLICATION SLAVE, REPLICATION CLIENT  ON *.* TO 'debezium' IDENTIFIED BY 'dbz';
+
+# Create the database that we'll use to populate data and watch the effect in the binlog
+CREATE DATABASE demo;
+GRANT ALL PRIVILEGES ON demo.* TO 'mysqluser'@'%';
+
 use demo;
-drop table customers;
+
 create table customers (
 	id INT PRIMARY KEY,
 	first_name VARCHAR(50),
@@ -7,8 +14,8 @@ create table customers (
 	email VARCHAR(50),
 	gender VARCHAR(50),
 	comments VARCHAR(90),
-	create_ts timestamp DEFAULT CURRENT_TIMESTAMP , 
-	update_ts timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP 
+	create_ts timestamp DEFAULT CURRENT_TIMESTAMP ,
+	update_ts timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 insert into customers (id, first_name, last_name, email, gender, comments) values (1, 'Bibby', 'Argabrite', 'bargabrite0@google.com.hk', 'Female', 'Reactive exuding productivity');
 insert into customers (id, first_name, last_name, email, gender, comments) values (2, 'Auberon', 'Sulland', 'asulland1@slideshare.net', 'Male', 'Organized context-sensitive Graphical User Interface');
