@@ -1,7 +1,7 @@
 #!/bin/sh
 
 curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -H  "Content-Type:application/json" http://localhost:18083/connectors/ \
     -d '{
         "name": "jdbc_source_mysql_foobar_01",
         "config": {
@@ -10,7 +10,7 @@ curl -i -X POST -H "Accept:application/json" \
 
                 "_comment": " --- JDBC-specific configuration below here  --- ",
                 "_comment": "JDBC connection URL. This will vary by RDBMS. Consult your DB docs for more information",
-                "connection.url": "jdbc:mysql://localhost:3306/demo?user=debezium&password=dbz",
+                "connection.url": "jdbc:mysql://mysql:3306/demo?user=debezium&password=dbz",
 
                 "_comment": "Which table(s) to include",
                 "table.whitelist": "customers",
@@ -29,4 +29,3 @@ curl -i -X POST -H "Accept:application/json" \
         }
 }
 '
-

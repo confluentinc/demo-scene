@@ -4,18 +4,16 @@ v0.01, 23 May 2018
 
 ## Demo setup
 
+Download the MySQL JDBC driver into the local `docker-compose` folder:
 
-    docker-compose -f docker-compose/docker-compose.yml up
+    cd docker-compose
+    wget https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-8.0.11.tar.gz -O ./mysql-connector-java.tar.gz
+    tar -xf ./mysql-connector-java.tar.gz
+    mv mysql-connector-java-*/mysql-connector-java-*.jar mysql-connector-java.jar 
 
-###  mysql JDBC driver
-https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-8.0.11.zip
+Start the environment:
 
-[source,bash]
-----
-tar -xvf ~/Downloads/mysql-connector-java-5.1.45.tar.gz -C /tmp/
-mv /tmp/mysql-connector-java-5.1.45/mysql-connector-java-5.1.45-bin.jar ~/cp/confluent-4.1.1/share/java/kafka-connect-jdbc/
-----
-
+    docker-compose up
 
 ## Demo - JDBC
 
@@ -36,7 +34,7 @@ Set up JDBC connector:
 
 [source,bash]
 ----
-~/git/demo-scene/no-more-silos/add-jdbc-connector.sh
+~/git/demo-scene/no-more-silos/docker-compose/add-jdbc-connector.sh
 ----
 
 Show topic created
@@ -130,12 +128,11 @@ Show some data - flattened
 
 [source,bash]
 ----
-$ kafka-avro-console-consumer \
-   --bootstrap-server localhost:9092 \
-   --property schema.registry.url=http://localhost:8081 \
+$ docker-compose exec kafka-connect-cp kafka-avro-console-consumer \
+   --bootstrap-server kafka:29092 \
+   --property schema.registry.url=http://schema-registry:8081 \
    --topic asgard.demo.customers \
-   --from-beginning \
-   | jq  '.'
+   --from-beginning
 [...]
 {
   "id": 1,
@@ -170,12 +167,11 @@ Now show some data - un-flattened
 
 [source,bash]
 ----
-$ kafka-avro-console-consumer \
-   --bootstrap-server localhost:9092 \
-   --property schema.registry.url=http://localhost:8081 \
+$ docker-compose exec kafka-connect-cp kafka-avro-console-consumer \
+   --bootstrap-server kafka:29092 \
+   --property schema.registry.url=http://schema-registry:8081 \
    --topic asgard.demo.customers-raw \
-   --from-beginning \
-   | jq  '.'
+   --from-beginning
 [...]
 {
   "id": 1,
@@ -210,6 +206,11 @@ DELETE FROM CUSTOMERS WHERE ID=42;
 
 ### Explore the data (easier & more powerful than console-consumer+`jq`)
 
+[source,bash]
+----
+docker-compose exec ksql-cli ksql http://ksql-server:8088
+----
+
 Explore topics
 
 [source,sql]
@@ -220,7 +221,7 @@ PRINT 'asgard.demo.customers' FROM BEGINNING;
 [source,sql]
 ----
 CREATE STREAM CUSTOMERS_STREAM WITH (KAFKA_TOPIC='asgard.demo.customers', VALUE_FORMAT='AVRO');
-SET 'AUTO.OFFSET.RESET' = 'earliest';
+SET 'auto.offset.reset' = 'earliest';
 SELECT * FROM CUSTOMERS_STREAM;
 ----
 
@@ -251,7 +252,7 @@ Split screen, load some more records, note how the matching ones are picked up i
 
 [source,bash]
 ----
-mysql demo -uroot < ~/git/demo-scene/no-more-silos/customers_1k.sql
+docker-compose exec -T mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo ' < customers_1k.sql
 ----
 
 Show that this is just a Kafka topic:
