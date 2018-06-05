@@ -9,11 +9,15 @@ Download the MySQL JDBC driver into the local `docker-compose` folder:
     cd docker-compose
     wget https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-8.0.11.tar.gz -O ./mysql-connector-java.tar.gz
     tar -xf ./mysql-connector-java.tar.gz
-    mv mysql-connector-java-*/mysql-connector-java-*.jar mysql-connector-java.jar 
+    mv mysql-connector-java-*/mysql-connector-java-*.jar mysql-connector-java.jar
 
 Start the environment:
 
     docker-compose up
+
+Make sure Kafka Connect has started (wait until this command returns output):
+
+    docker-compose logs -f kafka-connect-cp|grep "Kafka Connect started"
 
 ## Demo - JDBC
 
@@ -37,12 +41,19 @@ Set up JDBC connector:
 ~/git/demo-scene/no-more-silos/docker-compose/add-jdbc-connector.sh
 ----
 
+Check status - should be `RUNNING`
+[source,bash]
+----
+$ curl -s "http://localhost:18083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:18083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+jdbc_source_mysql_foobar_01  |  RUNNING  |  RUNNING
+----
+
 Show topic created
 
 [source,bash]
 ----
 $ docker-compose exec kafka kafka-topics --zookeeper zookeeper:2181 --list
-mysql-jdbc-customers
+mysql-jdbc-CUSTOMERS
 ----
 
 Show the messages
@@ -50,11 +61,11 @@ Show the messages
 [source,bash]
 ----
 $ docker-compose exec kafka-connect-cp kafka-avro-console-consumer \
-   --bootstrap-server localhost:9092 \
-   --property schema.registry.url=http://localhost:8081 \
-   --topic mysql-jdbc-customers \
+   --bootstrap-server kafka:29092 \
+   --property schema.registry.url=http://schema-registry:8081 \
+   --topic mysql-jdbc-CUSTOMERS \
    --from-beginning \
-   | jq  '.'
+   | jq  -c '.'
 
 [...]
 {
@@ -82,6 +93,11 @@ $ docker-compose exec kafka-connect-cp kafka-avro-console-consumer \
 
 Split screen and show `INSERT` and `UPDATE` in MySQL, with corresponding messages in the Kafka console consumer:
 
+[source,bash]
+----
+docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
+----
+
 [source,sql]
 ----
 INSERT INTO CUSTOMERS (id,first_name,last_name) VALUES (42,'Rick','Astley');
@@ -97,11 +113,11 @@ DELETE FROM CUSTOMERS WHERE ID=42;
 
 == Demo - Debezium
 
-Set up Debezium connector:
+Set up Debezium connectors:
 
 [source,bash]
 ----
-./add-debezium-connectors.sh
+~/git/demo-scene/no-more-silos/docker-compose/add-debezium-connectors.sh
 ----
 
 Check status
@@ -109,7 +125,6 @@ Check status
 [source,bash]
 ----
 $ curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
-jdbc_source_mysql_foobar_01      |  RUNNING  |  RUNNING
 mysql-source-demo-customers      |  RUNNING  |  RUNNING
 mysql-source-demo-customers-raw  |  RUNNING  |  RUNNING
 ----
@@ -118,10 +133,10 @@ Show topic created
 
 [source,bash]
 ----
-$ docker-compose exec kafka kafka-topics --zookeeper zookeeper:2181 --list
-asgard.demo.customers
-asgard.demo.customers-raw
-mysql-jdbc-customers
+$ docker-compose exec kafka bash -c 'kafka-topics --zookeeper zookeeper:2181 --list|grep CUSTOMERS'
+asgard.demo.CUSTOMERS
+asgard.demo.CUSTOMERS-raw
+mysql-jdbc-CUSTOMERS
 ----
 
 Show some data - flattened
@@ -131,7 +146,7 @@ Show some data - flattened
 $ docker-compose exec kafka-connect-cp kafka-avro-console-consumer \
    --bootstrap-server kafka:29092 \
    --property schema.registry.url=http://schema-registry:8081 \
-   --topic asgard.demo.customers \
+   --topic asgard.demo.CUSTOMERS \
    --from-beginning
 [...]
 {
@@ -161,6 +176,7 @@ Split-screen, `INSERT` a row:
 [source,sql]
 ----
 INSERT INTO CUSTOMERS (id,first_name,last_name) VALUES (43,'Bat','man');
+UPDATE CUSTOMERS SET first_name='Super' WHERE ID=43;
 ----
 
 Now show some data - un-flattened
@@ -199,7 +215,7 @@ and `DELETE` a row:
 
 [source,sql]
 ----
-DELETE FROM CUSTOMERS WHERE ID=42;
+DELETE FROM CUSTOMERS WHERE ID=1;
 ----
 
 ## Bonus: KSQL

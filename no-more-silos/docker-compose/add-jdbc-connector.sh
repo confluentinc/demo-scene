@@ -13,7 +13,7 @@ curl -i -X POST -H "Accept:application/json" \
                 "connection.url": "jdbc:mysql://mysql:3306/demo?user=debezium&password=dbz",
 
                 "_comment": "Which table(s) to include",
-                "table.whitelist": "customers",
+                "table.whitelist": "CUSTOMERS",
 
                 "_comment": "Pull all rows based on an timestamp column. You can also do bulk or incrementing column-based extracts. For more information, see http://docs.confluent.io/current/connect/connect-jdbc/docs/source_config_options.html#mode",
                 "mode": "timestamp",
