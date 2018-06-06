@@ -89,9 +89,11 @@ Add Elasticsearch index to Kibana
 curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.2.4' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"ratings_enriched","timeFieldName":"EXTRACT_TS"}}' --compressed
 ----
 
-Import dashboard, from http://localhost:5601/app/kibana#/management/kibana/objects?_g=()&_a=(tab:dashboards)
+Import dashboard `/Users/Robin/git/demo-scene/mysql-debezium-ksql-elasticsearch/kibana_objects.json` using the **Import** button at http://localhost:5601/app/kibana#/management/kibana/objects
 
-=== Run KSQL CLI
+Load the Kibana dashboard http://localhost:5601/app/kibana#/dashboard/02028f30-424c-11e8-af19-1188a9332246
+
+=== Run KSQL CLI and MySQL CLI
 
 [source,bash]
 ----
@@ -108,7 +110,7 @@ Is the stack up?
 
 [source,bash]
 ----
-docker-compose ps
+$ docker-compose ps
                 Name                               Command               State                          Ports
 -------------------------------------------------------------------------------------------------------------------------------------
 docker-compose_connect-debezium_1       /docker-entrypoint.sh start      Up      0.0.0.0:8083->8083/tcp, 8778/tcp, 9092/tcp, 9779/tcp
@@ -140,7 +142,8 @@ Is ratings data being produced?
 
 [source,bash]
 ----
-docker-compose exec kafka-connect-cp kafka-avro-console-consumer \
+$ docker-compose exec kafka-connect-cp \
+                                         kafka-avro-console-consumer \
                                           --bootstrap-server kafka:29092 \
                                           --property schema.registry.url=http://schema-registry:8081 \
                                           --topic ratings
@@ -151,7 +154,7 @@ Is Elasticsearch running?
 
 [source,bash]
 ----
-Robin@asgard02 ~> curl http://localhost:9200
+$ curl http://localhost:9200
 {
   "name" : "0-JgLQj",
   "cluster_name" : "elasticsearch_Robin",
@@ -169,7 +172,7 @@ Robin@asgard02 ~> curl http://localhost:9200
 }
 ----
 
-* Load Kibana dashboard: http://localhost:5601/app/kibana#/
+* Load Kibana dashboard: http://localhost:5601/app/kibana#/dashboard/02028f30-424c-11e8-af19-1188a9332246
 * Create iTerm windows, using the `screencapture` profile
 * `screen -x CP_demo`
 * Load this instructions doc into Chrome
