@@ -1,0 +1,304 @@
+# No More Silos: Integrating Databases and Apache Kafka
+Robin Moffatt <robin@confluent.io>
+v0.01, 23 May 2018
+
+## Demo setup
+
+Download the MySQL JDBC driver into the local `docker-compose` folder:
+
+    cd docker-compose
+    wget https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-8.0.11.tar.gz -O ./mysql-connector-java.tar.gz
+    tar -xf ./mysql-connector-java.tar.gz
+    mv mysql-connector-java-*/mysql-connector-java-*.jar mysql-connector-java.jar
+
+Start the environment:
+
+    docker-compose up
+
+Make sure Kafka Connect has started (wait until this command returns output):
+
+    docker-compose logs -f kafka-connect-cp|grep "Kafka Connect started"
+
+## Demo - JDBC
+
+Inspect data in mysql:
+
+[source,bash]
+----
+docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
+----
+
+[source,sql]
+----
+SHOW TABLES;
+SELECT * FROM CUSTOMERS;
+----
+
+Set up JDBC connector:
+
+[source,bash]
+----
+~/git/demo-scene/no-more-silos/docker-compose/add-jdbc-connector.sh
+----
+
+Check status - should be `RUNNING`
+[source,bash]
+----
+$ curl -s "http://localhost:18083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:18083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+jdbc_source_mysql_foobar_01  |  RUNNING  |  RUNNING
+----
+
+Show topic created
+
+[source,bash]
+----
+$ docker-compose exec kafka kafka-topics --zookeeper zookeeper:2181 --list
+mysql-jdbc-CUSTOMERS
+----
+
+Show the messages
+
+[source,bash]
+----
+$ docker-compose exec kafka-connect-cp kafka-avro-console-consumer \
+   --bootstrap-server kafka:29092 \
+   --property schema.registry.url=http://schema-registry:8081 \
+   --topic mysql-jdbc-CUSTOMERS \
+   --from-beginning \
+   | jq  -c '.'
+
+[...]
+{
+  "id": 8,
+  "first_name": {
+    "string": "Ruperto"
+  },
+  "last_name": {
+    "string": "Matteotti"
+  },
+  "email": {
+    "string": "rmatteotti7@diigo.com"
+  },
+  "gender": {
+    "string": "Male"
+  },
+  "comments": {
+    "string": "Diverse client-server conglomeration"
+  },
+  "create_ts": 1527086662000,
+  "update_ts": 1527086662000
+}
+----
+
+
+Split screen and show `INSERT` and `UPDATE` in MySQL, with corresponding messages in the Kafka console consumer:
+
+[source,bash]
+----
+docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
+----
+
+[source,sql]
+----
+INSERT INTO CUSTOMERS (id,first_name,last_name) VALUES (42,'Rick','Astley');
+UPDATE CUSTOMERS SET FIRST_NAME='Norma' WHERE ID=1;
+----
+
+Note that a `DELETE` is not captured:
+
+[source,sql]
+----
+DELETE FROM CUSTOMERS WHERE ID=42;
+----
+
+== Demo - Debezium
+
+Set up Debezium connectors:
+
+[source,bash]
+----
+~/git/demo-scene/no-more-silos/docker-compose/add-debezium-connectors.sh
+----
+
+Check status
+
+[source,bash]
+----
+$ curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+mysql-source-demo-customers      |  RUNNING  |  RUNNING
+mysql-source-demo-customers-raw  |  RUNNING  |  RUNNING
+----
+
+Show topic created
+
+[source,bash]
+----
+$ docker-compose exec kafka bash -c 'kafka-topics --zookeeper zookeeper:2181 --list|grep CUSTOMERS'
+asgard.demo.CUSTOMERS
+asgard.demo.CUSTOMERS-raw
+mysql-jdbc-CUSTOMERS
+----
+
+Show some data - flattened
+
+[source,bash]
+----
+$ docker-compose exec kafka-connect-cp kafka-avro-console-consumer \
+   --bootstrap-server kafka:29092 \
+   --property schema.registry.url=http://schema-registry:8081 \
+   --topic asgard.demo.CUSTOMERS \
+   --from-beginning
+[...]
+{
+  "id": 1,
+  "first_name": {
+    "string": "Norma"
+  },
+  "last_name": {
+    "string": "Argabrite"
+  },
+  "email": {
+    "string": "bargabrite0@google.com.hk"
+  },
+  "gender": {
+    "string": "Female"
+  },
+  "comments": {
+    "string": "Reactive exuding productivity"
+  },
+  "create_ts": 1527086662000,
+  "update_ts": 1527087531000
+}
+----
+
+Split-screen, `INSERT` a row:
+
+[source,sql]
+----
+INSERT INTO CUSTOMERS (id,first_name,last_name) VALUES (43,'Bat','man');
+UPDATE CUSTOMERS SET first_name='Super' WHERE ID=43;
+----
+
+Now show some data - un-flattened
+
+[source,bash]
+----
+$ docker-compose exec kafka-connect-cp kafka-avro-console-consumer \
+   --bootstrap-server kafka:29092 \
+   --property schema.registry.url=http://schema-registry:8081 \
+   --topic asgard.demo.customers-raw \
+   --from-beginning
+[...]
+{
+  "id": 1,
+  "first_name": {
+    "string": "Norma"
+  },
+  "last_name": {
+    "string": "Argabrite"
+  },
+  "email": {
+    "string": "bargabrite0@google.com.hk"
+  },
+  "gender": {
+    "string": "Female"
+  },
+  "comments": {
+    "string": "Reactive exuding productivity"
+  },
+  "create_ts": 1527086662000,
+  "update_ts": 1527087531000
+}
+----
+
+and `DELETE` a row:
+
+[source,sql]
+----
+DELETE FROM CUSTOMERS WHERE ID=1;
+----
+
+## Bonus: KSQL
+
+### Explore the data (easier & more powerful than console-consumer+`jq`)
+
+[source,bash]
+----
+docker-compose exec ksql-cli ksql http://ksql-server:8088
+----
+
+Explore topics
+
+[source,sql]
+----
+PRINT 'asgard.demo.customers' FROM BEGINNING;
+----
+
+[source,sql]
+----
+CREATE STREAM CUSTOMERS_STREAM WITH (KAFKA_TOPIC='asgard.demo.customers', VALUE_FORMAT='AVRO');
+SET 'auto.offset.reset' = 'earliest';
+SELECT * FROM CUSTOMERS_STREAM;
+----
+
+Filter the data:
+
+[source,sql]
+----
+SELECT FIRST_NAME, EMAIL FROM CUSTOMERS_STREAM WHERE EMAIL LIKE '%.com';
+----
+
+### Create a derived stream
+
+[source,sql]
+----
+CREATE STREAM EMAIL_DOTCOM AS \
+SELECT * FROM CUSTOMERS_STREAM \
+WHERE EMAIL LIKE '%.com';
+----
+
+Select from the stream to show current records:
+
+[source,sql]
+----
+SELECT FIRST_NAME, EMAIL FROM EMAIL_DOTCOM;
+----
+
+Split screen, load some more records, note how the matching ones are picked up in the stream
+
+[source,bash]
+----
+docker-compose exec -T mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo ' < customers_1k.sql
+----
+
+Show that this is just a Kafka topic:
+
+[source,sql]
+----
+PRINT 'EMAIL_DOTCOM' FROM BEGINNING;
+----
+
+### Tables and Streams
+
+[source,sql]
+----
+CREATE STREAM CUST_REKEYED AS SELECT * FROM CUSTOMERS_STREAM PARTITION BY ID;
+CREATE TABLE CUSTOMERS WITH (KAFKA_TOPIC='CUST_REKEYED', VALUE_FORMAT='AVRO', KEY='ID');
+----
+
+Show stream for a record that's changed
+
+[source,sql]
+----
+SELECT FIRST_NAME, LAST_NAME FROM CUSTOMERS_STREAM WHERE ID=1;
+Norma | Argabrite
+Bibby | Argabrite
+----
+
+Show table for a record that's changed
+
+[source,sql]
+----
+SELECT FIRST_NAME, LAST_NAME FROM CUSTOMERS WHERE ID=1;
+Bibby | Argabrite
+----
