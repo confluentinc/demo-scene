@@ -89,7 +89,7 @@ services:
 
   # KSQL
   ksql-server:
-    image: "confluentinc/ksql-cli:5.0.0-beta1"
+    image: "confluentinc/ksql-cli:5.0.0-beta30"
     hostname: ksql-server
     ports:
       - '8088:8088'
@@ -129,6 +129,7 @@ services:
 
   connect-debezium:
     image: debezium/connect:0.8
+#    image: debezium/connect:0.7.4
     hostname: connect-debezium
     ports:
      - 8083:8083
@@ -179,7 +180,7 @@ services:
       - "moby:127.0.0.1"
 
   ksql-cli:
-    image: "confluentinc/ksql-cli:5.0.0-beta1"
+    image: "confluentinc/ksql-cli:5.0.0-beta30"
     hostname: ksql-cli
     depends_on:
       - kafka

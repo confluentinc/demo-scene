@@ -79,14 +79,33 @@ Create dummy document in index:
 
 [source,bash]
 ----
-curl -XPOST "http://localhost:9200/ratings_enriched/type.name=kafkaconnect" -H 'Content-Type: application/json' -d'{"RATING_ID": 0,"CHANNEL": "iOS","STARS": 0,"MESSAGE": "","ID": 1,"FULL_NAME": "","EXTRACT_TS": 1528284650101}'
+curl -XPOST "http://localhost:9200/ratings-with-customer-data/type.name=kafkaconnect" -H 'Content-Type: application/json' -d'{
+          "RATING_ID": 79,
+          "CHANNEL": "iOS",
+          "STARS": 4,
+          "MESSAGE": "Surprisingly good, maybe you are getting your mojo back at long last!",
+          "ID": 1,
+          "CLUB_STATUS": "bronze",
+          "EMAIL": "rblaisdell0@rambler.ru",
+          "FIRST_NAME": "Rica",
+          "LAST_NAME": "Blaisdell",
+          "EXTRACT_TS": 1528992287749
+        }'
+curl -XPOST "http://localhost:9200/unhappy_platinum_customers/type.name=kafkaconnect" -H 'Content-Type: application/json' -d'{
+          "MESSAGE": "why is it so difficult to keep the bathrooms clean ?",
+          "STARS": 1,
+          "EXTRACT_TS": 1528992291449,
+          "CLUB_STATUS": "platinum",
+          "EMAIL": "rleheude5@reddit.com"
+        }'
 ----
 
 Add Elasticsearch index to Kibana
 
 [source,bash]
 ----
-curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.2.4' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"ratings_enriched","timeFieldName":"EXTRACT_TS"}}' --compressed
+curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.2.4' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"ratings-with-customer-data","timeFieldName":"EXTRACT_TS"}}' --compressed
+curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.2.4' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"unhappy_platinum_customers","timeFieldName":"EXTRACT_TS"}}' --compressed
 ----
 
 Import dashboard `/Users/Robin/git/demo-scene/mysql-debezium-ksql-elasticsearch/kibana_objects.json` using the **Import** button at http://localhost:5601/app/kibana#/management/kibana/objects
@@ -135,7 +154,7 @@ mysql-source-demo-CUSTOMERS      |  RUNNING  |  RUNNING
 mysql-source-demo-CUSTOMERS-raw  |  RUNNING  |  RUNNING
 
 $ curl -s "http://localhost:18083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:18083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
-es_sink_RATINGS_ENRICHED  |  RUNNING  |  RUNNING
+es_sink_ratings-with-customer-data  |  RUNNING  |  RUNNING
 ----
 
 Is ratings data being produced?
@@ -237,8 +256,8 @@ mysql> select * from CUSTOMERS;
 [source,bash]
 ----
 curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
-mysql-source-demo-customers      |  RUNNING  |  RUNNING
-mysql-source-demo-customers-raw  |  RUNNING  |  RUNNING
+mysql-source-demo-CUSTOMERS      |  RUNNING  |  RUNNING
+mysql-source-demo-CUSTOMERS-raw  |  RUNNING  |  RUNNING
 ----
 
 === Show Kafka topic has been created & populated
@@ -384,7 +403,7 @@ Persist this stream of data
 
 [source,sql]
 ----
-CREATE STREAM RATINGS_ENRICHED WITH (PARTITIONS=1) AS \
+CREATE STREAM ratings-with-customer-data WITH (PARTITIONS=1) AS \
 SELECT R.RATING_ID, R.CHANNEL, R.STARS, R.MESSAGE, \
        C.ID, C.CLUB_STATUS, C.EMAIL, \
        C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME \
@@ -403,7 +422,7 @@ CUSTOMERS is a KSQL _table_, which means that we have the latest value for a giv
 Check out the ratings for customer id 2 only:
 [source,sql]
 ----
-ksql> SELECT * FROM RATINGS_ENRICHED WHERE ID=2;
+ksql> SELECT * FROM ratings-with-customer-data WHERE ID=2;
 ----
 
 In mysql, make a change to ID 2
@@ -420,11 +439,11 @@ Tested on Elasticsearch 6.2.3.
 
 === Set up Kibana
 
-* From http://localhost:5601/app/kibana#/management/kibana/index create a `ratings_enriched` Index Pattern
+* From http://localhost:5601/app/kibana#/management/kibana/index create a `ratings-with-customer-data` Index Pattern
 
 * From http://localhost:5601/app/kibana#/management/kibana/objects import `kibana_objects.json`
 
-For some reason the mapping doesn't get picked up correctly. `curl -Xget "http://localhost:9200/ratings_enriched/_mapping/"` should show each text field as a `keyword`. If it doesn't, and the connector is running, simply run `curl -Xdelete "http://localhost:9200/ratings_enriched"` to truncate what's there and assuming the dynamic mapping has been created it will then get picked up when the index is then re-created.
+For some reason the mapping doesn't get picked up correctly. `curl -Xget "http://localhost:9200/ratings-with-customer-data/_mapping/"` should show each text field as a `keyword`. If it doesn't, and the connector is running, simply run `curl -Xdelete "http://localhost:9200/ratings-with-customer-data"` to truncate what's there and assuming the dynamic mapping has been created it will then get picked up when the index is then re-created.
 
 === View and explore data
 
@@ -441,13 +460,13 @@ Simple aggregation - count of ratings per person, per minute:
 
 [source,sql]
 ----
-ksql> SELECT FULL_NAME,COUNT(*) FROM RATINGS_ENRICHED WINDOW TUMBLING (SIZE 1 MINUTE) GROUP BY FULL_NAME;
+ksql> SELECT FULL_NAME,COUNT(*) FROM ratings-with-customer-data WINDOW TUMBLING (SIZE 1 MINUTE) GROUP BY FULL_NAME;
 ----
 
 Persist this and show the timestamp:
 
 [source,sql]
 ----
-CREATE TABLE RATINGS_PER_CUSTOMER_PER_MINUTE AS SELECT FULL_NAME,COUNT(*) AS RATINGS_COUNT FROM RATINGS_ENRICHED WINDOW TUMBLING (SIZE 1 MINUTE) GROUP BY FULL_NAME;
+CREATE TABLE RATINGS_PER_CUSTOMER_PER_MINUTE AS SELECT FULL_NAME,COUNT(*) AS RATINGS_COUNT FROM ratings-with-customer-data WINDOW TUMBLING (SIZE 1 MINUTE) GROUP BY FULL_NAME;
 SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') , FULL_NAME, RATINGS_COUNT FROM RATINGS_PER_CUSTOMER_PER_MINUTE;
 ----
