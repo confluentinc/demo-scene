@@ -21,7 +21,7 @@ settings = {
 }
 c = Consumer(settings)
 
-c.subscribe(['UNHAPPY_PLATINUM_CUSTOMERS2'])
+c.subscribe(['UNHAPPY_PLATINUM_CUSTOMERS'])
 
 try:
     while True:
