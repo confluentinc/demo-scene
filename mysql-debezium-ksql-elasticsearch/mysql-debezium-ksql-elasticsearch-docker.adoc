@@ -1,4 +1,8 @@
 = Streaming ETL demo - Enriching event stream data with CDC data from MySQL, stream into Elasticsearch
+Robin Moffatt <robin@confluent.io>
+v1.01, 18 Jun 2018
+
+This is designed to be run as a step-by-step demo. The `ksql-statements.sql` should match those run in this doc end-to-end and in theory you can just run the file, but I have not tested it. PRs welcome for a one-click script that just demonstrates the end-to-end running demo :) 
 
 == Pre-reqs
 
@@ -114,13 +118,21 @@ Load the Kibana dashboard http://localhost:5601/app/kibana#/dashboard/02028f30-4
 
 === Run KSQL CLI and MySQL CLI
 
+Optionally, use something like `screen` or `tmux` to have these both easily to hand. Or multiple Terminal tabs. Whatever works for you :)
+KSQL CLI:
+
 [source,bash]
 ----
 cd docker-compose
+docker-compose exec ksql-cli ksql http://ksql-server:8088
+----
 
-screen -d -m -S CP_demo -t bash watch date
-screen -S CP_demo -p 0 -X screen -t KSQL-cli docker-compose exec ksql-cli ksql http://ksql-server:8088
-screen -S CP_demo -p 0 -X screen -t mysql docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
+MySQL CLI:
+
+[source,bash]
+----
+cd docker-compose
+docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
 ----
 
 == Pre-flight checklist
@@ -470,3 +482,25 @@ Persist this and show the timestamp:
 CREATE TABLE RATINGS_PER_CUSTOMER_PER_MINUTE AS SELECT FULL_NAME,COUNT(*) AS RATINGS_COUNT FROM ratings-with-customer-data WINDOW TUMBLING (SIZE 1 MINUTE) GROUP BY FULL_NAME;
 SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') , FULL_NAME, RATINGS_COUNT FROM RATINGS_PER_CUSTOMER_PER_MINUTE;
 ----
+
+=== Slack notifications
+
+_This bit will need some config of your own, as you'll need your own Slack workspace and API key (both free). With this though, you can demo the idea of an event-driven app subscribing to a KSQL-populated stream of filtered events.
+
+:image:images/slack_ratings.png[Slack push notifications driven from Kafka and KSQL]
+
+To run, first export your API key as an environment variable:
+
+[source,bash]
+----
+export SLACK_API_TOKEN=xyxyxyxyxyxyxyxyxyxyxyx
+----
+
+then run the code:
+
+[source,bash]
+----
+python python_kafka_notify.py
+----
+
+You will need to install `slackclient` and `confluent_kafka` libraries.
