@@ -35,10 +35,13 @@ Don't forget to check out the #ksql channel on our https://slackpass.io/confluen
 * Docker Compose
 * 8GB+ RAM
 
-IMPORTANT: *THIS MUST BE DONE _BEFORE_ THE WORKSHOP*
+IMPORTANT: *THIS MUST BE DONE _BEFORE_ THE WORKSHOP - The docker images are large and will take time to download. Please don't wait until the workshop as the wi-fi will not cope!*
 
 [IMPORTANT]
 ====
+
+0. In Docker’s advanced settings, increase the memory dedicated to Docker to at least 8GB.
+** Don't forget to do this
 
 1. Clone the workshop repo to your local machine:
 +
@@ -47,12 +50,18 @@ IMPORTANT: *THIS MUST BE DONE _BEFORE_ THE WORKSHOP*
 git clone https://github.com/confluentinc/demo-scene.git
 ----
 
+0. Did you remember to increase the memory dedicated to Docker to at least 8GB?
+** You really do need to do this
+
 2. Change working directory
 +
 [source,bash]
 ----
 cd ksql-workshop
 ----
+
+0. How much memory did you allocate to Docker? It needs to be >= 8 GB!
+** Nothing will work if you don't do this
 
 3. Pull all required docker images—this will take a while!
 +
@@ -63,6 +72,8 @@ docker-compose pull
 ====
 
 == Start Confluent Platform
+
+NOTE: In Docker’s advanced settings, increase the memory dedicated to Docker to at least 8GB.
 
 [source,bash]
 ----
@@ -75,171 +86,95 @@ Once you see output then it means Kafka is running and you can proceed
 
 [source,bash]
 ----
-Robin@asgard02 ~/g/d/m/docker-compose> docker-compose logs -f kafka|grep "INFO Kafka version"
+$ docker-compose logs -f kafka|grep "INFO Kafka version"
 kafka_1                 | [2018-06-19 11:37:32,586] INFO Kafka version : 1.1.1-cp1 (org.apache.kafka.common.utils.AppInfoParser)
 ----
 
-== Populate Users topic manually
+Press Ctrl-C twice to exit the `docker-compose logs` command
+
+Run `docker-compose ps` to confirm that all components are running:
 
 [source,bash]
 ----
-docker run --volume $PWD/data:/data \
-           --network docker-compose_default \
-           --tty --interactive \
+$ docker-compose ps
+     Name                    Command               State                        Ports
+-----------------------------------------------------------------------------------------------------------
+connect           /etc/confluent/docker/run        Up      0.0.0.0:8083->8083/tcp, 9092/tcp
+control-center    /etc/confluent/docker/run        Up      0.0.0.0:9021->9021/tcp
+kafka             /etc/confluent/docker/run        Up      0.0.0.0:29092->29092/tcp, 0.0.0.0:9092->9092/tcp
+ksql-server       perl -e while(1){ sleep 99 ...   Up      0.0.0.0:8088->8088/tcp
+rest-proxy        /etc/confluent/docker/run        Up      0.0.0.0:8082->8082/tcp
+schema-registry   /etc/confluent/docker/run        Up      0.0.0.0:8081->8081/tcp
+zookeeper         /etc/confluent/docker/run        Up      0.0.0.0:2181->2181/tcp, 2888/tcp, 3888/tcp
+----
+
+== Populate Customers topic manually
+
+[source,bash]
+----
+cat data/customers.json | \
+docker run --interactive \
+           --network ksql-workshop_default \
            confluentinc/cp-kafkacat \
            kafkacat -b kafka:29092 \
                     -t customers \
-                    -P \
-                    -l /data/customers.json
+                    -P
 ----
 
-
-
-=== Inspect Users topic data
-
-`kafkacat -C -K: -b localhost:9092 -f 'Key:    %k\nValue:  %s\n\n' -t mysql_users`
+== Inspect Customers topic data
 
 [source,bash]
 ----
-kafkacat -C -K: -b localhost:9092 -f 'Key:    %k\nValue:  %s\n\n' -t mysql_users
-[...]
-Key:    4
-Value:  {"uid":4,"name":"Michael","locale":"en_US","address_city":"Geneva","elite":"G"}
-
-Key:    5
-Value:  {"uid":5,"name":"Neil","locale":"en_US","address_city":"London","elite":"G"}
-[...]
+docker run --network ksql-workshop_default \
+          --tty --interactive \
+          confluentinc/cp-kafkacat \
+          kafkacat -b kafka:29092 -C -K: \
+          -f '\nKey (%K bytes): %k\t\nValue (%S bytes): %s\n\Partition: %p\tOffset: %o\n--\n' \
+          -t customers
 ----
+
 
 <<<
 
-== Demo
-
-[NOTE]
-====
-Create blank window in `screen`
-====
-
-=== Check Confluent is running
-
-`confluent status`
+== Inspect Ratings topic data
 
 [source,bash]
 ----
-Robin@asgard02 ~/c/confluent-4.0.0> confluent status
-Writing temporary config and data files to /var/folders/q9/2tg_lt9j6nx29rvr5r5jn_bw0000gp/T/
-connect is [UP]
-kafka-rest is [UP]
-schema-registry is [UP]
-kafka is [UP]
-zookeeper is [UP]
+docker run --network ksql-workshop_default \
+          --tty --interactive \
+          confluentinc/cp-kafkacat \
+          kafkacat -b kafka:29092 -C -K: \
+          -f '\nKey (%K bytes): %k\t\nValue (%S bytes): %s\n\Partition: %p\tOffset: %o\n--\n' \
+          -t ratings
 ----
+
+Note that the data is in Avro, so you will see lots of special characters in the output.
+
+Press Ctrl-C to cancel
 
 <<<
-=== Run datagen - ratings
 
-`~/git/ksql/bin/ksql-datagen quickstart=ratings format=avro topic=ratings maxInterval=500`
-
-[source,bash]
-----
-Robin@asgard02 ~/c/confluent-4.0.0> ~/git/ksql/bin/ksql-datagen quickstart=ratings format=avro topic=ratings maxInterval=500
-1 --> ([ 1 | 10 | 3 | 9297 | 1519302621843 | 'iOS' | 'your team here rocks!' ])
-2 --> ([ 2 | 10 | 1 | 3415 | 1519302622767 | 'android' | 'Surprisingly good, maybe you are getting your mojo back at long last!' ])
-3 --> ([ 3 | 17 | 2 | 5197 | 1519302623090 | 'web' | 'meh' ])
-4 --> ([ 4 | 9 | 3 | 9389 | 1519302623414 | 'android' | 'is this as good as it gets? really ?' ])
-----
-
-[NOTE]
-====
-Name `screen` window `ratings data`
-====
-
-
-<<<
-=== Start KSQL Server
+== Launch KSQL CLI
 
 [source,bash]
 ----
-~/git/ksql/bin/ksql-server-start ~/git/ksql/ksqlserver.properties
+docker-compose exec ksql-cli ksql http://ksql-server:8088
 ----
+
+Make sure that you get a successful start up screen:
 
 [source,bash]
 ----
-$ ~/git/ksql/bin/ksql-server-start ~/git/ksql/ksqlserver.properties
+Copyright 2017 Confluent Inc.
 
-                  ===========================================
-                  =        _  __ _____  ____  _             =
-                  =       | |/ // ____|/ __ \| |            =
-                  =       | ' /| (___ | |  | | |            =
-                  =       |  <  \___ \| |  | | |            =
-                  =       | . \ ____) | |__| | |____        =
-                  =       |_|\_\_____/ \___\_\______|       =
-                  =                                         =
-                  =  Streaming SQL Engine for Apache Kafka® =
-                  ===========================================
-
-Copyright 2018 Confluent Inc.
-
-Server 0.5 listening on http://localhost:8090
-
-To access the KSQL CLI, run:
-ksql-cli remote http://localhost:8090
-
-To access the UI, point your browser at:
-http://localhost:8090/index.html
-----
-
-[NOTE]
-====
-Name `screen` window `KSQL Server`
-====
-
-<<<
-=== Launch KSQL CLI
-
-[NOTE]
-====
-New `screen` window
-====
-
-Connect to KSQL server running locally
-
-`~/git/ksql/bin/ksql-cli remote http://localhost:8090/`
-
-[NOTE]
-====
-Name `screen` window `KSQL CLI`
-====
-
-[source,bash]
-----
-Robin@asgard02 ~> ~/git/ksql/bin/ksql-cli remote http://localhost:8090/
-
-
-                  ===========================================
-                  =        _  __ _____  ____  _             =
-                  =       | |/ // ____|/ __ \| |            =
-                  =       | ' /| (___ | |  | | |            =
-                  =       |  <  \___ \| |  | | |            =
-                  =       | . \ ____) | |__| | |____        =
-                  =       |_|\_\_____/ \___\_\______|       =
-                  =                                         =
-                  =  Streaming SQL Engine for Apache Kafka® =
-                  ===========================================
-
-Copyright 2018 Confluent Inc.
-
-CLI v0.5, Server v0.5 located at http://localhost:8090/
+CLI v5.0.0-SNAPSHOT, Server v5.0.0-SNAPSHOT located at http://ksql-server:8088
 
 Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
 
 ksql>
 ----
 
-<<<
-=== See available Kafka topics
-
-`show topics;`
+== See available Kafka topics
 
 [source,sql]
 ----
@@ -253,7 +188,7 @@ ksql> show topics;
  connect-statuses | false      | 5          | 1                  | 0         | 0
  ksql__commands   | true       | 1          | 1                  | 0         | 0
  ratings          | false      | 1          | 1                  | 0         | 0
- users            | false      | 1          | 1                  | 0         | 0
+ customers        | false      | 1          | 1                  | 0         | 0
 -----------------------------------------------------------------------------------------------
 ----
 
@@ -278,11 +213,11 @@ Format:AVRO
 ----
 
 <<<
-=== Inspect a topic contents - Users
+=== Inspect a topic contents - Customers
 
 Don't need to know the format of the data. Can see column names and values.
 
-`PRINT 'mysql_users' FROM BEGINNING;`
+`PRINT 'customers' FROM BEGINNING;`
 
 <<<
 === Tell KSQL to process from beginning of topic
@@ -366,21 +301,20 @@ Restart the datagen task - query now continues to return data
 <<<
 === Filter the ratings stream
 
-`SELECT * FROM ratings WHERE STARS <3 AND CHANNEL='iOS' LIMIT 5;`
+`SELECT USER_ID, STARS, CHANNEL, MESSAGE FROM ratings WHERE STARS <3 AND CHANNEL='iOS' LIMIT 5;`
 
 Note the use of `LIMIT` so that we just see a sample of the stream of data
 
 [source,sql]
 ----
-ksql> SELECT * FROM ratings WHERE STARS <3 AND CHANNEL='iOS' LIMIT 5;
-1519402272247 | 13 | 13 | 9 | 1 | 2545 | 1519402272247 | iOS | more peanuts please
-1519402272750 | 14 | 14 | 0 | 2 | 4419 | 1519402272749 | iOS | airport refurb looks great, will fly outta here more!
-1519402273755 | 18 | 18 | 15 | 1 | 5306 | 1519402273755 | iOS | Surprisingly good, maybe you are getting your mojo back at long last!
-1519402278686 | 37 | 37 | 17 | 1 | 725 | 1519402278686 | iOS | meh
-1519402279186 | 39 | 39 | 10 | 1 | 6304 | 1519402279186 | iOS | (expletive deleted)
-LIMIT reached for the partition.
+ksql> SELECT USER_ID, STARS, CHANNEL, MESSAGE FROM ratings WHERE STARS <3 AND CHANNEL='iOS' LIMIT 5;
+7 | 1 | iOS | thank you for the most friendly, helpful experience today at your new lounge
+12 | 1 | iOS | is this as good as it gets? really ?
+12 | 2 | iOS | more peanuts please
+16 | 2 | iOS | worst. flight. ever. #neveragain
+10 | 2 | iOS | why is it so difficult to keep the bathrooms clean ?
+Limit Reached
 Query terminated
-ksql>
 ----
 
 <<<
@@ -445,12 +379,13 @@ DESCRIBE EXTENDED POOR_RATINGS;
 ----
 ksql> DESCRIBE EXTENDED POOR_RATINGS;
 
+Name                 : POOR_RATINGS
 Type                 : STREAM
 Key field            :
-Timestamp field      : Not set - using <ROWTIME>
 Key format           : STRING
+Timestamp field      : Not set - using <ROWTIME>
 Value format         : AVRO
-Kafka output topic   : POOR_RATINGS (partitions: 4, replication: 1)
+Kafka topic          : POOR_RATINGS (partitions: 4, replication: 1)
 
  Field       | Type
 -----------------------------------------
@@ -467,16 +402,15 @@ Kafka output topic   : POOR_RATINGS (partitions: 4, replication: 1)
 
 Queries that write into this STREAM
 -----------------------------------
-id:CSAS_POOR_RATINGS - CREATE STREAM POOR_RATINGS AS SELECT * FROM ratings WHERE STARS <3 AND CHANNEL='iOS';
+CSAS_POOR_RATINGS_0 : CREATE STREAM POOR_RATINGS AS SELECT * FROM ratings WHERE STARS <3 AND CHANNEL='iOS';
 
 For query topology and execution plan please run: EXPLAIN <QueryId>
 
 Local runtime statistics
 ------------------------
-messages-per-sec:      0.33   total-messages:        33     last-message: 27/02/18 11:28:58 GMT
+messages-per-sec:      2.18   total-messages:       217     last-message: 6/20/18 11:09:11 AM UTC
  failed-messages:         0 failed-messages-per-sec:         0      last-failed:       n/a
 (Statistics of the local KSQL server interaction with the Kafka topic POOR_RATINGS)
-ksql>
 ----
 
 <<<
@@ -484,41 +418,36 @@ ksql>
 
 [source,sql]
 ----
-SELECT * FROM POOR_RATINGS;
+SELECT STARS, CHANNEL, MESSAGE FROM POOR_RATINGS;
 ----
 
 [source,sql]
 ----
-ksql> SELECT * FROM POOR_RATINGS;
-1519730883770 | 1608 | 1608 | 18 | 2 | 829 | 1519730883770 | iOS | your team here rocks!
-1519730881132 | 1596 | 1596 | 6 | 2 | 3185 | 1519730881132 | iOS | thank you for the most friendly, helpful experience today at your new lounge
-1519730886192 | 1615 | 1615 | 19 | 1 | 9409 | 1519730886192 | iOS | more peanuts please
-1519730880186 | 1591 | 1591 | 7 | 1 | 9830 | 1519730880186 | iOS | is this as good as it gets? really ?
-1519730894709 | 1655 | 1655 | 7 | 2 | 6036 | 1519730894709 | iOS | meh
+ksql> SELECT STARS, CHANNEL, MESSAGE FROM POOR_RATINGS;
+1 | iOS | thank you for the most friendly, helpful experience today at your new lounge
+1 | iOS | why is it so difficult to keep the bathrooms clean ?
+2 | iOS | worst. flight. ever. #neveragain
+2 | iOS | your team here rocks!
+2 | iOS | more peanuts please
 ----
 
 <<<
 ==== See the Kafka Topic
 
-From the command line, use the standard Kafka tools to interact with the new stream -- it's just a Kafka topic!
+It's just a Kafka topic!
 
 [source,bash]
 ----
-kafka-topics --zookeeper localhost:2181 --list
-----
+ksql> show topics;
 
-[source,bash]
-----
-Robin@asgard02 ~> kafka-topics --zookeeper localhost:2181 --list
-POOR_RATINGS
-__consumer_offsets
-_schemas
-connect-configs
-connect-offsets
-connect-statuses
-ksql__commands
-mysql_users
-ratings
+ Kafka Topic        | Registered | Partitions | Partition Replicas | Consumers | ConsumerGroups
+------------------------------------------------------------------------------------------------
+ _confluent-metrics | false      | 12         | 1                  | 0         | 0
+ _schemas           | false      | 1          | 1                  | 0         | 0
+ customers          | false      | 1          | 1                  | 0         | 0
+ POOR_RATINGS       | true       | 4          | 1                  | 0         | 0
+ ratings            | true       | 1          | 1                  | 1         | 1
+------------------------------------------------------------------------------------------------
 ----
 
 <<<
@@ -526,80 +455,104 @@ ratings
 
 [source,bash]
 ----
-kafka-avro-console-consumer \
---bootstrap-server localhost:9092 \
---property schema.registry.url=http://localhost:8081 \
---topic POOR_RATINGS --from-beginning | jq '.'
+ksql> print 'POOR_RATINGS';
+Format:AVRO
+6/20/18 11:01:03 AM UTC, 37, {"RATING_ID": 37, "USER_ID": 12, "STARS": 2, "ROUTE_ID": 8916, "RATING_TIME": 1529492463400, "CHANNEL": "iOS", "MESSAGE": "more peanuts please"}
+6/20/18 11:01:07 AM UTC, 55, {"RATING_ID": 55, "USER_ID": 10, "STARS": 2, "ROUTE_ID": 5232, "RATING_TIME": 1529492467552, "CHANNEL": "iOS", "MESSAGE": "why is it so difficult to keep the bathrooms clean ?"}
 ----
-
-[source,bash]
-----
-Robin@asgard02 ~> kafka-avro-console-consumer \
-                  --bootstrap-server localhost:9092 \
-                  --property schema.registry.url=http://localhost:8081 \
-                  --topic POOR_RATINGS --from-beginning | jq '.'
-{
-  "RATING_ID": {
-    "long": 1615
-  },
-  "USER_ID": {
-    "int": 19
-  },
-  "STARS": {
-    "int": 1
-  },
-  "ROUTE_ID": {
-    "int": 9409
-  },
-  "RATING_TIME": {
-    "long": 1519730886192
-  },
-  "CHANNEL": {
-    "string": "iOS"
-  },
-  "MESSAGE": {
-    "string": "more peanuts please"
-  }
-}
-----
-
 
 <<<
 === Joining Data in KSQL
 
-Remember our Users data? Let's bring that into play, and use it to enrich the inbound stream of ratings data.
+Remember our Customer data? Let's bring that into play, and use it to enrich the inbound stream of ratings data.
 
 <<<
-==== Inspect Users Data
+==== Inspect Customers Data
 
 Let's check the data first, using the very handy `PRINT` command:
 
-`PRINT 'mysql_users' FROM BEGINNING;`
+`PRINT 'customers' FROM BEGINNING;`
 
 [source,sql]
 ----
-ksql> PRINT 'mysql_users' FROM BEGINNING;
+ksql> PRINT 'customers' FROM BEGINNING;
 Format:JSON
-{"ROWTIME":1519640382207,"ROWKEY":"1","uid":1,"name":"Cliff","locale":"en_US","address_city":"St Louis","elite":"P"}
-{"ROWTIME":1519640382207,"ROWKEY":"2","uid":2,"name":"Nick","locale":"en_US","address_city":"Palo Alto","elite":"G"}
-{"ROWTIME":1519640382207,"ROWKEY":"3","uid":3,"name":"Jeremy","locale":"en_US","address_city":"Austin","elite":"P"}
+{"ROWTIME":1529492614185,"ROWKEY":"null","id":1,"first_name":"Annemarie","last_name":"Arent","email":"aarent0@cpanel.net","gender":"Female","club_status":"platinum","comments":"Organized web-enabled ability"}
 ----
 
 <<<
-==== Create Users Table
 
-Now, create a `TABLE` over the Kafka topic. Why's it a table? Because for each key (user id), we want to know its value (name, address, etc)
+==== Re-Key Customers Topic
 
-`CREATE TABLE users (uid INT, name VARCHAR, locale VARCHAR, address_city VARCHAR, elite VARCHAR) WITH (KAFKA_TOPIC='mysql_users', VALUE_FORMAT='JSON', KEY='uid');`
+Define source stream
 
-Note that we've specified the `KEY` here, which must match the key of the Kafka message too.
+[source,sql]
 ----
-ksql> CREATE TABLE users (uid INT, name VARCHAR, locale VARCHAR, address_city VARCHAR, elite VARCHAR) WITH (KAFKA_TOPIC='mysql_users', VALUE_FORMAT='JSON', KEY='uid');
+ksql> CREATE STREAM CUSTOMERS_SRC (id BIGINT, first_name VARCHAR, last_name VARCHAR, email VARCHAR, gender VARCHAR, club_status VARCHAR, comments VARCHAR) WITH (KAFKA_TOPIC='customers', VALUE_FORMAT='JSON');
+
+ Message
+----------------
+ Stream created
+----------------
+ksql>
+----
+
+KSQL to continually transform source topic into keyed topic, and re-serialise into Avro:
+[source,sql]
+----
+ksql> CREATE STREAM CUSTOMERS_SRC_REKEY WITH (PARTITIONS=1, VALUE_FORMAT='AVRO') AS SELECT * FROM CUSTOMERS_SRC PARTITION BY ID;
+
+ Message
+----------------------------
+ Stream created and running
+----------------------------
+ksql>
+----
+
+Wait for a moment here; if you run the CTAS _immediately_ after the CSAS it may fail
+with error `Could not fetch the AVRO schema from schema registry. Subject not found.; error code: 40401`
+
+==== Create Customers Table
+
+Now, create a `TABLE` over the Kafka topic. Why's it a table? Because for each key (user id), we want to know its value (name, status, etc)
+
+[source,sql]
+----
+ksql> CREATE TABLE CUSTOMERS WITH (KAFKA_TOPIC='CUSTOMERS_SRC_REKEY', VALUE_FORMAT ='AVRO', KEY='ID');
 
  Message
 ---------------
  Table created
 ---------------
+ksql>
+----
+
+Query the table:
+
+[source,sql]
+----
+ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS;
+1 | Annemarie | Arent | aarent0@cpanel.net | platinum
+2 | Merilyn | Doughartie | mdoughartie1@dedecms.com | platinum
+----
+
+==== [Optional] Demonstrate why the re-key is required
+
+[source,sql]
+----
+ksql> SELECT C.ROWKEY, C.ID FROM CUSTOMERS_SRC C LIMIT 3;
+null | 1
+null | 2
+null | 3
+Limit Reached
+Query terminated
+
+ksql> SELECT C.ROWKEY, C.ID FROM CUSTOMERS C LIMIT 3;
+1 | 1
+2 | 2
+3 | 3
+Limit Reached
+Query terminated
 ksql>
 ----
 
@@ -616,24 +569,24 @@ Couple of things to note:
 
 [source,sql]
 ----
-SELECT R.MESSAGE, U.NAME \
-FROM RATINGS R LEFT JOIN USERS U \
-ON R.USER_ID = U.UID \
+SELECT R.MESSAGE, U.FIRST_NAME, U.LAST_NAME \
+FROM RATINGS R LEFT JOIN CUSTOMERS U \
+ON R.USER_ID = U.ID \
 LIMIT 5;
 ----
 
 [source,sql]
 ----
-ksql> SELECT R.MESSAGE, U.NAME \
-> FROM RATINGS R LEFT JOIN USERS U \
-> ON R.USER_ID = U.UID \
+ksql> SELECT R.MESSAGE, U.FIRST_NAME, U.LAST_NAME \
+> FROM RATINGS R LEFT JOIN CUSTOMERS U \
+> ON R.USER_ID = U.ID \
 > LIMIT 5;
-airport refurb looks great, will fly outta here more! | Damian
-Exceeded all my expectations. Thank you ! | Neil
-(expletive deleted) | Lu
-why is it so difficult to keep the bathrooms clean ? | Apurva
-thank you for the most friendly, helpful experience today at your new lounge | Cliff
-LIMIT reached for the partition.
+Surprisingly good, maybe you are getting your mojo back at long last! | null | null
+thank you for the most friendly, helpful experience today at your new lounge | Allyn | Langlois
+airport refurb looks great, will fly outta here more! | Mirilla | Orwin
+is this as good as it gets? really ? | Mirilla | Orwin
+more peanuts please | Gianina | Mixhel
+Limit Reached
 Query terminated
 ksql>
 ----
@@ -647,30 +600,21 @@ Note the `IS NOT NULL` clause to filter out any ratings with no corresponding us
 
 [source,sql]
 ----
-SELECT R.RATING_ID, R.STARS, R.ROUTE_ID, TIMESTAMPTOSTRING(R.RATING_TIME, 'yyyy-MM-dd HH:mm:ss'), R.CHANNEL, \
-R.MESSAGE, U.NAME, U.ADDRESS_CITY, U.ELITE \
-FROM RATINGS R LEFT JOIN USERS U \
-ON R.USER_ID = U.UID WHERE U.NAME IS NOT NULL;
+SELECT TIMESTAMPTOSTRING(R.RATING_TIME, 'yyyy-MM-dd HH:mm:ss'), R.RATING_ID, R.STARS, R.ROUTE_ID,  R.CHANNEL, \
+R.MESSAGE, U.FIRST_NAME, U.LAST_NAME, U.CLUB_STATUS \
+FROM RATINGS R LEFT JOIN CUSTOMERS U \
+ON R.USER_ID = U.ID WHERE U.LAST_NAME IS NOT NULL;
 ----
 
 [source,sql]
 ----
-ksql> SELECT R.RATING_ID, R.STARS, R.ROUTE_ID, TIMESTAMPTOSTRING(R.RATING_TIME, 'yyyy-MM-dd HH:mm:ss'), R.CHANNEL, \
-> R.MESSAGE, U.NAME, U.ADDRESS_CITY, U.ELITE \
-> FROM RATINGS R LEFT JOIN USERS U \
-> ON R.USER_ID = U.UID WHERE U.NAME IS NOT NULL;
-18196 | 1 | 1790 | 2018-02-26 12:42:38 | iOS-test | Surprisingly good, maybe you are getting your mojo back at long last! | Robin | Ilkley | G
-18197 | 4 | 2862 | 2018-02-26 12:42:38 | iOS-test | your team here rocks! | Jeremy | Austin | P
-18198 | 1 | 6954 | 2018-02-26 12:42:39 | ios | Exceeded all my expectations. Thank you ! | Nick | Palo Alto | P
-18199 | 1 | 2092 | 2018-02-26 12:42:39 | ios | (expletive deleted) | Neil | London | G
-18200 | 2 | 6042 | 2018-02-26 12:42:39 | ios | more peanuts please | Neil | London | G
-18202 | 2 | 1133 | 2018-02-26 12:42:39 | iOS-test | thank you for the most friendly, helpful experience today at your new lounge | Neha | Palo Alto | P
-18205 | 3 | 4086 | 2018-02-26 12:42:40 | ios | meh | Neil | London | G
-18206 | 1 | 9217 | 2018-02-26 12:42:41 | web | thank you for the most friendly, helpful experience today at your new lounge | Nick | Palo Alto | P
-18207 | 3 | 2655 | 2018-02-26 12:42:41 | android | more peanuts please | Neha | Palo Alto | P
-18209 | 3 | 2086 | 2018-02-26 12:42:42 | iOS-test | meh | Lu | Palo Alto | P
-18210 | 2 | 1629 | 2018-02-26 12:42:42 | web | airport refurb looks great, will fly outta here more! | Neha | Palo Alto | P
-^CQuery terminated
+ksql> SELECT TIMESTAMPTOSTRING(R.RATING_TIME, 'yyyy-MM-dd HH:mm:ss'), R.RATING_ID, R.STARS, R.ROUTE_ID,  R.CHANNEL, \
+> R.MESSAGE, U.FIRST_NAME, U.LAST_NAME, U.CLUB_STATUS \
+> FROM RATINGS R LEFT JOIN CUSTOMERS U \
+> ON R.USER_ID = U.ID WHERE U.LAST_NAME IS NOT NULL;
+2018-06-20 11:00:53 | 2 | 1 | 537 | web | thank you for the most friendly, helpful experience today at your new lounge | Allyn | Langlois | gold
+2018-06-20 11:00:54 | 3 | 2 | 5028 | android | airport refurb looks great, will fly outta here more! | Mirilla | Orwin | gold
+2018-06-20 11:00:54 | 4 | 4 | 3557 | web | is this as good as it gets? really ? | Mirilla | Orwin | gold
 ----
 
 <<<
@@ -680,26 +624,31 @@ Let's persist this as an enriched stream:
 
 [source,sql]
 ----
-CREATE STREAM RATINGS_FULL AS \
-SELECT R.RATING_ID, R.STARS, R.ROUTE_ID, TIMESTAMPTOSTRING(R.RATING_TIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TIME, \
-R.CHANNEL, R.MESSAGE, U.NAME, U.ADDRESS_CITY, U.ELITE \
-FROM RATINGS R LEFT JOIN USERS U \
-ON R.USER_ID = U.UID WHERE U.NAME IS NOT NULL;
+CREATE STREAM RATINGS_WITH_CUSTOMER_DATA WITH (PARTITIONS=1) AS \
+SELECT R.RATING_ID, R.CHANNEL, R.STARS, R.MESSAGE, \
+       C.ID, C.CLUB_STATUS, C.EMAIL, \
+       C.FIRST_NAME, C.LAST_NAME \
+FROM RATINGS R \
+     LEFT JOIN CUSTOMERS C \
+       ON R.USER_ID = C.ID \
+WHERE C.FIRST_NAME IS NOT NULL ;
 ----
 
 [source,sql]
 ----
-ksql> CREATE STREAM RATINGS_FULL AS \
-> SELECT R.RATING_ID, R.STARS, R.ROUTE_ID, TIMESTAMPTOSTRING(R.RATING_TIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TIME, \
-> R.CHANNEL, R.MESSAGE, U.NAME, U.ADDRESS_CITY, U.ELITE \
-> FROM RATINGS R LEFT JOIN USERS U \
-> ON R.USER_ID = U.UID WHERE U.NAME IS NOT NULL;
+ksql> CREATE STREAM RATINGS_WITH_CUSTOMER_DATA WITH (PARTITIONS=1) AS \
+> SELECT R.RATING_ID, R.CHANNEL, R.STARS, R.MESSAGE, \
+>        C.ID, C.CLUB_STATUS, C.EMAIL, \
+>        C.FIRST_NAME, C.LAST_NAME \
+> FROM RATINGS R \
+>      LEFT JOIN CUSTOMERS C \
+>        ON R.USER_ID = C.ID \
+> WHERE C.FIRST_NAME IS NOT NULL ;
 
  Message
 ----------------------------
  Stream created and running
 ----------------------------
-ksql>
 ----
 
 <<<
@@ -707,32 +656,42 @@ ksql>
 
 Which of our Premier customers are not happy?
 
-`SELECT * FROM RATINGS_FULL WHERE ELITE='P' AND STARS <3;`
+`SELECT * FROM RATINGS_WITH_CUSTOMER_DATA WHERE CLUB_STATUS='platinum' AND STARS <3;`
 
 [source,sql]
 ----
-ksql> SELECT * FROM RATINGS_FULL WHERE ELITE='P' AND STARS <3;
-1519649077925 | 2 | 18684 | 1 | 3895 | 2018-02-26 12:44:37 | ios | thank you for the most friendly, helpful experience today at your new lounge | Nick | Palo Alto | P
-1519649078280 | 13 | 18685 | 1 | 4088 | 2018-02-26 12:44:38 | iOS | more peanuts please | Lu | Palo Alto | P
-1519649079664 | 1 | 18691 | 2 | 8933 | 2018-02-26 12:44:39 | iOS-test | more peanuts please | Cliff | St Louis | P
-1519649084065 | 13 | 18709 | 1 | 4366 | 2018-02-26 12:44:44 | iOS-test | airport refurb looks great, will fly outta here more! | Lu | Palo Alto | P
-1519649084603 | 3 | 18712 | 2 | 744 | 2018-02-26 12:44:44 | ios | worst. flight. ever. #neveragain | Jeremy | Austin | P
-^CQuery terminated
+ksql> SELECT * FROM RATINGS_WITH_CUSTOMER_DATA WHERE CLUB_STATUS='platinum' AND STARS <3;
+1529492455187 | 2 | 8 | web | 2 | Exceeded all my expectations. Thank you ! | 2 | platinum | mdoughartie1@dedecms.com | Merilyn | Doughartie
+1529492479155 | 1 | 100 | iOS-test | 1 | is this as good as it gets? really ? | 1 | platinum | aarent0@cpanel.net | Annemarie | Arent
 ----
 
 <<<
 ==== Persist the filtered & enriched stream
 
-`CREATE STREAM UNHAPPY_VIPS AS SELECT * FROM RATINGS_FULL WHERE ELITE='P' AND STARS <3;`
+[source,sql]
+----
+CREATE STREAM UNHAPPY_PLATINUM_CUSTOMERS \
+       WITH (VALUE_FORMAT='JSON') AS \
+SELECT CLUB_STATUS, EMAIL, STARS, MESSAGE \
+FROM   RATINGS_WITH_CUSTOMER_DATA \
+WHERE  STARS < 3 \
+  AND  CLUB_STATUS = 'platinum';
+----
 
 [source,sql]
 ----
-ksql> CREATE STREAM UNHAPPY_VIPS AS SELECT * FROM RATINGS_FULL WHERE ELITE='P' AND STARS <3;
+ksql> CREATE STREAM UNHAPPY_PLATINUM_CUSTOMERS \
+>        WITH (VALUE_FORMAT='JSON') AS \
+> SELECT CLUB_STATUS, EMAIL, STARS, MESSAGE \
+> FROM   RATINGS_WITH_CUSTOMER_DATA \
+> WHERE  STARS < 3 \
+>   AND  CLUB_STATUS = 'platinum';
 
  Message
 ----------------------------
  Stream created and running
 ----------------------------
+ksql>
 ksql>
 ----
 
@@ -743,34 +702,44 @@ ksql>
 
 [source,sql]
 ----
-ksql> SELECT STARS, MESSAGE, NAME FROM UNHAPPY_VIPS;
-1 | why is it so difficult to keep the bathrooms clean ? | Nick
-1 | is this as good as it gets? really ? | Jeremy
-1 | thank you for the most friendly, helpful experience today at your new lounge | Jeremy
-1 | your team here rocks! | Lu
-1 | thank you for the most friendly, helpful experience today at your new lounge | Lu
-1 | why is it so difficult to keep the bathrooms clean ? | Jeremy
+ksql> SELECT STARS, MESSAGE, EMAIL FROM UNHAPPY_PLATINUM_CUSTOMERS;
+1 | is this as good as it gets? really ? | aarent0@cpanel.net
+2 | airport refurb looks great, will fly outta here more! | aarent0@cpanel.net
+2 | meh | aarent0@cpanel.net
 ----
 
 <<<
 ==== View the underlying topic data
 
-[source,bash]
+[source,sql]
 ----
-kafka-avro-console-consumer \
---bootstrap-server localhost:9092 \
---property schema.registry.url=http://localhost:8081 \
---topic UNHAPPY_VIPS --from-beginning
+ksql> SHOW TOPICS;
+
+ Kafka Topic                | Registered | Partitions | Partition Replicas | Consumers | ConsumerGroups
+--------------------------------------------------------------------------------------------------------
+ _confluent-metrics         | false      | 12         | 1                  | 0         | 0
+ _schemas                   | false      | 1          | 1                  | 0         | 0
+ customers                  | true       | 1          | 1                  | 2         | 2
+ CUSTOMERS_SRC_REKEY        | true       | 1          | 1                  | 0         | 0
+ POOR_RATINGS               | true       | 4          | 1                  | 0         | 0
+ ratings                    | true       | 1          | 1                  | 2         | 2
+ RATINGS_WITH_CUSTOMER_DATA | true       | 1          | 1                  | 1         | 1
+ UNHAPPY_PLATINUM_CUSTOMERS | true       | 4          | 1                  | 0         | 0
+--------------------------------------------------------------------------------------------------------
+ksql>
 ----
 
-[source,bash]
+[source,sql]
 ----
-Robin@asgard02 ~> kafka-avro-console-consumer \
-                  --bootstrap-server localhost:9092 \
-                  --property schema.registry.url=http://localhost:8081 \
-                  --topic UNHAPPY_VIPS --from-beginning
-{"RATING_ID":{"long":25},"STARS":{"int":1},"ROUTE_ID":{"int":1548},"KSQL_COL_3":{"string":"2018-02-27 11:21:21"},"CHANNEL":{"string":"android"},"MESSAGE":{"string":"thank you for the most friendly, helpful experience today at your new lounge"},"NAME":{"string":"Neha"},"ADDRESS_CITY":{"string":"Palo Alto"},"ELITE":{"string":"P"}}
-{"RATING_ID":{"long":31},"STARS":{"int":2},"ROUTE_ID":{"int":451},"KSQL_COL_3":{"string":"2018-02-27 11:21:22"},"CHANNEL":{"string":"android"},"MESSAGE":{"string":"Exceeded all my expectations. Thank you !"},"NAME":{"string":"Cliff"},"ADDRESS_CITY":{"string":"St Louis"},"ELITE":{"string":"P"}}
+ksql> PRINT UNHAPPY_PLATINUM_CUSTOMERS;
+----
+
+[source,sql]
+----
+ksql> PRINT 'UNHAPPY_PLATINUM_CUSTOMERS';
+Format:JSON
+{"ROWTIME":1529492479155,"ROWKEY":"1","MESSAGE":"is this as good as it gets? really ?","CLUB_STATUS":"platinum","STARS":1,"EMAIL":"aarent0@cpanel.net"}
+{"ROWTIME":1529492488095,"ROWKEY":"1","MESSAGE":"airport refurb looks great, will fly outta here more!","CLUB_STATUS":"platinum","STARS":2,"EMAIL":"aarent0@cpanel.net"}
 ----
 
 <<<
@@ -785,46 +754,45 @@ Explain windowing
 <<<
 ==== Running Count per Minute
 
-Show count of ratings per City, per minute
+Show count of ratings per customer status, per minute
 
 [source,sql]
 ----
-SELECT ADDRESS_CITY, COUNT(*) AS RATING_COUNT \
-FROM RATINGS_FULL WINDOW TUMBLING (SIZE 1 MINUTES) \
-GROUP BY ADDRESS_CITY;
+SELECT CLUB_STATUS, COUNT(*) AS RATING_COUNT \
+FROM RATINGS_WITH_CUSTOMER_DATA WINDOW TUMBLING (SIZE 1 MINUTES) \
+GROUP BY CLUB_STATUS;
 ----
 
 [source,sql]
 ----
-ksql> SELECT ADDRESS_CITY, COUNT(*) AS RATING_COUNT \
-> FROM RATINGS_FULL WINDOW TUMBLING (SIZE 1 MINUTES) \
-> GROUP BY ADDRESS_CITY;
-Geneva | 11
-Geneva | 11
-Geneva | 14
-Geneva | 10
-Geneva | 19
+ksql> SELECT CLUB_STATUS, COUNT(*) AS RATING_COUNT \
+> FROM RATINGS_WITH_CUSTOMER_DATA WINDOW TUMBLING (SIZE 1 MINUTES) \
+> GROUP BY CLUB_STATUS;
+platinum | 1
+bronze | 2
+gold | 12
+bronze | 13
 ----
 
 <<<
 ==== CREATE TABLE
 
-Let's persist that into a TABLE. So far we've only worked with a STREAM. A table gives the state of a given key at a given point in time. So here, for each city, at each minute window, what's the total count
+Let's persist that into a TABLE. So far we've only worked with a STREAM. A table gives the state of a given key at a given point in time. So here, for each club status, at each minute window, what's the total count
 
 [source,sql]
 ----
-CREATE TABLE RATINGS_BY_CITY AS \
-SELECT ADDRESS_CITY, COUNT(*) AS RATING_COUNT \
-FROM RATINGS_FULL WINDOW TUMBLING (SIZE 1 MINUTES) \
-GROUP BY ADDRESS_CITY;
+CREATE TABLE RATINGS_BY_CLUB_STATUS AS \
+SELECT CLUB_STATUS, COUNT(*) AS RATING_COUNT \
+FROM RATINGS_WITH_CUSTOMER_DATA WINDOW TUMBLING (SIZE 1 MINUTES) \
+GROUP BY CLUB_STATUS;
 ----
 
 [source,sql]
 ----
-ksql> CREATE TABLE RATINGS_BY_CITY AS \
-> SELECT ADDRESS_CITY, COUNT(*) AS RATING_COUNT \
-> FROM RATINGS_FULL WINDOW TUMBLING (SIZE 1 MINUTES) \
-> GROUP BY ADDRESS_CITY;
+ksql> CREATE TABLE RATINGS_BY_CLUB_STATUS AS \
+> SELECT CLUB_STATUS, COUNT(*) AS RATING_COUNT \
+> FROM RATINGS_WITH_CUSTOMER_DATA WINDOW TUMBLING (SIZE 1 MINUTES) \
+> GROUP BY CLUB_STATUS;
 
  Message
 ---------------------------
@@ -836,41 +804,45 @@ ksql>
 <<<
 ==== Examine the created table's columns
 
-`DESCRIBE RATINGS_BY_CITY;`
+`DESCRIBE RATINGS_BY_CLUB_STATUS;`
 
 Note that the city is denoted as `(key)`
 
 [source,sql]
 ----
-ksql> DESCRIBE RATINGS_BY_CITY;
+ksql> DESCRIBE RATINGS_BY_CLUB_STATUS;
 
+Name                 : RATINGS_BY_CLUB_STATUS
  Field        | Type
 ------------------------------------------
  ROWTIME      | BIGINT           (system)
  ROWKEY       | VARCHAR(STRING)  (system)
- ADDRESS_CITY | VARCHAR(STRING)  (key)
+ CLUB_STATUS  | VARCHAR(STRING)
  RATING_COUNT | BIGINT
 ------------------------------------------
 For runtime statistics and query details run: DESCRIBE EXTENDED <Stream,Table>;
 ksql>
 ----
 
-Point out the system columns - `ROWTIME` and `ROWKEY`.
+Note the system columns - `ROWTIME` and `ROWKEY`.
 
 <<<
 ==== Examine the contents of the new table's columns
 
 
-`SELECT ROWTIME, ROWKEY, ADDRESS_CITY, RATING_COUNT FROM RATINGS_BY_CITY LIMIT 5;`
+`SELECT ROWTIME, ROWKEY, CLUB_STATUS, RATING_COUNT FROM RATINGS_BY_CLUB_STATUS LIMIT 5;`
 
 [source,sql]
 ----
-ksql> SELECT ROWTIME, ROWKEY, ADDRESS_CITY, RATING_COUNT FROM RATINGS_BY_CITY LIMIT 5;
-1519730460000 | Geneva : Window{start=1519730460000 end=-} | Geneva | 11
-1519730460000 | Ilkley : Window{start=1519730460000 end=-} | Ilkley | 11
-1519730520000 | Geneva : Window{start=1519730520000 end=-} | Geneva | 11
-1519730460000 | St Louis : Window{start=1519730460000 end=-} | St Louis | 9
-1519730580000 | Geneva : Window{start=1519730580000 end=-} | Geneva | 14
+ksql> SELECT ROWTIME, ROWKEY, CLUB_STATUS, RATING_COUNT FROM RATINGS_BY_CLUB_STATUS LIMIT 5;
+1529492400000 | bronze : Window{start=1529492400000 end=-} | bronze | 2
+1529492460000 | bronze : Window{start=1529492460000 end=-} | bronze | 13
+1529492520000 | bronze : Window{start=1529492520000 end=-} | bronze | 23
+1529492580000 | bronze : Window{start=1529492580000 end=-} | bronze | 15
+1529492640000 | bronze : Window{start=1529492640000 end=-} | bronze | 31
+Limit Reached
+Query terminated
+ksql>
 ----
 
 <<<
@@ -880,16 +852,16 @@ KSQL comes with a bunch of functions, both scalar and aggregate (like `COUNT` wh
 
 Let's convert the `ROWTIME` epoch value to a more readable one:
 
-`SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, ADDRESS_CITY, RATING_COUNT FROM RATINGS_BY_CITY;`
+`SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, CLUB_STATUS, RATING_COUNT FROM RATINGS_BY_CLUB_STATUS;`
 
 [source,sql]
 ----
-ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, ADDRESS_CITY, RATING_COUNT FROM RATINGS_BY_CITY;
-2018-02-27 11:21:00 | London | 25
-2018-02-27 11:21:00 | Palo Alto | 71
-2018-02-27 11:22:00 | Palo Alto | 89
-2018-02-27 11:22:00 | London | 24
-2018-02-27 11:23:00 | London | 25
+ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, CLUB_STATUS, RATING_COUNT FROM RATINGS_BY_CLUB_STATUS;
+2018-06-20 11:00:00 | platinum | 1
+2018-06-20 11:01:00 | platinum | 22
+2018-06-20 11:02:00 | platinum | 29
+2018-06-20 11:03:00 | platinum | 27
+2018-06-20 11:04:00 | platinum | 23
 ----
 
 <<<
@@ -897,163 +869,15 @@ ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_T
 
 This table is just a first class object in KSQL, that we can query and filter as any other:
 
-`SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, ADDRESS_CITY, RATING_COUNT FROM RATINGS_BY_CITY WHERE ADDRESS_CITY='Ilkley';`
+`SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, CLUB_STATUS, RATING_COUNT FROM RATINGS_BY_CLUB_STATUS WHERE CLUB_STATUS='bronze';`
 
 [source,sql]
 ----
-ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, ADDRESS_CITY, RATING_COUNT FROM RATINGS_BY_CITY WHERE ADDRESS_CITY='Ilkley';
-2018-02-27 11:21:00 | Ilkley | 11
-2018-02-27 11:22:00 | Ilkley | 6
-2018-02-27 11:23:00 | Ilkley | 13
-2018-02-27 11:24:00 | Ilkley | 14
-2018-02-27 11:25:00 | Ilkley | 15
+ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, CLUB_STATUS, RATING_COUNT FROM RATINGS_BY_CLUB_STATUS WHERE CLUB_STATUS='bronze';
+2018-06-20 11:00:00 | bronze | 2
+2018-06-20 11:01:00 | bronze | 13
+2018-06-20 11:02:00 | bronze | 23
+2018-06-20 11:03:00 | bronze | 15
 ----
 
 Note how aggregates update within the current window.
-
-<<<
-==== Check out the Kafka topic
-
-Let's step out of KSQL for a moment. When you _create_ a `STREAM or `TABLE` in KSQL, it is backed by a Kafka topic. Let's check this out:
-
-`kafka-topics --zookeeper localhost:2181 --list|grep RATINGS`
-
-[source,bash]
-----
-Robin@asgard02 ~/c/confluent-4.0.0> kafka-topics --zookeeper localhost:2181 --list|grep RATINGS
-RATINGS_BY_CITY
-ksql_query_CTAS_RATING_COUNT_BY_CHANNEL-KSQL_Agg_Query_1519407993703-changelog
-ksql_query_CTAS_RATING_COUNT_BY_CHANNEL-KSQL_Agg_Query_1519407993703-repartition
-[...]
-----
-
-And it's just a Kafka topic, that we can consume from just as any other:
-
-[source,bash]
-----
-kafka-avro-console-consumer \
---bootstrap-server localhost:9092 \
---property schema.registry.url=http://localhost:8081 \
---topic RATINGS_BY_CITY --from-beginning -max-messages 5| jq '.'
-----
-
-[source,bash]
-----
-Robin@asgard02 ~> kafka-avro-console-consumer \
-                                                      --bootstrap-server localhost:9092 \
-                                                      --property schema.registry.url=http://localhost:8081 \
-                                                      --topic RATINGS_BY_CITY2 --from-beginning -max-messages 5| jq '.'
-{
-  "ADDRESS_CITY": {
-    "string": "London"
-  },
-  "RATING_COUNT": {
-    "long": 25
-  }
-}
-{
-  "ADDRESS_CITY": {
-    "string": "Palo Alto"
-  },
-  "RATING_COUNT": {
-    "long": 71
-  }
-}
-----
-
-Where's the window? Well that's a system column that's part of the message key. If we wanted to expose it further, we could do a `CREATE TABLE` based on that `TIMESTAMPTOSTRING` function which exposes the system column
-
-<<<
-==== Exposing Aggregate Window Keys
-
-`CREATE TABLE RATINGS_BY_CITY_TS AS SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, ROWKEY, ADDRESS_CITY, RATING_COUNT FROM RATINGS_BY_CITY;`
-
-[source,sql]
-----
-ksql> CREATE TABLE RATINGS_BY_CITY_TS AS SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, ROWKEY, ADDRESS_CITY, RATING_COUNT FROM RATINGS_BY_CITY;
-
- Message
----------------------------
- Table created and running
----------------------------
-ksql>
-----
-
-<<<
-==== Examine table with Timestamp exposed
-
-`DESCRIBE RATINGS_BY_CITY_TS;`
-
-[source,sql]
-----
-ksql> describe RATINGS_BY_CITY_TS;
-
-
- Field           | Type
----------------------------------------------
- ROWTIME         | BIGINT           (system)
- ROWKEY          | VARCHAR(STRING)  (system)
- WINDOW_START_TS | VARCHAR(STRING)
- ADDRESS_CITY    | VARCHAR(STRING)  (key)
- RATING_COUNT    | BIGINT
----------------------------------------------
-For runtime statistics and query details run: DESCRIBE EXTENDED <Stream,Table>;
-----
-
-<<<
-==== Look at the data
-
-`SELECT * FROM RATINGS_BY_CITY_TS LIMIT 5;`
-
-[source,sql]
-----
-ksql> SELECT * FROM RATINGS_BY_CITY_TS LIMIT 5;
-1519730460000 | Geneva : Window{start=1519730460000 end=-} | 2018-02-27 11:21:00 | Geneva | 11
-1519730520000 | Geneva : Window{start=1519730520000 end=-} | 2018-02-27 11:22:00 | Geneva | 11
-1519730580000 | Geneva : Window{start=1519730580000 end=-} | 2018-02-27 11:23:00 | Geneva | 14
-1519730640000 | Geneva : Window{start=1519730640000 end=-} | 2018-02-27 11:24:00 | Geneva | 10
-1519730700000 | Geneva : Window{start=1519730700000 end=-} | 2018-02-27 11:25:00 | Geneva | 19
-LIMIT reached for the partition.
-Query terminated
-ksql>
-----
-
-<<<
-==== Check the Kafka Topic
-
-[source,bash]
-----
-kafka-avro-console-consumer \
-                                    --bootstrap-server localhost:9092 \
-                                    --property schema.registry.url=http://localhost:8081 \
-                                    --topic RATINGS_BY_CITY_TS --from-beginning --max-messages 5| jq '.'
-----
-
-[source,bash]
-----
-Robin@asgard02 ~> kafka-avro-console-consumer \
-                                    --bootstrap-server localhost:9092 \
-                                    --property schema.registry.url=http://localhost:8081 \
-                                    --topic RATINGS_BY_CITY_TS --from-beginning --max-messages 5| jq '.'
-{
-  "WINDOW_START_TS": {
-    "string": "2018-02-27 11:21:00"
-  },
-  "ADDRESS_CITY": {
-    "string": "Geneva"
-  },
-  "RATING_COUNT": {
-    "long": 11
-  }
-}
-----
-
-<<<
-== Show KSQL Experimental UI
-
-http://localhost:8090/index.html
-
-[source,sql]
-----
-SELECT STARS, MESSAGE, NAME FROM UNHAPPY_VIPS;
-----
