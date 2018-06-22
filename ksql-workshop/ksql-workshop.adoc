@@ -105,7 +105,7 @@ ksql-workshop_schema-registry_1   /etc/confluent/docker/run        Up      0.0.0
 ksql-workshop_zookeeper_1         /etc/confluent/docker/run        Up      0.0.0.0:2181->2181/tcp, 2888/tcp, 3888/tcp
 ----
 
-== Ratings event stream
+== Source Data : Rating events
 
 The event stream driving this example is a simulated stream of events purporting to show the ratings left by users on a website, with data elements including the device type that they used, the star rating, and a message associated with the rating.
 
@@ -125,7 +125,7 @@ Note that the data is in Avro, so you will see lots of special characters in the
 
 Press Ctrl-C to cancel and return to the command prompt.
 
-== Customer source data
+== Source Data : Customers
 
 To keep things simple, we're going to mock up the data that would be coming from our customers table on a database. In practice you would ingest the data using https://www.confluent.io/blog/no-more-silos-how-to-integrate-your-databases-with-apache-kafka-and-cdc[Kafka Connect and CDC]
 
@@ -178,7 +178,7 @@ Press Ctrl-C to cancel and return to the command prompt.
 
 KSQL can be used via the command line interface (CLI), a graphical UI built into Confluent Control Center, or the documented https://docs.confluent.io/current/ksql/docs/api.html[REST API].
 
-In this workshop we will use the CLI, which if you have used Oracle's sql*plus, MySQL cli, and so on will feel very familiar to yoC.
+In this workshop we will use the CLI, which if you have used Oracle's sql*plus, MySQL CLI, and so on will feel very familiar to you.
 
 Launch the CLI:
 
@@ -318,7 +318,6 @@ Let's run our first SQL. As anyone familar with SQL knows, `SELECT *` will retur
 
 [source,sql]
 ----
-ksql> SELECT * FROM ratings;
 ksql> SELECT * FROM ratings;
 1529501380124 | 6229 | 6229 | 17 | 2 | 3957 | 1529501380124 | iOS-test | why is it so difficult to keep the bathrooms clean ?
 1529501380197 | 6230 | 6230 | 14 | 2 | 2638 | 1529501380197 | iOS | your team here rocks!
@@ -760,6 +759,8 @@ KSQL can create aggregations of event data, either over all events to date (and 
 * Tumbling (e.g. every 5 minutes : 00:00, 00:05, 00:10)
 * Hopping (e.g. every 5 minutes, advancing 1 minute: 00:00-00:05, 00:01-00:06)
 * Session (Sets a timeout for the given key, after which any new data is treated as a new session)
+
+To understand more about these time windows, you can read the related https://docs.confluent.io/current/streams/developer-guide/dsl-api.html#windowing[Kafka Streams documentation]. Since KSQL is built on Kafka Streams, the concepts are the same. The https://docs.confluent.io/current/ksql/docs/tutorials/examples.html#aggregating-windowing-and-sessionization[KSQL-specific documentation] is also useful.
 
 image::images/ksql_workshop_05.png[Aggregating data with KSQL]
 
