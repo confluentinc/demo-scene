@@ -153,9 +153,9 @@ services:
 
 
   # Runs the Kafka KSQL data generator for ratings
-  ksql-datagen-ratings:
+  datagen-ratings:
     image: "confluentinc/ksql-examples:4.1.0"
-    hostname: ksql-datagen-ratings
+    hostname: datagen-ratings
     depends_on:
       - kafka
       - schema-registry
