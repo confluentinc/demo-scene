@@ -171,3 +171,27 @@ services:
       - $PWD/img_data/oradata:/opt/oracle/oradata
       - $PWD/img_data/swingbench/:/home/oracle/swingbench
       - $PWD/scripts/ora/setup:/opt/oracle/scripts/setup
+
+  connect-debezium:
+    image: debezium/connect:0.8.0.Beta1
+    hostname: connect-debezium
+    ports:
+     - 8083:8083
+    links:
+     - kafka
+     - schema-registry
+    environment:
+     - BOOTSTRAP_SERVERS=kafka:29092
+     - GROUP_ID=1
+     - CONFIG_STORAGE_TOPIC=my_connect_configs
+     - OFFSET_STORAGE_TOPIC=my_connect_offsets
+     - STATUS_STORAGE_TOPIC=my_connect_status
+     - KEY_CONVERTER=io.confluent.connect.avro.AvroConverter
+     - VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter
+     - CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
+     - CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
+    depends_on:
+     - kafka
+     - schema-registry
+
+
