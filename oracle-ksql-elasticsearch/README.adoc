@@ -78,13 +78,13 @@ curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.
 curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"logon_enriched","timeFieldName":"EXTRACT_TS"}}' --compressed
 ----
 
+Go to the http://localhost:5601/app/kibana#/management/kibana/indices/[Index Patterns] page and mark one of them (doesn't matter which) as the default index.
+
 Import dashboard `kibana_objects.json` using the **Import** button at http://localhost:5601/app/kibana#/management/kibana/objects
 
 Map the `Logons` object to `logon_enriched` and the others to `orders`
 
 image::kibana_ix.png[Kibana index]
-
-Go to the http://localhost:5601/app/kibana#/management/kibana/indices/[Index Patterns] page and mark one of them (doesn't matter which) as the default index.
 
 Load the Kibana dashboard http://localhost:5601/app/kibana#/dashboard/02028f30-424c-11e8-af19-1188a9332246
 
