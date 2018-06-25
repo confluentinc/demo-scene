@@ -1,114 +1,176 @@
-= Oracle -> Kafka Connect -> Kafka -> KSQL -> Kafka Connect -> Elasticsearch
+= Demo: Oracle CDC -> Kafka -> KSQL -> Kafka Connect -> Elasticsearch
 
-== Install
+:source-highlighter: pygments
+:doctype: book
+:sectnums:
+Robin Moffatt <@rmoff>
+v0.10, 22 Jun 2018
 
-=== Setup Elasticsearch
+:toc:
 
-[source,bash]
-----
-brew install elasticsearch
-brew install kibana
-elasticsearch
-kibana
-curl -XPUT localhost:9200/_cluster/settings -d '{
-    "transient" : {
-        "cluster.routing.allocation.disk.threshold_enabled" : false
-    }
-}'
-----
+== Pre-requisites
 
-=== Setup Confluent Platform
+On your host machine you need:
 
-( Install Confluent Platform 4.1 )
+* 8GB+ RAM
+* `curl`
+* `jq`
+* Docker
+* Docker Compose
+* This github repository cloned locally
 
-Copy `ojdbc8.jar` to `share/java/kafka-connect-jdbc/`
+=== Build the Oracle Docker image
 
-=== Set up Oracle
+You need to build the Oracle Docker image manually.
 
-==== Build & run Docker image , install Swingbench
-(this takes 10-15 minutes)
+Clone the repository:
 
 [source,bash]
 ----
 git clone git@github.com:oracle/docker-images.git
-# Follow instructions in `OracleDatabase/SingleInstance/README.md` to build the Docker image
-docker run --name ora12c --expose 1521 --detach oracle/database:12.2.0.1-ee
-docker logs -f ora12c
-# wait until logs say "DATABASE IS READY TO USE!" then press ctrl-c to cancel the `docker logs`
-docker exec ora12c ./setPassword.sh Password01
-docker exec ora12c curl -s http://dominicgiles.com/swingbench/swingbench261082.zip -o swingbench.zip
-docker exec ora12c unzip -q swingbench.zip
 ----
 
-== Pre-Demo Prep
+and then follow instructions in `OracleDatabase/SingleInstance/README.md` to build the Docker image.
 
-=== [Re-]Initialise Swingbench schema
+Once done, you should see the image listed in your local Docker environment:
 
 [source,bash]
 ----
-docker exec -ti ora12c bash
-export JAVA_HOME=/opt/oracle/product/12.2.0.1/dbhome_1/jdk/jre/
-export PATH=$PATH:$JAVA_HOME/bin:/home/oracle/swingbench/bin
-oewizard -cs localhost:1521/ORCLPDB1 -cl -dbap Password01 -drop -u soe -v
-oewizard -cs localhost:1521/ORCLPDB1 -df /opt/oracle/oradata/ORCLCDB/ORCLPDB1/soe.dbf -cl -scale 0.01 -dbap Password01 -create -u soe -p soe -ts soe -v
+$ docker images|grep oracle/database
+oracle/database                                 12.2.0.1-ee         dc4ab29cfca2        4 days ago          13.2GB
 ----
 
-=== Run Confluent Platform, Elasticsearch, and Kibana
+=== Start the stack
+
+IMPORTANT: It's important that you're in this folder, as the volumes mounted by the containers rely on the relative path (`$PWD`)
 
 [source,bash]
 ----
-elasticsearch
-kibana
-confluent start
+cd oracle-ksql-elasticsearch
+
+docker-compose up -d
 ----
 
-Optional: start `sqlcl`
+Note that there are setup scripts for the Oracle container that are run to download and initialise Swingbench, and reset the SYS password to `Password01`.
 
 [source,bash]
 ----
-~/Dropbox/sqlcl/bin/sql soe/soe@localhost:1521/ORCLPDB1
+docker-compose logs -f oracle|grep "DATABASE IS READY TO USE!"
 ----
 
-=== Kafka Connect: Create JDBC connectors
+IMPORTANT: Wait until logs say "DATABASE IS READY TO USE!" then press Ctrl-C twice to cancel and return to the command prompt
+
+=== Elasticsearch
+
+Create dynamic mapping and dummy docs:
 
 [source,bash]
 ----
-/Users/Robin/git/demo-scene/oracle-ksql-elasticsearch/create_jdbc_connectors.sh
+./scripts/create_es_mapping.sh
+./scripts/create_es_docs.sh
 ----
 
-== Demo
-
-Check Kafka Connect status:
+Add Elasticsearch index to Kibana:
 
 [source,bash]
 ----
-curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"orders","timeFieldName":"EXTRACT_TS"}}' --compressed
+curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"logon_enriched","timeFieldName":"EXTRACT_TS"}}' --compressed
+----
+
+Go to the http://localhost:5601/app/kibana#/management/kibana/indices/[Index Patterns] page and mark one of them (doesn't matter which) as the default index.
+
+Import dashboard `kibana_objects.json` using the **Import** button at http://localhost:5601/app/kibana#/management/kibana/objects
+
+Map the `Logons` object to `logon_enriched` and the others to `orders`
+
+image::kibana_ix.png[Kibana index]
+
+Load the Kibana dashboard http://localhost:5601/app/kibana#/dashboard/02028f30-424c-11e8-af19-1188a9332246
+
+=== Kafka Connect
+
+==== Create JDBC connectors
+
+Make sure Kafka Connect has started:
+
+[source,bash]
+----
+docker-compose logs -f kafka-connect-cp|grep "Kafka Connect started"
+----
+
+Press Ctrl-C twice to exit to the shell prompt
+
+Load the Oracle JDBC connector configs:
+
+[source,bash]
+----
+docker-compose exec kafka-connect-cp "/scripts/create_jdbc_connectors.sh"
+----
+
+This should create three connectors, and for each you should see:
+
+[source,bash]
+----
+HTTP/1.1 100 Continue
+
+HTTP/1.1 201 Created
+
+[...]
+----
+
+Load the Elasticsearch connector configs:
+
+[source,bash]
+----
+docker-compose exec kafka-connect-cp "/scripts/create_es_connectors.sh"
+----
+
+Check connectors are running:
+
+[source,bash]
+----
+$ curl -s "http://localhost:18083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:18083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+
+es_sink_LOGON_ENRICHED            |  RUNNING  |  RUNNING
+es_sink_ora-soe-ORDERS            |  RUNNING  |  RUNNING
 jdbc_source_oracle_soe_customers  |  RUNNING  |  RUNNING
 jdbc_source_oracle_soe_logon      |  RUNNING  |  RUNNING
 jdbc_source_oracle_soe_orders     |  RUNNING  |  RUNNING
 ----
 
-=== Show Stream monitor
 
-http://localhost:9021/monitoring/streams/consumer-groups?monitoringClusterId=Ml53oV6RT5Gs1v-q-YjbAA&rolling=15
+== Demo
 
-=== Run Swingbench
+Optional, explore data in sql*plus:
 
 [source,bash]
 ----
-docker exec -ti ora12c bash
-export JAVA_HOME=/opt/oracle/product/12.2.0.1/dbhome_1/jdk/jre/
-export PATH=$PATH:$JAVA_HOME/bin:/home/oracle/swingbench/bin
-charbench -cs localhost:1521/ORCLPDB1 -u soe -p soe -v trans,users -c /home/oracle/swingbench/configs/SOE_Client_Side.xml -uc 1
+docker-compose exec oracle bash -c 'sqlplus soe/soe@localhost:1521/ORCLPDB1'
 ----
 
+=== Run Swingbench to generate activity on Oracle
+
+[source,bash]
+----
+docker-compose exec oracle bash -c 'export JAVA_HOME=/opt/oracle/product/12.2.0.1/dbhome_1/jdk/jre/ && \
+                                    export PATH=$PATH:$JAVA_HOME/bin:/home/oracle/swingbench/bin && \
+                                    charbench -cs localhost:1521/ORCLPDB1 -u soe -p soe -v trans,users -c /home/oracle/swingbench/configs/SOE_Client_Side.xml -uc 1 -min 10000'
+----
+
+=== Launch KSQL CLI
+
+[source,bash]
+----
+docker-compose exec ksql-cli ksql http://ksql-server:8088
+----
 
 === KSQL : Inspect
 
 [source,sql]
 ----
 -- Only need this if not running on live data
---SET 'auto.offset.reset' = 'earliest';
+SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM LOGON WITH (KAFKA_TOPIC='ora-soe-LOGON', VALUE_FORMAT='AVRO', TIMESTAMP='LOGON_DATE');
 SELECT * FROM LOGON LIMIT 5;
 ----
@@ -118,8 +180,8 @@ SELECT * FROM LOGON LIMIT 5;
 ----
 CREATE STREAM CUST_SRC WITH (KAFKA_TOPIC='ora-soe-CUSTOMERS', VALUE_FORMAT='AVRO');
 --SELECT CUSTOMER_ID, CUST_FIRST_NAME, CUST_LAST_NAME FROM CUST_SRC LIMIT 5;
-CREATE STREAM CUST_REKEYED AS SELECT * FROM CUST_SRC PARTITION BY CUSTOMER_ID;
--- Wait a moment for the stream to be created
+CREATE STREAM CUST_REKEYED WITH (PARTITIONS=1) AS SELECT * FROM CUST_SRC PARTITION BY CUSTOMER_ID;
+-- Wait a few moments for the stream to be created, or retry this command until it works
 CREATE TABLE CUSTOMERS WITH (KAFKA_TOPIC='CUST_REKEYED', VALUE_FORMAT='AVRO', KEY='CUSTOMER_ID');
 SELECT CUSTOMER_ID, CUST_FIRST_NAME, CUST_LAST_NAME, CUSTOMER_CLASS  FROM CUSTOMERS WHERE CUSTOMER_ID=42;
 ----
@@ -128,7 +190,7 @@ SELECT CUSTOMER_ID, CUST_FIRST_NAME, CUST_LAST_NAME, CUSTOMER_CLASS  FROM CUSTOM
 
 [source,sql]
 ----
-SELECT L.LOGON_ID, C.CUSTOMER_ID, C.CUST_FIRST_NAME + ' ' + C.CUST_LAST_NAME AS CUST_FULL_NAME, \
+SELECT L.LOGON_ID, C.CUSTOMER_ID, CONCAT(CONCAT(C.CUST_FIRST_NAME,' '), C.CUST_LAST_NAME) AS CUST_FULL_NAME, \
        C.CUSTOMER_SINCE, C.CUSTOMER_CLASS, C.CREDIT_LIMIT \
 FROM LOGON L \
      LEFT OUTER JOIN CUSTOMERS C \
@@ -138,8 +200,8 @@ WHERE C.CUSTOMER_ID IS NOT NULL;
 
 [source,sql]
 ----
-CREATE STREAM LOGON_ENRICHED AS \
-SELECT L.LOGON_ID, C.CUSTOMER_ID, C.CUST_FIRST_NAME + ' ' + C.CUST_LAST_NAME AS CUST_FULL_NAME, \
+CREATE STREAM LOGON_ENRICHED WITH (PARTITIONS=1) AS \
+SELECT L.LOGON_ID, C.CUSTOMER_ID, CONCAT(CONCAT(C.CUST_FIRST_NAME,' '), C.CUST_LAST_NAME) AS CUST_FULL_NAME, \
        C.CUSTOMER_SINCE, C.CUSTOMER_CLASS, C.CREDIT_LIMIT \
 FROM LOGON L \
      LEFT OUTER JOIN CUSTOMERS C \
@@ -153,10 +215,10 @@ Inspect output topic:
 
 [source,bash]
 ----
-kafka-avro-console-consumer \
-   --bootstrap-server localhost:9092 \
-   --property schema.registry.url=http://localhost:8081 \
-   --topic LOGON_ENRICHED --max-messages 1 --from-beginning | jq '.'
+docker-compose exec kafka-connect-cp bash -c 'kafka-avro-console-consumer \
+                                             --bootstrap-server kafka:29092 \
+                                             --property schema.registry.url=http://schema-registry:8081 \
+                                             --topic LOGON_ENRICHED --max-messages 1 --from-beginning'
 ----
 
 === KSQL : Filter
@@ -204,27 +266,6 @@ FROM LOGON_ENRICHED WINDOW TUMBLING (SIZE 1 MINUTE) \
 GROUP BY CUSTOMER_CLASS;
 ----
 
-=== Kafka Connect: Create Elasticsearch connectors
-
-[source,bash]
-----
-/Users/Robin/git/demo-scene/oracle-ksql-elasticsearch/create_es_connectors.sh
-----
-
-Check Kafka Connect status:
-
-[source,bash]
-----
-curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
-es_sink_LOGON_ENRICHED            |  RUNNING  |  RUNNING
-es_sink_ora-soe-ORDERS            |  RUNNING  |  RUNNING
-jdbc_source_oracle_soe_customers  |  RUNNING  |  RUNNING
-jdbc_source_oracle_soe_logon      |  RUNNING  |  RUNNING
-jdbc_source_oracle_soe_orders     |  RUNNING  |  RUNNING
-----
-
 === Analyse data in Kibana
-
-_Import `kibana.json` into Kibana for pre-built viz & dashboard_
 
 image::kibana_01.png[]

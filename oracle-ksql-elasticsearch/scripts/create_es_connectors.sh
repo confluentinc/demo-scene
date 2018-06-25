@@ -1,6 +1,6 @@
 #!/bin/sh
 
-curl -X "POST" "http://localhost:8083/connectors/" \
+curl -X "POST" "http://localhost:18083/connectors/" \
      -H "Content-Type: application/json" \
      -d '{
   "name": "es_sink_LOGON_ENRICHED",
@@ -12,11 +12,14 @@ curl -X "POST" "http://localhost:8083/connectors/" \
     "schema.ignore": "false",
     "type.name": "type.name=kafkaconnect",
     "topic.index.map": "LOGON_ENRICHED:'logon_enriched'",
-    "connection.url": "http://localhost:9200"
+    "transforms": "ExtractTimestamp",
+    "transforms.ExtractTimestamp.type": "org.apache.kafka.connect.transforms.InsertField$Value",
+    "transforms.ExtractTimestamp.timestamp.field" : "EXTRACT_TS",
+    "connection.url": "http://elasticsearch:9200"
   }
 }'
 
-curl -X "POST" "http://localhost:8083/connectors/" \
+curl -X "POST" "http://localhost:18083/connectors/" \
      -H "Content-Type: application/json" \
      -d '{
   "name": "es_sink_ora-soe-ORDERS",
@@ -28,7 +31,10 @@ curl -X "POST" "http://localhost:8083/connectors/" \
     "schema.ignore": "false",
     "type.name": "type.name=kafkaconnect",
     "topic.index.map": "ora-soe-ORDERS:'orders'",
-    "connection.url": "http://localhost:9200"
+    "transforms": "ExtractTimestamp",
+    "transforms.ExtractTimestamp.type": "org.apache.kafka.connect.transforms.InsertField$Value",
+    "transforms.ExtractTimestamp.timestamp.field" : "EXTRACT_TS",
+    "connection.url": "http://elasticsearch:9200"
   }
 }'
 
