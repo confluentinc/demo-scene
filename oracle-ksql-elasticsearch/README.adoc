@@ -42,10 +42,10 @@ oracle/database                                 12.2.0.1-ee         dc4ab29cfca2
 
 === Start the stack
 
+IMPORTANT: It's important that you're in this folder, as the volumes mounted by the containers rely on the relative path (`$PWD`)
+
 [source,bash]
 ----
-# It's important that you're in this folder, as the volumes mounted
-# by the containers rely on the relative path ($PWD)
 cd oracle-ksql-elasticsearch
 
 docker-compose up -d
@@ -59,6 +59,34 @@ docker-compose logs -f oracle|grep "DATABASE IS READY TO USE!"
 ----
 
 IMPORTANT: Wait until logs say "DATABASE IS READY TO USE!" then press Ctrl-C twice to cancel and return to the command prompt
+
+=== Elasticsearch
+
+Create dynamic mapping and dummy docs:
+
+[source,bash]
+----
+./scripts/create_es_mapping.sh
+./scripts/create_es_docs.sh
+----
+
+Add Elasticsearch index to Kibana:
+
+[source,bash]
+----
+curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"orders","timeFieldName":"EXTRACT_TS"}}' --compressed
+curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"logon_enriched","timeFieldName":"EXTRACT_TS"}}' --compressed
+----
+
+Import dashboard `kibana_objects.json` using the **Import** button at http://localhost:5601/app/kibana#/management/kibana/objects
+
+Map the `Logons` object to `logon_enriched` and the others to `orders`
+
+image::kibana_ix.png[Kibana index]
+
+Go to the http://localhost:5601/app/kibana#/management/kibana/indices/[Index Patterns] page and mark one of them (doesn't matter which) as the default index.
+
+Load the Kibana dashboard http://localhost:5601/app/kibana#/dashboard/02028f30-424c-11e8-af19-1188a9332246
 
 === Kafka Connect
 
@@ -111,27 +139,6 @@ jdbc_source_oracle_soe_logon      |  RUNNING  |  RUNNING
 jdbc_source_oracle_soe_orders     |  RUNNING  |  RUNNING
 ----
 
-=== Elasticsearch
-
-Create dynamic mapping and dummy docs:
-
-[source,bash]
-----
-./scripts/create_es_mapping.sh
-./scripts/create_es_docs.sh
-----
-
-Add Elasticsearch index to Kibana:
-
-[source,bash]
-----
-curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"orders","timeFieldName":"EXTRACT_TS"}}' --compressed
-curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"logon_enriched","timeFieldName":"EXTRACT_TS"}}' --compressed
-----
-
-Import dashboard `kibana_objects.json` using the **Import** button at http://localhost:5601/app/kibana#/management/kibana/objects
-
-Load the Kibana dashboard http://localhost:5601/app/kibana#/dashboard/02028f30-424c-11e8-af19-1188a9332246
 
 == Demo
 
@@ -148,7 +155,7 @@ docker-compose exec oracle bash -c 'sqlplus soe/soe@localhost:1521/ORCLPDB1'
 ----
 docker-compose exec oracle bash -c 'export JAVA_HOME=/opt/oracle/product/12.2.0.1/dbhome_1/jdk/jre/ && \
                                     export PATH=$PATH:$JAVA_HOME/bin:/home/oracle/swingbench/bin && \
-                                    charbench -cs localhost:1521/ORCLPDB1 -u soe -p soe -v trans,users -c /home/oracle/swingbench/configs/SOE_Client_Side.xml -uc 1'
+                                    charbench -cs localhost:1521/ORCLPDB1 -u soe -p soe -v trans,users -c /home/oracle/swingbench/configs/SOE_Client_Side.xml -uc 1 -min 10000'
 ----
 
 === Launch KSQL CLI
