@@ -96,7 +96,6 @@ Load the Elasticsearch connector configs:
 [source,bash]
 ----
 docker-compose exec kafka-connect-cp "/scripts/create_es_connectors.sh"
-docker-compose exec kafka-connect-cp "/scripts/create_es_mapping.sh"
 ----
 
 Check connectors are running:
@@ -111,6 +110,28 @@ jdbc_source_oracle_soe_customers  |  RUNNING  |  RUNNING
 jdbc_source_oracle_soe_logon      |  RUNNING  |  RUNNING
 jdbc_source_oracle_soe_orders     |  RUNNING  |  RUNNING
 ----
+
+=== Elasticsearch
+
+Create dynamic mapping and dummy docs:
+
+[source,bash]
+----
+./scripts/create_es_mapping.sh
+./scripts/create_es_docs.sh
+----
+
+Add Elasticsearch index to Kibana:
+
+[source,bash]
+----
+curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"orders","timeFieldName":"EXTRACT_TS"}}' --compressed
+curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"logon_enriched","timeFieldName":"EXTRACT_TS"}}' --compressed
+----
+
+Import dashboard `kibana_objects.json` using the **Import** button at http://localhost:5601/app/kibana#/management/kibana/objects
+
+Load the Kibana dashboard http://localhost:5601/app/kibana#/dashboard/02028f30-424c-11e8-af19-1188a9332246
 
 == Demo
 
@@ -240,20 +261,4 @@ GROUP BY CUSTOMER_CLASS;
 
 === Analyse data in Kibana
 
-_Import `kibana.json` into Kibana for pre-built viz & dashboard_
-
 image::kibana_01.png[]
-
-
-
-
-=== Setup Elasticsearch ?
-
-[source,bash]
-----
-curl -XPUT localhost:9200/_cluster/settings -d '{
-    "transient" : {
-        "cluster.routing.allocation.disk.threshold_enabled" : false
-    }
-}'
-----

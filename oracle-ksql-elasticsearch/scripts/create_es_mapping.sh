@@ -1,4 +1,5 @@
-curl -XPUT "http://localhost:9200/_template/kafkaconnect/" -H 'Content-Type: application/json' -d'
+#!/bin/sh
+curl -XPUT "http://elasticsearch:9200/_template/kafkaconnect/" -H 'Content-Type: application/json' -d'
 {
   "index_patterns": "*",
   "settings": {

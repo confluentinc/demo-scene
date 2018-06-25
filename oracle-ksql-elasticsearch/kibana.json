@@ -6,37 +6,12 @@
       "title": "Swingbench / Kafka / KSQL / Elasticsearch",
       "hits": 0,
       "description": "",
-      "panelsJSON": "[{\"panelIndex\":\"1\",\"gridData\":{\"x\":0,\"y\":2,\"w\":6,\"h\":3,\"i\":\"1\"},\"id\":\"f7dda380-5891-11e8-aab8-a57a49bb5c26\",\"type\":\"visualization\",\"version\":\"6.2.3\"},{\"panelIndex\":\"2\",\"gridData\":{\"x\":6,\"y\":2,\"w\":6,\"h\":3,\"i\":\"2\"},\"id\":\"0da0c670-5892-11e8-aab8-a57a49bb5c26\",\"type\":\"search\",\"version\":\"6.2.3\"},{\"panelIndex\":\"3\",\"gridData\":{\"x\":0,\"y\":5,\"w\":6,\"h\":3,\"i\":\"3\"},\"id\":\"1c8703c0-5892-11e8-aab8-a57a49bb5c26\",\"type\":\"search\",\"version\":\"6.2.3\"},{\"panelIndex\":\"4\",\"gridData\":{\"x\":6,\"y\":5,\"w\":6,\"h\":3,\"i\":\"4\"},\"id\":\"98a57590-5892-11e8-aab8-a57a49bb5c26\",\"type\":\"visualization\",\"version\":\"6.2.3\"},{\"panelIndex\":\"5\",\"gridData\":{\"x\":0,\"y\":0,\"w\":12,\"h\":2,\"i\":\"5\"},\"version\":\"6.2.3\",\"type\":\"visualization\",\"id\":\"5e634140-5893-11e8-aab8-a57a49bb5c26\"}]",
+      "panelsJSON": "[{\"panelIndex\":\"1\",\"gridData\":{\"x\":0,\"y\":7,\"w\":24,\"h\":15,\"i\":\"1\"},\"id\":\"f7dda380-5891-11e8-aab8-a57a49bb5c26\",\"type\":\"visualization\",\"version\":\"6.3.0\"},{\"panelIndex\":\"2\",\"gridData\":{\"x\":24,\"y\":7,\"w\":24,\"h\":15,\"i\":\"2\"},\"id\":\"0da0c670-5892-11e8-aab8-a57a49bb5c26\",\"type\":\"search\",\"version\":\"6.3.0\"},{\"panelIndex\":\"3\",\"gridData\":{\"x\":0,\"y\":22,\"w\":24,\"h\":15,\"i\":\"3\"},\"id\":\"1c8703c0-5892-11e8-aab8-a57a49bb5c26\",\"sort\":[\"EXTRACT_TS\",\"desc\"],\"type\":\"search\",\"version\":\"6.3.0\"},{\"panelIndex\":\"4\",\"gridData\":{\"x\":24,\"y\":22,\"w\":24,\"h\":15,\"i\":\"4\"},\"id\":\"98a57590-5892-11e8-aab8-a57a49bb5c26\",\"type\":\"visualization\",\"version\":\"6.3.0\"},{\"panelIndex\":\"5\",\"gridData\":{\"x\":0,\"y\":0,\"w\":48,\"h\":7,\"i\":\"5\"},\"id\":\"5e634140-5893-11e8-aab8-a57a49bb5c26\",\"type\":\"visualization\",\"version\":\"6.3.0\"}]",
       "optionsJSON": "{\"darkTheme\":false,\"hidePanelTitles\":false,\"useMargins\":true}",
       "version": 1,
       "timeRestore": false,
       "kibanaSavedObjectMeta": {
         "searchSourceJSON": "{\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[],\"highlightAll\":true,\"version\":true}"
-      }
-    },
-    "_meta": {
-      "savedObjectVersion": 2
-    }
-  },
-  {
-    "_id": "0da0c670-5892-11e8-aab8-a57a49bb5c26",
-    "_type": "search",
-    "_source": {
-      "title": "Orders",
-      "description": "",
-      "hits": 0,
-      "columns": [
-        "ORDER_ID",
-        "ORDER_MODE",
-        "ORDER_TOTAL"
-      ],
-      "sort": [
-        "ORDER_DATE",
-        "desc"
-      ],
-      "version": 1,
-      "kibanaSavedObjectMeta": {
-        "searchSourceJSON": "{\"index\":\"10aa0440-5891-11e8-aab8-a57a49bb5c26\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"
       }
     },
     "_meta": {
@@ -61,7 +36,7 @@
       ],
       "version": 1,
       "kibanaSavedObjectMeta": {
-        "searchSourceJSON": "{\"index\":\"88fc0190-588d-11e8-aab8-a57a49bb5c26\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"
+        "searchSourceJSON": "{\"index\":\"775db610-787f-11e8-b653-89fb1cdb615b\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"
       }
     },
     "_meta": {
@@ -69,16 +44,24 @@
     }
   },
   {
-    "_id": "f7dda380-5891-11e8-aab8-a57a49bb5c26",
-    "_type": "visualization",
+    "_id": "0da0c670-5892-11e8-aab8-a57a49bb5c26",
+    "_type": "search",
     "_source": {
-      "title": "Order Value per Status",
-      "visState": "{\"title\":\"Order Value per Status\",\"type\":\"histogram\",\"params\":{\"type\":\"histogram\",\"grid\":{\"categoryLines\":false,\"style\":{\"color\":\"#eee\"}},\"categoryAxes\":[{\"id\":\"CategoryAxis-1\",\"type\":\"category\",\"position\":\"bottom\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\"},\"labels\":{\"show\":true,\"truncate\":100},\"title\":{}}],\"valueAxes\":[{\"id\":\"ValueAxis-1\",\"name\":\"LeftAxis-1\",\"type\":\"value\",\"position\":\"left\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\",\"mode\":\"normal\"},\"labels\":{\"show\":true,\"rotate\":0,\"filter\":false,\"truncate\":100},\"title\":{\"text\":\"Sum of ORDER_TOTAL\"}}],\"seriesParams\":[{\"show\":\"true\",\"type\":\"histogram\",\"mode\":\"stacked\",\"data\":{\"label\":\"Sum of ORDER_TOTAL\",\"id\":\"1\"},\"valueAxis\":\"ValueAxis-1\",\"drawLinesBetweenPoints\":true,\"showCircles\":true}],\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"times\":[],\"addTimeMarker\":false},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"sum\",\"schema\":\"metric\",\"params\":{\"field\":\"ORDER_TOTAL\"}},{\"id\":\"2\",\"enabled\":true,\"type\":\"date_histogram\",\"schema\":\"segment\",\"params\":{\"field\":\"ORDER_DATE\",\"interval\":\"auto\",\"customInterval\":\"2h\",\"min_doc_count\":1,\"extended_bounds\":{}}},{\"id\":\"3\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"group\",\"params\":{\"field\":\"ORDER_STATUS\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\"}}]}",
-      "uiStateJSON": "{}",
+      "title": "Orders",
       "description": "",
+      "hits": 0,
+      "columns": [
+        "ORDER_ID",
+        "ORDER_MODE",
+        "ORDER_TOTAL"
+      ],
+      "sort": [
+        "ORDER_DATE",
+        "desc"
+      ],
       "version": 1,
       "kibanaSavedObjectMeta": {
-        "searchSourceJSON": "{\"index\":\"10aa0440-5891-11e8-aab8-a57a49bb5c26\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"
+        "searchSourceJSON": "{\"index\":\"74450460-787f-11e8-b653-89fb1cdb615b\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"
       }
     },
     "_meta": {
@@ -95,7 +78,24 @@
       "description": "",
       "version": 1,
       "kibanaSavedObjectMeta": {
-        "searchSourceJSON": "{\"index\":\"10aa0440-5891-11e8-aab8-a57a49bb5c26\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"
+        "searchSourceJSON": "{\"index\":\"74450460-787f-11e8-b653-89fb1cdb615b\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
+    "_id": "f7dda380-5891-11e8-aab8-a57a49bb5c26",
+    "_type": "visualization",
+    "_source": {
+      "title": "Order Value per Status",
+      "visState": "{\"title\":\"Order Value per Status\",\"type\":\"histogram\",\"params\":{\"type\":\"histogram\",\"grid\":{\"categoryLines\":false,\"style\":{\"color\":\"#eee\"}},\"categoryAxes\":[{\"id\":\"CategoryAxis-1\",\"type\":\"category\",\"position\":\"bottom\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\"},\"labels\":{\"show\":true,\"truncate\":100},\"title\":{}}],\"valueAxes\":[{\"id\":\"ValueAxis-1\",\"name\":\"LeftAxis-1\",\"type\":\"value\",\"position\":\"left\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\",\"mode\":\"normal\"},\"labels\":{\"show\":true,\"rotate\":0,\"filter\":false,\"truncate\":100},\"title\":{\"text\":\"Sum of ORDER_TOTAL\"}}],\"seriesParams\":[{\"show\":\"true\",\"type\":\"histogram\",\"mode\":\"stacked\",\"data\":{\"label\":\"Sum of ORDER_TOTAL\",\"id\":\"1\"},\"valueAxis\":\"ValueAxis-1\",\"drawLinesBetweenPoints\":true,\"showCircles\":true}],\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"times\":[],\"addTimeMarker\":false},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"sum\",\"schema\":\"metric\",\"params\":{\"field\":\"ORDER_TOTAL\"}},{\"id\":\"2\",\"enabled\":true,\"type\":\"date_histogram\",\"schema\":\"segment\",\"params\":{\"field\":\"ORDER_DATE\",\"interval\":\"custom\",\"customInterval\":\"1m\",\"min_doc_count\":1,\"extended_bounds\":{}}},{\"id\":\"3\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"group\",\"params\":{\"field\":\"ORDER_STATUS\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\"}}]}",
+      "uiStateJSON": "{}",
+      "description": "",
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"index\":\"74450460-787f-11e8-b653-89fb1cdb615b\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"
       }
     },
     "_meta": {
@@ -107,7 +107,7 @@
     "_type": "visualization",
     "_source": {
       "title": "Title",
-      "visState": "{\"title\":\"Title\",\"type\":\"markdown\",\"params\":{\"fontSize\":12,\"markdown\":\"# Realtime Analytics with Oracle, Apache Kafka, KSQL, and Elasticsearch\\n`@rmoff / 15 May 2018`\"},\"aggs\":[]}",
+      "visState": "{\"title\":\"Title\",\"type\":\"markdown\",\"params\":{\"fontSize\":20,\"markdown\":\"![](https://www.confluent.io/wp-content/uploads/icon-ksql.png) **Realtime Analytics with Oracle, Apache Kafka, KSQL, and Elasticsearch**\\n`@rmoff / 25 Jun 2018`\",\"openLinksInNewTab\":false},\"aggs\":[]}",
       "uiStateJSON": "{}",
       "description": "",
       "version": 1,
