@@ -1,0 +1,468 @@
+= Streaming ETL demo - Enriching event stream data with CDC data from Postgres, stream into Elasticsearch
+Robin Moffatt <robin@confluent.io>
+v1.00, 26 Jun 2018
+
+This is designed to be run as a step-by-step demo. The `ksql-statements.sql` should match those run in this doc end-to-end and in theory you can just run the file, but I have not tested it. PRs welcome for a one-click script that just demonstrates the end-to-end running demo :)
+
+== Pre-reqs
+
+Local:
+
+* `curl`
+* `jq`
+* Docker
+
+== Pre-Flight Setup
+
+Start the environment:
+
+[source,bash]
+----
+cd docker-compose
+docker-compose up -d
+----
+
+Make sure Kafka Connect has started (wait until this command returns output):
+
+[source,bash]
+----
+docker-compose logs -f kafka-connect-cp|grep "Kafka Connect started"
+----
+
+=== Setup CDC
+
+Create CDC connector:
+
+[source,bash]
+----
+docker-compose exec connect-debezium bash -c '/scripts/add-pg-connector.sh'
+----
+
+Check status
+
+[source,bash]
+----
+$ curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+pg-source  |  RUNNING  |  RUNNING
+----
+
+Check topic created
+
+[source,bash]
+----
+$ docker-compose exec kafka bash -c 'kafka-topics --zookeeper zookeeper:2181 --list|grep customers'
+asgard.public.customers
+----
+
+=== Setup Elasticsearch
+
+Set up Elasticsearch dynamic mapping template:
+
+[source,bash]
+----
+$ docker-compose exec elasticsearch bash -c '/scripts/create-dynamic-mapping.sh'
+
+{"acknowledged":true}⏎
+----
+
+Set up Elasticsearch Kafka Connect connector:
+
+[source,bash]
+----
+docker-compose exec kafka-connect-cp bash -c '/scripts/add-es-connector.sh'
+----
+
+Create dummy document in index:
+
+[source,bash]
+----
+curl -XPOST "http://localhost:9200/ratings-with-customer-data/type.name=kafkaconnect" -H 'Content-Type: application/json' -d'{
+          "RATING_ID": 79,
+          "CHANNEL": "iOS",
+          "STARS": 4,
+          "MESSAGE": "Surprisingly good, maybe you are getting your mojo back at long last!",
+          "ID": 1,
+          "CLUB_STATUS": "bronze",
+          "EMAIL": "rblaisdell0@rambler.ru",
+          "FIRST_NAME": "Rica",
+          "LAST_NAME": "Blaisdell",
+          "EXTRACT_TS": 1528992287749
+        }'
+curl -XPOST "http://localhost:9200/unhappy_platinum_customers/type.name=kafkaconnect" -H 'Content-Type: application/json' -d'{
+          "MESSAGE": "why is it so difficult to keep the bathrooms clean ?",
+          "STARS": 1,
+          "EXTRACT_TS": 1528992291449,
+          "CLUB_STATUS": "platinum",
+          "EMAIL": "rleheude5@reddit.com"
+        }'
+----
+
+Add Elasticsearch index to Kibana
+
+[source,bash]
+----
+curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"ratings-with-customer-data","timeFieldName":"EXTRACT_TS"}}' --compressed
+curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"unhappy_platinum_customers","timeFieldName":"EXTRACT_TS"}}' --compressed
+----
+
+Set an index (any index) as default in Kibana at http://localhost:5601/app/kibana#/management/kibana/indices/
+
+Import dashboard `kibana_objects.json` using the **Import** button at http://localhost:5601/app/kibana#/management/kibana/objects
+
+image::images/kibana_ix01.png[Kibana indexes]
+
+Load the Kibana dashboard http://localhost:5601/app/kibana#/dashboard/02028f30-424c-11e8-af19-1188a9332246
+
+=== Run KSQL CLI and Postgres CLI
+
+Optionally, use something like `screen` or `tmux` to have these both easily to hand. Or multiple Terminal tabs. Whatever works for you :)
+KSQL CLI:
+
+[source,bash]
+----
+cd docker-compose
+docker-compose exec ksql-cli ksql http://ksql-server:8088
+----
+
+Postgres CLI:
+
+[source,bash]
+----
+cd docker-compose
+docker-compose exec postgres bash -c 'psql --username postgres'
+----
+
+== Pre-flight checklist
+
+Is the stack up?
+
+[source,bash]
+----
+$ docker-compose ps
+Name                             Command               State                          Ports
+---------------------------------------------------------------------------------------------------------------------------------
+docker-compose_connect-debezium_1   /docker-entrypoint.sh start      Up      0.0.0.0:8083->8083/tcp, 8778/tcp, 9092/tcp, 9779/tcp
+docker-compose_datagen-ratings_1    bash -c echo Waiting for K ...   Up
+docker-compose_kafka-connect-cp_1   /etc/confluent/docker/run        Up      0.0.0.0:18083->18083/tcp, 8083/tcp, 9092/tcp
+docker-compose_kafka_1              /etc/confluent/docker/run        Up      0.0.0.0:9092->9092/tcp
+docker-compose_ksql-cli_1           sleep infinity                   Up
+docker-compose_ksql-server_1        bash -c echo Waiting for K ...   Up
+docker-compose_postgres_1           docker-entrypoint.sh postgres    Up      5432/tcp
+docker-compose_schema-registry_1    /etc/confluent/docker/run        Up      8081/tcp
+docker-compose_zookeeper_1          /etc/confluent/docker/run        Up      2181/tcp, 2888/tcp, 3888/tcp
+elasticsearch                       /usr/local/bin/docker-entr ...   Up      0.0.0.0:9200->9200/tcp, 0.0.0.0:9300->9300/tcp
+kibana                              /usr/local/bin/kibana-docker     Up      0.0.0.0:5601->5601/tcp
+----
+
+Are the connectors running?
+
+[source,bash]
+----
+$ curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+pg-source  |  RUNNING  |  RUNNING
+
+$ curl -s "http://localhost:18083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:18083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+es_sink_ratings-with-customer-data  |  RUNNING  |  RUNNING
+es_sink_unhappy_platinum_customers  |  RUNNING  |  RUNNING
+----
+
+Is ratings data being produced?
+
+[source,bash]
+----
+$ docker-compose exec kafka-connect-cp \
+                                         kafka-avro-console-consumer \
+                                          --bootstrap-server kafka:29092 \
+                                          --property schema.registry.url=http://schema-registry:8081 \
+                                          --topic ratings
+{"rating_id":{"long":13323},"user_id":{"int":19},"stars":{"int":3},"route_id":{"int":5676},"rating_time":{"long":1528279580480},"channel":{"string":"iOS"},"message":{"string":"your team here rocks!"}}
+----
+
+Is Elasticsearch running?
+
+[source,bash]
+----
+$ curl http://localhost:9200
+{
+  "name" : "0-JgLQj",
+  "cluster_name" : "elasticsearch_Robin",
+  "cluster_uuid" : "XKkAsum3QL-ECyZlP8z-rA",
+  "version" : {
+    "number" : "6.2.3",
+    "build_hash" : "c59ff00",
+    "build_date" : "2018-03-13T10:06:29.741383Z",
+    "build_snapshot" : false,
+    "lucene_version" : "7.2.1",
+    "minimum_wire_compatibility_version" : "5.6.0",
+    "minimum_index_compatibility_version" : "5.0.0"
+  },
+  "tagline" : "You Know, for Search"
+}
+----
+
+* Load Kibana dashboard: http://localhost:5601/app/kibana#/dashboard/02028f30-424c-11e8-af19-1188a9332246
+* Create iTerm windows, using the `screencapture` profile
+* `screen -x CP_demo`
+* Load this instructions doc into Chrome
+* Close all other apps
+
+== Demo
+
+image:images/ksql-debezium-es.png[Kafka Connect / KSQL / Elasticsearch]
+
+=== Inspect topics
+
+[source,sql]
+----
+SHOW TOPICS;
+----
+
+=== Inspect ratings & define stream
+
+[source,sql]
+----
+PRINT 'ratings';
+CREATE STREAM RATINGS WITH (KAFKA_TOPIC='ratings',VALUE_FORMAT='AVRO');
+----
+
+=== Filter live stream of data
+
+[source,sql]
+----
+SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
+----
+
+=== Show Postgres table + contents
+
+[source,sql]
+----
+postgres=# \dt
+           List of relations
+ Schema |   Name    | Type  |  Owner
+--------+-----------+-------+----------
+ public | customers | table | postgres
+(1 row)
+
+Postgres> select * from CUSTOMERS;
++----+------------+-----------+--------------------------------+--------+------------------------------------------------------+
+| id | first_name | last_name | email                          | gender | comments                                             |
++----+------------+-----------+--------------------------------+--------+------------------------------------------------------+
+|  1 | Bibby      | Argabrite | bargabrite0@google.com.hk      | Female | Reactive exuding productivity                        |
+|  2 | Auberon    | Sulland   | asulland1@slideshare.net       | Male   | Organized context-sensitive Graphical User Interface |
+|  3 | Marv       | Dalrymple | mdalrymple2@macromedia.com     | Male   | Versatile didactic pricing structure                 |
+|  4 | Nolana     | Yeeles    | nyeeles3@drupal.org            | Female | Adaptive real-time archive                           |
+|  5 | Modestia   | Coltart   | mcoltart4@scribd.com           | Female | Reverse-engineered non-volatile success              |
+|  6 | Bram       | Acaster   | bacaster5@pagesperso-orange.fr | Male   | Robust systematic support                            |
+|  7 | Marigold   | Veld      | mveld6@pinterest.com           | Female | Sharable logistical installation                     |
+|  8 | Ruperto    | Matteotti | rmatteotti7@diigo.com          | Male   | Diverse client-server conglomeration                 |
++----+------------+-----------+--------------------------------+--------+------------------------------------------------------+
+8 rows in set (0.00 sec)
+----
+
+=== Check status of Debezium connectors
+
+[source,bash]
+----
+curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+pg-source  |  RUNNING  |  RUNNING
+----
+
+=== Show Kafka topic has been created & populated
+
+Show contents:
+
+[source,bash]
+----
+$ docker-compose exec -T kafka-connect-cp kafka-avro-console-consumer \
+                                         --bootstrap-server kafka:29092 \
+                                         --property schema.registry.url=http://schema-registry:8081 \
+                                         --topic asgard.public.customers \
+                                         --from-beginning \
+                                         | jq '.'
+{
+  "id": 1,
+  "first_name": {
+    "string": "Bibby"
+  },
+  "last_name": {
+    "string": "Argabrite"
+  },
+  "email": {
+    "string": "bargabrite0@google.com.hk"
+  },
+  "gender": {
+    "string": "Female"
+  },
+  "comments": {
+    "string": "Reactive exuding productivity"
+  },
+  "messagetopic": {
+    "string": "asgard.public.customers"
+  },
+  "messagesource": {
+    "string": "Debezium CDC from Postgres on asgard"
+  }
+}
+[…]
+----
+
+=== Show CDC in action
+
+==== Insert a row in Postgres, observe it in Kafka
+
+[source,sql]
+----
+insert into CUSTOMERS (id,first_name,last_name) values (42,'Rick','Astley');
+----
+
+==== Update a row in Postgres, observe it in Kafka
+
+[source,sql]
+----
+update CUSTOMERS set first_name='Bob' where id=1;
+----
+
+=== Inspect CUSTOMERS data
+[source,sql]
+----
+PRINT 'asgard.public.customers' FROM BEGINNING;
+
+CREATE STREAM CUSTOMERS_SRC WITH (KAFKA_TOPIC='asgard.public.customers', VALUE_FORMAT='AVRO');
+SET 'auto.offset.reset' = 'earliest';
+SELECT ID, FIRST_NAME, LAST_NAME FROM CUSTOMERS_SRC;
+----
+
+=== Re-key the customer data
+[source,sql]
+----
+CREATE STREAM CUSTOMERS_SRC_REKEY WITH (PARTITIONS=1) AS SELECT * FROM CUSTOMERS_SRC PARTITION BY ID;
+-- Wait for a moment here; if you run the CTAS _immediately_ after the CSAS it may fail
+-- with error `Could not fetch the AVRO schema from schema registry. Subject not found.; error code: 40401`
+CREATE TABLE CUSTOMERS WITH (KAFKA_TOPIC='CUSTOMERS_SRC_REKEY', VALUE_FORMAT ='AVRO', KEY='ID');
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, MESSAGESOURCE FROM CUSTOMERS;
+----
+
+==== [Optional] Demonstrate why the re-key is required
+
+[source,sql]
+----
+ksql> SELECT C.ROWKEY, C.ID FROM CUSTOMERS_SRC C LIMIT 3;
+ | 1
+ | 2
+ | 3
+
+ksql> SELECT C.ROWKEY, C.ID FROM CUSTOMERS C LIMIT 3;
+1 | 1
+2 | 2
+3 | 3
+----
+
+
+=== Join live stream of ratings to customer data
+
+[source,sql]
+----
+ksql> SELECT R.RATING_ID, R.CHANNEL, R.MESSAGE, C.ID, CONCAT(CONCAT(C.FIRST_NAME, ' '),C.LAST_NAME) FROM RATINGS R LEFT JOIN CUSTOMERS C ON R.USER_ID = C.ID WHERE C.FIRST_NAME IS NOT NULL;
+241 | android | (expletive deleted) | Bram Acaster
+245 | web | Exceeded all my expectations. Thank you ! | Marigold Veld
+247 | android | airport refurb looks great, will fly outta here more! | Modestia Coltart
+251 | iOS-test | why is it so difficult to keep the bathrooms clean ? | Bob Argabrite
+252 | iOS | more peanuts please | Marv Dalrymple
+254 | web | why is it so difficult to keep the bathrooms clean ? | Marigold Veld
+255 | iOS-test | is this as good as it gets? really ? | Ruperto Matteotti
+257 | web | is this as good as it gets? really ? | Marigold Veld
+259 | iOS-test | your team here rocks! | Bob Argabrite
+----
+
+Persist this stream of data
+
+[source,sql]
+----
+CREATE STREAM ratings_with_customer_data WITH (PARTITIONS=1) AS \
+SELECT R.RATING_ID, R.CHANNEL, R.STARS, R.MESSAGE, \
+       C.ID, C.CLUB_STATUS, C.EMAIL, \
+       CONCAT(CONCAT(C.FIRST_NAME, ' '),C.LAST_NAME) AS FULL_NAME \
+FROM RATINGS R \
+     LEFT JOIN CUSTOMERS C \
+       ON R.USER_ID = C.ID \
+WHERE C.FIRST_NAME IS NOT NULL ;
+----
+
+The `WITH (PARTITIONS=1)` is only necessary if the Elasticsearch connector has already been defined, as it will create the topic before KSQL does, and using a single partition (not 4, as KSQL wants to by default).
+
+=== Examine changing reference data
+
+CUSTOMERS is a KSQL _table_, which means that we have the latest value for a given key.
+
+Check out the ratings for customer id 2 only:
+[source,sql]
+----
+ksql> SELECT * FROM ratings_with_customer_data WHERE ID=2;
+----
+
+In Postgres, make a change to ID 2
+[source,sql]
+----
+postgres=# update CUSTOMERS set first_name='Bob' where id=2;
+----
+
+Observe in the continuous KSQL query that the customer name has now changed.
+
+=== Create stream of unhappy VIPs
+
+CREATE STREAM UNHAPPY_PLATINUM_CUSTOMERS  \
+       WITH (VALUE_FORMAT='JSON',PARTITIONS=1) AS \
+SELECT CLUB_STATUS, EMAIL, STARS, MESSAGE \
+FROM   ratings_with_customer_data \
+WHERE  STARS < 3 \
+  AND  CLUB_STATUS = 'platinum';
+
+== View in Elasticsearch and Kibana
+
+Tested on Elasticsearch 6.3.0
+
+image:images/es01.png[Kibana]
+
+#EOF
+
+== Optional
+
+
+=== Aggregations
+
+Simple aggregation - count of ratings per person, per minute:
+
+[source,sql]
+----
+ksql> SELECT FULL_NAME,COUNT(*) FROM ratings_with_customer_data WINDOW TUMBLING (SIZE 1 MINUTE) GROUP BY FULL_NAME;
+----
+
+Persist this and show the timestamp:
+
+[source,sql]
+----
+CREATE TABLE RATINGS_PER_CUSTOMER_PER_MINUTE AS SELECT FULL_NAME,COUNT(*) AS RATINGS_COUNT FROM ratings_with_customer_data WINDOW TUMBLING (SIZE 1 MINUTE) GROUP BY FULL_NAME;
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') , FULL_NAME, RATINGS_COUNT FROM RATINGS_PER_CUSTOMER_PER_MINUTE;
+----
+
+=== Slack notifications
+
+_This bit will need some config of your own, as you'll need your own Slack workspace and API key (both free). With this though, you can demo the idea of an event-driven app subscribing to a KSQL-populated stream of filtered events.
+
+:image:images/slack_ratings.png[Slack push notifications driven from Kafka and KSQL]
+
+To run, first export your API key as an environment variable:
+
+[source,bash]
+----
+export SLACK_API_TOKEN=xyxyxyxyxyxyxyxyxyxyxyx
+----
+
+then run the code:
+
+[source,bash]
+----
+python python_kafka_notify.py
+----
+
+You will need to install `slackclient` and `confluent_kafka` libraries.
