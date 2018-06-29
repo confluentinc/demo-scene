@@ -1,1 +1,1 @@
-see [mysql-debezium-ksql-elasticsearch-docker.adoc](mysql-debezium-ksql-elasticsearch-docker.adoc)
+see [postgres-debezium-ksql-elasticsearch-docker.adoc](postgres-debezium-ksql-elasticsearch-docker.adoc)
