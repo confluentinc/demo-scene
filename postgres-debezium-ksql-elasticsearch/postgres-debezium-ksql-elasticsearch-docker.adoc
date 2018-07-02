@@ -31,26 +31,38 @@ docker-compose logs -f kafka-connect-cp|grep "Kafka Connect started"
 
 === Setup CDC
 
-Create CDC connector:
-
+1. Create CDC connector:
++
 [source,bash]
 ----
 docker-compose exec connect-debezium bash -c '/scripts/add-pg-connector.sh'
 ----
 
-Check status
-
+2. Check status
++
 [source,bash]
 ----
-$ curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+----
+
+** should be:
++
+[source,bash]
+----
 pg-source  |  RUNNING  |  RUNNING
 ----
 
-Check topic created
-
+3. Check topic created
++
 [source,bash]
 ----
-$ docker-compose exec kafka bash -c 'kafka-topics --zookeeper zookeeper:2181 --list|grep customers'
+docker-compose exec kafka bash -c 'kafka-topics --zookeeper zookeeper:2181 --list|grep customers'
+----
+
+** should get:
++
+[source,bash]
+----
 asgard.public.customers
 ----
 
@@ -105,7 +117,7 @@ curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.
 curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"unhappy_platinum_customers","timeFieldName":"EXTRACT_TS"}}' --compressed
 ----
 
-Set an index (any index) as default in Kibana at http://localhost:5601/app/kibana#/management/kibana/indices/
+In a browser, go to Kibana at http://localhost:5601/app/kibana#/management/kibana/indices/ and set an index (any index) as default
 
 Import dashboard `kibana_objects.json` using the **Import** button at http://localhost:5601/app/kibana#/management/kibana/objects
 
@@ -170,11 +182,15 @@ Is ratings data being produced?
 
 [source,bash]
 ----
-$ docker-compose exec kafka-connect-cp \
-                                         kafka-avro-console-consumer \
-                                          --bootstrap-server kafka:29092 \
-                                          --property schema.registry.url=http://schema-registry:8081 \
-                                          --topic ratings
+docker-compose exec kafka-connect-cp \
+                   kafka-avro-console-consumer \
+                    --bootstrap-server kafka:29092 \
+                    --property schema.registry.url=http://schema-registry:8081 \
+                    --topic ratings
+----
+
+[source,bash]
+----
 {"rating_id":{"long":13323},"user_id":{"int":19},"stars":{"int":3},"route_id":{"int":5676},"rating_time":{"long":1528279580480},"channel":{"string":"iOS"},"message":{"string":"your team here rocks!"}}
 ----
 
@@ -182,7 +198,11 @@ Is Elasticsearch running?
 
 [source,bash]
 ----
-$ curl http://localhost:9200
+curl http://localhost:9200
+----
+
+[source,bash]
+----
 {
   "name" : "0-JgLQj",
   "cluster_name" : "elasticsearch_Robin",
@@ -202,7 +222,6 @@ $ curl http://localhost:9200
 
 * Load Kibana dashboard: http://localhost:5601/app/kibana#/dashboard/02028f30-424c-11e8-af19-1188a9332246
 * Create iTerm windows, using the `screencapture` profile
-* `screen -x CP_demo`
 * Load this instructions doc into Chrome
 * Close all other apps
 
@@ -274,11 +293,11 @@ Show contents:
 [source,bash]
 ----
 $ docker-compose exec -T kafka-connect-cp kafka-avro-console-consumer \
-                                         --bootstrap-server kafka:29092 \
-                                         --property schema.registry.url=http://schema-registry:8081 \
-                                         --topic asgard.public.customers \
-                                         --from-beginning \
-                                         | jq '.'
+                     --bootstrap-server kafka:29092 \
+                     --property schema.registry.url=http://schema-registry:8081 \
+                     --topic asgard.public.customers \
+                     --from-beginning \
+                     | jq '.'
 {
   "id": 1,
   "first_name": {
@@ -410,12 +429,15 @@ Observe in the continuous KSQL query that the customer name has now changed.
 
 === Create stream of unhappy VIPs
 
+[source,sql]
+----
 CREATE STREAM UNHAPPY_PLATINUM_CUSTOMERS  \
        WITH (VALUE_FORMAT='JSON',PARTITIONS=1) AS \
 SELECT CLUB_STATUS, EMAIL, STARS, MESSAGE \
 FROM   ratings_with_customer_data \
 WHERE  STARS < 3 \
   AND  CLUB_STATUS = 'platinum';
+----
 
 == View in Elasticsearch and Kibana
 
@@ -447,7 +469,7 @@ SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') , FULL_NAME, RATINGS_CO
 
 === Slack notifications
 
-_This bit will need some config of your own, as you'll need your own Slack workspace and API key (both free). With this though, you can demo the idea of an event-driven app subscribing to a KSQL-populated stream of filtered events.
+_This bit will need some config of your own, as you'll need your own Slack workspace and API key (both free). With this though, you can demo the idea of an event-driven app subscribing to a KSQL-populated stream of filtered events._
 
 :image:images/slack_ratings.png[Slack push notifications driven from Kafka and KSQL]
 
