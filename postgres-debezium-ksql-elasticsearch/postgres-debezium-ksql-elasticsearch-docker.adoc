@@ -1,6 +1,6 @@
 = Streaming ETL demo - Enriching event stream data with CDC data from Postgres, stream into Elasticsearch
 Robin Moffatt <robin@confluent.io>
-v1.00, 26 Jun 2018
+v1.01, 02 Jul 2018
 
 This is designed to be run as a step-by-step demo. The `ksql-statements.sql` should match those run in this doc end-to-end and in theory you can just run the file, but I have not tested it. PRs welcome for a one-click script that just demonstrates the end-to-end running demo :)
 
@@ -35,7 +35,7 @@ docker-compose logs -f kafka-connect-cp|grep "Kafka Connect started"
 +
 [source,bash]
 ----
-docker-compose exec connect-debezium bash -c '/scripts/add-pg-connector.sh'
+docker-compose exec connect-debezium bash -c '/scripts/create-pg-source.sh'
 ----
 
 2. Check status
@@ -66,6 +66,15 @@ docker-compose exec kafka bash -c 'kafka-topics --zookeeper zookeeper:2181 --lis
 asgard.public.customers
 ----
 
+=== Postgres as a sink
+
+Load the connector
+
+[source,bash]
+----
+docker-compose exec kafka-connect-cp bash -c '/scripts/create-pg-sink.sh'
+----
+
 === Setup Elasticsearch
 
 Set up Elasticsearch dynamic mapping template:
@@ -81,7 +90,7 @@ Set up Elasticsearch Kafka Connect connector:
 
 [source,bash]
 ----
-docker-compose exec kafka-connect-cp bash -c '/scripts/add-es-connector.sh'
+docker-compose exec kafka-connect-cp bash -c '/scripts/create-es-sink.sh'
 ----
 
 Create dummy document in index:
@@ -278,7 +287,7 @@ Postgres> select * from CUSTOMERS;
 8 rows in set (0.00 sec)
 ----
 
-=== Check status of Debezium connectors
+=== OPTIONAL: Check status of Debezium connectors
 
 [source,bash]
 ----
@@ -357,6 +366,17 @@ SELECT ID, FIRST_NAME, LAST_NAME FROM CUSTOMERS_SRC;
 CREATE STREAM CUSTOMERS_SRC_REKEY WITH (PARTITIONS=1) AS SELECT * FROM CUSTOMERS_SRC PARTITION BY ID;
 -- Wait for a moment here; if you run the CTAS _immediately_ after the CSAS it may fail
 -- with error `Could not fetch the AVRO schema from schema registry. Subject not found.; error code: 40401`
+----
+
+Show the streams application is running and processing data:
+
+[source,sql]
+----
+DESCRIBE EXTENDED CUSTOMERS_SRC_REKEY;
+----
+
+[source,sql]
+----
 CREATE TABLE CUSTOMERS WITH (KAFKA_TOPIC='CUSTOMERS_SRC_REKEY', VALUE_FORMAT ='AVRO', KEY='ID');
 SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, MESSAGESOURCE FROM CUSTOMERS;
 ----
@@ -377,7 +397,7 @@ ksql> SELECT C.ROWKEY, C.ID FROM CUSTOMERS C LIMIT 3;
 ----
 
 
-=== Join live stream of ratings to customer data
+=== OPTIONAL: Show join live stream of ratings to customer data
 
 [source,sql]
 ----
@@ -393,7 +413,8 @@ ksql> SELECT R.RATING_ID, R.CHANNEL, R.MESSAGE, C.ID, CONCAT(CONCAT(C.FIRST_NAME
 259 | iOS-test | your team here rocks! | Bob Argabrite
 ----
 
-Persist this stream of data
+=== Persist results of the join
+
 
 [source,sql]
 ----
@@ -409,7 +430,7 @@ WHERE C.FIRST_NAME IS NOT NULL ;
 
 The `WITH (PARTITIONS=1)` is only necessary if the Elasticsearch connector has already been defined, as it will create the topic before KSQL does, and using a single partition (not 4, as KSQL wants to by default).
 
-=== Examine changing reference data
+=== OPTIONAL: Examine changing reference data
 
 CUSTOMERS is a KSQL _table_, which means that we have the latest value for a given key.
 
@@ -448,6 +469,70 @@ image:images/es01.png[Kibana]
 #EOF
 
 == Optional
+
+=== Postgres as a sink
+
+From the Postgres command line (`docker-compose exec postgres bash -c 'psql --username postgres'`), see that the table has been created:
+
+[source,sql]
+----
+postgres=# \dt
+                   List of relations
+ Schema |            Name            | Type  |  Owner
+--------+----------------------------+-------+----------
+ public | RATINGS_WITH_CUSTOMER_DATA | table | postgres
+ public | customers                  | table | postgres
+(2 rows)
+----
+
+List the columns (note `EXTRACT_TS` which has been added by Kafka Connect using Single Message Transform):
+
+[source,sql]
+----
+postgres=# \d+ "RATINGS_WITH_CUSTOMER_DATA"
+                                     Table "public.RATINGS_WITH_CUSTOMER_DATA"
+   Column    |            Type             | Collation | Nullable | Default | Storage  | Stats target | Description
+-------------+-----------------------------+-----------+----------+---------+----------+--------------+-------------
+ MESSAGE     | text                        |           |          |         | extended |              |
+ CHANNEL     | text                        |           |          |         | extended |              |
+ CLUB_STATUS | text                        |           |          |         | extended |              |
+ FULL_NAME   | text                        |           |          |         | extended |              |
+ STARS       | integer                     |           |          |         | plain    |              |
+ ID          | integer                     |           |          |         | plain    |              |
+ EMAIL       | text                        |           |          |         | extended |              |
+ RATING_ID   | bigint                      |           |          |         | plain    |              |
+ EXTRACT_TS  | timestamp without time zone |           |          |         | plain    |              |
+----
+
+Show the span of data loaded:
+
+[source,sql]
+----
+postgres=# select min("EXTRACT_TS"), max("EXTRACT_TS") from "RATINGS_WITH_CUSTOMER_DATA";
+           min           |           max
+-------------------------+-------------------------
+ 2018-07-02 15:47:14.939 | 2018-07-02 16:16:05.428
+(1 row)
+----
+
+
+Query the data for recent time period:
+
+[source,sql]
+----
+postgres=# select "EXTRACT_TS", "FULL_NAME" , "MESSAGE" from "RATINGS_WITH_CUSTOMER_DATA" where "EXTRACT_TS" > NOW() - interval '2 seconds' ORDER BY "EXTRACT_TS";
+       EXTRACT_TS        |     FULL_NAME     |                                MESSAGE
+-------------------------+-------------------+-----------------------------------------------------------------------
+ 2018-07-02 16:14:13.247 | Ruthie Brockherst | more peanuts please
+ 2018-07-02 16:14:13.424 | Clair Vardy       | more peanuts please
+ 2018-07-02 16:14:13.687 | Clair Vardy       | your team here rocks!
+ 2018-07-02 16:14:13.837 | Brena Tollerton   | Surprisingly good, maybe you are getting your mojo back at long last!
+ 2018-07-02 16:14:14.299 | Clair Vardy       | (expletive deleted)
+ 2018-07-02 16:14:14.665 | Isabelita Talboy  | airport refurb looks great, will fly outta here more!
+ 2018-07-02 16:14:14.822 | Sheryl Hackwell   | more peanuts please
+ 2018-07-02 16:14:14.87  | Brianna Paradise  | Surprisingly good, maybe you are getting your mojo back at long last!
+(8 rows)
+----
 
 
 === Aggregations
