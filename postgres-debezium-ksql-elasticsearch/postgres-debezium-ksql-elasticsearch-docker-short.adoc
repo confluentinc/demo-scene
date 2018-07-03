@@ -1,8 +1,10 @@
 = Streaming ETL demo - Enriching event stream data with CDC data from Postgres, stream into Elasticsearch - SHORT DEMO
 Robin Moffatt <robin@confluent.io>
-v1.01, 02 Jul 2018
+v1.02, 03 Jul 2018
 
 This is designed to be run as a step-by-step demo. The `ksql-statements.sql` should match those run in this doc end-to-end and in theory you can just run the file, but I have not tested it. PRs welcome for a one-click script that just demonstrates the end-to-end running demo :)
+
+c.10 minutes
 
 == Pre-reqs
 
