@@ -1,2 +1,11 @@
 # demo-scene
-Internal repo for collating demo scripts. This is stuff that is not nicely bundled for public consumption (and should go on our public examples repo) but for internal things we use for demos &amp; talks etc which may need a bit of setting up to use.
+
+Scripts and samples to support Confluent Platform talks. May be rough around the edges. For automated tutorials and QA'd code, see https://github.com/confluentinc/quickstart-demos/
+
+## Contents
+
+[Live-Coding KSQL scripts](live-coding-ksq)
+[MySQL / Debezium CDC / KSQL / Elasticsearch](mysql-debezium-ksql-elasticsearch)
+[CDC demo with MySQL](no-more-silos)
+[Oracle CDC / KSQL / Elasticsearch](oracle-ksql-elasticsearch)
+[Postgres / Debezium CDC / KSQL / Elasticsearch](postgres-debezium-ksql-elasticsearch)
