@@ -3,14 +3,16 @@
 :source-highlighter: pygments
 :doctype: book
 :sectnums:
-Robin Moffatt <@rmoff>
-v0.10, 22 Jun 2018
+Robin Moffatt <robin@confluent.io>
+v0.11, 05 Jul 2018
 
 :toc:
 
 == Overview
 
 Streaming data from Oracle in real time, into Kafka, enriching it with KSQL, streaming it to Elasticsearch
+
+*Slides: https://speakerdeck.com/rmoff/oracle-developer-meetup-streaming-etl-in-practice-with-oracle-apache-kafka-and-ksql[Streaming ETL in Practice with Oracle, Apache Kafka, and KSQL]*
 
 image::overview01.png[]
 
