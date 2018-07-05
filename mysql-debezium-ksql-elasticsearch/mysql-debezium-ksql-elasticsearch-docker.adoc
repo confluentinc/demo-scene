@@ -14,7 +14,7 @@ Local:
 
 == Pre-Flight Setup
 
-Start the environment:
+Start the environment
 
 [source,bash]
 ----
@@ -22,21 +22,12 @@ cd docker-compose
 docker-compose up -d
 ----
 
-Make sure Kafka Connect has started (wait until this command returns output):
-
 [source,bash]
 ----
-docker-compose logs -f kafka-connect-cp|grep "Kafka Connect started"
+./scripts/setup.sh
 ----
 
-=== Setup CDC
-
-Create CDC connectors (one raw, one flattened):
-
-[source,bash]
-----
-/Users/Robin/git/demo-scene/mysql-debezium-ksql-elasticsearch/add-debezium-connector.sh
-----
+=== Checks
 
 Check status
 
@@ -56,65 +47,16 @@ asgard.demo.CUSTOMERS
 asgard.demo.CUSTOMERS-raw
 ----
 
-=== Setup Elasticsearch
+=== Setup Kibana
 
-Wait for Elasticsearch to start:
+In a browser, go to Kibana at http://localhost:5601/app/kibana#/management/kibana/indices/ and set an index (any index) as default
 
-[source,bash]
-----
-docker-compose logs -f elasticsearch|grep started
-----
+Import dashboard `kibana_objects.json` using the **Import** button at http://localhost:5601/app/kibana#/management/kibana/objects
 
-Set up Elasticsearch dynamic mapping template:
-
-[source,bash]
-----
-/Users/Robin/git/demo-scene/mysql-debezium-ksql-elasticsearch/create-dynamic-mapping.sh
-----
-
-Set up Elasticsearch Kafka Connect connector:
-
-[source,bash]
-----
-/Users/Robin/git/demo-scene/mysql-debezium-ksql-elasticsearch/add-es-connector.sh
-----
-
-Create dummy document in index:
-
-[source,bash]
-----
-curl -XPOST "http://localhost:9200/ratings-with-customer-data/type.name=kafkaconnect" -H 'Content-Type: application/json' -d'{
-          "RATING_ID": 79,
-          "CHANNEL": "iOS",
-          "STARS": 4,
-          "MESSAGE": "Surprisingly good, maybe you are getting your mojo back at long last!",
-          "ID": 1,
-          "CLUB_STATUS": "bronze",
-          "EMAIL": "rblaisdell0@rambler.ru",
-          "FIRST_NAME": "Rica",
-          "LAST_NAME": "Blaisdell",
-          "EXTRACT_TS": 1528992287749
-        }'
-curl -XPOST "http://localhost:9200/unhappy_platinum_customers/type.name=kafkaconnect" -H 'Content-Type: application/json' -d'{
-          "MESSAGE": "why is it so difficult to keep the bathrooms clean ?",
-          "STARS": 1,
-          "EXTRACT_TS": 1528992291449,
-          "CLUB_STATUS": "platinum",
-          "EMAIL": "rleheude5@reddit.com"
-        }'
-----
-
-Add Elasticsearch index to Kibana
-
-[source,bash]
-----
-curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.2.4' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"ratings-with-customer-data","timeFieldName":"EXTRACT_TS"}}' --compressed
-curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.2.4' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"unhappy_platinum_customers","timeFieldName":"EXTRACT_TS"}}' --compressed
-----
-
-Import dashboard `/Users/Robin/git/demo-scene/mysql-debezium-ksql-elasticsearch/kibana_objects.json` using the **Import** button at http://localhost:5601/app/kibana#/management/kibana/objects
+image::images/kibana_ix01.png[Kibana indexes]
 
 Load the Kibana dashboard http://localhost:5601/app/kibana#/dashboard/02028f30-424c-11e8-af19-1188a9332246
+
 
 === Run KSQL CLI and MySQL CLI
 
@@ -141,7 +83,11 @@ Is the stack up?
 
 [source,bash]
 ----
-$ docker-compose ps
+docker-compose ps
+----
+
+[source,bash]
+----
                 Name                               Command               State                          Ports
 -------------------------------------------------------------------------------------------------------------------------------------
 docker-compose_connect-debezium_1       /docker-entrypoint.sh start      Up      0.0.0.0:8083->8083/tcp, 8778/tcp, 9092/tcp, 9779/tcp
@@ -161,11 +107,22 @@ Are the connectors running?
 
 [source,bash]
 ----
-$ curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+----
+
+[source,bash]
+----
 mysql-source-demo-CUSTOMERS      |  RUNNING  |  RUNNING
 mysql-source-demo-CUSTOMERS-raw  |  RUNNING  |  RUNNING
+----
 
-$ curl -s "http://localhost:18083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:18083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+[source,bash]
+----
+curl -s "http://localhost:18083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:18083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+----
+
+[source,bash]
+----
 es_sink_ratings-with-customer-data  |  RUNNING  |  RUNNING
 ----
 
@@ -173,11 +130,15 @@ Is ratings data being produced?
 
 [source,bash]
 ----
-$ docker-compose exec kafka-connect-cp \
-                                         kafka-avro-console-consumer \
-                                          --bootstrap-server kafka:29092 \
-                                          --property schema.registry.url=http://schema-registry:8081 \
-                                          --topic ratings
+docker-compose exec kafka-connect-cp \
+                     kafka-avro-console-consumer \
+                      --bootstrap-server kafka:29092 \
+                      --property schema.registry.url=http://schema-registry:8081 \
+                      --topic ratings
+----
+
+[source,bash]
+----
 {"rating_id":{"long":13323},"user_id":{"int":19},"stars":{"int":3},"route_id":{"int":5676},"rating_time":{"long":1528279580480},"channel":{"string":"iOS"},"message":{"string":"your team here rocks!"}}
 ----
 
@@ -185,7 +146,11 @@ Is Elasticsearch running?
 
 [source,bash]
 ----
-$ curl http://localhost:9200
+curl http://localhost:9200
+----
+
+[source,bash]
+----
 {
   "name" : "0-JgLQj",
   "cluster_name" : "elasticsearch_Robin",
@@ -204,8 +169,7 @@ $ curl http://localhost:9200
 ----
 
 * Load Kibana dashboard: http://localhost:5601/app/kibana#/dashboard/02028f30-424c-11e8-af19-1188a9332246
-* Create iTerm windows, using the `screencapture` profile
-* `screen -x CP_demo`
+* Create iTerm window, using the `screencapture` profile
 * Load this instructions doc into Chrome
 * Close all other apps
 
@@ -447,26 +411,19 @@ Observe in the continuous KSQL query that the customer name has now changed.
 
 === Create stream of unhappy VIPs
 
+[source,sql]
+----
 CREATE STREAM UNHAPPY_PLATINUM_CUSTOMERS \
        WITH (VALUE_FORMAT='JSON') AS \
 SELECT CLUB_STATUS, EMAIL, STARS, MESSAGE \
 FROM   ratings_with_customer_data \
 WHERE  STARS < 3 \
   AND  CLUB_STATUS = 'platinum';
-  
+----
+
 == View in Elasticsearch and Kibana
 
-Tested on Elasticsearch 6.2.3.
-
-=== Set up Kibana
-
-* From http://localhost:5601/app/kibana#/management/kibana/index create a `ratings-with-customer-data` Index Pattern
-
-* From http://localhost:5601/app/kibana#/management/kibana/objects import `kibana_objects.json`
-
-For some reason the mapping doesn't get picked up correctly. `curl -Xget "http://localhost:9200/ratings-with-customer-data/_mapping/"` should show each text field as a `keyword`. If it doesn't, and the connector is running, simply run `curl -Xdelete "http://localhost:9200/ratings-with-customer-data"` to truncate what's there and assuming the dynamic mapping has been created it will then get picked up when the index is then re-created.
-
-=== View and explore data
+Tested on Elasticsearch 6.3.0
 
 image:images/es01.png[Kibana]
 

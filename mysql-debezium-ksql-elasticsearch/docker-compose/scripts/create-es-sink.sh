@@ -1,6 +1,6 @@
 #!/bin/sh
 
-curl -X "POST" "http://localhost:18083/connectors/" \
+curl -X "POST" "http://kafka-connect-cp:18083/connectors/" \
      -H "Content-Type: application/json" \
      -d '{
   "name": "es_sink_unhappy_platinum_customers",
@@ -14,6 +14,7 @@ curl -X "POST" "http://localhost:18083/connectors/" \
     "schema.ignore": "true",
     "type.name": "type.name=kafkaconnect",
     "topic.index.map": "UNHAPPY_PLATINUM_CUSTOMERS:unhappy_platinum_customers",
+    "errors.deadletterqueue.topic.name": "connect-dlq",
     "connection.url": "http://elasticsearch:9200",
     "transforms": "ExtractTimestamp",
     "transforms.ExtractTimestamp.type": "org.apache.kafka.connect.transforms.InsertField$Value",
@@ -21,7 +22,7 @@ curl -X "POST" "http://localhost:18083/connectors/" \
   }
 }'
 
-curl -X "POST" "http://localhost:18083/connectors/" \
+curl -X "POST" "http://kafka-connect-cp:18083/connectors/" \
      -H "Content-Type: application/json" \
      -d '{
   "name": "es_sink_ratings-with-customer-data",
@@ -29,6 +30,7 @@ curl -X "POST" "http://localhost:18083/connectors/" \
     "topics": "ratings-with-customer-data",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "errors.deadletterqueue.topic.name": "connect-dlq",
     "key.ignore": "true",
     "schema.ignore": "true",
     "type.name": "type.name=kafkaconnect",

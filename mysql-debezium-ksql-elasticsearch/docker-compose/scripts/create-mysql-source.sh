@@ -1,7 +1,7 @@
 #!/bin/sh
 
 curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -H  "Content-Type:application/json" http://connect-debezium:8083/connectors/ \
     -d '{
       "name": "mysql-source-demo-customers",
       "config": {
@@ -26,7 +26,7 @@ curl -i -X POST -H "Accept:application/json" \
        }
     }'
 curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -H  "Content-Type:application/json" http://connect-debezium:8083/connectors/ \
     -d '{
       "name": "mysql-source-demo-customers-raw",
       "config": {
