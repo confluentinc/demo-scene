@@ -17,23 +17,23 @@ docker-compose exec kafka-connect-cp bash -c '/scripts/create-es-sink.sh'
 
 
 curl -XPOST "http://localhost:9200/ratings-with-customer-data/type.name=kafkaconnect" -H 'Content-Type: application/json' -d'{
-          "RATING_ID": 79,
-          "CHANNEL": "iOS",
+          "RATING_ID": 15486,
+          "MESSAGE": "thank you for the most friendly, helpful experience today at your new lounge",
           "STARS": 4,
-          "MESSAGE": "Surprisingly good, maybe you are getting your mojo back at long last!",
-          "ID": 1,
-          "CLUB_STATUS": "bronze",
-          "EMAIL": "rblaisdell0@rambler.ru",
-          "FIRST_NAME": "Rica",
-          "LAST_NAME": "Blaisdell",
-          "EXTRACT_TS": 1528992287749
+          "CHANNEL": "iOS",
+          "ID": 8,
+          "FULL_NAME": "Patti Rosten",
+          "CLUB_STATUS": "silver",
+          "EMAIL": "prosten7@ihg.com",
+          "EXTRACT_TS": 1532512096460
         }'
 curl -XPOST "http://localhost:9200/unhappy_platinum_customers/type.name=kafkaconnect" -H 'Content-Type: application/json' -d'{
-          "MESSAGE": "why is it so difficult to keep the bathrooms clean ?",
+          "FULL_NAME": "Laney Toopin",
+          "MESSAGE": "more peanuts please",
           "STARS": 1,
-          "EXTRACT_TS": 1528992291449,
+          "EXTRACT_TS": 1532507457763,
           "CLUB_STATUS": "platinum",
-          "EMAIL": "rleheude5@reddit.com"
+          "EMAIL": "ltoopinc@icio.us"
         }'
 curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"ratings-with-customer-data","timeFieldName":"EXTRACT_TS"}}' --compressed
 curl 'http://localhost:5601/api/saved_objects/index-pattern' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"unhappy_platinum_customers","timeFieldName":"EXTRACT_TS"}}' --compressed

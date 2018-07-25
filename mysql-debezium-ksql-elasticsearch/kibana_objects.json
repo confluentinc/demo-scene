@@ -6,39 +6,12 @@
       "title": "Ratings Data",
       "hits": 0,
       "description": "",
-      "panelsJSON": "[{\"panelIndex\":\"1\",\"gridData\":{\"x\":0,\"y\":2,\"w\":6,\"h\":3,\"i\":\"1\"},\"id\":\"0c118530-31d5-11e8-a6be-09f3e3eb4b97\",\"type\":\"visualization\",\"version\":\"6.2.3\"},{\"panelIndex\":\"2\",\"gridData\":{\"x\":0,\"y\":7,\"w\":12,\"h\":2,\"i\":\"2\"},\"id\":\"39803a20-31d5-11e8-a6be-09f3e3eb4b97\",\"type\":\"visualization\",\"version\":\"6.2.3\"},{\"panelIndex\":\"3\",\"gridData\":{\"x\":0,\"y\":5,\"w\":12,\"h\":2,\"i\":\"3\"},\"id\":\"11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97\",\"type\":\"search\",\"version\":\"6.2.3\",\"columns\":[\"CHANNEL\",\"MESSAGE\"]},{\"panelIndex\":\"4\",\"gridData\":{\"x\":0,\"y\":0,\"w\":2,\"h\":2,\"i\":\"4\"},\"id\":\"5ef922e0-6ff0-11e8-8fa0-279444e59a8f\",\"type\":\"visualization\",\"version\":\"6.2.4\"},{\"panelIndex\":\"5\",\"gridData\":{\"x\":2,\"y\":0,\"w\":10,\"h\":2,\"i\":\"5\"},\"id\":\"2f3d2290-6ff0-11e8-8fa0-279444e59a8f\",\"type\":\"search\",\"version\":\"6.2.4\"},{\"panelIndex\":\"6\",\"gridData\":{\"x\":6,\"y\":2,\"w\":6,\"h\":3,\"i\":\"6\"},\"version\":\"6.2.4\",\"type\":\"visualization\",\"id\":\"c6344a70-6ff0-11e8-8fa0-279444e59a8f\"}]",
+      "panelsJSON": "[{\"gridData\":{\"h\":15,\"i\":\"1\",\"w\":24,\"x\":0,\"y\":10},\"id\":\"0c118530-31d5-11e8-a6be-09f3e3eb4b97\",\"panelIndex\":\"1\",\"type\":\"visualization\",\"version\":\"6.3.0\"},{\"gridData\":{\"h\":10,\"i\":\"2\",\"w\":48,\"x\":0,\"y\":35},\"id\":\"39803a20-31d5-11e8-a6be-09f3e3eb4b97\",\"panelIndex\":\"2\",\"type\":\"visualization\",\"version\":\"6.3.0\"},{\"gridData\":{\"h\":10,\"i\":\"4\",\"w\":8,\"x\":0,\"y\":0},\"id\":\"5ef922e0-6ff0-11e8-8fa0-279444e59a8f\",\"panelIndex\":\"4\",\"type\":\"visualization\",\"version\":\"6.3.0\"},{\"gridData\":{\"h\":10,\"i\":\"5\",\"w\":40,\"x\":8,\"y\":0},\"id\":\"2f3d2290-6ff0-11e8-8fa0-279444e59a8f\",\"panelIndex\":\"5\",\"type\":\"search\",\"version\":\"6.3.0\"},{\"gridData\":{\"h\":15,\"i\":\"6\",\"w\":24,\"x\":24,\"y\":10},\"id\":\"c6344a70-6ff0-11e8-8fa0-279444e59a8f\",\"panelIndex\":\"6\",\"type\":\"visualization\",\"version\":\"6.3.0\"},{\"embeddableConfig\":{},\"gridData\":{\"h\":10,\"i\":\"7\",\"w\":48,\"x\":0,\"y\":25},\"id\":\"11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97\",\"panelIndex\":\"7\",\"type\":\"search\",\"version\":\"6.3.0\",\"sort\":[\"EXTRACT_TS\",\"desc\"]}]",
       "optionsJSON": "{\"darkTheme\":false,\"hidePanelTitles\":false,\"useMargins\":true}",
       "version": 1,
       "timeRestore": false,
       "kibanaSavedObjectMeta": {
         "searchSourceJSON": "{\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[],\"highlightAll\":true,\"version\":true}"
-      }
-    },
-    "_meta": {
-      "savedObjectVersion": 2
-    }
-  },
-  {
-    "_id": "11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97",
-    "_type": "search",
-    "_source": {
-      "title": "Ratings detail",
-      "description": "",
-      "hits": 0,
-      "columns": [
-        "FIRST_NAME",
-        "LAST_NAME",
-        "CHANNEL",
-        "MESSAGE",
-        "EMAIL"
-      ],
-      "sort": [
-        "_score",
-        "desc"
-      ],
-      "version": 1,
-      "kibanaSavedObjectMeta": {
-        "searchSourceJSON": "{\"index\":\"d291fd90-6fef-11e8-8fa0-279444e59a8f\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"
       }
     },
     "_meta": {
@@ -63,7 +36,35 @@
       ],
       "version": 1,
       "kibanaSavedObjectMeta": {
-        "searchSourceJSON": "{\"index\":\"d2f83970-6fef-11e8-8fa0-279444e59a8f\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"
+        "searchSourceJSON": "{\"index\":\"29fcda80-8ff0-11e8-8d4d-11fc9088503c\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
+    "_id": "11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97",
+    "_type": "search",
+    "_source": {
+      "title": "Ratings detail",
+      "description": "",
+      "hits": 0,
+      "columns": [
+        "FULL_NAME",
+        "EMAIL",
+        "CLUB_STATUS",
+        "STARS",
+        "MESSAGE",
+        "CHANNEL"
+      ],
+      "sort": [
+        "_score",
+        "desc"
+      ],
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"index\":\"29699b30-8ff0-11e8-8d4d-11fc9088503c\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"
       }
     },
     "_meta": {
@@ -80,41 +81,7 @@
       "description": "",
       "version": 1,
       "kibanaSavedObjectMeta": {
-        "searchSourceJSON": "{\"index\":\"d291fd90-6fef-11e8-8fa0-279444e59a8f\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"
-      }
-    },
-    "_meta": {
-      "savedObjectVersion": 2
-    }
-  },
-  {
-    "_id": "39803a20-31d5-11e8-a6be-09f3e3eb4b97",
-    "_type": "visualization",
-    "_source": {
-      "title": "Ratings per Person",
-      "visState": "{\n  \"title\": \"Ratings per Person\",\n  \"type\": \"metric\",\n  \"params\": {\n    \"addTooltip\": true,\n    \"addLegend\": false,\n    \"type\": \"metric\",\n    \"metric\": {\n      \"percentageMode\": false,\n      \"useRanges\": false,\n      \"colorSchema\": \"Green to Red\",\n      \"metricColorMode\": \"None\",\n      \"colorsRange\": [\n        {\n          \"from\": 0,\n          \"to\": 10000\n        }\n      ],\n      \"labels\": {\n        \"show\": true\n      },\n      \"invertColors\": false,\n      \"style\": {\n        \"bgFill\": \"#000\",\n        \"bgColor\": false,\n        \"labelColor\": false,\n        \"subText\": \"\",\n        \"fontSize\": 60\n      }\n    }\n  },\n  \"aggs\": [\n    {\n      \"id\": \"1\",\n      \"enabled\": true,\n      \"type\": \"count\",\n      \"schema\": \"metric\",\n      \"params\": {}\n    },\n    {\n      \"id\": \"2\",\n      \"enabled\": true,\n      \"type\": \"terms\",\n      \"schema\": \"group\",\n      \"params\": {\n        \"field\": \"LAST_NAME\",\n        \"otherBucket\": false,\n        \"otherBucketLabel\": \"Other\",\n        \"missingBucket\": false,\n        \"missingBucketLabel\": \"Missing\",\n        \"size\": 5,\n        \"order\": \"desc\",\n        \"orderBy\": \"1\"\n      }\n    }\n  ]\n}",
-      "uiStateJSON": "{}",
-      "description": "",
-      "version": 1,
-      "kibanaSavedObjectMeta": {
-        "searchSourceJSON": "{\n  \"index\": \"d291fd90-6fef-11e8-8fa0-279444e59a8f\",\n  \"filter\": [],\n  \"query\": {\n    \"query\": \"\",\n    \"language\": \"lucene\"\n  }\n}"
-      }
-    },
-    "_meta": {
-      "savedObjectVersion": 2
-    }
-  },
-  {
-    "_id": "5ef922e0-6ff0-11e8-8fa0-279444e59a8f",
-    "_type": "visualization",
-    "_source": {
-      "title": "Unhappy Platinum Customers",
-      "visState": "{\"title\":\"Unhappy Platinum Customers\",\"type\":\"metric\",\"params\":{\"addTooltip\":true,\"addLegend\":false,\"type\":\"metric\",\"metric\":{\"percentageMode\":false,\"useRanges\":false,\"colorSchema\":\"Green to Red\",\"metricColorMode\":\"None\",\"colorsRange\":[{\"from\":0,\"to\":10000}],\"labels\":{\"show\":false},\"invertColors\":false,\"style\":{\"bgFill\":\"#000\",\"bgColor\":false,\"labelColor\":false,\"subText\":\"\",\"fontSize\":60}}},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}}]}",
-      "uiStateJSON": "{\"spy\":null}",
-      "description": "",
-      "version": 1,
-      "kibanaSavedObjectMeta": {
-        "searchSourceJSON": "{\"index\":\"d2f83970-6fef-11e8-8fa0-279444e59a8f\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"
+        "searchSourceJSON": "{\"index\":\"29699b30-8ff0-11e8-8d4d-11fc9088503c\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"
       }
     },
     "_meta": {
@@ -131,7 +98,41 @@
       "description": "",
       "version": 1,
       "kibanaSavedObjectMeta": {
-        "searchSourceJSON": "{\"index\":\"d291fd90-6fef-11e8-8fa0-279444e59a8f\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"
+        "searchSourceJSON": "{\"index\":\"29699b30-8ff0-11e8-8d4d-11fc9088503c\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
+    "_id": "5ef922e0-6ff0-11e8-8fa0-279444e59a8f",
+    "_type": "visualization",
+    "_source": {
+      "title": "Unhappy Platinum Customers",
+      "visState": "{\"title\":\"Unhappy Platinum Customers\",\"type\":\"metric\",\"params\":{\"addTooltip\":true,\"addLegend\":false,\"type\":\"metric\",\"metric\":{\"percentageMode\":false,\"useRanges\":false,\"colorSchema\":\"Green to Red\",\"metricColorMode\":\"None\",\"colorsRange\":[{\"from\":0,\"to\":10000}],\"labels\":{\"show\":false},\"invertColors\":false,\"style\":{\"bgFill\":\"#000\",\"bgColor\":false,\"labelColor\":false,\"subText\":\"\",\"fontSize\":60}}},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}}]}",
+      "uiStateJSON": "{\"spy\":null}",
+      "description": "",
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"index\":\"29fcda80-8ff0-11e8-8d4d-11fc9088503c\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
+    "_id": "39803a20-31d5-11e8-a6be-09f3e3eb4b97",
+    "_type": "visualization",
+    "_source": {
+      "title": "Ratings per Person",
+      "visState": "{\n  \"title\": \"Ratings per Person\",\n  \"type\": \"metric\",\n  \"params\": {\n    \"addTooltip\": true,\n    \"addLegend\": false,\n    \"type\": \"metric\",\n    \"metric\": {\n      \"percentageMode\": false,\n      \"useRanges\": false,\n      \"colorSchema\": \"Green to Red\",\n      \"metricColorMode\": \"None\",\n      \"colorsRange\": [\n        {\n          \"from\": 0,\n          \"to\": 10000\n        }\n      ],\n      \"labels\": {\n        \"show\": true\n      },\n      \"invertColors\": false,\n      \"style\": {\n        \"bgFill\": \"#000\",\n        \"bgColor\": false,\n        \"labelColor\": false,\n        \"subText\": \"\",\n        \"fontSize\": 60\n      }\n    }\n  },\n  \"aggs\": [\n    {\n      \"id\": \"1\",\n      \"enabled\": true,\n      \"type\": \"count\",\n      \"schema\": \"metric\",\n      \"params\": {}\n    },\n    {\n      \"id\": \"2\",\n      \"enabled\": true,\n      \"type\": \"terms\",\n      \"schema\": \"group\",\n      \"params\": {\n        \"field\": \"FULL_NAME\",\n        \"otherBucket\": false,\n        \"otherBucketLabel\": \"Other\",\n        \"missingBucket\": false,\n        \"missingBucketLabel\": \"Missing\",\n        \"size\": 5,\n        \"order\": \"desc\",\n        \"orderBy\": \"1\"\n      }\n    }\n  ]\n}",
+      "uiStateJSON": "{}",
+      "description": "",
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\n  \"index\": \"29699b30-8ff0-11e8-8d4d-11fc9088503c\",\n  \"filter\": [],\n  \"query\": {\n    \"query\": \"\",\n    \"language\": \"lucene\"\n  }\n}"
       }
     },
     "_meta": {

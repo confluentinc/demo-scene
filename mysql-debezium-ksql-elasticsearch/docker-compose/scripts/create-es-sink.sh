@@ -26,7 +26,8 @@ curl -X "POST" "http://kafka-connect-cp:18083/connectors/" \
      -d '{
   "name": "es_sink_ratings-with-customer-data",
   "config": {
-    "topics": "ratings-with-customer-data",
+    "topics": "RATINGS_WITH_CUSTOMER_DATA",
+    "topic.index.map": "RATINGS_WITH_CUSTOMER_DATA:ratings-with-customer-data",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
     "key.ignore": "true",
