@@ -1,10 +1,12 @@
 = Streaming ETL demo - Enriching event stream data with CDC data from MySQL, stream into Elasticsearch
 Robin Moffatt <robin@confluent.io>
-v1.11, 05 Jul 2018
+v1.15, 25 Jul 2018
 
 image:images/ksql-debezium-es.png[Kafka Connect / KSQL / Elasticsearch]
 
 This is designed to be run as a step-by-step demo. The `ksql-statements.sql` should match those run in this doc end-to-end and in theory you can just run the file, but I have not tested it. PRs welcome for a one-click script that just demonstrates the end-to-end running demo :)
+
+The slides that accompany this demo can be found here: https://speakerdeck.com/rmoff/apache-kafka-and-ksql-in-action-lets-build-a-streaming-data-pipeline
 
 == Pre-reqs
 
@@ -64,94 +66,6 @@ docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
 
 == Pre-flight checklist
 
-Is the stack up?
-
-[source,bash]
-----
-docker-compose ps
-----
-
-[source,bash]
-----
-                Name                               Command               State                          Ports
--------------------------------------------------------------------------------------------------------------------------------------
-docker-compose_connect-debezium_1       /docker-entrypoint.sh start      Up      0.0.0.0:8083->8083/tcp, 8778/tcp, 9092/tcp, 9779/tcp
-docker-compose_kafka-connect-cp_1       /etc/confluent/docker/run        Up      0.0.0.0:18083->18083/tcp, 8083/tcp, 9092/tcp
-docker-compose_kafka_1                  /etc/confluent/docker/run        Up      0.0.0.0:29092->29092/tcp, 0.0.0.0:9092->9092/tcp
-docker-compose_ksql-datagen-ratings_1   bash -c echo Waiting for K ...   Up
-docker-compose_ksql-server_1            bash -c echo Waiting for K ...   Up      0.0.0.0:8088->8088/tcp
-docker-compose_mysql_1                  docker-entrypoint.sh mysqld      Up      0.0.0.0:3306->3306/tcp
-docker-compose_schema-registry_1        /etc/confluent/docker/run        Up      0.0.0.0:8081->8081/tcp
-docker-compose_zookeeper_1              /etc/confluent/docker/run        Up      0.0.0.0:2181->2181/tcp, 2888/tcp, 3888/tcp
-elasticsearch                           /usr/local/bin/docker-entr ...   Up      0.0.0.0:9200->9200/tcp, 0.0.0.0:9300->9300/tcp
-kibana                                  /bin/bash /usr/local/bin/k ...   Up      0.0.0.0:5601->5601/tcp
-----
-
-Are the connectors running?
-
-[source,bash]
-----
-curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
-----
-
-[source,bash]
-----
-mysql-source-demo-CUSTOMERS      |  RUNNING  |  RUNNING
-mysql-source-demo-CUSTOMERS-raw  |  RUNNING  |  RUNNING
-----
-
-[source,bash]
-----
-curl -s "http://localhost:18083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:18083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
-----
-
-[source,bash]
-----
-es_sink_ratings-with-customer-data  |  RUNNING  |  RUNNING
-----
-
-Is ratings data being produced?
-
-[source,bash]
-----
-docker-compose exec kafka-connect-cp \
-                     kafka-avro-console-consumer \
-                      --bootstrap-server kafka:29092 \
-                      --property schema.registry.url=http://schema-registry:8081 \
-                      --topic ratings
-----
-
-[source,bash]
-----
-{"rating_id":{"long":13323},"user_id":{"int":19},"stars":{"int":3},"route_id":{"int":5676},"rating_time":{"long":1528279580480},"channel":{"string":"iOS"},"message":{"string":"your team here rocks!"}}
-----
-
-Is Elasticsearch running?
-
-[source,bash]
-----
-curl http://localhost:9200 | jq '.version'
-----
-
-[source,bash]
-----
-{
-  "name" : "0-JgLQj",
-  "cluster_name" : "elasticsearch_Robin",
-  "cluster_uuid" : "XKkAsum3QL-ECyZlP8z-rA",
-  "version" : {
-    "number" : "6.2.3",
-    "build_hash" : "c59ff00",
-    "build_date" : "2018-03-13T10:06:29.741383Z",
-    "build_snapshot" : false,
-    "lucene_version" : "7.2.1",
-    "minimum_wire_compatibility_version" : "5.6.0",
-    "minimum_index_compatibility_version" : "5.0.0"
-  },
-  "tagline" : "You Know, for Search"
-}
-----
-
 * Load Kibana dashboard: http://localhost:5601/app/kibana#/dashboard/02028f30-424c-11e8-af19-1188a9332246
 * Create iTerm window, using the `screencapture` profile
 * Load this instructions doc into Chrome
@@ -161,27 +75,7 @@ curl http://localhost:9200 | jq '.version'
 
 image:images/ksql-debezium-es.png[Kafka Connect / KSQL / Elasticsearch]
 
-=== Inspect topics
-
-[source,sql]
-----
-SHOW TOPICS;
-----
-
-=== Inspect ratings & define stream
-
-[source,sql]
-----
-PRINT 'ratings';
-CREATE STREAM RATINGS WITH (KAFKA_TOPIC='ratings',VALUE_FORMAT='AVRO');
-----
-
-=== Filter live stream of data
-
-[source,sql]
-----
-SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
-----
+== Part 01 - Kafka Connect
 
 === Show MySQL table + contents
 
@@ -219,18 +113,19 @@ mysql-source-demo-CUSTOMERS      |  RUNNING  |  RUNNING
 mysql-source-demo-CUSTOMERS-raw  |  RUNNING  |  RUNNING
 ----
 
-=== [Optional] Show Kafka topic has been created & populated
+=== Show Kafka topic has been created & populated
 
 Show contents:
 
 [source,bash]
 ----
-$ docker-compose exec -T kafka-connect-cp kafka-avro-console-consumer \
-                                         --bootstrap-server kafka:29092 \
-                                         --property schema.registry.url=http://schema-registry:8081 \
-                                         --topic asgard.demo.CUSTOMERS \
-                                         --from-beginning \
-                                         | jq '.'
+$ docker-compose exec -T kafka-connect-cp \
+                 kafka-avro-console-consumer \
+                  --bootstrap-server kafka:29092 \
+                  --property schema.registry.url=http://schema-registry:8081 \
+                  --topic asgard.demo.CUSTOMERS \
+                  --from-beginning \
+                  | jq '.'
 {
   "id": 1,
   "first_name": {
@@ -255,10 +150,9 @@ $ docker-compose exec -T kafka-connect-cp kafka-avro-console-consumer \
     "string": "Debezium CDC from MySQL on asgard"
   }
 }
-Processed a total of 1 messages
 ----
 
-=== [Optional] Show CDC in action with before/after record data
+=== Show CDC in action with before/after record data
 
 [source,bash]
 ----
@@ -267,17 +161,6 @@ docker-compose exec -T kafka-connect-cp \
  --bootstrap-server kafka:29092 \
  --property schema.registry.url=http://schema-registry:8081 \
  --topic asgard.demo.CUSTOMERS-raw --from-beginning  | jq  '.'
-----
-
-=== Inspect CUSTOMERS data
-[source,sql]
-----
--- Inspect raw topic data if you want
--- PRINT 'asgard.demo.CUSTOMERS' FROM BEGINNING;
-
-CREATE STREAM CUSTOMERS_SRC WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
-SET 'auto.offset.reset' = 'earliest';
-SELECT ID, FIRST_NAME, LAST_NAME, CLUB_STATUS FROM CUSTOMERS_SRC;
 ----
 
 ==== Insert a row in MySQL, observe it in Kafka
@@ -298,7 +181,7 @@ update CUSTOMERS set first_name='Bob' where id=1;
 
 Point out before/after records in `raw` stream
 
-==== [Optional] Delete a row in MySQL, observe it in Kafka
+==== Optional Delete a row in MySQL, observe it in Kafka
 
 [source,sql]
 ----
@@ -306,6 +189,63 @@ DELETE FROM CUSTOMERS WHERE ID=8;
 ----
 
 Point out before/after records in `raw` stream
+
+---
+
+Return to slides 
+
+---
+
+== Part 02 - KSQL for filtering streams
+
+=== Inspect topics
+
+[source,sql]
+----
+SHOW TOPICS;
+----
+
+=== Inspect ratings & define stream
+
+[source,sql]
+----
+PRINT 'ratings';
+CREATE STREAM RATINGS WITH (KAFKA_TOPIC='ratings',VALUE_FORMAT='AVRO');
+----
+
+=== Filter live stream of data
+
+[source,sql]
+----
+SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
+----
+
+=== Create a derived stream
+
+[source,sql]
+----
+CREATE STREAM POOR_REVIEWS AS \
+SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
+----
+
+---
+
+Return to slides 
+
+---
+
+== Part 03 - KSQL for joining streams
+
+=== Inspect CUSTOMERS data
+[source,sql]
+----
+-- Inspect raw topic data if you want
+-- PRINT 'asgard.demo.CUSTOMERS' FROM BEGINNING;
+
+CREATE STREAM CUSTOMERS_SRC WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
+SET 'auto.offset.reset' = 'earliest';
+SELECT ID, FIRST_NAME, LAST_NAME, CLUB_STATUS FROM CUSTOMERS_SRC;
+----
 
 === Re-key the customer data
 [source,sql]
@@ -381,7 +321,7 @@ Persist this stream of data
 ----
 CREATE STREAM RATINGS_WITH_CUSTOMER_DATA \
        WITH (PARTITIONS=1) AS \
-SELECT R.RATING_ID, R.MESSAGE, R.STARS, R.CHANNEL\
+SELECT R.RATING_ID, R.MESSAGE, R.STARS, R.CHANNEL,\
       C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, \
       C.CLUB_STATUS, C.EMAIL \
       FROM RATINGS R \
@@ -416,7 +356,7 @@ Observe in the continuous KSQL query that the customer name has now changed.
 ----
 CREATE STREAM UNHAPPY_PLATINUM_CUSTOMERS \
        WITH (VALUE_FORMAT='JSON', PARTITIONS=1) AS \
-SELECT CLUB_STATUS, EMAIL, STARS, MESSAGE \
+SELECT FULL_NAME, CLUB_STATUS, EMAIL, STARS, MESSAGE \
 FROM   RATINGS_WITH_CUSTOMER_DATA \
 WHERE  STARS < 3 \
   AND  CLUB_STATUS = 'platinum';
@@ -427,6 +367,12 @@ WHERE  STARS < 3 \
 Tested on Elasticsearch 6.3.0
 
 image:images/es01.png[Kibana]
+
+---
+
+Return to slides 
+
+---
 
 #EOF
 
@@ -439,7 +385,7 @@ Simple aggregation - count of ratings per person, per minute:
 
 [source,sql]
 ----
-ksql> SELECT FULL_NAME,COUNT(*) FROM ratings_with_customer_data WINDOW TUMBLING (SIZE 1 MINUTE) GROUP BY FULL_NAME;
+ksql> SELECT FULL_NAME,COUNT(*) FROM RATINGS_WITH_CUSTOMER_DATA WINDOW TUMBLING (SIZE 1 MINUTE) GROUP BY FULL_NAME;
 ----
 
 Persist this and show the timestamp:
