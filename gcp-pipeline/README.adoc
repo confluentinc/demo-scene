@@ -1,0 +1,15 @@
+= GCP Pipeline demo
+Robin Moffatt <robin@confluent.io>
+v0.01, August 9, 2018
+
+== What is this? 
+
+Material showing how to work with Confluent Cloud (CCloud) and build cool pipelines into Google Cloud Platform (GCP). 
+
+== What is there? 
+
+* Details of how to run the stack: - 
+** link:HOWTO_run_it_locally.adoc[Locally, with Docker / Docker Compose, with or without CCloud]
+** link:HOWTO_run_it_on_gce.adoc[All in the Cloud - GCE + CCloud]
+* link:scenario_01_environment-data.adoc[Pipeline examples with some cool Kafka Connect and KSQL action]
+
