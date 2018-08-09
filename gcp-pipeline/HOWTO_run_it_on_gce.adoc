@@ -52,7 +52,7 @@ Take the external IP of the instance created, and set it as an environment varia
 
 [source,bash]
 ----
-export SCHEMA_REGISTRY_HOST=35.237.252.210
+export SCHEMA_REGISTRY_HOST=xx.xx.xx.xx
 ----
 
 === KSQL Server
@@ -71,7 +71,7 @@ Take the external IP of the instance created, and set it as an environment varia
 
 [source,bash]
 ----
-export KSQL_SERVER_HOST=35.231.210.79
+export KSQL_SERVER_HOST=xx.xx.xx.xx
 ----
 
 === Kafka Connect instance with REST source connector
@@ -93,7 +93,7 @@ Take the external IP of the instance created, and set it as an environment varia
 
 [source,bash]
 ----
-export CONNECT_HOST_SOURCE=35.237.247.88
+export CONNECT_HOST_SOURCE=xx.xx.xx.xx
 ----
 
 
@@ -118,7 +118,7 @@ Take the external IP of the instance created, and set it as an environment varia
 
 [source,bash]
 ----
-export CONNECT_HOST_SINK=35.231.210.79
+export CONNECT_HOST_SINK=xx.xx.xx.xx
 ----
 
 == Healthcheck 
