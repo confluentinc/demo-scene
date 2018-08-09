@@ -1,1 +1,1 @@
-This has moved to https://github.com/confluentinc/quickstart-demos/oracle-ksql-elasticsearch
+This has moved to the `oracle-ksql-elasticsearch` folder on https://github.com/confluentinc/quickstart-demos/
