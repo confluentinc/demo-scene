@@ -1,0 +1,238 @@
+= Running Confluent Platform on Docker locally, connecting to CCloud
+
+== Creds
+
+GCS and GBQ both use GCP creds, which the Docker images will mount locally from the `creds/` folder in the current path. Make sure that within there's a `gcp_creds.json` file (https://console.cloud.google.com/apis/credentials[from GCP]).
+
+== Script setup
+
+* Search and replace `CCLOUD_USERNAME` with your CCloud API user
+* Search and replace `CCLOUD_PASSWORD` with your CCloud API password
+* Search and replace `CCLOUD_BROKER_HOST` with your CCloud broker address
+* Search and replace `GCP_PROJECT_NAME` with your GCP project id
+
+== Docker Compose
+
+The easiest way is to use Docker Compose. Choose whether you want to run just those components not currently available in CCloud, or _all_ components locally (i.e. including Kafka; useful for offline work).
+
+=== Option 1 : Non-CCloud components run locally
+
+[source,yaml]
+----
+include::docker-compose-ccloud.yml
+----
+
+[source,bash]
+----
+docker-compose -f docker-compose-ccloud.yml -up d
+----
+
+
+=== Option 2 : All components run locally (including Kafka)
+
+[source,yaml]
+----
+include::docker-compose-all-local.yml
+----
+
+[source,bash]
+----
+docker-compose -f docker-compose-all-local.yml -up d
+----
+
+== Docker 
+
+Below is how to run each component with Docker directly. 
+
+=== Kafka Connect
+
+==== Run Connect in Docker locally, connecting to GCP, with custom [non-hub] connector
+
+[source,bash]
+----
+docker run \
+    --env "CONNECT_BOOTSTRAP_SERVERS=CCLOUD_BROKER_HOST:9092" \
+    --env "CONNECT_REST_PORT=8083" \
+    --env "CONNECT_GROUP_ID=compose-connect-group-local-02" \
+    --env "CONNECT_CONFIG_STORAGE_TOPIC=docker-connect-configs-local-02" \
+    --env "CONNECT_OFFSET_STORAGE_TOPIC=docker-connect-offsets-local-02" \
+    --env "CONNECT_STATUS_STORAGE_TOPIC=docker-connect-status-local-02" \
+    --env "CONNECT_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter" \
+    --env "CONNECT_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter" \
+    --env "CONNECT_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter" \
+    --env "CONNECT_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter" \
+    --env "CONNECT_REST_ADVERTISED_HOST_NAME=kafka-connect-cp" \
+    --env "CONNECT_LOG4J_ROOT_LOGLEVEL=INFO" \
+    --env "CONNECT_LOG4J_LOGGERS=org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR" \
+    --env "CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR=3" \
+    --env "CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR=3" \
+    --env "CONNECT_STATUS_STORAGE_REPLICATION_FACTOR=3" \
+    --env "CONNECT_PLUGIN_PATH=/usr/share/java,/u01/connectors" \
+    --env "CONNECT_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM=https" \
+    --env "CONNECT_SASL_MECHANISM=PLAIN" \
+    --env "CONNECT_REQUEST_TIMEOUT_MS=20000" \
+    --env "CONNECT_RETRY_BACKOFF_MS=500" \
+    --env "CONNECT_SECURITY_PROTOCOL=SASL_SSL" \
+    --env "CONNECT_CONSUMER_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM=https" \
+    --env "CONNECT_CONSUMER_SASL_MECHANISM=PLAIN" \
+    --env "CONNECT_CONSUMER_REQUEST_TIMEOUT_MS=20000" \
+    --env "CONNECT_CONSUMER_RETRY_BACKOFF_MS=500" \
+    --env "CONNECT_CONSUMER_SECURITY_PROTOCOL=SASL_SSL" \
+    --env "CONNECT_PRODUCER_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM=https" \
+    --env "CONNECT_PRODUCER_SASL_MECHANISM=PLAIN" \
+    --env "CONNECT_PRODUCER_REQUEST_TIMEOUT_MS=20000" \
+    --env "CONNECT_PRODUCER_RETRY_BACKOFF_MS=500" \
+    --env "CONNECT_PRODUCER_SECURITY_PROTOCOL=SASL_SSL" \
+    --env "CONNECT_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule\ required\ username=\"CCLOUD_USERNAME\"\ password=\"CCLOUD_PASSWORD\"\;" \
+    --env "CONNECT_CONSUMER_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule\ required\ username=\"CCLOUD_USERNAME\"\ password=\"CCLOUD_PASSWORD\"\;" \
+    --env "CONNECT_PRODUCER_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule\ required\ username=\"CCLOUD_USERNAME\"\ password=\"CCLOUD_PASSWORD\"\;" \
+    -p 8083:8083 \
+confluentinc/cp-kafka-connect:5.0.0 \
+bash -c 'echo Installing unzip… && \
+        curl -so unzip.deb http://ftp.br.debian.org/debian/pool/main/u/unzip/unzip_6.0-16+deb8u3_amd64.deb && \
+        dpkg -i unzip.deb && \
+        echo Downloading connector… && \
+        curl -so kafka-connect-rest.zip https://storage.googleapis.com/rmoff-connectors/kafka-connect-rest.zip && \
+        mkdir -p /u01/connectors/ && \
+        unzip -j kafka-connect-rest.zip -d /u01/connectors/kafka-connect-rest && \
+        echo Launching Connect… && \
+        /etc/confluent/docker/run'
+----
+
+==== Run Connect in Docker locally, connecting to GCP, with custom [hub] connector 
+
+Note `plugin.path` needs the default hub install path (`/usr/share/confluent-hub-components`) in it
+
+[source,bash]
+----
+docker run \
+    --env "CONNECT_BOOTSTRAP_SERVERS=CCLOUD_BROKER_HOST:9092" \
+    --env "CONNECT_REST_PORT=8083" \
+    --env "CONNECT_GROUP_ID=compose-connect-group-local-03" \
+    --env "CONNECT_CONFIG_STORAGE_TOPIC=docker-connect-configs-local-03" \
+    --env "CONNECT_OFFSET_STORAGE_TOPIC=docker-connect-offsets-local-03" \
+    --env "CONNECT_STATUS_STORAGE_TOPIC=docker-connect-status-local-03" \
+    --env "CONNECT_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter" \
+    --env "CONNECT_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter" \
+    --env "CONNECT_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter" \
+    --env "CONNECT_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter" \
+    --env "CONNECT_REST_ADVERTISED_HOST_NAME=kafka-connect-cp" \
+    --env "CONNECT_LOG4J_ROOT_LOGLEVEL=INFO" \
+    --env "CONNECT_LOG4J_LOGGERS=org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR" \
+    --env "CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR=3" \
+    --env "CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR=3" \
+    --env "CONNECT_STATUS_STORAGE_REPLICATION_FACTOR=3" \
+    --env "CONNECT_PLUGIN_PATH=/usr/share/java,/u01/connectors,/usr/share/confluent-hub-components" \
+    --env "CONNECT_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM=https" \
+    --env "CONNECT_SASL_MECHANISM=PLAIN" \
+    --env "CONNECT_REQUEST_TIMEOUT_MS=20000" \
+    --env "CONNECT_RETRY_BACKOFF_MS=500" \
+    --env "CONNECT_SECURITY_PROTOCOL=SASL_SSL" \
+    --env "CONNECT_CONSUMER_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM=https" \
+    --env "CONNECT_CONSUMER_SASL_MECHANISM=PLAIN" \
+    --env "CONNECT_CONSUMER_REQUEST_TIMEOUT_MS=20000" \
+    --env "CONNECT_CONSUMER_RETRY_BACKOFF_MS=500" \
+    --env "CONNECT_CONSUMER_SECURITY_PROTOCOL=SASL_SSL" \
+    --env "CONNECT_PRODUCER_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM=https" \
+    --env "CONNECT_PRODUCER_SASL_MECHANISM=PLAIN" \
+    --env "CONNECT_PRODUCER_REQUEST_TIMEOUT_MS=20000" \
+    --env "CONNECT_PRODUCER_RETRY_BACKOFF_MS=500" \
+    --env "CONNECT_PRODUCER_SECURITY_PROTOCOL=SASL_SSL" \
+    --env "CONNECT_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule\ required\ username=\"CCLOUD_USERNAME\"\ password=\"CCLOUD_PASSWORD\"\;" \
+    --env "CONNECT_CONSUMER_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule\ required\ username=\"CCLOUD_USERNAME\"\ password=\"CCLOUD_PASSWORD\"\;" \
+    --env "CONNECT_PRODUCER_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule\ required\ username=\"CCLOUD_USERNAME\"\ password=\"CCLOUD_PASSWORD\"\;" \
+    --volume $PWD/creds/:/root/ \
+    -p 8083:8083 \
+confluentinc/cp-kafka-connect:5.0.0 \
+bash -c 'confluent-hub install --no-prompt confluentinc/kafka-connect-gcs:5.0.0 && \
+         confluent-hub install --no-prompt wepay/kafka-connect-bigquery:1.1.0 && \
+        /etc/confluent/docker/run'
+----
+
+
+== Schema Registry
+
+=== Schema Registry in local Docker connecting to CCloud
+
+[source,bash]
+----
+docker run \
+        --env "SCHEMA_REGISTRY_HOST_NAME=localhost" \
+        --env "SCHEMA_REGISTRY_LISTENERS=http://0.0.0.0:8081" \
+        --env "SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=SASL_SSL://CCLOUD_BROKER_HOST:9092" \
+        --env "SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL=SASL_SSL" \
+        --env "SCHEMA_REGISTRY_KAFKASTORE_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"CCLOUD_USERNAME\" password=\"CCLOUD_PASSWORD\";" \
+        --env "SCHEMA_REGISTRY_KAFKASTORE_SASL_MECHANISM=PLAIN" \
+        --env "SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL=INFO" \
+        -p 8081:8081 \
+        confluentinc/cp-schema-registry:5.0.0
+----
+
+
+== KSQL Server
+
+
+=== Run KSQL Server on Docker locally, connecting to CCloud
+
+[source,bash]
+----
+docker run \
+    --env "KSQL_BOOTSTRAP_SERVERS=CCLOUD_BROKER_HOST:9092" \
+    --env "KSQL_KSQL_SCHEMA_REGISTRY_URL=http://SCHEMA-REGISTRY:8081" \
+    --env "KSQL_KSQL_SERVER_UI_ENABLED=false" \
+    --env "KSQL_APPLICATION_ID=rmoff-gcp-pipeline-demo" \
+    --env "KSQL_KSQL_STREAMS_REPLICATION_FACTOR=3" \
+    --env "KSQL_KSQL_SINK_REPLICAS=3" \
+    --env "KSQL_LISTENERS=http://0.0.0.0:8088" \
+    --env "KSQL_CACHE_MAX_BYTES_BUFFERING=0" \
+    --env "KSQL_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM=HTTPS" \
+    --env "KSQL_SECURITY_PROTOCOL=SASL_SSL" \
+    --env "KSQL_SASL_MECHANISM=PLAIN" \
+    --env "KSQL_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule\ required\ username=\"CCLOUD_USERNAME\"\ password=\"CCLOUD_PASSWORD\"\;" \
+    -p 8088:8088 \
+confluentinc/cp-ksql-server:5.0.0
+----
+
+Test it out: 
+
+[source,bash]
+----
+$ ksql http://localhost:8088
+
+                  ===========================================
+                  =        _  __ _____  ____  _             =
+                  =       | |/ // ____|/ __ \| |            =
+                  =       | ' /| (___ | |  | | |            =
+                  =       |  <  \___ \| |  | | |            =
+                  =       | . \ ____) | |__| | |____        =
+                  =       |_|\_\_____/ \___\_\______|       =
+                  =                                         =
+                  =  Streaming SQL Engine for Apache Kafka® =
+                  ===========================================
+
+Copyright 2017-2018 Confluent Inc.
+
+CLI v5.0.0, Server v5.0.0 located at http://localhost:8088
+
+Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
+
+ksql> show topics;
+
+ Kafka Topic                        | Registered | Partitions | Partition Replicas | Consumers | ConsumerGroups
+----------------------------------------------------------------------------------------------------------------
+ _confluent-command                 | false      | 1          | 3                  | 0         | 0
+ _schemas                           | false      | 1          | 3                  | 0         | 0
+  flood-monitoring-059793            | false      | 12         | 3                  | 0         | 0
+ flood-monitoring-073422            | false      | 12         | 3                  | 0         | 0
+ flood-monitoring-3680              | false      | 12         | 3                  | 0         | 0
+ flood-monitoring-F1902             | false      | 12         | 3                  | 0         | 0
+ flood-monitoring-L2404             | false      | 12         | 3                  | 0         | 0
+ flood-monitoring-L2481             | false      | 12         | 3                  | 0         | 0
+ iex-stock-aapl-company             | false      | 12         | 3                  | 0         | 0
+ iex-stock-aapl-quote               | false      | 12         | 3                  | 12        | 1
+ page_visits                        | false      | 12         | 3                  | 0         | 0
+ river-levels                       | false      | 12         | 3                  | 0         | 0
+----------------------------------------------------------------------------------------------------------------
+ksql>
+----
+

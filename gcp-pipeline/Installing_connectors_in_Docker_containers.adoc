@@ -1,0 +1,78 @@
+= Installing connectors in Docker containers
+Robin Moffatt <robin@confluent.io>
+v0.01, August 9, 2018
+
+== Introduction 
+
+To run in The Cloud we need to get the Kafka Connect connector plugin available to the Docker container. 
+
+Once the install is done, the Kafka Connect startup is run, https://github.com/confluentinc/cp-docker-images/blob/master/debian/kafka-connect-base/Dockerfile#L50[based on the `CMD` from Dockerfile] : `/etc/confluent/docker/run`
+
+== Connectors on Confluent Hub
+
+This is nice and easy : 
+
+[source,bash]
+----
+confluent-hub install --no-prompt confluentinc/kafka-connect-gcs:5.0.0 && \
+/etc/confluent/docker/run
+----
+
+== Connectors not on Confluent Hub
+
+If a connector is not on Confluent Hub then one way to make it available to the container is make it available on GCS (Google Cloud Storage - Google's object store), and pull it in as part of the container start up. 
+
+For example, https://github.com/llofberg/kafka-connect-rest/[kafka-connect-rest]. 
+
+Build it locally, create a zip and then copy it to GCS: 
+
+[source,bash]
+----
+$ gsutil mb gs://rmoff-connectors
+
+$ gsutil cp /u01/connectors/kafka-connect-rest.zip gs://rmoff-connectors/
+----
+
+Make the connectors available to public: 
+
+[source,bash]
+----
+gsutil acl ch -u AllUsers:R gs://rmoff-connectors/kafka-connect-rest.zip
+----
+
+Now the connector can be accessed at https://storage.googleapis.com/rmoff-connectors/kafka-connect-rest.zip
+
+But, the Docker image `confluentinc/cp-kafka-connect:5.0.0` doesn't have `unzip` on it, so we need to install it: 
+
+[source,bash]
+----
+curl -o unzip.deb http://ftp.br.debian.org/debian/pool/main/u/unzip/unzip_6.0-16+deb8u3_amd64.deb
+dpkg -i unzip.deb
+----
+
+(The available APT source, zulu, doesn't seem to have `unzip`)
+
+Now pull down the zip and uncompress it locally
+
+[source,bash]
+----
+curl -o kafka-connect-rest.zip https://storage.googleapis.com/rmoff-connectors/kafka-connect-rest.zip
+mkdir -p /data/connectors/
+unzip -j kafka-connect-rest.zip -d /data/connectors/kafka-connect-rest
+----
+
+This can be combined into a series of Docker commands for the container at launch time: 
+
+[source,bash]
+----
+bash -c 'echo Installing unzip… && \
+                curl -so unzip.deb http://ftp.br.debian.org/debian/pool/main/u/unzip/unzip_6.0-16+deb8u3_amd64.deb && \
+                dpkg -i unzip.deb && \
+                echo Downloading connector… && \
+                curl -so kafka-connect-rest.zip https://storage.googleapis.com/rmoff-connectors/kafka-connect-rest.zip && \
+                mkdir -p /u01/connectors/ && \
+                unzip -j kafka-connect-rest.zip -d /u01/connectors/kafka-connect-rest && \
+                echo Launching Connect… && \
+                /etc/confluent/docker/run'
+----
+

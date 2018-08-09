@@ -1,0 +1,63 @@
+-- York rainfall
+DROP STREAM flood_monitoring_059793;
+CREATE STREAM flood_monitoring_059793 \
+    (meta STRUCT<publisher VARCHAR, \
+                 comment VARCHAR>, \
+     items STRUCT<eaRegionName VARCHAR, \
+                  gridReference VARCHAR, \
+                  lat DOUBLE, \
+                  long DOUBLE, \
+                  measures STRUCT<label VARCHAR, \
+                        latestReading STRUCT<\
+                            dateTime VARCHAR, \
+                            value DOUBLE>,\
+                        parameterName VARCHAR, \
+                        unitName VARCHAR>, \
+                  stationReference VARCHAR,\
+                  town VARCHAR,\
+                  eaAreaName VARCHAR,\
+                  RiverName VARCHAR,\
+                  label VARCHAR> \
+    ) WITH (KAFKA_TOPIC='flood-monitoring-059793',VALUE_FORMAT='JSON');
+
+DROP STREAM flood_monitoring_L2404;
+CREATE STREAM flood_monitoring_L2404 \
+    (meta STRUCT<publisher VARCHAR, \
+                 comment VARCHAR>, \
+     items STRUCT<eaRegionName VARCHAR, \
+                  gridReference VARCHAR, \
+                  lat DOUBLE, \
+                  long DOUBLE, \
+                  measures STRUCT<label VARCHAR, \
+                        latestReading STRUCT<\
+                            dateTime VARCHAR, \
+                            value DOUBLE>,\
+                        parameterName VARCHAR, \
+                        unitName VARCHAR>, \
+                  stationReference VARCHAR,\
+                  town VARCHAR,\
+                  eaAreaName VARCHAR,\
+                  RiverName VARCHAR,\
+                  label VARCHAR> \
+    ) WITH (KAFKA_TOPIC='flood-monitoring-L2404',VALUE_FORMAT='JSON');
+
+DROP STREAM flood_monitoring_L2481;
+CREATE STREAM flood_monitoring_L2481 \
+    (meta STRUCT<publisher VARCHAR, \
+                 comment VARCHAR>, \
+     items STRUCT<eaRegionName VARCHAR, \
+                  gridReference VARCHAR, \
+                  lat DOUBLE, \
+                  long DOUBLE, \
+                  measures STRUCT<label VARCHAR, \
+                        latestReading STRUCT<\
+                            dateTime VARCHAR, \
+                            value DOUBLE>,\
+                        parameterName VARCHAR, \
+                        unitName VARCHAR>, \
+                  stationReference VARCHAR,\
+                  town VARCHAR,\
+                  eaAreaName VARCHAR,\
+                  RiverName VARCHAR,\
+                  label VARCHAR> \
+    ) WITH (KAFKA_TOPIC='flood-monitoring-L2481',VALUE_FORMAT='JSON');
