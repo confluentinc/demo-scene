@@ -52,7 +52,7 @@ KSQL CLI:
 [source,bash]
 ----
 docker run --network docker-compose_default --interactive --tty \
-     confluentinc/cp-ksql-cli:5.0.0-rc3 \
+     confluentinc/cp-ksql-cli:5.0.0 \
      http://ksql-server:8088
 ----
 
