@@ -9,6 +9,7 @@ Scripts and samples to support Confluent Platform talks. May be rough around the
 * [Postgres / Debezium CDC / KSQL / Elasticsearch](postgres-debezium-ksql-elasticsearch)
 * [Live-Coding KSQL scripts](live-coding-ksql)
 * [CDC demo with MySQL](no-more-silos)
+* [KSQL UDF Advanced Example](ksql-udf-advanced-example)
 
 ## Feedback & Questions
 
