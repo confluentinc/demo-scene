@@ -1,6 +1,6 @@
 = Streaming ETL demo - Enriching event stream data with CDC data from MySQL, stream into Elasticsearch
 Robin Moffatt <robin@confluent.io>
-v1.15, 25 Jul 2018
+v1.20, August 22, 2018
 
 image:images/ksql-debezium-es.png[Kafka Connect / KSQL / Elasticsearch]
 
@@ -32,18 +32,6 @@ docker-compose logs -f kafka-connect-cp|grep "Kafka Connect started"
 ./scripts/setup.sh
 ----
 
-
-=== Setup Kibana
-
-1. Go to http://localhost:5601/app/kibana#/management/kibana/indices/ and set an index (any index) as default
-
-2. Go to http://localhost:5601/app/kibana#/management/kibana/objects and Import dashboard `kibana_objects.json` using the **Import** button 
-+
-image::images/kibana_ix01.png[Kibana indexes]
-
-3. Load the Kibana dashboard http://localhost:5601/app/kibana#/dashboard/02028f30-424c-11e8-af19-1188a9332246
-
-
 === Run KSQL CLI and MySQL CLI
 
 Optionally, use something like `screen` or `tmux` to have these both easily to hand. Or multiple Terminal tabs. Whatever works for you :)
@@ -67,7 +55,7 @@ docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
 
 == Pre-flight checklist
 
-* Load Kibana dashboard: http://localhost:5601/app/kibana#/dashboard/02028f30-424c-11e8-af19-1188a9332246
+* Load Kibana dashboard: http://localhost:5601/app/kibana#/dashboard/mysql-ksql-kafka-es
 * Create iTerm window, using the `screencapture` profile
 * Load this instructions doc into Chrome
 * Close all other apps
@@ -321,7 +309,9 @@ Persist this stream of data
 [source,sql]
 ----
 CREATE STREAM RATINGS_WITH_CUSTOMER_DATA \
-       WITH (PARTITIONS=1) AS \
+       WITH (PARTITIONS=1, \
+             KAFKA_TOPIC='ratings-enriched') \
+       AS \
 SELECT R.RATING_ID, R.MESSAGE, R.STARS, R.CHANNEL,\
       C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, \
       C.CLUB_STATUS, C.EMAIL \
