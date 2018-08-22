@@ -47,17 +47,18 @@ image::images/kibana_ix01.png[Kibana indexes]
 === Run KSQL CLI and MySQL CLI
 
 Optionally, use something like `screen` or `tmux` to have these both easily to hand. Or multiple Terminal tabs. Whatever works for you :)
-KSQL CLI:
 
+* KSQL CLI:
++
 [source,bash]
 ----
-docker run --network docker-compose_default --interactive --tty \
+docker run --network docker-compose_default --interactive --tty --rm \
      confluentinc/cp-ksql-cli:5.0.0 \
      http://ksql-server:8088
 ----
 
-MySQL CLI:
-
+* MySQL CLI:
++
 [source,bash]
 ----
 cd docker-compose
@@ -398,9 +399,9 @@ SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') , FULL_NAME, RATINGS_CO
 
 === Slack notifications
 
-_This bit will need some config of your own, as you'll need your own Slack workspace and API key (both free). With this though, you can demo the idea of an event-driven app subscribing to a KSQL-populated stream of filtered events.
+_This bit will need some config of your own, as you'll need your own Slack workspace and API key (both free). With this though, you can demo the idea of an event-driven app subscribing to a KSQL-populated stream of filtered events._
 
-:image:images/slack_ratings.png[Slack push notifications driven from Kafka and KSQL]
+image:images/slack_ratings.png[Slack push notifications driven from Kafka and KSQL]
 
 To run, first export your API key as an environment variable:
 
