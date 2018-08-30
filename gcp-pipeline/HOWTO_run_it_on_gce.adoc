@@ -172,6 +172,22 @@ docker run --rm --interactive --tty confluentinc/cp-ksql-cli:5.0.0 http://$KSQL_
 
 == Footnotes
 
+=== Accessing log data from GCE instances and containers running within
+
+Get stdout: 
+
+[source,bash]
+----
+gcloud compute instances get-serial-port-output my-vm-name-goes-here
+----
+
+Docker output: 
+
+[source,bash]
+----
+$ gcloud logging read "jsonPayload.container.name=/my-vm-name-goes-here AND logName=projects/my-project-name/logs/gcplogs-docker-driver" --format=json --order=asc --freshness=1h --limit=100|jq '.[] | .jsonPayload.data '
+----
+
 === Passing Environment Variables to containers
 
 The environment variables for Docker images are combined into a single `--container-env` argument, and the default comma-separation is overriden to use `±` instead (`^±^`) since commas are required as some of the environment values. See https://cloud.google.com/sdk/gcloud/reference/topic/escaping[docs for more details].
