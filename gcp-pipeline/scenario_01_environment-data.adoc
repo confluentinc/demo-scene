@@ -29,6 +29,7 @@ Create the target topic in CCloud:
 ccloud topic create flood-monitoring-L2404
 ccloud topic create flood-monitoring-L2481
 ccloud topic create flood-monitoring-059793
+ccloud topic create flood-monitoring-3680
 ----
 
 POST the connector config: 
@@ -62,19 +63,20 @@ Format:STRING
 
 [source,sql]
 ----
-include::env-data/define_source_data.sql[]
+include::env-data/define_source_data_minimal.sql[]
 ----
 
 [source,sql]
 ----
 ksql> show streams;
 
- Stream Name             | Kafka Topic             | Format
-------------------------------------------------------------
- FLOOD_MONITORING_L2404  | flood-monitoring-L2404  | JSON
- FLOOD_MONITORING_059793 | flood-monitoring-059793 | JSON
- FLOOD_MONITORING_L2481  | flood-monitoring-L2481  | JSON
-------------------------------------------------------------
+ Stream Name             | Kafka Topic                 | Format
+----------------------------------------------------------------
+ FLOOD_MONITORING_3680   | flood-monitoring-3680       | JSON
+ FLOOD_MONITORING_L2404  | flood-monitoring-L2404      | JSON
+ FLOOD_MONITORING_059793 | flood-monitoring-059793     | JSON
+ FLOOD_MONITORING_L2481  | flood-monitoring-L2481      | JSON
+----------------------------------------------------------------
 ----
 
 === Examine the data
