@@ -111,7 +111,7 @@ Use `DESCRIBE EXTENDED` to examine the new stream:
 +
 [source,sql]
 ----
-ksql>  ENVIRONMENT_DATA;
+ksql> DESCRIBE EXTENDED ENVIRONMENT_DATA;
 
 Name                 : ENVIRONMENT_DATA
 Type                 : STREAM
@@ -172,7 +172,7 @@ ksql>
 
 [source,sql]
 ----
-include::env-data/repartition.sql
+include::env-data/repartition.sql[]
 ----
 
 == Stream data to target datastore(s)
@@ -194,7 +194,7 @@ Create the connector:
 
 [source,bash]
 ----
-include::env-data/connect_sink_gcs.sh
+include::env-data/connect_sink_gcs.sh[]
 ----
 
 N.B. `flush.size` is how many messages will be collected before Kafka Connect writes to storage. If it's too high, you'll not see any data in your target object store. If it's too low, your performance is gonna suck…
@@ -239,7 +239,7 @@ Create the connector
 
 [source,bash]
 ----
-include::env-data/connect_sink_gbq.sh
+include::env-data/connect_sink_gbq.sh[]
 ----
 
 
