@@ -1,2 +1,4 @@
 python_notify
 img_data
+*.docx
+gcp_creds.json
