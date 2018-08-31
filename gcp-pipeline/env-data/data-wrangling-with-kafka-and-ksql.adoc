@@ -1,12 +1,12 @@
-= Data Wrangling with KSQL
+= Data Wrangling with Apache Kafka and KSQL
 
 Robin Moffatt <robin@confluent.io>
 v1.10, August 31, 2018
 
-KSQL, the SQL streaming engine for Apache Kafka, puts the power of stream processing into the hands of anyone who knows SQL. It's fun to use for exploring data in Kafka topics, but its real power comes in building stream processing applications. By continually streaming messages from one Kafka topic to another, applying transformations expressed in SQL, it is possible to build powerful applications doing common data wrangling tasks such as: 
+KSQL, the SQL streaming engine for Apache Kafka®, puts the power of stream processing into the hands of anyone who knows SQL. It's fun to use for exploring data in Kafka topics, but its real power comes in building stream processing applications. By continually streaming messages from one Kafka topic to another, applying transformations expressed in SQL, it is possible to build powerful applications doing common data wrangling tasks such as: 
 
 - Applying schema to data
-- Filtering
+- Filtering and masking data
 - Changing data structures (e.g. flattening nested data)
 - Changing the serialisation format
 - Enriching streams of data
@@ -127,7 +127,7 @@ CREATE STREAM flood_monitoring_059793 \
                   long             DOUBLE, \
                   measures STRUCT<label         VARCHAR, \
                                   latestReading STRUCT<dateTime VARCHAR, \
-                                                       value DOUBLE>,\
+                                                Value DOUBLE>,\
                                   parameterName VARCHAR, \
                                   unitName VARCHAR>> \
     ) WITH (KAFKA_TOPIC='flood-monitoring-059793',VALUE_FORMAT='JSON');
@@ -145,7 +145,7 @@ CREATE STREAM flood_monitoring_3680 \
                   measures ARRAY<STRUCT<label VARCHAR, \
                         latestReading STRUCT<\
                             dateTime VARCHAR, \
-                            value DOUBLE>,\
+                     Value DOUBLE>,\
                         parameterName VARCHAR, \
                         unitName VARCHAR>>> \
     ) WITH (KAFKA_TOPIC='flood-monitoring-3680',VALUE_FORMAT='JSON');
@@ -215,7 +215,9 @@ ksql> select items->stationreference, \
 
 Taking a sample record from each topic and reading type gives us this table when manually collated: 
 
+[options="header"]
 |=================================================================================
+|Station reference|Station region|Measurement type|Timestamp|Measurement|Unit
 |3680 | Midland | Rainfall | 2018-08-30T04:00:00Z | 0.0 | mm
 |3680 | Midland | Temperature | 2018-08-30T04:00:00Z | 8.0 | deg C
 |059793 | North East | Rainfall | 2018-08-22T05:30:00Z | 0.0 | mm
@@ -329,12 +331,12 @@ Using https://docs.confluent.io/current/app-development/kafkacat-usage.html[kafk
 ----
 $ kafkacat -b kafka-broker:9092 -t ENVIRONMENT_DATA_JSON -f 'Partition: %p\tOffset: %o\tKey (%K bytes): %k\tValue (%S bytes): %s\n'|grep L2481
 
-Partition: 0    Offset: 344     Key (-1 bytes):         Value (260 bytes): {"STATIONREFERENCE":"L2481"[...]
+Partition: 0    Offset: 344  Key (-1 bytes):  Value (260 bytes): {"STATIONREFERENCE":"L2481"[...]
 [...]
-Partition: 1    Offset: 595     Key (-1 bytes):         Value (260 bytes): {"STATIONREFERENCE":"L2481"[...]
+Partition: 1    Offset: 595  Key (-1 bytes):  Value (260 bytes): {"STATIONREFERENCE":"L2481"[...]
 [...]
-Partition: 2    Offset: 48      Key (-1 bytes):         Value (260 bytes): {"STATIONREFERENCE":"L2481"[...]
-Partition: 2    Offset: 49      Key (-1 bytes):         Value (260 bytes): {"STATIONREFERENCE":"L2481"[...]
+Partition: 2    Offset: 48   Key (-1 bytes):  Value (260 bytes): {"STATIONREFERENCE":"L2481"[...]
+Partition: 2    Offset: 49   Key (-1 bytes):  Value (260 bytes): {"STATIONREFERENCE":"L2481"[...]
 [...]
 ----
 
@@ -357,10 +359,10 @@ kafkacat -b kafka-broker:9092 -t ENVIRONMENT_DATA_REKEYED -f 'Partition: %p\tOff
 % Auto-selecting Consumer mode (use -P or -C to override)
 % Reached end of topic ENVIRONMENT_DATA_REKEYED2 [3] at offset 0
 % Reached end of topic ENVIRONMENT_DATA_REKEYED2 [1] at offset 0
-Partition: 2    Offset: 0       Key (16 bytes): L2481Water Level        Value (241 bytes): {"COMPOSITE_KEY":"L2481Water Level","STATIONREFERENCE":"L2481"[...]
-Partition: 2    Offset: 1       Key (16 bytes): L2481Water Level        Value (241 bytes): {"COMPOSITE_KEY":"L2481Water Level","STATIONREFERENCE":"L2481"[...]
+Partition: 2    Offset: 0    Key (16 bytes): L2481Water Level        Value (241 bytes): {"COMPOSITE_KEY":"L2481Water Level","STATIONREFERENCE":"L2481"[...]
+Partition: 2    Offset: 1    Key (16 bytes): L2481Water Level        Value (241 bytes): {"COMPOSITE_KEY":"L2481Water Level","STATIONREFERENCE":"L2481"[...]
 [...]
-Partition: 2    Offset: 734     Key (16 bytes): L2481Water Level        Value (241 bytes): {"COMPOSITE_KEY":"L2481Water Level","STATIONREFERENCE":"L2481"[...]
+Partition: 2    Offset: 734  Key (16 bytes): L2481Water Level        Value (241 bytes): {"COMPOSITE_KEY":"L2481Water Level","STATIONREFERENCE":"L2481"[...]
 ----
 
 All of the messages for the given key reside on a single partition, and each message has a key as well as value.
@@ -623,6 +625,7 @@ As well as streaming data to Google BigQuery, we can _also_ stream the same tran
     "gcs.credentials.path": "/root/creds/gcp_creds.json",
 [...]
 ----
+_https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/env-data/connect_sink_gcs.sh[-> full code on github]_
 
 With this connector running, we now have data streaming to BigQuery as before, and now also Google Cloud Storage: 
 
