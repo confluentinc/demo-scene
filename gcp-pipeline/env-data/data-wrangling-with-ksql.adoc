@@ -1,7 +1,7 @@
 = Data Wrangling with KSQL
 
 Robin Moffatt <robin@confluent.io>
-v0.01, August 30, 2018
+v1.00, August 31, 2018
 
 KSQL, the SQL streaming engine for Apache Kafka, puts the power of stream processing into the hands of anyone who knows SQL. It's fun to use for exploring data in Kafka topics, but its real power comes in building stream processing applications. By continually streaming messages from one Kafka topic to another, applying transformations expressed in SQL, it is possible to build powerful applications doing common data wrangling tasks such as: 
 
