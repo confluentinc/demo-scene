@@ -14,5 +14,5 @@ image::images/env-data-arch-01.png[]
 ** link:HOWTO_run_it_locally.adoc[Locally, with Docker / Docker Compose, with or without CCloud]
 ** link:HOWTO_run_it_on_gce.adoc[All in the Cloud - GCE + CCloud]
 * Example Pipelines: 
-** link:scenario_01_environment-data.adoc[Pipeline examples with some cool Kafka Connect and KSQL action]
+** link:scenario_01_rest-ksql-gcp.adoc[Pipeline examples with some cool REST->Kafka Connect and KSQL action]
 ** …more to come…
