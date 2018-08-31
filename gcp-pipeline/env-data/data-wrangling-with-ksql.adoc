@@ -1,7 +1,7 @@
 = Data Wrangling with KSQL
 
 Robin Moffatt <robin@confluent.io>
-v1.00, August 31, 2018
+v1.10, August 31, 2018
 
 KSQL, the SQL streaming engine for Apache Kafka, puts the power of stream processing into the hands of anyone who knows SQL. It's fun to use for exploring data in Kafka topics, but its real power comes in building stream processing applications. By continually streaming messages from one Kafka topic to another, applying transformations expressed in SQL, it is possible to build powerful applications doing common data wrangling tasks such as: 
 
@@ -47,7 +47,7 @@ Create the connectors (one per station):
     }
 }
 ----
-[https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/env-data/connect_source.sh[full code here]]
+_https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/env-data/connect_source.sh[-> full code on github]_
 
 With this running, I have a Kafka topic per weather station, and data in each: 
 
@@ -484,6 +484,62 @@ SELECT * FROM ENVIRONMENT_DATA_WITH_TS \
 WHERE  GEO_DISTANCE(LAT,LONG,53.919066, -1.815725,'KM') < 100;
 ----
 
+== Masking data with KSQL
+
+As well as 'row' filtering as shown above, KSQL can also be used to filter 'columns' from a message. Imagine you have a field in your source data that you don't want to persist downstream—with KSQL you simply create a derived stream and omit the column(s) in question from the projection: 
+
+[source,sql]
+----
+ksql> DESCRIBE ENVIRONMENT_DATA;
+
+Name                 : ENVIRONMENT_DATA
+ Field            | Type
+----------------------------------------------
+ ROWTIME          | BIGINT           (system)
+ ROWKEY           | VARCHAR(STRING)  (system)
+ STATIONREFERENCE | VARCHAR(STRING)
+ EAREGIONNAME     | VARCHAR(STRING)
+ LABEL            | VARCHAR(STRING)
+ LAT              | DOUBLE
+ LONG             | DOUBLE
+ READING_TS       | VARCHAR(STRING)
+ PARAMETERNAME    | VARCHAR(STRING)
+ READING_VALUE    | DOUBLE
+ UNITNAME         | VARCHAR(STRING)
+----------------------------------------------
+
+ksql> CREATE STREAM ENVIRONMENT_DATA_MINIMAL AS \
+        SELECT STATIONREFERENCE, READING_TS, READING_VALUE \
+        FROM ENVIRONMENT_DATA;
+
+ksql> DESCRIBE ENVIRONMENT_DATA_MINIMAL;
+
+Name                 : ENVIRONMENT_DATA_MINIMAL
+ Field            | Type
+----------------------------------------------
+ ROWTIME          | BIGINT           (system)
+ ROWKEY           | VARCHAR(STRING)  (system)
+ STATIONREFERENCE | VARCHAR(STRING)
+ READING_TS       | VARCHAR(STRING)
+ READING_VALUE    | DOUBLE
+----------------------------------------------
+----
+
+As well as simply dropping a column, KSQL ships with functions to mask data: 
+
+[source,sql]
+----
+ksql> SELECT STATIONREFERENCE, EAREGIONNAME \
+      FROM ENVIRONMENT_DATA;
+L2404 | North East
+
+ksql> SELECT STATIONREFERENCE, EAREGIONNAME, MASK_RIGHT(EAREGIONNAME,4) AS REGION_NAME_MASKED \
+      FROM ENVIRONMENT_DATA2;
+L2404 | North East | North Xxxx
+----
+
+There are several `MASK`-based functions, and if you have your own special-sauce you'd like to use here, KSQL https://docs.confluent.io/current/ksql/docs/udf.html#example-udf-class[support UDFs as of 5.0]. 
+
 == Recap
 
 So far, we've ingested data from several sources, with similar but varying data models. Using KSQL we've wrangling the data: 
@@ -494,7 +550,7 @@ So far, we've ingested data from several sources, with similar but varying data 
 * Set the message partitioning key
 * Set the message timestamp metadata to the correct logical value
 * Created derived columns in the transformation
-* Filtered the data to include messages only matching a given pattern
+* Filtered and masked the data
 
 image::../images/recap.png[]
 
@@ -522,7 +578,7 @@ For our analytics, we're going to land the data to Google's Cloud Data Warehouse
     "keyfile":"/root/creds/gcp_creds.json"
     [...]
 ----
-[https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/env-data/connect_sink_gbq.sh[full code here]]
+_https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/env-data/connect_sink_gbq.sh[-> full code on github]_
 
 Once deployed, we can see data arriving in BigQuery using the Console: 
 
