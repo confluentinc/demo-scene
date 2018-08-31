@@ -1,0 +1,30 @@
+=== Environment Data API notes
+
+API reference: 
+
+* http://environment.data.gov.uk/flood-monitoring/doc/reference
+* http://environment.data.gov.uk/flood-monitoring/doc/rainfall
+
+Example REST calls: 
+
+* Rainfall stations within 2km of York
+** http://environment.data.gov.uk/flood-monitoring/id/stations?parameter=rainfall&lat=53.961517&long=-1.088830&dist=2
+
+* River Level stations within 2km of York
+** http://environment.data.gov.uk/flood-monitoring/id/stations?parameter=level&lat=53.961517&long=-1.088830&dist=2
+
+* All measurement stations (no reading data):	
+** http://environment.data.gov.uk/flood-monitoring/id/stations
+* Stations on River Wharfe: 
+** http://environment.data.gov.uk/flood-monitoring/id/stations?riverName=River%20Wharfe
+* Ilkley station current reading: 
+** https://environment.data.gov.uk/flood-monitoring/id/stations/F1902 
+*** (n.b. has a broken `latestReading` which breaks parsing the record)
+* York station (1) current reading: 
+** https://environment.data.gov.uk/flood-monitoring/id/stations/L2481
+* York station (2) current reading: 
+** https://environment.data.gov.uk/flood-monitoring/id/stations/L2404
+* All readings for all measures from across all the stations (i.e. historical too):	
+** http://environment.data.gov.uk/flood-monitoring/data/readings
+* All readings for measures from a particular station:	`{root}/id/stations/{id}/readings` 
+** e.g. https://environment.data.gov.uk/flood-monitoring/id/stations/059793/readings 

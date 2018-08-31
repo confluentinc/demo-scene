@@ -20,7 +20,8 @@ image::../images/env-data-arch-02.png[]
 
 In this article we'll see how to pull in data from REST sources, cleanse and wrangle it with KSQL, and then stream it out to both Google Cloud Storage (GCS) as well as Google's BigQuery for analysis and visualisation in Google DataStudio. We're using https://confluent.cloud[Confluent Cloud] to host our Kafka brokers, but it will work on a local cluster instead if you want to. 
 
-_You can find all of the code, including Docker Compose files, used in this article https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/scenario_01_environment-data.adoc[on github]_.
+_You can find all of the code, including a https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/docker-compose-all-local.yml[Docker Compose file], used in this article https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/env-data/data-wrangling-with-kafka-and-ksql.adoc[on github]_.
+
 
 == Getting the data in
 
