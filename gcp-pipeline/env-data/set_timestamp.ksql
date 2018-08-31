@@ -1,0 +1,14 @@
+--CREATE STREAM ENVIRONMENT_DATA_WITH_TS \
+--            WITH (TIMESTAMP='READING_TS', \
+--                  TIMESTAMP_FORMAT='yyyy-MM-dd''T''HH:mm:ssX') AS \
+--SELECT * \
+--  FROM ENVIRONMENT_DATA ;
+-- Above is currently blocked by https://github.com/confluentinc/ksql/issues/1439[#1439]. Workaround is a two-step conversion: 
+CREATE STREAM ENVIRONMENT_DATA_WITH_TS_STG AS \
+SELECT STRINGTOTIMESTAMP(READING_TS, 'yyyy-MM-dd''T''HH:mm:ssX') AS READING_TS_EPOCH, * \
+FROM ENVIRONMENT_DATA ;
+
+CREATE STREAM ENVIRONMENT_DATA_WITH_TS \
+            WITH (TIMESTAMP='READING_TS_EPOCH') AS \
+SELECT * \
+  FROM ENVIRONMENT_DATA_WITH_TS_STG;
