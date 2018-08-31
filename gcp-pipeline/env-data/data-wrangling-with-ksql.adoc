@@ -16,7 +16,7 @@ Imagine you've got data on which you want to build some analytics. It's coming f
 
 Why Kafka? Because we can use it for integrating the source systems with those downstream, in near-realtime and with the abililty to add it and swap out sources and targets without disturbing the rest of the components. Because we can re-process data as required, and share it with multiple other systems—enabling them to take advantage of the data cleansing and wrangling that we've performed. 
 
-image::../images/env-data-arch-01.png[]
+image::../images/env-data-arch-02.png[]
 
 In this article we'll see how to pull in data from REST sources, cleanse and wrangle it with KSQL, and then stream it out to both Google Cloud Storage (GCS) as well as Google's BigQuery for analysis and visualisation in Google DataStudio. We're using https://confluent.cloud[Confluent Cloud] to host our Kafka brokers, but it will work on a local cluster instead if you want to. 
 
@@ -25,6 +25,8 @@ _You can find all of the code, including Docker Compose files, used in this arti
 == Getting the data in
 
 _Mandatory credit: this uses Environment Agency rainfall data from the real-time data API (Beta)_
+
+image::../images/kc01.png[]
 
 The data I'm working with here is from the http://environment.data.gov.uk/flood-monitoring/doc/reference[public API] that the UK government's Environment Agency provide about readings taken from various weather stations around the country. From these you get things like rainfall, river levels, and so on. Each station has its own REST API endpoint. We're going to pull in data from four of these, using Kafka Connect to poll the sources. 
 
@@ -111,22 +113,23 @@ Now we want to take these four Kafka topics, and build a stream processing appli
 
 The data that's coming in is in JSON, but with no declared schema as such. Kafka Connect can automagically register a schema for inbound data that it serialises as Avro, but the REST connector is basically just pulling string data from the REST endpoint, that happens to be in JSON. So the first thing we're going to do with KSQL is declare a schema for our source data from each topic. Note that the schema varies slightly to take into account the data from one of the stations that includes an array. 
 
+image::../images/ksql_schema.png[]
+
 [source,sql]
 ----
 CREATE STREAM flood_monitoring_059793 \
-    (meta STRUCT<publisher VARCHAR, \
-                 comment VARCHAR>, \
-     items STRUCT<eaRegionName VARCHAR, \
-                  label VARCHAR, \
+    (meta STRUCT<publisher         VARCHAR, \
+                 comment           VARCHAR>, \
+     items STRUCT<eaRegionName     VARCHAR, \
+                  label            VARCHAR, \
                   stationReference VARCHAR, \
-                  lat DOUBLE, \
-                  long DOUBLE, \
-                  measures STRUCT<label VARCHAR, \
-                        latestReading STRUCT<\
-                            dateTime VARCHAR, \
-                            value DOUBLE>,\
-                        parameterName VARCHAR, \
-                        unitName VARCHAR>> \
+                  lat              DOUBLE, \
+                  long             DOUBLE, \
+                  measures STRUCT<label         VARCHAR, \
+                                  latestReading STRUCT<dateTime VARCHAR, \
+                                                       value DOUBLE>,\
+                                  parameterName VARCHAR, \
+                                  unitName VARCHAR>> \
     ) WITH (KAFKA_TOPIC='flood-monitoring-059793',VALUE_FORMAT='JSON');
 
 [...]
@@ -266,7 +269,7 @@ SELECT  items->stationreference AS stationreference, \
 
 -- (INSERT INTO repeated for the remaining source topics)
 ----
-https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/env-data/apply_schema__unify_streams_minimal.sql[src]
+_https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/env-data/apply_schema__unify_streams_minimal.sql[-> full code on github]_
 
 Now when we inspect the `STREAMS` we can see the new one created and populated by the above statements: 
 
@@ -380,8 +383,7 @@ To rectify this, we can use KSQL. Just as we used the `WITH` clause above to set
 ----
 CREATE STREAM ENVIRONMENT_DATA_WITH_TS \
             WITH (TIMESTAMP='READING_TS', \
-                  TIMESTAMP_FORMAT='yyyy-MM-dd''T''HH:mm:ssX') \
-AS \
+                  TIMESTAMP_FORMAT='yyyy-MM-dd''T''HH:mm:ssX') AS \
 SELECT * \
   FROM ENVIRONMENT_DATA ;
 ----
@@ -395,8 +397,7 @@ SELECT STRINGTOTIMESTAMP(READING_TS, 'yyyy-MM-dd''T''HH:mm:ssX') AS READING_TS_E
 FROM ENVIRONMENT_DATA ;
 
 CREATE STREAM ENVIRONMENT_DATA_WITH_TS \
-            WITH (TIMESTAMP='READING_TS_EPOCH') \
-AS \
+            WITH (TIMESTAMP='READING_TS_EPOCH') AS \
 SELECT * \
   FROM ENVIRONMENT_DATA_WITH_TS_STG;
 ----
@@ -495,9 +496,9 @@ So far, we've ingested data from several sources, with similar but varying data 
 * Created derived columns in the transformation
 * Filtered the data to include messages only matching a given pattern
 
-< diagram >
+image::../images/recap.png[]
 
-The results of these transformations is continually populated Kafka topics. As new messages arrive on the source, they are processed by the continually-running KSQL statements, and written to the target Kafka topic. 
+The results of these transformations is *continually populated Kafka topics*. As new messages arrive on the source, they are processed by the continually-running KSQL statements, and written to the target Kafka topic. 
 
 == Streaming Onwards…
 
@@ -589,4 +590,4 @@ Using KSQL streaming processing can be expressed using SQL alone, with no need t
 * https://www.youtube.com/playlist?list=PLa7VYi0yPIH2eX8q3mPpZAn3qCS1eDX8W[KSQL video tutorials]
 * https://docs.confluent.io/current/ksql/docs/tutorials/basics-docker.html[KSQL hands-on tutorials]
 
-_You can find all of the code used in this article on [https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/env-data/[github]_.
+_You can find all of the code used in this article on https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/env-data/[github]_.
