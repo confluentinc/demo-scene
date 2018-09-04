@@ -2,13 +2,13 @@
 version: '2'
 services:
   zookeeper:
-    image: "confluentinc/cp-zookeeper:5.0.0"
+    image: confluentinc/cp-zookeeper:5.0.0
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: "confluentinc/cp-enterprise-kafka:5.0.0"
+    image: confluentinc/cp-enterprise-kafka:5.0.0
     depends_on:
       - zookeeper
     ports:
@@ -33,7 +33,7 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: "confluentinc/cp-schema-registry:5.0.0"
+    image: confluentinc/cp-schema-registry:5.0.0
     depends_on:
       - zookeeper
       - kafka
@@ -68,11 +68,9 @@ services:
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
-      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components'
+      CONNECT_PLUGIN_PATH: '/usr/share/java'
     volumes:
       - $PWD/scripts:/scripts
-      - $PWD/aws_creds.txt:/root/.aws/credentials
-      - $PWD/gcp_creds.json:/root/gcp_creds.json
 
   ksql-server:
     image: confluentinc/cp-ksql-server:5.0.0
@@ -87,7 +85,7 @@ services:
 
   # Runs the Kafka KSQL data generator for ratings
   datagen-ratings:
-    image: "confluentinc/ksql-examples:5.0.0"
+    image: confluentinc/ksql-examples:5.0.0
     depends_on:
       - kafka
       - schema-registry
