@@ -2,6 +2,8 @@
 
 == Environment Data
 
+image::images/env-data-arch-01.png[]
+
 See full article here link:env-data/data-wrangling-with-kafka-and-ksql.adoc[]
 
 == Other REST data sources to play with
