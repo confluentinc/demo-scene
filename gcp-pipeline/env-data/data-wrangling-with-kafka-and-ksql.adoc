@@ -1,41 +1,40 @@
 = Data Wrangling with Apache Kafka and KSQL
 
 Robin Moffatt <robin@confluent.io>
-v1.10, August 31, 2018
+v1.20, September 6, 2018
 
 KSQL, the SQL streaming engine for Apache Kafka®, puts the power of stream processing into the hands of anyone who knows SQL. It's fun to use for exploring data in Kafka topics, but its real power comes in building stream processing applications. By continually streaming messages from one Kafka topic to another, applying transformations expressed in SQL, it is possible to build powerful applications doing common data wrangling tasks such as: 
 
 - Applying schema to data
 - Filtering and masking data
-- Changing data structures (e.g. flattening nested data)
-- Changing the serialisation format
+- Changing data structures (for example, flattening nested data)
+- Changing the serialization format
 - Enriching streams of data
 - Unifying multiple streams of data
 
-Imagine you've got data on which you want to build some analytics. It's coming from multiple sources—maybe different instances of the same system. You need to unify those sources into a single one, and reformat the data along the way, as well as applying a schema to the data so that it can be easily analysed downstream. Apache Kafka and KSQL is a great choice for this. 
+Imagine you’ve got data on which you want to build some analytics. It’s coming from multiple sources—maybe different instances of the same system. You need to unify those sources into a single one, reformat the data along the way and apply a schema to the data so that it can be easily analyzed downstream. Apache Kafka and KSQL are a great choice for this.
 
-Why Kafka? Because we can use it for integrating the source systems with those downstream, in near-realtime and with the abililty to add it and swap out sources and targets without disturbing the rest of the components. Because we can re-process data as required, and share it with multiple other systems—enabling them to take advantage of the data cleansing and wrangling that we've performed. 
+Why Kafka? Because we can use it for integrating the source systems with those downstream, in near real-time and with the ability to add and swap out sources and targets without disturbing the rest of the components. In addition, we can reprocess data as required and share it with other systems—enabling them to take advantage of the data cleansing and wrangling that we’ve performed.
 
 image::../images/env-data-arch-02.png[]
 
-In this article we'll see how to pull in data from REST sources, cleanse and wrangle it with KSQL, and then stream it out to both Google Cloud Storage (GCS) as well as Google's BigQuery for analysis and visualisation in Google DataStudio. We're using https://confluent.cloud[Confluent Cloud] to host our Kafka brokers, but it will work on a local cluster instead if you want to. 
+In this article, we’ll see how to pull in data from REST sources, cleanse and wrangle it with KSQL, then stream it out to both Google Cloud Storage (GCS) as well as Google BigQuery for analysis and visualization in Google Data Studio. We’re using https://confluent.cloud[Confluent Cloud]™ to host our Kafka brokers, but it will work on a local cluster instead if you want to.
 
-_You can find all of the code, including a https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/docker-compose-all-local.yml[Docker Compose file], used in this article https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/env-data/data-wrangling-with-kafka-and-ksql.adoc[on github]_.
-
+_You can find all of the code used in this article on https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/env-data/[GitHub], including https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/docker-compose-all-local.yml[Docker Compose] files._
 
 == Getting the data in
 
-_Mandatory credit: this uses Environment Agency rainfall data from the real-time data API (Beta)_
+_Credit: This section uses Environment Agency rainfall data from the real-time data API (beta)._
 
 image::../images/kc01.png[]
 
-The data I'm working with here is from the http://environment.data.gov.uk/flood-monitoring/doc/reference[public API] that the UK government's Environment Agency provide about readings taken from various weather stations around the country. From these you get things like rainfall, river levels, and so on. Each station has its own REST API endpoint. We're going to pull in data from four of these, using Kafka Connect to poll the sources. 
+The data that I’m working with here is from the http://environment.data.gov.uk/flood-monitoring/doc/reference[public API] provided by the U.K. government’s Environment Agency. It contains readings taken from various weather stations around the country regarding information  like rainfall, river levels and so on. Each station has its own REST API endpoint. 
 
-The data structures from each endpoint varies slightly, giving us a nice real-world example of data cleansing problems.
+We’re going to pull in data from four of these, using Kafka Connect to poll the sources. The data structures from each endpoint vary slightly, giving us a nice real-world example of data cleansing problems.
 
 I'm using the https://github.com/llofberg/kafka-connect-rest[Kafka Connect REST] source connector, which is a community-contributed connector written by Lenny Löfberg. Using this connector I can specify a REST endpoint, and a polling interval, and the resulting payload is written to a Kafka topic. 
 
-Create the connectors (one per station): 
+To start with, create the connectors (one per station): 
 
 [source,json]
 ----
@@ -50,7 +49,7 @@ Create the connectors (one per station):
 ----
 _https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/env-data/connect_source.sh[-> full code on github]_
 
-With this running, I have a Kafka topic per weather station, and data in each: 
+With this running, I have a Kafka topic per weather station and data in each: 
 
 [source,bash]
 ----
@@ -108,11 +107,11 @@ You'll note from the above sample of JSON that it's nested data. For this statio
 
 This kind of varying structure in the data is a common problem in data integration and ETL. We'll see in this article how KSQL can help with addressing this kind of challenge. 
 
-Now we want to take these four Kafka topics, and build a stream processing application that will populate a single unified output topic of transformed data from across the four topics. This will process data that already exists in the Kafka topic, along with every new message that arrives. 
+Now, we want to take these four Kafka topics and build a stream processing application that will populate a single unified output topic of transformed data from across the four topics. This will process data that already exists in the Kafka topic, along with every new message that arrives.
 
 == Declaring the schema
 
-The data that's coming in is in JSON, but with no declared schema as such. Kafka Connect can automagically register a schema for inbound data that it serialises as Avro, but the REST connector is basically just pulling string data from the REST endpoint, that happens to be in JSON. So the first thing we're going to do with KSQL is declare a schema for our source data from each topic. Note that the schema varies slightly to take into account the data from one of the stations that includes an array. 
+The data coming in is JSON—but with no declared schema as such. As a framework, Kafka Connect can automagically register a schema for inbound data that it serializes as Apache Avro™, but the REST connector here is basically just pulling string data from the REST endpoint, and that string data happens to be JSON. So, the first thing we're going to do with KSQL is declare a schema for our source data from each topic. Note that the schema varies slightly to take into account the data from one of the stations that includes an array. 
 
 image::../images/ksql_schema.png[]
 
@@ -168,7 +167,7 @@ ksql> show streams;
 ----------------------------------------------------------------
 ----
 
-Before we even do anything else to the data, we could use KSQL's ability to reserialise data to convert the raw JSON data into Avro. The advantage here is that any application downstream—whether another KSQL process, Kafka Connect, or a Kafka consumer—can work with the data directly from the topic and obtain the schema for it from the Schema Registry. To do this, use the `CREATE STREAM … AS SELECT` statement, with the `VALUE_FORMAT` specified as part of the `WITH` clause: 
+Before we even do anything else to the data, we could use KSQL’s ability to reserialize and convert the raw JSON data into Avro. The advantage here is that any application downstream—whether it’s another KSQL process, Kafka Connect or a Kafka consumer—can work with the data directly from the topic and obtain the schema for it from the Schema Registry. To do this, use the `CREATE STREAM…AS SELECT` statement with the `VALUE_FORMAT` specified as part of the `WITH` clause:
 
 [source,sql]
 ----
@@ -177,13 +176,13 @@ CREATE STREAM FLOOD_MONITORING_3680_AVRO \
     SELECT * FROM FLOOD_MONITORING_3680;
 ----
 
-You can also define the partitioning and replication factor at this stage too, if you wanted to change that. 
+You can also define the partitioning and replication factor at this stage, too, if you wanted to change that.
 
-For the rest of this exercise we'll stick to the original JSON topics, and apply the Avro serialisation later on. 
+For the rest of this exercise we’ll stick to the original JSON topics and apply the Avro serialization later on.
 
 == Working with nested data
 
-Since the data in the source topic is nested JSON, we declare the parent column's data type as `STRUCT`. To access the data using KSQL use the `->` operator: 
+Because the data in the source topic is nested JSON, we declare the parent column's data type as `STRUCT`. To access the data with KSQL, use the `->` operator: 
 
 [source,sql]
 ----
@@ -212,7 +211,7 @@ ksql> select items->stationreference, \
 ----
 
 
-== Unifying Data from Multiple Streams
+== Unifying data from multiple streams
 
 Taking a sample record from each topic and reading type gives us this table when manually collated: 
 
@@ -239,11 +238,11 @@ Looking at the data, we can apply a data model that looks something like this:
   +-Measurement units
 ----
 
-The type of reading varies (temperature, rainfall, river level, and so on), as does the units associated with it, and the station. We could normalise this out into stations, reading types, and so on—but for ease of reporting we'll actually denormalise it into a single flat structure. This means bringing in data from the multiple streams, including manually exploding the array within the `3680` topic (containing both Rainfall and Temperature data): 
+The type of reading (e.g., temperature, rainfall and river level) varies, as do the units associated with it and the station. We could normalize this out into stations, reading types and so on—but for ease of reporting we’ll actually denormalize it into a single flat structure. This means bringing in data from the multiple streams, including manually exploding the array within the 3680 topic (which contains both rainfall and temperature data):
 
 image::../images/ksql-unify01.png[]
 
-To do this, we can use KSQL's `INSERT INTO` statement. This streams the results of a `SELECT` statement into an existing target `STREAM`. The initial `STREAM` we'll create using `CREATE STREAM…AS SELECT`. We'll also take the opportunity to serialise the data to Avro. 
+To do this, we can use KSQL's `INSERT INTO` statement. This streams the results of a `SELECT` statement into an existing target `STREAM`. The initial `STREAM` we'll create using `CREATE STREAM…AS SELECT`. We'll also take the opportunity to serialize the data to Avro. 
 
 [source,sql]
 ----
@@ -274,7 +273,7 @@ SELECT  items->stationreference AS stationreference, \
 ----
 _https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/env-data/apply_schema__unify_streams_minimal.sql[-> full code on github]_
 
-Now when we inspect the `STREAMS` we can see the new one created and populated by the above statements: 
+Now when we inspect the `STREAMS`, we can see the new one created and populated by the above statements: 
 
 [source,sql]
 ----
@@ -290,7 +289,7 @@ ksql> show streams;
 -------------------------------------------------------------------
 ----
 
-Note that the **Format** is `AVRO`. Using `DESCRIBE EXTENDED` you can check that messages are being processed by reviewing the `Local runtime statistics`: 
+Note that the “Format” as shown in the column in the above output is `AVRO`. Using `DESCRIBE EXTENDED` you can check that messages are being processed by reviewing the `Local runtime statistics`: 
 
 [source,sql]
 ----
@@ -322,11 +321,11 @@ ksql> SELECT * FROM ENVIRONMENT_DATA ;
 
 == Re-keying data in KSQL
 
-Based on the above data model, the unique key for data is a composite of the station + reading type + timestamp. We're going to handle the timestamp seperately - for now let's see how to use KSQL to set the message key used by Kafka. 
+Based on the above data model, the unique key for data is a composite of the station, reading type, and timestamp. We’re going to handle the timestamp separately - for now let’s see how to use KSQL to set the message key used by Kafka.
 
-The message key is important as it defines the partition on which messages are stored in Kafka, as well as being used in any joins in KSQL. At the moment there's no key set, so data for the same station and reading type could be scattered across partitions. For a few rows of data this may not matter, but as volumes increase it becomes more important to consider. It's also pertinent to the strict ordering guarentee that Kafka provides, which only applies within a partition. 
+The message key is important as it defines the partition on which messages are stored in Kafka, and is used in any KSQL joins. At the moment there’s no key set, so data for the same station and reading type could be scattered across partitions. For a few rows of data this may not matter, but as volumes increase it becomes more important to consider. It’s also pertinent to the strict ordering guarantee that Kafka provides, which only applies within a partition.
 
-Using https://docs.confluent.io/current/app-development/kafkacat-usage.html[kafkacat] we can inspect the partition assignments. I'm using a topic that I've created just for this purpose, with the serialisation set to JSON (kafkacat doesn't currently support Avro). By filtering for a given station we can see the partitions the messages are assigned to, as well as the message key: 
+Using https://docs.confluent.io/current/app-development/kafkacat-usage.html[kafkacat] we can inspect the partition assignments. I'm using a topic that I've created just for this purpose, with the serialization set to JSON (kafkacat doesn't currently support Avro). By filtering for a given station we can see the partitions that messages are assigned to as well as the message key:
 
 [source,bash]
 ----
@@ -341,9 +340,9 @@ Partition: 2    Offset: 49   Key (-1 bytes):  Value (260 bytes): {"STATIONREFERE
 [...]
 ----
 
-Note how the messages span several partitions, and have a null key. 
+Note that the messages span several partitions and have a null key.
 
-Now let's repartition our unified data stream, using the `PARTITION BY` clause: 
+Next, let’s repartition our unified data stream using the `PARTITION BY` clause: 
 
 [source,sql]
 ----
@@ -352,7 +351,7 @@ CREATE STREAM ENVIRONMENT_DATA_REKEYED AS \
     PARTITION BY COMPOSITE_KEY;
 ----
 
-Checking the data with kafkacat again we see: 
+Checking the data with kafkacat again, we see the following:
 
 [source,bash]
 ----
@@ -366,11 +365,11 @@ Partition: 2    Offset: 1    Key (16 bytes): L2481Water Level        Value (241 
 Partition: 2    Offset: 734  Key (16 bytes): L2481Water Level        Value (241 bytes): {"COMPOSITE_KEY":"L2481Water Level","STATIONREFERENCE":"L2481"[...]
 ----
 
-All of the messages for the given key reside on a single partition, and each message has a key as well as value.
+All of the messages for the given key reside on a single partition, and each message has a key and value.
 
-== Managing Timestamps in KSQL 
+== Managing message timestamps in KSQL 
 
-As well as messages having a key (and value), they also have a timestamp in their metadata. This can be set explicitly by the application producing the messages to Kafka, or in the absence of that will take the time at which it arrives at the Kafka broker. The messages that we're working with have the timestamp of the time at which they were ingested by Kafka Connect. However, the actual timestamp to use in processing the data for analysis is the `items.measures.latestReading.dateTime` value within the message. This matters particularly when using the data for aggregations, time-based partitioning, and so on. Using the `TIMESTAMPTOSTRING` function we can examine the two timestamps discussed above: 
+As well as messages having a key (and value), they also have a timestamp in their metadata. This can be set explicitly by the application producing the messages to Kafka, or in the absence of that messages will take the time at which it arrives at the Kafka broker. The timestamp of the messages that we’re working with have the timestamp of the time at which they were ingested by Kafka Connect. However, the actual timestamp to use in processing the data for analysis is the `items.measures.latestReading.dateTime` value within the message. This matters particularly when using the data for aggregations, time-based partitioning and so on. Using the `TIMESTAMPTOSTRING` function we can examine the two timestamps discussed above: 
 
 [source,sql]
 ----
@@ -378,9 +377,9 @@ ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss'), items->measures-
 2018-08-23 01:11:53 | 2018-08-22T18:45:00Z
 ----
 
-In this example, the data arrived in Kafka at 01:11 on the 23rd August, but the reading was from 18:45 on the 22nd August. If we did any date arithmetic on the data as it stands (for example, what was the maximum reading value on the 22nd August) we'd get an incorrect answer. This is because KSQL uses the _message timestamp_ (accessible through the virtual system column `ROWTIME`) in its time processing (such as windowed aggregates). 
+In this example, the data arrived in Kafka at 01:11 on Aug. 23, 2018, but the reading occurred at 18:45 on the Aug. 22, 2018. If we did any arithmetic on the data as it stands (for example, calculating the maximum reading value on Aug. 22), we’d get an incorrect answer. This is because KSQL uses the _message timestamp_ (accessible through the virtual system column `ROWTIME`) in its time processing (such as windowed aggregates). 
 
-To rectify this, we can use KSQL. Just as we used the `WITH` clause above to set the serialisation format to Avro, we can use a similar pattern to override the timestamp that will be used for the messages in the target stream being created: 
+To rectify this, we can use KSQL. Just as we used the `WITH` clause previously to set the serialization format to Avro, we can use a similar pattern to override the timestamp that will be used for the messages in the target stream being created: 
 
 [source,sql]
 ----
@@ -391,7 +390,7 @@ SELECT * \
   FROM ENVIRONMENT_DATA ;
 ----
 
-* _Currently blocked by https://github.com/confluentinc/ksql/issues/1439[#1439]. Workaround is a two-step conversion_: 
+* _This is currently blocked by https://github.com/confluentinc/ksql/issues/1439[#1439]. The workaround is a two-step conversion_:
 +
 [source,sql]
 ----
@@ -405,7 +404,7 @@ SELECT * \
   FROM ENVIRONMENT_DATA_WITH_TS_STG;
 ----
 
-To validate the conversion, check out the ROWTIME of the newly-created stream compared to the source `READING_TS`: 
+You can validate the conversion by comparing the `ROWTIME` of the newly created stream with the source `READING_TS`:
 
 [source,sql]
 ----
@@ -416,7 +415,7 @@ ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss'), READING_TS \
 
 == Column derivations with KSQL
 
-As well as filtering, KSQL can also be used to create derivations based on the incoming data. Let's take the example of dates. As well as the raw timestamp of each reading that we receive, it could be that for ease of use down-stream we want to also add columns for just year, month, and so on. Easily done, using the `TIMESTAMPTOSTRING` function and https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html[DateTime format strings]: 
+Beyond filtering, KSQL can be used to create derivations based on the incoming data. Let’s take the example of dates. As well as the raw timestamp of each reading that we receive, it could be that for ease of use down-stream we want to also add columns for just year, month and so on. The `TIMESTAMPTOSTRING` function and https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html[DateTime format strings] allow you to easily accomplish these tasks: 
 
 [source,sql]
 ----
@@ -428,7 +427,7 @@ SELECT *, \
 FROM   ENVIRONMENT_DATA_LOCAL_WITH_TS;
 ----
 
-Now the stream includes the new columns: 
+The stream now includes the new columns:
 
 [source,sql]
 ----
@@ -455,7 +454,7 @@ Name                 : ENVIRONMENT_DATA_LOCAL_WITH_TS_AND_DATE_COLS
 ----------------------------------------------
 ----
 
-and each message includes the derived data: 
+Each message includes the derived data: 
 
 [source,sql]
 ----
@@ -474,7 +473,7 @@ Limit Reached
 Query terminated
 ----
 
-_In this example we're building up step-by-step a series of transformations in a daisy-chain style. In practice you may re-factor these into fewer steps, but I'm keeping them separate here to make the explanations clearer_.
+_Note: In this example we’re building step by step a series of transformations in a daisy-chain style. In practice you may refactor them into fewer steps, but I’m keeping them separate here to make the explanations clearer._.
 
 == Filtering data with KSQL
 
@@ -489,7 +488,7 @@ WHERE  GEO_DISTANCE(LAT,LONG,53.919066, -1.815725,'KM') < 100;
 
 == Masking data with KSQL
 
-As well as 'row' filtering as shown above, KSQL can also be used to filter 'columns' from a message. Imagine you have a field in your source data that you don't want to persist downstream—with KSQL you simply create a derived stream and omit the column(s) in question from the projection: 
+As well as filtering entire rows based on a predicate as shown above, KSQL can also be used to ‘filter’ columns from a message. Imagine you have a field in your source data that you don't want to persist downstream—with KSQL you simply create a derived stream and omit the column(s) in question from the projection: 
 
 [source,sql]
 ----
@@ -541,31 +540,31 @@ ksql> SELECT STATIONREFERENCE, EAREGIONNAME, MASK_RIGHT(EAREGIONNAME,4) AS REGIO
 L2404 | North East | North Xxxx
 ----
 
-There are several `MASK`-based functions, and if you have your own special-sauce you'd like to use here, KSQL https://docs.confluent.io/current/ksql/docs/udf.html#example-udf-class[support UDFs as of 5.0]. 
+There are several `MASK`-based functions, and if you have your own special-sauce you’d like to use here, KSQL does support https://docs.confluent.io/current/ksql/docs/udf.html#example-udf-class[user-defined functions (UDFs)] as of Confluent Platform 5.0.
 
 == Recap
 
-So far, we've ingested data from several sources, with similar but varying data models. Using KSQL we've wrangling the data: 
+So far, we’ve ingested data from several sources with similar but varying data models. Using KSQL we’ve wrangled the data by:
 
-* Flattened nested data structures
-* Reserialised JSON data to Avro
-* Unified the multiple streams into one
-* Set the message partitioning key
-* Set the message timestamp metadata to the correct logical value
-* Created derived columns in the transformation
-* Filtered and masked the data
+* Flattening nested data structures
+* Reserializing JSON data to Avro
+* Unifying the multiple streams into one
+* Setting the message partitioning key
+* Setting the message timestamp metadata to the correct logical value
+* Creating derived columns in the transformation
+* Filtering and masking the data
 
 image::../images/recap.png[]
 
-The results of these transformations is *continually populated Kafka topics*. As new messages arrive on the source, they are processed by the continually-running KSQL statements, and written to the target Kafka topic. 
+The results of these transformations is *continually populated Kafka topics*. As new messages arrive on the source,  continuously running KSQL statements process and write them to the target Kafka topic.
 
 == Streaming Onwards…
 
-The great thing about Kafka is the ability to build systems in which functionality is compartmentalised. Ingest is handled by one process (here, Kafka Connect), transformation by a series of KSQL statements. Each can be modified and switched out for another without impacting the pipeline we're building. By keeping them separate it makes it easier to test, to troubleshoot, to analyse performance metrics, and so on. It also means that we can extend data pipelines easily. We may have a single use-case in mind when initially building it, and one way to do this would be to build a single application that pulls data from REST endpoints, cleanses and wrangles it, and writes it out to the original target. But now if we want to add other targets, we have to modify that application, which becomes more complex and risky to do. Instead, by breaking the processes up and building it all around Kafka, adding another target for the data is as simple as consuming the transformed data from a Kafka topic. 
+The great thing about Kafka is its ability to build systems in which functionality is compartmentalized. Ingest is handled by one process in this case, Kafka Connect), and transformation is handled by a series of KSQL statements. Each can be modified and switched out for another without impacting the pipeline we’re building. Keeping them separate makes it easier to perform important activities such as testing, troubleshooting and analyzing performance metrics. It also means that we can extend data pipelines easily. We may have a single use case in mind when initially building it, and one way to do this would be building a single application that pulls data from REST endpoints before cleansing, wrangling and writing it out to the original target. But now if we want to add other targets, we have to modify that application, which becomes more complex and risky. Instead, by breaking up the processes and building them all around Kafka, adding another target for the data is as simple as consuming the transformed data from a Kafka topic.
 
-So let's take our transformed data, and do something with it! We can use it to drive analytics requirements, but we'll also see how it could drive applications themselves too. 
+So, let’s take our transformed data and do something with it! We can use it to drive analytic requirements, but we’ll also see how it can drive applications themselves, too.
 
-For our analytics, we're going to land the data to Google's Cloud Data Warehouse tool—https://cloud.google.com/bigquery/[BigQuery]. We'll use another Kafka Connect community connector, one written by WePay for https://www.confluent.io/connector/bigquery-sink-connector/[streaming data from Kafka topics to BigQuery]. For this you need to set up your GCP credentials in a file accessible to the Connect worker(s), and also make sure that the BigQuery project and dataset exists first—here I'm using ones called `devx-testing` and `environment_data` respectively: 
+For our analytics, we're going to land the data to https://cloud.google.com/bigquery/[BigQuery], Google's cloud data warehouse tool. We'll use another Kafka Connect community connector, one written by WePay to https://www.confluent.io/connector/bigquery-sink-connector/[stream data from Kafka topics to BigQuery]. You’ll need to set up your Google Cloud Platform (GCP) credentials in a file accessible to the Connect worker(s), and also make sure that the BigQuery project and dataset exist first. Here, I’m using ones called `devx-testing` and `environment_data`, respectively:
 
 [source,json]
 ----
@@ -606,12 +605,12 @@ Waiting on bqjob_r5ce1258159e7bf44_000001658f8cfedb_1 ... (0s) Current status: D
 [...]
 ----
 
-There are many ways of working with data in BigQuery, both using direct SQL interface as above or through the GUI console—or through numerous analytics visualization tools (including Looker, Tableau, Qlik, re:dash, etc). Here I've used Google's own https://marketingplatform.google.com/about/data-studio/[Data Studio]. Connecting to BigQuery is simple, and once the dataset is in Data Studio it's a matter of moments to throw some useful vizualisations together: 
+There are many ways to work with data in BigQuery: the direct SQL interface, the GUI console—or through numerous analytics visualization tools, including Looker, Tableau, Qlik, re:dash, etc. Here, I’ve used Google’s own https://marketingplatform.google.com/about/data-studio/[Data Studio]. Connecting to BigQuery is simple, and once the dataset is in Data Studio, it’s a matter of moments to throw some useful visualizations together: 
 
 image::../images/gds_env-data-02.png[Google Data Studio showing data from BigQuery streamed through Kafka and transformed with KSQL]
 image::../images/gds_env-data-03.png[Google Data Studio showing data from BigQuery streamed through Kafka and transformed with KSQL]
 
-As well as streaming data to Google BigQuery, we can _also_ stream the same transformed data to Google's Cloud Storage (GCS). This may be for uses such as archival purposes, or maybe batch access from other applications (although arguably this would be done from consuming the Kafka topic directly): 
+We’ve discussed streaming data to Google BigQuery, but did you know that you can also stream the same transformed data to GCS for archival purposes or even batch access from other applications (although arguably this would be done from consuming the Kafka topic directly)? 
 
 [source,json]
 ----
@@ -628,7 +627,7 @@ As well as streaming data to Google BigQuery, we can _also_ stream the same tran
 ----
 _https://github.com/confluentinc/demo-scene/blob/master/gcp-pipeline/env-data/connect_sink_gcs.sh[-> full code on github]_
 
-With this connector running, we now have data streaming to BigQuery as before, and now also Google Cloud Storage: 
+With this connector running, we now have data streaming to both BigQuery and GCS:
 
 [source,bash]
 ----
@@ -644,7 +643,7 @@ gs://rmoff-environment-data/topics/ENVIRONMENT_DATA/partition=0/ENVIRONMENT_DATA
 
 KSQL and Apache Kafka are a powerful way to build integration between systems, with transformation applied to the data in-flight, and the resulting data available to multiple consuming applications downstream. By working with streaming data, organisations can take advantage of the transform-once-use-many paradigm, since the data is available instantly for real-time applications to use, whilst applications with less immediate requirements (as is often the case with analytics) can use the same data. This reduces complexity, reduces duplication of code, and leads to a more flexible and powerful architecture. 
 
-Using KSQL streaming processing can be expressed using SQL alone, with no need to write any Java code. This opens it up to a much greater audience of developers. To learn more about KSQL and get started with it, check out: 
+Using KSQL, streaming processing can be expressed using SQL alone so you don’t need to write any Java code— opening up stream processing to a much wider audience of developers. To learn more about KSQL and get started with it, check out: 
 
 * https://www.confluent.io/product/ksql/[KSQL home page]
 * https://www.youtube.com/playlist?list=PLa7VYi0yPIH2eX8q3mPpZAn3qCS1eDX8W[KSQL video tutorials]
