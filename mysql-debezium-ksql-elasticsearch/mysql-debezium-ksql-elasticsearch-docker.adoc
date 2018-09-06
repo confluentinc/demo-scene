@@ -24,11 +24,6 @@ Start the environment
 ----
 cd docker-compose
 docker-compose up -d
-docker-compose logs -f kafka-connect-cp|grep "Kafka Connect started"
-----
-
-[source,bash]
-----
 ./scripts/setup.sh
 ----
 
