@@ -1,4 +1,6 @@
 python_notify
 img_data
 *.docx
-gcp_creds.json
+gcp-pipeline/run_it_on_gce_with_creds.sh
+gcp-pipeline/creds/gcp_creds.json
+gcp-pipeline/docker-compose-ccloud_with_creds.yml
