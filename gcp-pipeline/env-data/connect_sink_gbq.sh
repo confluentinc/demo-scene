@@ -4,7 +4,7 @@ curl -X "POST" "http://localhost:8083/connectors/" \
   "name": "sink_gbq_environment-data",
   "config": {
     "connector.class":"com.wepay.kafka.connect.bigquery.BigQuerySinkConnector",
-    "topics": "ENVIRONMENT_DATA",
+    "topics": "ENVIRONMENT_DATA_KEYED",
     "key.converter":"org.apache.kafka.connect.storage.StringConverter",
     "value.converter":"io.confluent.connect.avro.AvroConverter",
     "value.converter.schema.registry.url":"http://schema-registry:8081",
