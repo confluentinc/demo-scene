@@ -10,6 +10,7 @@ Scripts and samples to support Confluent Platform talks. May be rough around the
 * [Live-Coding KSQL scripts](live-coding-ksql)
 * [CDC demo with MySQL](no-more-silos)
 * [KSQL UDF Advanced Example](ksql-udf-advanced-example)
+* [MQTT Connect Connector Demo](mqtt-connect-connector-demo)
 
 ## Feedback & Questions
 
