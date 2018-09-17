@@ -54,6 +54,14 @@ docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
 * Create iTerm window, using the `screencapture` profile
 * Load this instructions doc into Chrome
 * Close all other apps
+* Optional: 
+** `source slack_creds.sh`
+** `python python_kafka_notify.py`
+** Connect laptop to wifi
+** Connect iPhone to wifi
+** Sign into Slack on iPhone
+** Enable Slack notifications
+** Disable other notifications (WhatsApp/Messages/any other Slack etc)
 
 == Demo
 
@@ -395,6 +403,8 @@ To run, first export your API key as an environment variable:
 export SLACK_API_TOKEN=xyxyxyxyxyxyxyxyxyxyxyx
 ----
 
+Or if you've got it locally, run `source slack_creds.sh`
+
 then run the code:
 
 [source,bash]
@@ -403,3 +413,4 @@ python python_kafka_notify.py
 ----
 
 You will need to install `slackclient` and `confluent_kafka` libraries.
+
