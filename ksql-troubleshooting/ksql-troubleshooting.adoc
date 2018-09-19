@@ -1,7 +1,7 @@
 = Troubleshooting KSQL
 
 Robin Moffatt <robin@confluent.io>
-v0.01, September 17, 2018
+v1.00, September 20, 2018
 
 == Introduction
 
@@ -518,11 +518,26 @@ The KSQL Server log is where you'd head if you're suspecting problems with your 
 
 === Confluent Control Center
 
-Part of Confluent Enterprise, this gives you powerful monitoring, management, and alerting capabilities for your Apache Kafka environment. From a KSQL point of view there's a KSQL editor for building and exploring KSQL objects, and crucially a streams monitoring capability. 
+Part of Confluent Enterprise, Confluent Control Center gives you powerful monitoring, management, and alerting capabilities for your Apache Kafka environment. From a KSQL point of view there's a KSQL editor for building and exploring KSQL objects, and crucially a streams monitoring capability. 
+
+With streams monitoring you can check: 
+
+- What's the message throughput rate of the pipeline? 
+- Were all messages that were written to Kafka consumed by the downstream application (which includes KSQL)? 
+- Were any messages consumed more than once? 
+- What was the latency of each consumer? 
 
 image::images/c3_01.png[]
 
+You can drill down into individual topics and consumers to inspect their particular behaviour. Here we can see that there are two Kafka Streams threads, only one of which (`StreamThread-2`) is consuming data. The reason for that is the source topic has a single partition:
+
 image::images/c3_02.png[]
+
+If we repartition the topic to four partitions, the Kafka Streams/KSQL task then consumes this over four threads: 
+
+image::images/c3_04.png[]
+
+Confluent Control Center can also show you when consumers are over-consuming. That could be because messages are being processed more than once—or as the case is in this screenshot, the required monitoring interceptors haven't been set up on the producer. 
 
 image::images/c3_03.png[]
 
@@ -530,7 +545,7 @@ image::images/c3_03.png[]
 
 === JMX 
 
-So Confluent Control Center is very cool for inspecting the flow of data in topics and behaviour of producers and consumers. But how about peeking inside how those producers and consumers are actually behaving? KSQL, as with other components in the Apache Kafka ecosystem, exposes a wealth of metrics through JMX. You can access these on an ad hoc basis through something like JConsole: 
+So Confluent Control Center is very cool for inspecting the flow of data in topics and behaviour of producers and consumers. But how about peeking inside how those producers and consumers are actually behaving? KSQL, as with other components in the Apache Kafka ecosystem, exposes a wealth of metrics through JMX. You can access these on an ad hoc basis through something like https://rmoff.net/2018/09/19/exploring-jmx-with-jmxterm/[jmxterm] or https://docs.oracle.com/javase/8/docs/technotes/guides/management/jconsole.html[JConsole] as seen here: 
 
 image::images/jmx02.png[JConsole]
 
@@ -566,21 +581,12 @@ For details of the specific metrics see:
 * https://kafka.apache.org/documentation/#monitoring[Apache Kafka docs]
 
 
+== Where Next? 
 
-== How can I check the status of a KSQL query
+So you're still stuck, and you need more help? There's several places to turn: 
 
-<<C3>>
+* KSQL is supported as part of the Confluent Enterprise platform—https://www.confluent.io/contact/[contact us for details]
+* Community support for KSQL is available: 
+** http://cnfl.io/slack[Confluent Community Slack] #ksql channel
+** https://github.com/confluentinc/ksql/issues[Search for similar issues] on GitHub, or  https://github.com/confluentinc/ksql/issues/new[raise a new issue] if one doesn't exist
 
-== What metrics does KSQL provide? 
-
-**** DESCRIBE EXTENDED
-
-$ export JMX_PORT=1099 && bin/ksql-server-start config/nicks-ksqlserver.properties
-JMX
-
-
-== My KSQL query's
-**** JMX
-**** C3
-**** JConsole
-**** DESCRIBE EXTENDED
