@@ -122,7 +122,8 @@ services:
     environment:
       - SECONDS_BETWEEN_RUNS=5
     volumes:
-      - ./config/jmx.json:/var/lib/jmxtrans/jmx.json
+      - ./config/jmx_minimal.json:/var/lib/jmxtrans/jmx.json
+      #- ./config/jmx_all.json:/var/lib/jmxtrans/jmx.json
 
   influxdb: 
     image: influxdb:1.1.0-alpine

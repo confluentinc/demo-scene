@@ -438,29 +438,134 @@ messages-per-sec:      1.10   total-messages:      2898     last-message: 9/17/1
 ksql>
 ----
 
-
-You can also access a wealth of metrics from KSQL over JMX, using tools such as JConsole: 
-
-image::images/jmx01.png[JConsole]
-
-For details of the specific metrics see the https://docs.confluent.io/current/streams/monitoring.html#accessing-metrics-via-jmx-and-reporters[Kafka Streams docs]
-
-
-
-
+Of note here is also the `failed-messages` count - if that's going up, then it's not a good sign for the health of your query. It could be caused by serialization errors, as discussed earlier. 
 
 == What's happening under the covers? 
 
-**** DESCRIBE EXTENDED
-EXPLAIN
-SHOW QUERIES
+You can dig deeper into the execution of queries. Let's start by listing the queries that are running: 
 
-visualvm
-https://visualvm.github.io/
+[source,sql]
+----
+ksql> SHOW QUERIES;
 
-**** jstatd
+ Query ID                | Kafka Topic      | Query String
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ CSAS_GOOD_IOS_RATINGS_0 | GOOD_IOS_RATINGS | CREATE STREAM GOOD_IOS_RATINGS AS     SELECT * FROM RATINGS WHERE STARS >= 4                             AND CHANNEL='iOS';
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----
 
-OR • jstatd– run it on every host! • Remotely connect and use Visualvm
+Just the one, populating `GOOD_IOS_RATINGS` with the CSAS statement we ran above. The query's called `CSAS_GOOD_IOS_RATINGS_0` (note, this name is non-deterministic). 
+
+We can examine the query itself, and how KSQL is going to perform the transformation we've asked it to, through the explain plan—the same thing as you get in RDBMS. To access it, use the `EXPLAIN` command: 
+
+[source,sql]
+----
+ksql> EXPLAIN CSAS_GOOD_IOS_RATINGS_0;
+
+[...]
+
+Execution plan
+--------------
+ > [ SINK ] Schema: [ROWTIME : BIGINT, ROWKEY : VARCHAR, RATING_ID : BIGINT, USER_ID : BIGINT, STARS : INT, ROUTE_ID : BIGINT, RATING_TIME : BIGINT, CHANNEL : VARCHAR, MESSAGE : VARCHAR].
+                 > [ PROJECT ] Schema: [ROWTIME : BIGINT, ROWKEY : VARCHAR, RATING_ID : BIGINT, USER_ID : BIGINT, STARS : INT, ROUTE_ID : BIGINT, RATING_TIME : BIGINT, CHANNEL : VARCHAR, MESSAGE : VARCHAR].
+                                 > [ FILTER ] Schema: [RATINGS.ROWTIME : BIGINT, RATINGS.ROWKEY : VARCHAR, RATINGS.RATING_ID : BIGINT, RATINGS.USER_ID : BIGINT, RATINGS.STARS : INT, RATINGS.ROUTE_ID : BIGINT, RATINGS.RATING_TIME : BIGINT, RATINGS.CHANNEL : VARCHAR, RATINGS.MESSAGE : VARCHAR].
+                                                 > [ SOURCE ] Schema: [RATINGS.ROWTIME : BIGINT, RATINGS.ROWKEY : VARCHAR, RATINGS.RATING_ID : BIGINT, RATINGS.USER_ID : BIGINT, RATINGS.STARS : INT, RATINGS.ROUTE_ID : BIGINT, RATINGS.RATING_TIME : BIGINT, RATINGS.CHANNEL : VARCHAR, RATINGS.MESSAGE : VARCHAR].
+----
+
+Because KSQL is built on Kafka Streams, and executes queries using it, the `EXPLAIN` command can also tell you the topology Kafka Streams will use: 
+
+[source,sql]
+----
+ksql> EXPLAIN CSAS_GOOD_IOS_RATINGS_0;
+
+[...]
+
+Processing topology
+-------------------
+Topologies:
+   Sub-topology: 0
+    Source: KSTREAM-SOURCE-0000000000 (topics: [ratings])
+      --> KSTREAM-MAPVALUES-0000000001
+    Processor: KSTREAM-MAPVALUES-0000000001 (stores: [])
+      --> KSTREAM-TRANSFORMVALUES-0000000002
+      <-- KSTREAM-SOURCE-0000000000
+    Processor: KSTREAM-TRANSFORMVALUES-0000000002 (stores: [])
+      --> KSTREAM-FILTER-0000000003
+      <-- KSTREAM-MAPVALUES-0000000001
+    Processor: KSTREAM-FILTER-0000000003 (stores: [])
+      --> KSTREAM-MAPVALUES-0000000004
+      <-- KSTREAM-TRANSFORMVALUES-0000000002
+    Processor: KSTREAM-MAPVALUES-0000000004 (stores: [])
+      --> KSTREAM-MAPVALUES-0000000005
+      <-- KSTREAM-FILTER-0000000003
+    Processor: KSTREAM-MAPVALUES-0000000005 (stores: [])
+      --> KSTREAM-SINK-0000000006
+      <-- KSTREAM-MAPVALUES-0000000004
+    Sink: KSTREAM-SINK-0000000006 (topic: GOOD_IOS_RATINGS)
+      <-- KSTREAM-MAPVALUES-0000000005
+----
+
+Taking the query name, you can even go and poke around the KSQL Server log, and see the Kafka Streams applications firing up, with the query name as part of their client id: 
+
+[source,bash]
+----
+ksql-server_1      | [2018-09-19 21:05:40,625] INFO stream-thread [_confluent-ksql-confluent_rmoff_01query_CSAS_GOOD_IOS_RATINGS_0-c36ebad2-f969-40e1-9b59-757305cf3b61-StreamThread-5] State transition from CREATED to RUNNING (org.apache.kafka.streams.processor.internals.StreamThread:209)
+----
+
+The KSQL Server log is where you'd head if you're suspecting problems with your queries that you can't diagnose through the KSQL CLI itself. 
+
+== Digging deeper with Confluent Control Center and JMX
+
+=== Confluent Control Center
+
+Part of Confluent Enterprise, this gives you powerful monitoring, management, and alerting capabilities for your Apache Kafka environment. From a KSQL point of view there's a KSQL editor for building and exploring KSQL objects, and crucially a streams monitoring capability. 
+
+image::images/c3_01.png[]
+
+image::images/c3_02.png[]
+
+image::images/c3_03.png[]
+
+
+
+=== JMX 
+
+So Confluent Control Center is very cool for inspecting the flow of data in topics and behaviour of producers and consumers. But how about peeking inside how those producers and consumers are actually behaving? KSQL, as with other components in the Apache Kafka ecosystem, exposes a wealth of metrics through JMX. You can access these on an ad hoc basis through something like JConsole: 
+
+image::images/jmx02.png[JConsole]
+
+Much more useful is to persist them to a datastore (such as InfluxDB) for subsequent analysis (for example through Grafana): 
+
+image::images/jmx09.png[Grafana showing JMX metrics]
+
+You can see nice and clearly here the ratio of messages being consumed by KSQL (all data from the `ratings` topic) to that produced by it (messages matching the `STARS >= 4 AND CHANNEL='iOS'` criteria): 
+
+image::images/jmx04.png[Grafana showing KSQL JMX metrics]
+
+The spike at 12:31 coincides with when I ran the above example of trying to read messages with the wrong serialization format defined. Handily enough, there's also a JMX metric we can track for errors: 
+
+image::images/jmx05.png[Grafana showing KSQL JMX metrics]
+
+Note the spike in `error-rate`, amd also the increase in `num-active-queries`—which makes sense, since there was the additional query running at the time against the invalid stream (in addition to the one already running against `ratings`).
+
+You can dig down into the underlying Kafka Streams metrics: 
+
+image::images/jmx08.png[Grafana showing Kafka Producer metrics]
+
+
+Kafka Streams is itself built on Kafka, and you can drill down to the underlying Kafka Producer and Consumer metrics too:
+
+image::images/jmx06.png[Grafana showing Kafka Producer metrics]
+image::images/jmx07.png[Grafana showing Kafka IO wait time metrics]
+
+If you want to try this out for yourself and explore the JMX metrics, you can use the https://github.com/confluentinc/demo-scene/tree/master/ksql-troubleshooting[complete code samples on GitHub].
+
+For details of the specific metrics see: 
+
+*  https://docs.confluent.io/current/streams/monitoring.html#accessing-metrics-via-jmx-and-reporters[Kafka Streams docs]
+* https://kafka.apache.org/documentation/#monitoring[Apache Kafka docs]
+
+
 
 == How can I check the status of a KSQL query
 
