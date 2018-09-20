@@ -423,9 +423,11 @@ If you've installed Confluent Platform using rpm/deb then you should find the lo
 
 So you're still stuck, and you need more help? There's several places to turn: 
 
-* KSQL is supported as part of the Confluent Enterprise platform—https://www.confluent.io/contact/[contact us for details]
+* KSQL is supported as part of the Confluent Enterprise platform— https://www.confluent.io/contact/[contact us for details]
 * Community support for KSQL is available: 
 ** http://cnfl.io/slack[Confluent Community Slack] #ksql channel
 ** https://github.com/confluentinc/ksql/issues[Search for similar issues] on GitHub, or  https://github.com/confluentinc/ksql/issues/new[raise a new issue] if one doesn't exist
 
-_Stay tuned for the second part of this series, in which we dive into KSQL internals, and look at tools we can use for monitoring and examining the behaviour of running queries and KSQL itself._
+Other articles in this series: 
+
+* https://www.confluent.io/blog/[Part 2: What's happening under the covers?]—dive into KSQL internals, and look at tools we can use for monitoring and examining the behaviour of running queries and KSQL itself

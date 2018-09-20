@@ -12,28 +12,15 @@ You can use this article for reference, or you can follow along with the code ex
 
 So now let's dive in and start exploring what to do when things aren't working…
 
-=== Locating KSQL Server logs
-
-KSQL writes most of its logs to `stdout` by default. If you're https://hub.docker.com/r/confluentinc/cp-ksql-server/[running KSQL using Docker] then you'll find the output in the container logs themselves, for example: 
-
-* `docker logs 483b1958efc4` 
-* `docker-compose logs ksql-server`
-
-Using the Confluent CLI you can run : 
-
-* `confluent log ksql-server`
-
-If you've installed Confluent Platform using rpm/deb then you should find the logs under `/var/log/confluent/`. 
-
-
-
-== Is my KSQL query running? How many messages has it processed? 
+== How many messages have been processed by a KSQL query? 
 
 In KSQL you can populate Kafka topics with the results of a query. You do this using the `CREATE STREAM…AS SELECT` syntax: 
 
 [source,sql]
 ----
-ksql> CREATE STREAM GOOD_RATINGS AS SELECT * FROM RATINGS WHERE STARS>=4;
+ksql> CREATE STREAM GOOD_IOS_RATINGS AS \
+        SELECT * FROM RATINGS WHERE STARS >= 4 \
+                                AND CHANNEL='iOS';
 ----
 
 Because KSQL queries are continuous, this means that we've just written and executed an application. It takes the inbound data, filters it for a condition, and writes any matches to the target topic. 
@@ -130,6 +117,19 @@ ksql-server_1      | [2018-09-19 21:05:40,625] INFO stream-thread [_confluent-ks
 
 The KSQL Server log is where you'd head if you're suspecting problems with your queries that you can't diagnose through the KSQL CLI itself. 
 
+=== Locating KSQL Server logs
+
+KSQL writes most of its logs to `stdout` by default. If you're https://hub.docker.com/r/confluentinc/cp-ksql-server/[running KSQL using Docker] then you'll find the output in the container logs themselves, for example: 
+
+* `docker logs 483b1958efc4` 
+* `docker-compose logs ksql-server`
+
+Using the Confluent CLI you can run : 
+
+* `confluent log ksql-server`
+
+If you've installed Confluent Platform using rpm/deb then you should find the logs under `/var/log/confluent/`. 
+
 == Digging deeper with Confluent Control Center and JMX
 
 === Confluent Control Center
@@ -201,8 +201,11 @@ For details of the specific metrics see:
 
 So you're still stuck, and you need more help? There's several places to turn: 
 
-* KSQL is supported as part of the Confluent Enterprise platform—https://www.confluent.io/contact/[contact us for details]
+* KSQL is supported as part of the Confluent Enterprise platform— https://www.confluent.io/contact/[contact us for details]
 * Community support for KSQL is available: 
 ** http://cnfl.io/slack[Confluent Community Slack] #ksql channel
 ** https://github.com/confluentinc/ksql/issues[Search for similar issues] on GitHub, or  https://github.com/confluentinc/ksql/issues/new[raise a new issue] if one doesn't exist
 
+Other articles in this series: 
+
+* https://www.confluent.io/blog/[Part 1: Why's my KSQL query not returning data?]
