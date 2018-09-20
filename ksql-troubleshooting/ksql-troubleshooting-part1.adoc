@@ -1,36 +1,16 @@
-= Troubleshooting KSQL
+= Troubleshooting KSQL - Part 1: Why's my KSQL query not returning data?
+//:source-highlighter: pygments
 
 Robin Moffatt <robin@confluent.io>
 v1.00, September 20, 2018
 
 == Introduction
 
-KSQL is the powerful SQL Streaming engine for Apache Kafka. Using standard SQL statements you can build powerful stream processing applications. In this article we'll see how to troubleshoot some of the common issues that people encounter with KSQL.
+KSQL is the powerful SQL Streaming engine for Apache Kafka. Using standard SQL statements you can build powerful stream processing applications. In this article we'll see how to troubleshoot some of the common issues that people encounter with KSQL. More advanced topics such as digging deeper into the internals for more advanced troubleshooting will be covered by a subsequent article. 
 
-Using Docker and Docker Compose, we can easily provision an environment in which to explore and try out the different techniques and tools for troubleshooting described below. The environment includes a data generator for a continuous stream of events into a Kafka topic that we will use for testing. 
+You can use this article for reference, or you can follow along with the code examples to try them out as we go. Using Docker and Docker Compose, we can easily provision an environment in which to explore and try out the different techniques and tools. The environment includes a data generator for a continuous stream of events into a Kafka topic that we will use for testing. You'll find all the necessary code on https://github.com/confluentinc/demo-scene/blob/ksql-troubleshooting/ksql-troubleshooting/[GitHub].
 
-First clone the repository and bring up the set of containers: 
-
-[source,bash]
-----
-git clone https://github.com/confluentinc/demo-scene.git
-cd demo-scene/ksql-troubleshooting
-docker-compose up -d
-----
-
-(make sure Docker has been allocated at least 8GB of memory)
-
-Now you can run the KSQL CLI: 
-
-[source,bash]
-----
-docker run --network ksql-troubleshooting_default \
-           --interactive --tty --rm               \
-      confluentinc/cp-ksql-cli:latest             \
-      http://ksql-server:8088
-----
-
-So we're all set now to start exploring what to do when things aren't working…
+So now let's dive in and start exploring what to do when things aren't working…
 
 == Why's my KSQL query not returning data? 
 
@@ -43,12 +23,12 @@ That is, you've run a `CREATE STREAM`, but when you go to query it…
 
 [source,sql]
 ----
-ksql> SELECT * FROM RATINGS;
+ksql> SELECT * FROM MY_FIRST_KSQL_STREAM;
 ----
 
 …nothing happens. And because KSQL queries are _continuous_, your KSQL session appears to "hang". That's because KSQL's continuing to wait for any new messages to show you. So if your run a KSQL `SELECT` and get no results back, what could be the reasons for that? 
 
-The answer usually comes down to one of three main reasons: 
+The answer usually comes down to one of four main reasons (the first three of which are variations on a theme): 
 
 1. No data in the source topic
 2. No new data arriving in the topic
@@ -57,13 +37,21 @@ The answer usually comes down to one of three main reasons:
 
 Let's look at each of these in turn and how to diagnose them. 
 
-=== No source data in the topic
+=== No data in the source topic
 
-We believe we've got data in a topic called `ratingz`, so we register it with KSQL as a `STREAM`: 
+Let's work this through from the start. We believe we've got data in a topic called `ratingz`, so we register it with KSQL as a `STREAM`: 
 
 [source,sql]
 ----
-ksql> CREATE STREAM RATINGS (rating_id BIGINT, user_id BIGINT, stars INT, route_id BIGINT, rating_time BIGINT, channel VARCHAR, message varchar) WITH (KAFKA_TOPIC='ratingz', VALUE_FORMAT='JSON');
+ksql> CREATE STREAM RATINGS (rating_id BIGINT, \
+                             user_id BIGINT, \
+                             stars INT, \
+                             route_id BIGINT, \
+                             rating_time BIGINT, \
+                             channel VARCHAR, \
+                             message varchar) \
+        WITH (KAFKA_TOPIC='ratingz', \
+        VALUE_FORMAT='JSON');
 
  Message
 ----------------
@@ -72,20 +60,25 @@ ksql> CREATE STREAM RATINGS (rating_id BIGINT, user_id BIGINT, stars INT, route_
 ksql>
 ----
 
-Go and query the new stream: 
+And then, we query the new stream: 
 
 [source,sql]
 ----
 SELECT rating_id, user_id, message FROM RATINGS;
 ----
 
-https://asciinema.org/a/201664
+++++
+<script src="https://asciinema.org/a/201664.js" id="asciicast-201664" async></script>
+++++
+//https://asciinema.org/a/201664
 
 No data comes back—so let's now do some detective work. 
 
-The first thing is to confirm which Kafka topic we're definitely looking at. Using the `DESCRIBE EXTENDED` command we can verify that: 
+The first thing is to confirm which Kafka topic we're using to drive the stream. We _think_ we know (we just ran the `CREATE STREAM`, right?), but as with any good troubleshooting approach the key is methodically working through the possibilities.
 
-[source,sql]
+So using the `DESCRIBE EXTENDED` command we can verify the topic from which the stream is sourced: 
+
+[source,sql,numbered]
 ----
 ksql> DESCRIBE EXTENDED RATINGS;
 
@@ -95,11 +88,12 @@ Key field            :
 Key format           : STRING
 Timestamp field      : Not set - using <ROWTIME>
 Value format         : JSON
-Kafka topic          : ratingz (partitions: 1, replication: 1)
+Kafka topic          : ratingz (partitions: 1, replication: 1) // <1>
 [...]
 ----
+<1> The Kafka topic used by this stream
 
-So our source topic is `ratingz`. Now we will step away from KSQL and use another Kafka consumer to verify if there is data in the topic. My preferred tool here is https://docs.confluent.io/current/app-development/kafkacat-usage.html[`kafkacat`] but you can use `kafka-console-consumer` too if you like. Invoking kafkacat shows: 
+So our source topic is `ratingz`. Now we will step away from KSQL and use another Kafka consumer to verify if there is data in the topic. My preferred tool here is https://docs.confluent.io/current/app-development/kafkacat-usage.html[`kafkacat`] but you can use other tools, such as `kafka-console-consumer`, if you like. Invoking kafkacat shows: 
 
 [source,bash]
 ----
@@ -113,7 +107,7 @@ $ docker run --network ksql-troubleshooting_default --tty --interactive --rm \
 
 The `-o beginning` tells it to go back to the beginning of the topic, and `-C` to read the messages. `Reached end of topic` shows that there's no data to read. No data means that KSQL isn't going to be showing anything in the output of a `SELECT`! 
 
-So in this case, there's no data in the source topic. Turns out we mistook the topic name, and used `ratingz` instead of `ratings`! D'oh! 
+NOTE: => So in this case, there's no data in the source topic. Turns out we mistook the topic name, and used `ratingz` instead of `ratings`! D'oh! 
 
 === No new data arriving in the topic
 
@@ -141,9 +135,10 @@ As before, try to query the stream, and find there's no data being returned:
 [source,sql]
 ----
 SELECT rating_id, user_id, message FROM RATINGS;
-----
 
-https://asciinema.org/a/201664
+[ no output returned from KSQL ]
+
+----
 
 Let's do as before, and first verify the source topic for the stream that we're querying: 
 
@@ -179,7 +174,12 @@ ksql> SELECT rating_id, user_id, message FROM RATINGS;
 [...]
 ----
 
-https://asciinema.org/a/201667
+++++
+<script src="https://asciinema.org/a/qDKaSYgu1ssP71nkkykAPlThl.js" id="asciicast-qDKaSYgu1ssP71nkkykAPlThl" async></script>
+++++
+// https://asciinema.org/a/201667
+
+NOTE: => So here we just needed to feed the topic more data. What about if you want to look at data already in the topic? That's what we'll look at in the next section. 
 
 === KSQL consuming from a later offset than for which there is data
 
@@ -196,11 +196,11 @@ ksql> LIST PROPERTIES;
  Property                                               | Value
 ------------------------------------------------------------------------------------------------------------------------
 [...]
- ksql.streams.auto.offset.reset (LOCAL OVERRIDE)        | earliest
+ ksql.streams.auto.offset.reset                         | latest
 [...]
 ----
 
-Often—and particularly in testing and development—you'll want to read the data that already exists in a topic. To tell KSQL to do this, you change the offset configuration: 
+Often—and particularly in testing and development—you'll want to read the data that _already exists in a topic_. To tell KSQL to do this, you change the offset property: 
 
 [source,sql]
 ----
@@ -211,29 +211,29 @@ ksql>
 
 Now when you run a `SELECT`, KSQL will return the data from the beginning of the topic. The `SELECT` will still run continuously, so if there is new data arriving you'll see that—and if there isn't the `SELECT` will just hang and wait for new data (or for you to cancel the query). 
 
+++++
+<script src="https://asciinema.org/a/928myvjdUsGmip8TVdSbckUh1.js" id="asciicast-928myvjdUsGmip8TVdSbckUh1" async></script>
+++++
+
+
 === Deserialization errors in reading the data
 
 Data in Kafka is just bytes. It's up to the producer how it serialises the source message, and the consumer (which is KSQL here) needs to deserialise using the same method. Common serialisation formats include Avro, JSON, etc.
 
 If KSQL cannot deserialise message data, it will not write anything to the `SELECT` results. If this happens, you could have checked the three situations above and ruled them out—but still not have any data returned to your `SELECT`. 
 
-Here's a simple example, using one of the internal topics that Kafka can write to called `_confluent-metrics`. Let's register it using a fictional schema that we believe to be correct for the purposes of this example, and declare the serialisation format of the message values to be JSON: 
+Here's a simple example, using one of the existing internal topics called `_confluent-metrics`. Let's register it using a fictional schema that we believe to be correct for the purposes of this example, and declare the serialisation format of the message values to be JSON (tip: it's not JSON!): 
 
 [source,sql]
 ----
-CREATE STREAM METRICS (col1 int, col2 int, col3 varchar) WITH (KAFKA_TOPIC='_confluent-metrics', VALUE_FORMAT='JSON');
+CREATE STREAM METRICS (col1 int, col2 int, col3 varchar) \
+  WITH (KAFKA_TOPIC='_confluent-metrics', VALUE_FORMAT='JSON');
 ----
 
 Taking the lesson from above, set the offset to earliest so that we definitely will pull all the messages, and run a `SELECT`: 
 
 [source,sql]
 ----
-ksql> CREATE STREAM METRICS (col1 int, col2 int, col3 varchar) WITH (KAFKA_TOPIC='_confluent-metrics', VALUE_FORMAT='JSON');
-
- Message
-----------------
- Stream created
-----------------
 ksql> SET 'auto.offset.reset'='earliest';
 Successfully changed local property 'auto.offset.reset' from 'earliest' to 'earliest'
 ksql> SELECT * FROM METRICS;
@@ -259,7 +259,8 @@ $ docker run --network ksql-troubleshooting_default --tty --interactive --rm \
           confluentinc/cp-kafkacat \
           kafkacat -b kafka:29092 \
           -C -t _confluent-metrics \
-          -o beginning -c 1                                                                                                                                  ���,�
+          -o beginning -c 1 <1>
+                                                                                                                                            ���,�
 
         kafka.logSizeLog"$partition.9.topic.__consumer_offsets*Akafka.log:type=Log,name=Size,topic=__consumer_offsets,partition=90�
 
@@ -270,8 +271,7 @@ $ docker run --network ksql-troubleshooting_default --tty --interactive --rm \
         kafka.logSizeLog"$partition.6.topic.__consumer_offsets*Akafka.log:type=Log,name=Size,topic=__consumer_offsets,partition=60�
         [...]
 ----
-
-(I used the `-c 1` argument to tell `kafkacat` to just return the one message and then exit). 
+<1>  The `-c 1` argument tells `kafkacat` to just return the one message and then exit
 
 So, there is data, we're querying the correct topic, we've set the offset back to the begining…why isn't KSQL returning data? 
 
@@ -300,13 +300,13 @@ Well, the data we can see from the output of `kafkacat` clearly isn't JSON, whic
 [...]
 ----
 
-You can see from the stack track it's using the JSON deserialiser (as you'd expect, given our `VALUE_FORMAT` configuration, and you can also see form the sample message that it's shown (`[Source: (byte[])�����,� �`) that it clearly isn't JSON. 
+You can see from the stack track it's using the JSON deserialiser (as you'd expect, given our `VALUE_FORMAT` configuration), and you can also see from the sample message in the log output that it's shown (`[Source: (byte[])�����,� �`) that it clearly isn't JSON. 
 
 If you hit this problem, then you need to synchronise your serialisation and deserialisation formats. KSQL supports delimited (CSV), JSON, or Avro. If you're using Protobuf then check out https://github.com/confluentinc/ksql/pull/1472[KLIP-0] which proposes adding this to KSQL. 
 
 ==== Not all of the messages from my topic are shown in KSQL
 
-Following on from the above example of _no_ messages being returned, you may also see cases where only _some_ of the messages are shown, and it could be the same root cause. 
+Following on from the above example of _no_ messages being returned, you may also see cases where only _some_ of the messages are shown, and it could be the same root cause—serialisation—but with a different slant. Instead of simply getting your serialisation format _wrong_, maybe you chose the right serialisation format, but there are some *malformed messages* on the topic. 
 
 Let's see a simple example. We'll put some data onto a new topic, using JSON but with some malformed messages
 
@@ -329,7 +329,8 @@ Register the topic in KSQL:
 
 [source,sql]
 ----
-ksql> CREATE STREAM DUMMY (COL1 INT, COL2 VARCHAR) WITH (KAFKA_TOPIC='dummy_topic', VALUE_FORMAT='JSON');
+ksql> CREATE STREAM DUMMY (COL1 INT, COL2 VARCHAR) \
+        WITH (KAFKA_TOPIC='dummy_topic', VALUE_FORMAT='JSON');
 
  Message
 ----------------
@@ -376,15 +377,22 @@ docker run --network ksql-troubleshooting_default \
           --tty --interactive --rm \
           confluentinc/cp-kafkacat \
           kafkacat -b kafka:29092 -C -K: \
-          -f '\nKey: %k\t\nValue: %s\n\Partition: %p\tOffset: %o\n--\n' \
-          -t dummy_topic -o 1 -p 0 -c 1
+          -f '\nKey: %k\t\nValue: %s\n\Partition: %p\tOffset: %o\n--\n' \ <1>
+          -t dummy_topic \
+          -o 1 \ <2>
+          -p 0 \ <3>
+          -c 1   <4>
 ----
+<1> `-f` to format the output and show some nice metadata
+<2> `-o 1` start at offset 1
+<3> `-p 0` read from partition 0
+<4> `-c 1` consume just one message
 
-Where the arguments are: 
-
-* `-p 0` read from partition 0
-* `-o 1` start at offset 1, and `-c 1` consume just one message
-* `-f` to format the output and show some nice metadata
+// Where the arguments are: 
+// 
+// * `-p 0` read from partition 0
+// * `-o 1` start at offset 1, and `-c 1` consume just one message
+// * `-f` to format the output and show some nice metadata
 
 The output of this is: 
 
@@ -396,7 +404,7 @@ Partition: 0    Offset: 1
 --
 ----
 
-And shows us, if we were in any doubt, that the message is not valid JSON—and thus can't be consumed by KSQL. 
+And shows us, if we were in any doubt, that the message value is not valid JSON—and thus can't be consumed by KSQL. 
 
 === Locating KSQL Server logs
 
@@ -411,176 +419,6 @@ Using the Confluent CLI you can run :
 
 If you've installed Confluent Platform using rpm/deb then you should find the logs under `/var/log/confluent/`. 
 
-== Is my KSQL query running? How many messages has it processed? 
-
-In KSQL you can populate Kafka topics with the results of a query. You do this using the `CREATE STREAM…AS SELECT` syntax: 
-
-[source,sql]
-----
-ksql> CREATE STREAM GOOD_RATINGS AS SELECT * FROM RATINGS WHERE STARS>=4;
-----
-
-Because KSQL queries are continuous, this means that we've just written and executed an application. It takes the inbound data, filters it for a condition, and writes any matches to the target topic. 
-
-What does any self-respecting application need? Metrics! How many messages have been processed? When was the last message processed? And so on. 
-
-The simplest option is from within KSQL itself, using the same `DESCRIBE EXTENDED` command that we saw previously: 
-
-[source,sql]
-----
-ksql> DESCRIBE EXTENDED GOOD_RATINGS;
-[...]
-Local runtime statistics
-------------------------
-messages-per-sec:      1.10   total-messages:      2898     last-message: 9/17/18 1:48:47 PM UTC
- failed-messages:         0 failed-messages-per-sec:         0      last-failed:       n/a
-(Statistics of the local KSQL server interaction with the Kafka topic GOOD_RATINGS)
-ksql>
-----
-
-Of note here is also the `failed-messages` count - if that's going up, then it's not a good sign for the health of your query. It could be caused by serialization errors, as discussed earlier. 
-
-== What's happening under the covers? 
-
-You can dig deeper into the execution of queries. Let's start by listing the queries that are running: 
-
-[source,sql]
-----
-ksql> SHOW QUERIES;
-
- Query ID                | Kafka Topic      | Query String
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- CSAS_GOOD_IOS_RATINGS_0 | GOOD_IOS_RATINGS | CREATE STREAM GOOD_IOS_RATINGS AS     SELECT * FROM RATINGS WHERE STARS >= 4                             AND CHANNEL='iOS';
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-----
-
-Just the one, populating `GOOD_IOS_RATINGS` with the CSAS statement we ran above. The query's called `CSAS_GOOD_IOS_RATINGS_0` (note, this name is non-deterministic). 
-
-We can examine the query itself, and how KSQL is going to perform the transformation we've asked it to, through the explain plan—the same thing as you get in RDBMS. To access it, use the `EXPLAIN` command: 
-
-[source,sql]
-----
-ksql> EXPLAIN CSAS_GOOD_IOS_RATINGS_0;
-
-[...]
-
-Execution plan
---------------
- > [ SINK ] Schema: [ROWTIME : BIGINT, ROWKEY : VARCHAR, RATING_ID : BIGINT, USER_ID : BIGINT, STARS : INT, ROUTE_ID : BIGINT, RATING_TIME : BIGINT, CHANNEL : VARCHAR, MESSAGE : VARCHAR].
-                 > [ PROJECT ] Schema: [ROWTIME : BIGINT, ROWKEY : VARCHAR, RATING_ID : BIGINT, USER_ID : BIGINT, STARS : INT, ROUTE_ID : BIGINT, RATING_TIME : BIGINT, CHANNEL : VARCHAR, MESSAGE : VARCHAR].
-                                 > [ FILTER ] Schema: [RATINGS.ROWTIME : BIGINT, RATINGS.ROWKEY : VARCHAR, RATINGS.RATING_ID : BIGINT, RATINGS.USER_ID : BIGINT, RATINGS.STARS : INT, RATINGS.ROUTE_ID : BIGINT, RATINGS.RATING_TIME : BIGINT, RATINGS.CHANNEL : VARCHAR, RATINGS.MESSAGE : VARCHAR].
-                                                 > [ SOURCE ] Schema: [RATINGS.ROWTIME : BIGINT, RATINGS.ROWKEY : VARCHAR, RATINGS.RATING_ID : BIGINT, RATINGS.USER_ID : BIGINT, RATINGS.STARS : INT, RATINGS.ROUTE_ID : BIGINT, RATINGS.RATING_TIME : BIGINT, RATINGS.CHANNEL : VARCHAR, RATINGS.MESSAGE : VARCHAR].
-----
-
-Because KSQL is built on Kafka Streams, and executes queries using it, the `EXPLAIN` command can also tell you the topology Kafka Streams will use: 
-
-[source,sql]
-----
-ksql> EXPLAIN CSAS_GOOD_IOS_RATINGS_0;
-
-[...]
-
-Processing topology
--------------------
-Topologies:
-   Sub-topology: 0
-    Source: KSTREAM-SOURCE-0000000000 (topics: [ratings])
-      --> KSTREAM-MAPVALUES-0000000001
-    Processor: KSTREAM-MAPVALUES-0000000001 (stores: [])
-      --> KSTREAM-TRANSFORMVALUES-0000000002
-      <-- KSTREAM-SOURCE-0000000000
-    Processor: KSTREAM-TRANSFORMVALUES-0000000002 (stores: [])
-      --> KSTREAM-FILTER-0000000003
-      <-- KSTREAM-MAPVALUES-0000000001
-    Processor: KSTREAM-FILTER-0000000003 (stores: [])
-      --> KSTREAM-MAPVALUES-0000000004
-      <-- KSTREAM-TRANSFORMVALUES-0000000002
-    Processor: KSTREAM-MAPVALUES-0000000004 (stores: [])
-      --> KSTREAM-MAPVALUES-0000000005
-      <-- KSTREAM-FILTER-0000000003
-    Processor: KSTREAM-MAPVALUES-0000000005 (stores: [])
-      --> KSTREAM-SINK-0000000006
-      <-- KSTREAM-MAPVALUES-0000000004
-    Sink: KSTREAM-SINK-0000000006 (topic: GOOD_IOS_RATINGS)
-      <-- KSTREAM-MAPVALUES-0000000005
-----
-
-Taking the query name, you can even go and poke around the KSQL Server log, and see the Kafka Streams applications firing up, with the query name as part of their client id: 
-
-[source,bash]
-----
-ksql-server_1      | [2018-09-19 21:05:40,625] INFO stream-thread [_confluent-ksql-confluent_rmoff_01query_CSAS_GOOD_IOS_RATINGS_0-c36ebad2-f969-40e1-9b59-757305cf3b61-StreamThread-5] State transition from CREATED to RUNNING (org.apache.kafka.streams.processor.internals.StreamThread:209)
-----
-
-The KSQL Server log is where you'd head if you're suspecting problems with your queries that you can't diagnose through the KSQL CLI itself. 
-
-== Digging deeper with Confluent Control Center and JMX
-
-=== Confluent Control Center
-
-Part of Confluent Enterprise, Confluent Control Center gives you powerful monitoring, management, and alerting capabilities for your Apache Kafka environment. From a KSQL point of view there's a KSQL editor for building and exploring KSQL objects, and crucially a streams monitoring capability. 
-
-With streams monitoring you can check: 
-
-- What's the message throughput rate of the pipeline? 
-- Were all messages that were written to Kafka consumed by the downstream application (which includes KSQL)? 
-- Were any messages consumed more than once? 
-- What was the latency of each consumer? 
-
-image::images/c3_01.png[]
-
-You can drill down into individual topics and consumers to inspect their particular behaviour. Here we can see that there are two Kafka Streams threads, only one of which (`StreamThread-2`) is consuming data. The reason for that is the source topic has a single partition:
-
-image::images/c3_02.png[]
-
-If we repartition the topic to four partitions, the Kafka Streams/KSQL task then consumes this over four threads: 
-
-image::images/c3_04.png[]
-
-Confluent Control Center can also show you when consumers are over-consuming. That could be because messages are being processed more than once—or as the case is in this screenshot, the required monitoring interceptors haven't been set up on the producer. 
-
-image::images/c3_03.png[]
-
-
-
-=== JMX 
-
-So Confluent Control Center is very cool for inspecting the flow of data in topics and behaviour of producers and consumers. But how about peeking inside how those producers and consumers are actually behaving? KSQL, as with other components in the Apache Kafka ecosystem, exposes a wealth of metrics through JMX. You can access these on an ad hoc basis through something like https://rmoff.net/2018/09/19/exploring-jmx-with-jmxterm/[jmxterm] or https://docs.oracle.com/javase/8/docs/technotes/guides/management/jconsole.html[JConsole] as seen here: 
-
-image::images/jmx02.png[JConsole]
-
-Much more useful is to persist them to a datastore (such as InfluxDB) for subsequent analysis (for example through Grafana): 
-
-image::images/jmx09.png[Grafana showing JMX metrics]
-
-You can see nice and clearly here the ratio of messages being consumed by KSQL (all data from the `ratings` topic) to that produced by it (messages matching the `STARS >= 4 AND CHANNEL='iOS'` criteria): 
-
-image::images/jmx04.png[Grafana showing KSQL JMX metrics]
-
-The spike at 12:31 coincides with when I ran the above example of trying to read messages with the wrong serialization format defined. Handily enough, there's also a JMX metric we can track for errors: 
-
-image::images/jmx05.png[Grafana showing KSQL JMX metrics]
-
-Note the spike in `error-rate`, amd also the increase in `num-active-queries`—which makes sense, since there was the additional query running at the time against the invalid stream (in addition to the one already running against `ratings`).
-
-You can dig down into the underlying Kafka Streams metrics: 
-
-image::images/jmx08.png[Grafana showing Kafka Producer metrics]
-
-
-Kafka Streams is itself built on Kafka, and you can drill down to the underlying Kafka Producer and Consumer metrics too:
-
-image::images/jmx06.png[Grafana showing Kafka Producer metrics]
-image::images/jmx07.png[Grafana showing Kafka IO wait time metrics]
-
-If you want to try this out for yourself and explore the JMX metrics, you can use the https://github.com/confluentinc/demo-scene/tree/master/ksql-troubleshooting[complete code samples on GitHub].
-
-For details of the specific metrics see: 
-
-*  https://docs.confluent.io/current/streams/monitoring.html#accessing-metrics-via-jmx-and-reporters[Kafka Streams docs]
-* https://kafka.apache.org/documentation/#monitoring[Apache Kafka docs]
-
-
 == Where Next? 
 
 So you're still stuck, and you need more help? There's several places to turn: 
@@ -590,3 +428,4 @@ So you're still stuck, and you need more help? There's several places to turn:
 ** http://cnfl.io/slack[Confluent Community Slack] #ksql channel
 ** https://github.com/confluentinc/ksql/issues[Search for similar issues] on GitHub, or  https://github.com/confluentinc/ksql/issues/new[raise a new issue] if one doesn't exist
 
+_Stay tuned for the second part of this series, in which we dive into KSQL internals, and look at tools we can use for monitoring and examining the behaviour of running queries and KSQL itself._

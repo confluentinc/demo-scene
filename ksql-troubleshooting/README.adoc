@@ -1,0 +1,98 @@
+= Troubleshooting KSQL - Part 1: Why's my KSQL query not returning data?
+
+Robin Moffatt, <robin@confluent.io>
+v1.00, September 20, 2018
+
+== Introduction
+
+This code accompanies the article, link:ksql-troubleshooting.adoc[KSQL Troubleshooting]. 
+
+== Launching the environment
+
+To spin up the environment, follow these steps: 
+
+1. Make sure you have git, Docker, and Docker Compose installed
+** if you're on Mac/Windows have allocated Docker at least 8GB of memory. Confirm this with: 
++
+[source,bash]
+----
+docker system info | grep Memory
+----
+** I've not tested this with Docker on Windows. PRs welcome for any issues!
+
+2. Clone the repository and bring up the set of containers: 
++
+[source,bash]
+----
+git clone https://github.com/confluentinc/demo-scene.git
+cd demo-scene/ksql-troubleshooting
+docker-compose up -d
+----
+
+3. Check everything's running, with `docker-compose ps`
++
+[source,bash]
+----
+$ docker-compose ps
+                 Name                               Command               State                        Ports
+----------------------------------------------------------------------------------------------------------------------------------
+ksql-troubleshooting_control-center_1    /etc/confluent/docker/run        Up      0.0.0.0:9021->9021/tcp
+ksql-troubleshooting_datagen-ratings_1   bash -c echo Waiting for K ...   Up
+ksql-troubleshooting_grafana_1           /run.sh                          Up      0.0.0.0:3000->3000/tcp
+ksql-troubleshooting_influxdb_1          /entrypoint.sh influxd           Up      8083/tcp, 0.0.0.0:8086->8086/tcp
+ksql-troubleshooting_jmxtrans_1          /docker-entrypoint.sh star ...   Up      9999/tcp
+ksql-troubleshooting_kafka_1             /etc/confluent/docker/run        Up      0.0.0.0:30001->30001/tcp, 0.0.0.0:9092->9092/tcp
+ksql-troubleshooting_ksql-server_1       /etc/confluent/docker/run        Up      0.0.0.0:30002->30002/tcp, 0.0.0.0:8088->8088/tcp
+ksql-troubleshooting_schema-registry_1   /etc/confluent/docker/run        Up      8081/tcp
+ksql-troubleshooting_zookeeper_1         /etc/confluent/docker/run        Up      2181/tcp, 2888/tcp, 3888/tcp
+----
+
+3. Fire up the KSQL CLI: 
++
+[source,bash]
+----
+docker run --network ksql-troubleshooting_default \
+           --interactive --tty --rm               \
+      confluentinc/cp-ksql-cli:latest             \
+      http://ksql-server:8088
+----
+
+== Web UIs
+
+* Control Center: http://localhost:9021
+* Grafana: http://localhost:3000 (admin/admin)
+
+== Other tips
+
+To dig around a container, you can:
+
+* View the logs
++
+[source,bash]
+----
+docker-compose logs -f <container>
+----
+
+* Get a shell prompt within the container itself, which can be useful for examining running processes
+** Tip: if `ps` isn't available you can use https://www.tldp.org/LDP/Linux-Filesystem-Hierarchy/html/proc.html[the `/proc/` virtual filesystem] to explore a process' details
++
+[source,bash]
+----
+docker-compose exec <ksql-server> bash
+----
++
+e.g.
++
+[source,bash]
+----
+# From the host machine
+$ docker-compose exec ksql-server bash
+
+# Now you're in the container itself
+root@ce613ce43899:/# cat /proc/1/environ
+LANG=C.UTF-8JMX_PORT=30002HOSTNAME=ce613ce43899KSQL_BOOTSTRAP_SERVERS=kafka:29092KSQL_CONSUMER_INTERCEPTOR_CLASSES=io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptorPWD=/HOME=/rootKSQL_LISTENERS=http://0.0.0.0:8088KSQL_KSQL_SERVICE_ID=confluent_rmoff_01KSQL_OPTS=-Dksql.server.install.dir=/usrKSQL_PRODUCER_INTERCEPTOR_CLASSES=io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptorKSQL_CUB_KAFKA_TIMEOUT=120COMPONENT=ksql-serverKSQL_JMX_PORT=30002SHLVL=0KSQL_JMX_OPTS=-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false  -Djava.rmi.server.hostname=ksql-server -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.rmi.port=30002 -Dcom.sun.management.jmxremote.port=30002 -Dcom.sun.management.jmxremote.port=30002 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/binKSQL_JMX_HOSTNAME=ksql-serverCUB_CLASSPATH="/usr/share/java/cp-base/*"KSQL_CLASSPATH=/usr/share/java/ksql-server/*root@ce613ce43899:/#
+
+root@ce613ce43899:/# cat /proc/1/cmdline
+java-cp/usr/share/java/ksql-server/*-Xmx3g-server-XX:+UseConcMarkSweepGC-XX:+CMSClassUnloadingEnabled-XX:+CMSScavengeBeforeRemark-XX:+ExplicitGCInvokesConcurrent-XX:NewRatio=1-Djava.awt.headless=true-Dcom.sun.management.jmxremote-Dcom.sun.management.jmxremote.authenticate=false-Dcom.sun.management.jmxremote.ssl=false-Djava.rmi.server.hostname=ksql-server-Dcom.sun.management.jmxremote.local.only=false-Dcom.sun.management.jmxremote.rmi.port=30002-Dcom.sun.management.jmxremote.port=30002-Dcom.sun.management.jmxremote.port=30002-Dksql.log.dir=/usr/logs-Dlog4j.configuration=file:/etc/ksql/log4j.properties-Dksql.server.install.dir=/usr-Xloggc:/usr/logs/ksql-server-gc.log-verbose:gc-XX:+PrintGCDetails-XX:+PrintGCDateStamps-XX:+PrintGCTimeStamps-XX:+UseGCLogFileRotation-XX:NumberOfGCLogFiles=10-XX:GCLogFileSize=100Mio.confluent.ksql.rest.server.KsqlServerMain/etc/ksql-server/ksql-server.propertiesroot@ce613ce43899:/#
+----
+
