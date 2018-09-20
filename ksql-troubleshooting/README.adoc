@@ -1,4 +1,4 @@
-= Troubleshooting KSQL - Part 1: Why's my KSQL query not returning data?
+= KSQL Troubleshooting - Hands On guide
 
 Robin Moffatt, <robin@confluent.io>
 v1.00, September 20, 2018

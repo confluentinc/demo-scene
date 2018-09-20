@@ -169,11 +169,11 @@ Much more useful is to persist them to a datastore (such as InfluxDB) for subseq
 
 image::images/jmx09.png[Grafana showing JMX metrics]
 
-You can see nice and clearly here the ratio of messages being consumed by KSQL (all data from the `ratings` topic) to that produced by it (messages matching the `STARS >= 4 AND CHANNEL='iOS'` criteria): 
+You can see messages being consumed by KSQL (all data from the `ratings` topic) and produced by it (to the `GOOD_IOS_RATINGS` stream with messages matching the `STARS >= 4 AND CHANNEL='iOS'` criteria). Just by looking at it you can determine that roughly 15% (0.26 divided by 1.96) of the messages are passing through from the source (`ratings`) to the target (`GOOD_IOS_RATINGS`): 
 
 image::images/jmx04.png[Grafana showing KSQL JMX metrics]
 
-The spike at 12:31 coincides with when I ran the above example of trying to read messages with the wrong serialization format defined. Handily enough, there's also a JMX metric we can track for errors: 
+The spike at 12:31 coincides with when I ran the example in https://www.confluent.io/blog/[part 1] of trying to read messages with the wrong serialization format defined. Handily enough, there's also a JMX metric we can track for errors: 
 
 image::images/jmx05.png[Grafana showing KSQL JMX metrics]
 
