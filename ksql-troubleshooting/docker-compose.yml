@@ -1,0 +1,140 @@
+---
+version: '2'
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:5.0.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-enterprise-kafka:5.0.0
+    depends_on:
+      - zookeeper
+    ports:
+    # Exposes 9092 for external connections to the broker
+    # Use kafka:29092 for connections internal on the docker network
+    # See https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
+      - 9092:9092
+      - 30001:30001
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
+      KAFKA_JMX_PORT: 30001
+      KAFKA_JMX_HOSTNAME: 127.0.0.1
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092
+      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'true'
+      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:5.0.0
+    depends_on:
+      - zookeeper
+      - kafka
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
+
+  ksql-server:
+    image: confluentinc/cp-ksql-server:5.0.0
+    ports:
+      - 30002:30002
+      - 8088:8088
+    depends_on:
+      - kafka
+    environment:
+      KSQL_CUB_KAFKA_TIMEOUT: 120
+      KSQL_BOOTSTRAP_SERVERS: kafka:29092
+      KSQL_LISTENERS: http://0.0.0.0:8088
+      KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
+      KSQL_JMX_PORT: 30002
+      KSQL_JMX_HOSTNAME: ksql-server
+      KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+
+  # Runs the Kafka KSQL data generator for ratings
+  datagen-ratings:
+    image: confluentinc/ksql-examples:5.0.0
+    depends_on:
+      - kafka
+    command: "bash -c 'echo Waiting for Kafka to be ready... && \
+                       cub kafka-ready -b kafka:29092 1 300 && \
+                       sleep 20 && \
+                       cp /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.0.0.jar /usr/share/java/ksql-examples/monitoring-interceptors-5.0.0.jar && \
+                       ksql-datagen \
+                          quickstart=ratings \
+                          format=json \
+                          topic=ratings \
+                          maxInterval=500 \
+                          bootstrap-server=kafka:29092 \
+                          propertiesFile=/etc/ksql/datagen.properties'"
+    volumes:
+      - monitoring_interceptors:/usr/share/java/monitoring-interceptors/
+
+
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:5.0.0
+    depends_on:
+      - zookeeper
+      - kafka
+      - schema-registry
+      - ksql-server
+    ports:
+      - 9021:9021
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
+      CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      CONTROL_CENTER_CONNECT_CLUSTER: 'kafka-connect:8083'
+      CONTROL_CENTER_KSQL_URL: "http://ksql-server:8088"
+      CONTROL_CENTER_KSQL_ADVERTISED_URL: "http://localhost:8088"
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      CONTROL_CENTER_CUB_KAFKA_TIMEOUT: 300
+      PORT: 9021
+    volumes:
+      - monitoring_interceptors:/usr/share/java/monitoring-interceptors/
+
+  grafana:
+    image: grafana/grafana:5.2.4
+    ports: 
+      - "3000:3000"
+    environment:
+      - GF_PATHS_DATA=/var/lib/grafana
+      - GF_DEFAULT_THEME=light
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+
+  jmxtrans:
+    image: jmxtrans/jmxtrans:latest
+    depends_on:
+      - influxdb
+    environment:
+      - SECONDS_BETWEEN_RUNS=5
+    volumes:
+      - ./config/jmx_minimal.json:/var/lib/jmxtrans/jmx.json
+      #- ./config/jmx_all.json:/var/lib/jmxtrans/jmx.json
+
+  influxdb: 
+    image: influxdb:1.1.0-alpine
+    ports:
+      - 8086:8086
+    volumes:
+      - ./data/influx/:/var/lib/influxdb
+
+volumes:
+    # This volume is mounted on an image in which the interceptor JARs do exist
+    # so that it can also be mounted on others where they do not, in order
+    # that those others can also make use of the interceptors. Neat huh! 
+    # Props to ybyzek for this trick
+    monitoring_interceptors: {}
