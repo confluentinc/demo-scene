@@ -245,6 +245,10 @@ SELECT ID, FIRST_NAME, LAST_NAME, CLUB_STATUS FROM CUSTOMERS_SRC;
 CREATE STREAM CUSTOMERS_SRC_REKEY WITH (PARTITIONS=1) AS SELECT * FROM CUSTOMERS_SRC PARTITION BY ID;
 -- Wait for a moment here; if you run the CTAS _immediately_ after the CSAS it may fail
 -- with error `Could not fetch the AVRO schema from schema registry. Subject not found.; error code: 40401`
+-- You may also get this error if you have not set 'auto.offset.reset'='earliest' and there is no 
+-- data flowing into the source CUSTOMERS topic, since no messages will have triggered the target stream 
+-- to be created.
+-- See https://github.com/confluentinc/ksql/issues/713
 CREATE TABLE CUSTOMERS WITH (KAFKA_TOPIC='CUSTOMERS_SRC_REKEY', VALUE_FORMAT ='AVRO', KEY='ID');
 SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS;
 ----
