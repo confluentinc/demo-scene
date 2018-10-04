@@ -1,0 +1,131 @@
+= KSQL for ATM Fraud Detection
+Robin Moffatt <robin@confluent.io>
+
+git clone git@github.com:mapr-demos/gess.git
+
+Start up the datagen
+
+./gess.sh start
+
+Emits transactions on UDP (into the ether, doesn't care if they're received)
+
+Use netcat + kafkacat to stream them to kafka
+
+nc -v -u -l 6900 | docker run --interactive --rm --network ksql-atm-fraud-detection_default confluentinc/cp-kafkacat kafkacat -b kafka:29092 -P -t atm_txns
+
+Launch KSQL 
+
+    docker run --network ksql-atm-fraud-detection_default --interactive --tty --rm \
+        confluentinc/cp-ksql-cli:5.0.0 \
+        http://ksql-server:8088
+
+List topics
+
+    ksql> LIST TOPICS;
+
+    Kafka Topic        | Registered | Partitions | Partition Replicas | Consumers | ConsumerGroups
+    ------------------------------------------------------------------------------------------------
+    _confluent-metrics | false      | 12         | 1                  | 0         | 0
+    _schemas           | false      | 1          | 1                  | 0         | 0
+    atm_txns           | false      | 1          | 1                  | 0         | 0
+    ------------------------------------------------------------------------------------------------
+    ksql>
+        
+look at contents
+
+    ksql> PRINT 'atm_txns' FROM BEGINNING;
+    Format:JSON
+    {"ROWTIME":1538657897902,"ROWKEY":"null","account_id":"a388","timestamp":"2018-10-04T13:58:16.792879","atm":"Bank of America","amount":50,"location":{"lat":"37.7306977","lon":"-122.404695"},"transaction_id":"2932606b-c7d5-11e8-b625-186590d22a35"}
+    {"ROWTIME":1538657897902,"ROWKEY":"null","account_id":"a146","timestamp":"2018-10-04T13:58:16.792999","atm":"Wells Fargo","amount":20,"location":{"lat":"37.7920004","lon":"-122.1992285"},"transaction_id":"29326511-c7d5-11e8-8550-186590d22a35"}
+    [...]
+
+
+ksql> set 'auto.offset.reset'='earliest';
+Successfully changed local property 'auto.offset.reset' from 'null' to 'earliest'
+
+ksql> CREATE STREAM ATM_TXNS (account_id VARCHAR, atm VARCHAR, location STRUCT<lon DOUBLE, lat DOUBLE>, amount INT, transaction_id VARCHAR, timestamp VARCHAR) WITH (KAFKA_TOPIC='atm_txns', VALUE_FORMAT='JSON');
+ Message
+----------------
+ Stream created
+----------------
+ksql> SELECT * FROM ATM_TXNS LIMIT 5;
+1538645090667 | null | a303 | Wells Fargo Bank | -122.0512727 | 37.3540099 | 300 | 57196ae6-c7b7-11e8-9222-186590d22a35 | 2018-10-04T10:24:48.896161
+1538645090667 | null | a750 | ID_1257057604 | -122.1527061 | 37.4593723 | 50 | 571e786b-c7b7-11e8-9c5c-186590d22a35 | 2018-10-04T10:24:48.935710
+1538645090667 | null | a941 | Chase | -121.4943199 | 38.5320738 | 100 | 571e8605-c7b7-11e8-841f-186590d22a35 | 2018-10-04T10:24:48.936060
+1538645090667 | null | a553 | Chase | -122.524055 | 37.946839 | 100 | 571e8d70-c7b7-11e8-bdb3-186590d22a35 | 2018-10-04T10:24:48.936258
+1538645090667 | null | a337 | Liberty Bank | -122.0730133 | 37.0517628 | 20 | 571e9342-c7b7-11e8-b529-186590d22a35 | 2018-10-04T10:24:48.936412
+Limit Reached
+Query terminated
+
+Note that `timestamp` == ROWTIME (taking into account daylight savings): 
+
+    ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss Z'), timestamp FROM ATM_TXNS LIMIT 5;
+    2018-10-04 12:27:26 +0000 | 2018-10-04T13:27:25.011894
+    2018-10-04 12:27:26 +0000 | 2018-10-04T13:27:25.012095
+    2018-10-04 12:27:26 +0000 | 2018-10-04T13:27:25.012301
+    2018-10-04 12:27:26 +0000 | 2018-10-04T13:27:25.012581
+    2018-10-04 12:27:26 +0000 | 2018-10-04T13:27:25.013235
+    Limit Reached
+    Query terminated
+    ksql>
+
+so we can simplify our stream definition and omit the `timestamp` field (since it's obtainable from `ROWTIME` if we do need it): 
+
+ksql> DROP STREAM ATM_TXNS;
+ksql> CREATE STREAM ATM_TXNS (account_id VARCHAR, atm VARCHAR, location STRUCT<lon DOUBLE, lat DOUBLE>, amount INT, transaction_id VARCHAR) WITH (KAFKA_TOPIC='atm_txns', VALUE_FORMAT='JSON');
+
+ Message
+----------------
+ Stream created
+----------------
+
+ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss Z'), ACCOUNT_ID, ATM, LOCATION, AMOUNT, TRANSACTION_ID FROM ATM_TXNS LIMIT 5;
+2018-10-04 12:27:26 +0000 | a799 | Swipe | {LON=-122.4208354, LAT=37.7841229} | 50 | d97305d9-c7d0-11e8-a591-186590d22a35
+2018-10-04 12:27:26 +0000 | a586 | ID_1490417505 | null | 20 | d9730ddc-c7d0-11e8-85ab-186590d22a35
+2018-10-04 12:27:26 +0000 | a823 | Chase | {LON=-122.1153891, LAT=37.3787346} | 200 | d97315b5-c7d0-11e8-9f78-186590d22a35
+2018-10-04 12:27:26 +0000 | a195 | ID_885584309 | {LON=-122.4694381, LAT=37.669612} | 50 | d97322e8-c7d0-11e8-9f5c-186590d22a35
+2018-10-04 12:27:26 +0000 | a980 | Bank of America | {LON=-122.0404158, LAT=37.9295157} | 400 | d9733a28-c7d0-11e8-9430-186590d22a35
+Limit Reached
+Query terminated
+ksql>
+
+Create a second topic as a duplicate of the first, to enable the self-referencing stream-stream join
+
+    CREATE STREAM ATM_TXNS_02 WITH (PARTITIONS=1) AS SELECT * FROM ATM_TXNS;
+
+Now return any transactions on the same account within 5 minutes of each other with different txn ids and different locations
+
+    CREATE STREAM ATM_POSSIBLE_FRAUD AS \
+    SELECT X.account_id AS ACCOUNT_ID, \
+        X.ROWTIME AS TXN1_TIMESTAMP, Y.ROWTIME AS TXN2_TIMESTAMP, \
+        X.location AS TXN1_LOCATION,  Y.location AS TXN2_LOCATION, \
+        X.amount AS TXN1_AMOUNT, Y.amount AS TXN2_AMOUNT, \
+        GEO_DISTANCE(X.location->lat, X.location->lon, Y.location->lat, Y.location->lon, 'KM') AS DISTANCE_BETWEEN_TXNS, \
+        (Y.ROWTIME - X.ROWTIME) AS MS_DIFFERENCE  \
+    FROM   ATM_TXNS X \
+        INNER JOIN ATM_TXNS_02 Y \
+        WITHIN 10 MINUTES \
+        ON X.account_id = Y.account_id \
+    WHERE X.transaction_id != Y.transaction_id \
+    AND X.location->lat != Y.location->lat \
+    AND X.location->lon != Y.location->lon;
+
+    ksql> DESCRIBE ATM_POSSIBLE_FRAUD;
+
+    Name                 : ATM_POSSIBLE_FRAUD
+    Field                 | Type
+    --------------------------------------------------------
+    ROWTIME               | BIGINT           (system)
+    ROWKEY                | VARCHAR(STRING)  (system)
+    ACCOUNT_ID            | VARCHAR(STRING)  (key)
+    TXN1_TIMESTAMP        | BIGINT
+    TXN2_TIMESTAMP        | BIGINT
+    TXN1_LOCATION         | STRUCT<LON DOUBLE, LAT DOUBLE>
+    TXN2_LOCATION         | STRUCT<LON DOUBLE, LAT DOUBLE>
+    TXN1_AMOUNT           | INTEGER
+    TXN2_AMOUNT           | INTEGER
+    DISTANCE_BETWEEN_TXNS | DOUBLE
+    MS_DIFFERENCE         | BIGINT
+    --------------------------------------------------------
+    For runtime statistics and query details run: DESCRIBE EXTENDED <Stream,Table>;
+    ksql>    

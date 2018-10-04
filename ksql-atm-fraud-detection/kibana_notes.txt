@@ -1,0 +1,82 @@
+get /_cat/indices
+
+DELETE /atm_possible_fraud
+DELETE /atm_possible_fraud
+DELETE /kafka-atm_txns-2018-10
+DELETE /kafka-atm_txns_02-2018-10
+DELETE /kafka-atm_txns
+DELETE /atm_txns_02
+DELETE /atm_txns
+
+get /atm_possible_fraud_json
+get /atm_possible_fraud
+get /atm_possible_fraud/_search
+get /kafka-atm_txns_02-2018-10
+get kafka-atm_txns/_search
+
+POST /kafka-atm_txns/kafkaconnect 
+{ "transaction_id": "d9d744c7-c7d0-11e8-930a-186590d22a35",
+          "amount": 300,
+          "account_id": "a567",
+          "location": {
+            "lon": -122.0347494,
+            "lat": 37.3766284
+          },
+          "atm": "BBVA Compass",
+          "timestamp": "2018-10-04T13:27:25.668867"
+        }
+      
+
+get kafka-atm_txns_02-2018-10
+get kafka-atm_txns_02-2018-10/_search
+
+
+delete /_template/kafkaconnect
+PUT /_template/kafkaconnect/
+{
+  "index_patterns": "*",
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0
+  },
+  "mappings": {
+    "_default_": {
+      "dynamic_templates": [
+        {
+          "dates": {
+            "match": "*TIMESTAMP",
+            "mapping": {
+              "type": "date"
+            }
+          }
+        },
+        {
+          "geopoint": {
+            "match": "location",
+            "mapping": {
+              "type": "geo_point"
+            }
+          }
+        },
+        {
+          "geopoint2": {
+            "match": "*LOCATION",
+            "mapping": {
+              "type": "geo_point"
+            }
+          }
+        },
+        {
+          "non_analysed_string_template": {
+            "match": "account_id, atm, transaction_id",
+            "match_mapping_type": "string",
+            "mapping": {
+              "type": "keyword"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
