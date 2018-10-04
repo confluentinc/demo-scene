@@ -28,12 +28,13 @@ ksql> SELECT * FROM MY_FIRST_KSQL_STREAM;
 
 …nothing happens. And because KSQL queries are _continuous_, your KSQL session appears to "hang". That's because KSQL's continuing to wait for any new messages to show you. So if your run a KSQL `SELECT` and get no results back, what could be the reasons for that? 
 
-The answer usually comes down to one of four main reasons (the first three of which are variations on a theme): 
+The answer usually comes down to one of five main reasons (the first four of which are variations on a theme): 
 
 1. No data in the source topic
 2. No new data arriving in the topic
 3. KSQL consuming from a later offset than for which there is data
-4. Deserialization errors in reading the data
+4. Data is read from the topic but none of it matches the predicate (`WHERE`) specified
+5. Deserialization errors in reading the data
 
 Let's look at each of these in turn and how to diagnose them. 
 
