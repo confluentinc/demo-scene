@@ -1,17 +1,124 @@
-= KSQL for ATM Fraud Detection
+= Kafka and KSQL for ATM Fraud Detection
 Robin Moffatt <robin@confluent.io>
+v0.01, October 5, 2018
 
-git clone git@github.com:mapr-demos/gess.git
+Detecting fraudulent transactions is one of the classic use-cases for realtime data. It may seem hackneyed, but the business value is clear: 
+
+* Reduce expose to risk by identifying fraud sooner in order to take action to stop it
+* Improve customer experience by reducing false-positives
+
+Traditionally fraud detection will have been done using stream processing applications written in Java, for example. Maybe using Kafka Streams, maybe Spark Streaming, but regardless of the framework, it required a strong understanding of the core language first. This reduces the base of developers who can access stream processing. KSQL changes this, because anyone who can write SQL can now write stream processing applications. 
+
+KSQL is a _continuous query language_. Whilst you can use it for interactive exploration of data—as we will see in a moment—it's core purpose it for building stream processing applications. Because KSQL is built on Kafka Streams, which is built on Kafka, it benefits from the horizontal scalability characteristics for both resilience and throughput. 
+
+We're going to see here how taking a stream of inbound ATM transactions we can easily set up an application to detect transactions which look fraudulent. We'll use a few simple factors in our evaluation: 
+
+* The same account number
+* Different location
+* Within a ten minute window
+
+As part of the processing we'll also calculate the distance (as the crow flies) between the two suspect transactions, the time between them, and thus how fast someone would have had to travel to plausibly make the transaction. This could feed into a second iteration of processing to refine the detection further. 
+
+< Elasticsearch eye candy screenshot >
+
+We're going to use Elasticsearch to store the transactions and enriched data, and Kibana to provide visualisation and further data inspection capabilities.
+
+== Joining the Streams
+
+KSQL has supported stream-stream joins since Confluent Platform 5.0. This means you can take two Kafka topics, and join between them on a common key. This could be something like a stream of order events, and a stream of shipment events—with a stream-stream join you can match up orders being placed to those being shipped. 
+
+A stream-stream join can also make sense when done against the same stream of data, and that's how we're going to use it here. To start with, we're going to take a simplified stream of ATM transactions and use it to understand what a stream-stream join is doing and the semantics around it. Once we've done that, we'll dive into a full-blown example with a data generator and some realistic test data to use. 
+
+I'm using Docker Compose to easily spin up my test environment—if you want to follow along the examples here you can find the https://github.com/confluentinc/demo-scene/tree/ksql-atm-fraud-detection/ksql-atm-fraud-detection[files on GitHub].
+
+With Zookeeper, Kafka, and KSQL running, I send a couple of test messages to my ATM topic, using `kafkacat`: 
+
+[source,bash]
+----
+docker run --interactive --rm --network ksql-atm-fraud-detection_default confluentinc/cp-kafkacat \
+kafkacat -b kafka:29092 -P -t atm_txns << EOF
+{"account_id": "B01", "atm": "ID_2276369282", "amount": 20, "location": {"lat": "38.6956033", "lon": "-121.5922283"}, "transaction_id": "01"}
+{"account_id": "B02", "atm": "Flying Pig Bistro", "amount": 400, "location": {"lat": "37.766319", "lon": "-122.417422"}, "transaction_id": "02"}
+{"account_id": "B03", "atm": "Wells Fargo", "amount": 50, "location": {"lat": "37.5522855", "lon": "-121.9797997"}, "transaction_id": "04"}
+EOF
+----
+
+This is three transactions, on three different account (B01, B02, B03). They have a value, and a location (both name, and coordinates). Let's pull this into KSQL and get going! 
+
+[source,sql]
+----
+ksql> SET 'auto.offset.reset'='earliest';
+ksql> CREATE STREAM ATM_TXNS (account_id VARCHAR, \
+                            atm VARCHAR, \
+                            location STRUCT<lon DOUBLE, \
+                                            lat DOUBLE>, \
+                            amount INT, \
+                            transaction_id VARCHAR) \
+                    WITH (KAFKA_TOPIC='atm_txns', \
+                    VALUE_FORMAT='JSON');
+ksql> SELECT ACCOUNT_ID, TRANSACTION_ID, AMOUNT, ATM FROM ATM_TXNS;
+B01 | 01 | 20 | ID_2276369282
+B02 | 02 | 400 | Flying Pig Bistro
+B03 | 04 | 50 | Wells Fargo
+----
+
+So far, so good. No naughty transactions—just three regular ones from three different accounts. Now let's fire in two more. The first is a second transaction _at the same location_ for the same account (someone forgot to pick up the drinks bill!), the second one is our nefarious fraudster, with a clone of the card for account `B03` drawing cash from an ATM elsewhere: 
+
+[source,bash]
+----
+docker run --interactive --rm --network ksql-atm-fraud-detection_default confluentinc/cp-kafkacat kafkacat -b kafka:29092 -P -t atm_txns << EOF
+{"account_id": "B02", "atm": "Flying Pig Bistro", "amount": 40, "location": {"lat": "37.766319", "lon": "-122.417422"}, "transaction_id": "03"}
+{"account_id": "B03", "atm": "Barclays", "amount": 500, "location": {"lat": "33.5522855", "lon": "-120.9797997"}, "transaction_id": "X05"}
+EOF
+----
+
+You'll see these two new transactions appear straightaway in the KSQL output: 
+
+[source,sql]
+----
+ksql> SELECT ACCOUNT_ID, TRANSACTION_ID, AMOUNT, ATM FROM ATM_TXNS;
+B01 | 01 | 20 | ID_2276369282
+B02 | 02 | 400 | Flying Pig Bistro
+B03 | 04 | 50 | Wells Fargo
+B02 | 03 | 40 | Flying Pig Bistro
+B03 | X05 | 500 | Barclays
+----
+
+So `B03` is the one we're interested in; the transaction ID has an `X` prefix to help us spot it in the output, but the key thing is that it's the same account, but a different location (`Flying Pig Bistro` and then `Barclays`). What about time window? I'm glad you asked! 
+
+All Kafka messages have, as well as a key and value, a timestamp. This can be set by the producing application, or it will take the value of the time at which the message arrived at the broker. KSQL exposes the message's timestamp through the system column `ROWTIME`: 
+
+[source,sql]
+----
+ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss'),ACCOUNT_ID, TRANSACTION_ID, AMOUNT, ATM FROM ATM_TXNS;
+2018-10-05 16:56:08 | B01 | 01 | 20 | ID_2276369282
+2018-10-05 16:56:08 | B02 | 02 | 400 | Flying Pig Bistro
+2018-10-05 16:56:08 | B03 | 04 | 50 | Wells Fargo
+2018-10-05 17:01:59 | B02 | 03 | 40 | Flying Pig Bistro
+2018-10-05 17:01:59 | B03 | X05 | 500 | Barclays
+----
+
+The two transactions for account `B03` occurred within the space of just over five minutes. 
+
+By eyeballing this data, we can spot that something doesn't look right; but how do we express this in stream processing terms? Enter stream-stream joins. 
+
+
+
+It's the last
+
+CREATE STREAM ATM_TXNS_02 WITH (PARTITIONS=1) AS SELECT * FROM ATM_TXNS;
+
+git clone git@github.com:rmoff/gess.git
 
 Start up the datagen
 
-./gess.sh start
+    ./gess.sh start
 
 Emits transactions on UDP (into the ether, doesn't care if they're received)
 
 Use netcat + kafkacat to stream them to kafka
 
-nc -v -u -l 6900 | docker run --interactive --rm --network ksql-atm-fraud-detection_default confluentinc/cp-kafkacat kafkacat -b kafka:29092 -P -t atm_txns
+    nc -v -u -l 6900 | docker run --interactive --rm --network ksql-atm-fraud-detection_default confluentinc/cp-kafkacat kafkacat -b kafka:29092 -P -t atm_txns
 
 Launch KSQL 
 
@@ -38,7 +145,6 @@ look at contents
     {"ROWTIME":1538657897902,"ROWKEY":"null","account_id":"a388","timestamp":"2018-10-04T13:58:16.792879","atm":"Bank of America","amount":50,"location":{"lat":"37.7306977","lon":"-122.404695"},"transaction_id":"2932606b-c7d5-11e8-b625-186590d22a35"}
     {"ROWTIME":1538657897902,"ROWKEY":"null","account_id":"a146","timestamp":"2018-10-04T13:58:16.792999","atm":"Wells Fargo","amount":20,"location":{"lat":"37.7920004","lon":"-122.1992285"},"transaction_id":"29326511-c7d5-11e8-8550-186590d22a35"}
     [...]
-
 
 ksql> set 'auto.offset.reset'='earliest';
 Successfully changed local property 'auto.offset.reset' from 'null' to 'earliest'
@@ -95,20 +201,25 @@ Create a second topic as a duplicate of the first, to enable the self-referencin
 
 Now return any transactions on the same account within 5 minutes of each other with different txn ids and different locations
 
-    CREATE STREAM ATM_POSSIBLE_FRAUD AS \
+    CREATE STREAM ATM_POSSIBLE_FRAUD2  \
+     WITH (PARTITIONS=1) AS \
     SELECT X.account_id AS ACCOUNT_ID, \
         X.ROWTIME AS TXN1_TIMESTAMP, Y.ROWTIME AS TXN2_TIMESTAMP, \
-        X.location AS TXN1_LOCATION,  Y.location AS TXN2_LOCATION, \
+        CAST(X.location->lat AS STRING) + ',' + CAST(X.location->lon AS STRING) AS TXN1_LOCATION, \
+        CAST(Y.location->lat AS STRING) + ',' + CAST(Y.location->lon AS STRING) AS TXN2_LOCATION, \
         X.amount AS TXN1_AMOUNT, Y.amount AS TXN2_AMOUNT, \
         GEO_DISTANCE(X.location->lat, X.location->lon, Y.location->lat, Y.location->lon, 'KM') AS DISTANCE_BETWEEN_TXNS, \
-        (Y.ROWTIME - X.ROWTIME) AS MS_DIFFERENCE  \
+         X.transaction_id AS TXN1_ID, Y.transaction_id AS TXN2_ID \
+        (X.ROWTIME - Y.ROWTIME) AS MS_DIFFERENCE  \
     FROM   ATM_TXNS X \
         INNER JOIN ATM_TXNS_02 Y \
-        WITHIN 10 MINUTES \
+        WITHIN (0 MINUTES,5 MINUTES) \
         ON X.account_id = Y.account_id \
     WHERE X.transaction_id != Y.transaction_id \
     AND X.location->lat != Y.location->lat \
     AND X.location->lon != Y.location->lon;
+
+
 
     ksql> DESCRIBE ATM_POSSIBLE_FRAUD;
 
@@ -129,3 +240,37 @@ Now return any transactions on the same account within 5 minutes of each other w
     --------------------------------------------------------
     For runtime statistics and query details run: DESCRIBE EXTENDED <Stream,Table>;
     ksql>    
+
+docker run --interactive --rm --network ksql-atm-fraud-detection_default confluentinc/cp-kafkacat kafkacat -b kafka:29092 -P -t atm_txns << EOF
+{"account_id": "B01", "atm": "ID_2276369282", "amount": 20, "location": {"lat": "38.6956033", "lon": "-121.5922283"}, "transaction_id": "01"}
+{"account_id": "B02", "atm": "Flying Pig Bistro", "amount": 400, "location": {"lat": "37.766319", "lon": "-122.417422"}, "transaction_id": "02"}
+{"account_id": "B03", "atm": "Wells Fargo", "amount": 50, "location": {"lat": "37.5522855", "lon": "-121.9797997"}, "transaction_id": "04"}
+EOF
+
+
+
+
+
+
+CREATE STREAM ATM_TXNS (account_id VARCHAR, atm VARCHAR, location STRUCT<lon DOUBLE, lat DOUBLE>, amount INT, transaction_id VARCHAR) WITH (KAFKA_TOPIC='atm_txns', VALUE_FORMAT='JSON');
+set 'auto.offset.reset'='earliest';
+CREATE STREAM ATM_TXNS_02 WITH (PARTITIONS=1) AS SELECT * FROM ATM_TXNS;
+
+CREATE STREAM ATM_POSSIBLE_FRAUD  \
+    WITH (PARTITIONS=1) AS \
+SELECT X.account_id AS ACCOUNT_ID, \
+    X.ROWTIME AS TXN1_TIMESTAMP, Y.ROWTIME AS TXN2_TIMESTAMP, \
+    CAST(X.location->lat AS STRING) + ',' + CAST(X.location->lon AS STRING) AS TXN1_LOCATION, \
+    CAST(Y.location->lat AS STRING) + ',' + CAST(Y.location->lon AS STRING) AS TXN2_LOCATION, \
+    X.amount AS TXN1_AMOUNT, Y.amount AS TXN2_AMOUNT, \
+    X.atm AS TXN1_ATM_NAME, Y.atm AS TXN2_ATM_NAME, 
+    GEO_DISTANCE(X.location->lat, X.location->lon, Y.location->lat, Y.location->lon, 'KM') AS DISTANCE_BETWEEN_TXNS, \
+    X.transaction_id AS TXN1_ID, Y.transaction_id AS TXN2_ID, \
+    (X.ROWTIME - Y.ROWTIME) AS MS_DIFFERENCE  \
+FROM   ATM_TXNS X \
+    INNER JOIN ATM_TXNS_02 Y \
+    WITHIN (5 MINUTES,0 MINUTES) \
+    ON X.account_id = Y.account_id \
+WHERE X.transaction_id != Y.transaction_id \
+AND (X.location->lat != Y.location->lat OR X.location->lon != Y.location->lon);
+

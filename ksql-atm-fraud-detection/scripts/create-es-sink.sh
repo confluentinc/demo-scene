@@ -13,7 +13,7 @@ curl -s \
      -d '{
   "name": "es_sink_atm_txns",
   "config": {
-    "topics": "atm_txns_02",
+    "topics": "atm_txns",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "value.converter": "org.apache.kafka.connect.json.JsonConverter",
     "value.converter.schemas.enable": false,
@@ -39,9 +39,9 @@ curl -s \
 curl -X "POST" "http://kafka-connect:18083/connectors/" \
      -H "Content-Type: application/json" \
      -d '{
-  "name": "es_sink_ATM_POSSIBLE_FRAUD",
+  "name": "es_sink_ATM_POSSIBLE_FRAUD2",
   "config": {
-    "topics": "ATM_POSSIBLE_FRAUD",
+    "topics": "ATM_POSSIBLE_FRAUD2",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "value.converter": "org.apache.kafka.connect.json.JsonConverter",
     "value.converter.schemas.enable": false,
@@ -49,7 +49,7 @@ curl -X "POST" "http://kafka-connect:18083/connectors/" \
     "key.ignore": "true",
     "schema.ignore": "true",
     "type.name": "type.name=kafkaconnect",
-    "topic.index.map": "ATM_POSSIBLE_FRAUD:atm_possible_fraud",
+    "topic.index.map": "ATM_POSSIBLE_FRAUD2:atm_possible_fraud",
     "connection.url": "http://elasticsearch:9200"
   }
 }'

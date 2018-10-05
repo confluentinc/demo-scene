@@ -11,7 +11,7 @@ curl -XPUT "http://elasticsearch:9200/_template/kafkaconnect/" -H 'Content-Type:
       "dynamic_templates": [
         {
           "dates": {
-            "match": "*TIME",
+            "match": "*TIMESTAMP",
             "mapping": {
               "type": "date"
             }
@@ -19,7 +19,15 @@ curl -XPUT "http://elasticsearch:9200/_template/kafkaconnect/" -H 'Content-Type:
         },
         {
           "geopoint": {
-            "match": "location, TXN1_LOCATION, TXN2_LOCATION",
+            "match": "*LOCATION",
+            "mapping": {
+              "type": "geo_point"
+            }
+          }
+        },
+        {
+          "geopoint2": {
+            "match": "location",
             "mapping": {
               "type": "geo_point"
             }
