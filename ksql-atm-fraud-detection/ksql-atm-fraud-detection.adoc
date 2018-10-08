@@ -301,7 +301,7 @@ Having explored the data and iterated on our query, let's instantiate it as a pe
 
 [source,sql]
 ----
-CREATE STREAM ATM_POSSIBLE_FRAUD  \
+CREATE STREAM ATM_POSSIBLE_FRAUD_01  \
     WITH (PARTITIONS=1) AS \
 SELECT T1.ROWTIME AS T1_TIMESTAMP, T2.ROWTIME AS T2_TIMESTAMP, \
         GEO_DISTANCE(T1.location->lat, T1.location->lon, T2.location->lat, T2.location->lon, 'KM') AS DISTANCE_BETWEEN_TXN_KM, \
@@ -335,10 +335,10 @@ Checking out the execution statistics shows that we've processed one message—t
 
 [source,sql]
 ----
-ksql> DESCRIBE EXTENDED ATM_POSSIBLE_FRAUD;
+ksql> DESCRIBE EXTENDED ATM_POSSIBLE_FRAUD_01;
 
 [...]
-Kafka topic          : ATM_POSSIBLE_FRAUD (partitions: 1, replication: 1)
+Kafka topic          : ATM_POSSIBLE_FRAUD_01 (partitions: 1, replication: 1)
 [...]
 Local runtime statistics
 ------------------------
@@ -382,6 +382,8 @@ Note that there's no console output from this, because it's being redirected to 
 
 We need to make one change to our KSQL statements that we developed above. Whereas we were previously using the Kafka message timestamp as the event rowtime, now we want to use the `timestamp` field that's included in the payload of the message. This is easy to do with KSQL, by simply specifying the `TIMESTAMP` field in the `WITH` clause: 
 
+[source,sql]
+----
 CREATE STREAM ATM_TXNS_GESS (account_id VARCHAR, \
                             atm VARCHAR, \
                             location STRUCT<lon DOUBLE, \
@@ -393,6 +395,8 @@ CREATE STREAM ATM_TXNS_GESS (account_id VARCHAR, \
             VALUE_FORMAT='JSON', \
             TIMESTAMP='timestamp', \
             TIMESTAMP_FORMAT='yyyy-MM-dd HH:mm:ss X');
+----
+
 
 Just to check that KSQL is indeed picking up the value of `timestamp` field in the source message, let's run a query to report the `timestamp` field's value along with the system column `ROWTIME` which represents the timestamp with which KSQL will process the message: 
 
@@ -405,7 +409,7 @@ ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss Z'), timestamp FROM
 2018-10-07 22:31:41 +0000 | 2018-10-07 22:31:41 +0000
 ----
 
-As expected, they match. One subtley to notice here is that the third message above is dated _earlier_ than the one previously. That's because the ATM transactions may be arriving out of order, but KSQL will process them based on **event time** (i.e. `timestamp` value in the source message, when the _actual ATM transaction occurred) rather than **processing time** (when the message arrived at the system)
+As expected, they match. One subtlety to notice here is that the third message above is dated _earlier_ than the one previously. That's because the ATM transactions may be arriving out of order, but KSQL will process them based on **event time** (i.e. `timestamp` value in the source message, when the _actual ATM transaction occurred) rather than **processing time** (when the message arrived at the system)
 
 Bringing together our new source stream (`ATM_TXNS_GESS`) with the logic we prototyped above gives us this code to run: 
 
@@ -420,8 +424,9 @@ SELECT T1.ROWTIME AS T1_TIMESTAMP, T2.ROWTIME AS T2_TIMESTAMP, \
         (T2.ROWTIME - T1.ROWTIME) AS MILLISECONDS_DIFFERENCE,  \
         (CAST(T2.ROWTIME AS DOUBLE) - CAST(T1.ROWTIME AS DOUBLE)) / 1000 / 60 AS MINUTES_DIFFERENCE,  \
         GEO_DISTANCE(T1.location->lat, T1.location->lon, T2.location->lat, T2.location->lon, 'KM') / ((CAST(T2.ROWTIME AS DOUBLE) - CAST(T1.ROWTIME AS DOUBLE)) / 1000 / 60 / 60) AS KMH_REQUIRED, \
-        T1.ACCOUNT_ID, \
+        T1.ACCOUNT_ID AS ACCOUNT_ID, \
         T1.TRANSACTION_ID, T2.TRANSACTION_ID, \
+        T1.AMOUNT, T2.AMOUNT, \
         T1.ATM, T2.ATM, \
         CAST(T1.location->lat AS STRING) + ',' + CAST(T1.location->lon AS STRING) AS T1_LOCATION, \
         CAST(T2.location->lat AS STRING) + ',' + CAST(T2.location->lon AS STRING) AS T2_LOCATION \
@@ -431,6 +436,49 @@ FROM   ATM_TXNS_GESS T1 \
         ON T1.ACCOUNT_ID = T2.ACCOUNT_ID \
 WHERE   T1.TRANSACTION_ID != T2.TRANSACTION_ID \
   AND   (T1.location->lat != T2.location->lat OR \
-         T1.location->lon != T2.location->lon);
+         T1.location->lon != T2.location->lon) \
+  AND   T2.ROWTIME != T1.ROWTIME;
 ----
 
+And checking the output shows that there are plenty of fraudulent transactions being detected: 
+
+<< asciinema screencast here >>
+
+[source,sql]
+----
+SELECT T1_ACCOUNT_ID, \
+        TIMESTAMPTOSTRING(T1_TIMESTAMP, 'yyyy-MM-dd HH:mm:ss'), TIMESTAMPTOSTRING(T2_TIMESTAMP, 'HH:mm:ss'), \
+        T1_ATM, T2_ATM, \
+        DISTANCE_BETWEEN_TXN_KM, MINUTES_DIFFERENCE \
+FROM ATM_POSSIBLE_FRAUD;
+
+a739 | 2018-10-08 15:35:58 | 15:38:31 | Halifax | Barclays Bank PLC | 15.698597512981406 | 2.55
+a649 | 2018-10-08 15:36:22 | 15:38:04 | Yorkshire Bank | Barclays Bank PLC | 23.179463348879413 | 1.7
+[...]
+----
+
+== Kafka + Elastic = ❤️
+
+Using the above KSQL application we've got a Kafka topic being populated with suspect ATM transactions. We can query this from the command line in KSQL to inspect it, but at the end of the day it's just a Kafka topic. We can use this Kafka topic for multiple independent purposes: 
+
+* drive a microservice—perhaps to trigger an alert or block on a particular card
+* stream the data to a store such as Elasticsearch for visualisation and analysis in Kibana
+
+Streaming data from Kafka to Elasticsearch is easy using Kafka Connect and the Elasticsearch connector. Check out the code on GitHub for full details but in essence it's two scripts: 
+
+1. A dynamic mapping template for the Elasticsearch indices so that things like geopoints and timestamps are set up correctly
+2. Kafka Connect JSON configuration specifying the Kafka topics from which to stream data and the corresponding Elasticsearch indices to load
+
+With the data in Elasticsearch we can easily build some powerful dashboards and analyses with Kibana. Here's a view of all suspected fraudulent activity in a region, with hotspots highlighted: 
+
+image::images/kafka_ksql_kibana_atm_fraud_01.png[]
+
+By selecting a specific account all ATM transactions for that account can be shown for further analysis. Here any fraud alerts for account `a410` are shown and plotted on the map: 
+
+image::images/kafka_ksql_kibana_atm_fraud_02.png[]
+
+You can also use Kibana to draw a bounding-box around a particular region of the map to filter events just for that area: 
+
+image::images/kafka_ksql_kibana_atm_fraud_03.png[]
+
+image::images/kafka_ksql_kibana_atm_fraud_04.png[]

@@ -55,7 +55,7 @@ services:
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       KSQL_KSQL_COMMIT_INTERVAL_MS: 2000
       KSQL_KSQL_CACHE_MAX_BYTES_BUFFERING: 10000000
-      KSQL_KSQL_AUTO_OFFSET_RESET: earliest
+      KSQL_KSQL_STREAMS_AUTO_OFFSET_RESET: earliest
 
   kafka-connect:
     image: confluentinc/cp-kafka-connect:5.0.0
@@ -104,7 +104,6 @@ services:
         /scripts/create-es-sink.sh 
         sleep infinity
 
-
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
     ports:
@@ -137,3 +136,17 @@ services:
     environment:
       xpack.security.enabled: "false"
       discovery.type: "single-node"
+    command: 
+      - bash 
+      - -c 
+      - |
+        /usr/local/bin/kibana-docker & 
+        echo "Waiting for Kibana to start ⏳"
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://localhost:5601/) -eq 000 ] ; do 
+          echo -e $$(date) " Kibana listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://localhost:5601/) " (waiting for 200)"
+          sleep 5 
+        done
+        echo -e "\n--\n+> Setup Kibana objects"
+        /scripts/setup-kibana.sh
+        sleep infinity
+

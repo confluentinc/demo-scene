@@ -13,14 +13,14 @@ curl -s \
      -d '{
   "name": "es_sink_atm_txns",
   "config": {
-    "topics": "atm_txns",
+    "topics": "atm_txns_gess",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "value.converter": "org.apache.kafka.connect.json.JsonConverter",
     "value.converter.schemas.enable": false,
     "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
     "key.ignore": "true",
     "schema.ignore": "true",
-    "type.name": "type.name=kafkaconnect",
+    "type.name": "kafkaconnect",
     "connection.url": "http://elasticsearch:9200",
     "transforms": "routeTS",
     "transforms.routeTS.type":"org.apache.kafka.connect.transforms.TimestampRouter",  
@@ -39,17 +39,17 @@ curl -s \
 curl -X "POST" "http://kafka-connect:18083/connectors/" \
      -H "Content-Type: application/json" \
      -d '{
-  "name": "es_sink_ATM_POSSIBLE_FRAUD2",
+  "name": "es_sink_ATM_POSSIBLE_FRAUD",
   "config": {
-    "topics": "ATM_POSSIBLE_FRAUD2",
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "connection.url": "http://elasticsearch:9200",
+    "type.name": "type.name=kafkaconnect",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "key.ignore": "true",
     "value.converter": "org.apache.kafka.connect.json.JsonConverter",
     "value.converter.schemas.enable": false,
-    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
-    "key.ignore": "true",
     "schema.ignore": "true",
-    "type.name": "type.name=kafkaconnect",
-    "topic.index.map": "ATM_POSSIBLE_FRAUD2:atm_possible_fraud",
-    "connection.url": "http://elasticsearch:9200"
+    "topics": "ATM_POSSIBLE_FRAUD",
+    "topic.index.map": "ATM_POSSIBLE_FRAUD:atm_possible_fraud"
   }
 }'

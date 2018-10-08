@@ -7,13 +7,23 @@ curl -XPUT "http://elasticsearch:9200/_template/kafkaconnect/" -H 'Content-Type:
     "number_of_replicas": 0
   },
   "mappings": {
-    "_default_": {
+    "kafkaconnect": {
       "dynamic_templates": [
         {
           "dates": {
             "match": "*TIMESTAMP",
             "mapping": {
               "type": "date"
+            }
+          }
+        },
+        {
+          "dates2": {
+            "match": "timestamp",
+            "mapping": {
+              "type": "date",
+              "format": "YYYY-MM-dd HH:mm:ss Z"
+
             }
           }
         },
