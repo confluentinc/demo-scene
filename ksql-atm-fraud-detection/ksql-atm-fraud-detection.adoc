@@ -131,8 +131,7 @@ ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss'),ACCOUNT_ID, TRANS
 ----
 
 
-
-_In practice this is a necessary step that in principle could be handled by KSQL, and is tracked in GitHub issue xxxx._
+_In practice this is a necessary step that in principle could be handled by KSQL, and is tracked in https://github.com/confluentinc/ksql/issues/2030[GitHub issue 2030]._
 
 With the two streams, let's join them: 
 
@@ -474,7 +473,7 @@ Persisting this as another new Kafka topic gives us this rich stream of events, 
 
 image::images/kafka_ksql_kibana_atm_fraud_05.png[]
 
-The same data is used for pushing fraud notifications to customer's phones: 
+The same data is used to drive fraud notifications direct to customer's phones: 
 
 image::images/ios_push.png[]
 
