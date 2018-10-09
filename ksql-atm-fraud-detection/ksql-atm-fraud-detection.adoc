@@ -4,7 +4,7 @@ v1.00, October 5, 2018
 
 Detecting fraudulent transactions is one of the classic use-cases for real time data. The business value is clear: 
 
-* Reduce expose to risk by identifying fraud sooner in order to take action to stop it
+* Reduce exposure to risk by identifying fraud sooner in order to take action to stop it
 * Improve customer experience by reducing false-positives
 
 Traditionally fraud detection will have been done using stream processing applications written in Java, for example. Maybe using Kafka Streams, maybe Spark Streaming, but regardless of the framework, it required a strong understanding of the core language first. This reduces the base of developers who can access stream processing. KSQL changes this, because anyone who can write SQL can now write stream processing applications. 
@@ -21,7 +21,7 @@ As part of the processing we'll also calculate the distance (as the crow flies) 
 
 image::images/kafka_ksql_kibana_atm_fraud_01.png[]
 
-We're going to use Elasticsearch to store the transactions and enriched data, and Kibana to provide visualisation and further data inspection capabilities.
+We're going to use Elasticsearch to store the transactions and enriched data, and Kibana to provide visualization and further data inspection capabilities.
 
 == Streams of ATM Transactions
 
@@ -398,7 +398,7 @@ There are some changes to note from the query that we iteratively built up at th
 Using the above KSQL application we've got a Kafka topic being populated with suspect ATM transactions. We can query this from the command line in KSQL to inspect it, but at the end of the day it's just a Kafka topic. We can use this Kafka topic for multiple independent purposes: 
 
 * drive a microservice—perhaps to trigger an alert or block on a particular card
-* stream the data to a store such as Elasticsearch for visualisation and analysis in Kibana
+* stream the data to a store such as Elasticsearch for visualization and analysis in Kibana
 
 Streaming data from Kafka to Elasticsearch is easy using Kafka Connect and the Elasticsearch connector. Check out the code on GitHub for full details but in essence it's two scripts: 
 
@@ -473,7 +473,7 @@ Persisting this as another new Kafka topic gives us this rich stream of events, 
 
 image::images/kafka_ksql_kibana_atm_fraud_05.png[]
 
-The same data is used to drive fraud notifications direct to customer's phones: 
+The same data is used to drive fraud notifications direct to customers' phones: 
 
 image::images/ios_push.png[]
 
