@@ -43,7 +43,7 @@ curl -X "POST" "http://kafka-connect:18083/connectors/" \
   "config": {
     "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
     "connection.url": "http://elasticsearch:9200",
-    "type.name": "type.name=kafkaconnect",
+    "type.name": "kafkaconnect",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "key.ignore": "true",
     "value.converter": "org.apache.kafka.connect.json.JsonConverter",
@@ -51,5 +51,29 @@ curl -X "POST" "http://kafka-connect:18083/connectors/" \
     "schema.ignore": "true",
     "topics": "ATM_POSSIBLE_FRAUD",
     "topic.index.map": "ATM_POSSIBLE_FRAUD:atm_possible_fraud"
+  }
+}'
+
+# ---- Sink to Elasticsearch with uppercase topic
+#
+# Use topic.index.map to map uppercase topic to lower case index name
+#
+# Note that this is not currently compatible with TimestampRouter
+#
+curl -X "POST" "http://kafka-connect:18083/connectors/" \
+     -H "Content-Type: application/json" \
+     -d '{
+  "name": "es_sink_ATM_POSSIBLE_FRAUD_ENRICHED",
+  "config": {
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "connection.url": "http://elasticsearch:9200",
+    "type.name": "kafkaconnect",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "key.ignore": "true",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": false,
+    "schema.ignore": "true",
+    "topics": "ATM_POSSIBLE_FRAUD_ENRICHED",
+    "topic.index.map": "ATM_POSSIBLE_FRAUD_ENRICHED:atm_possible_fraud_enriched"
   }
 }'

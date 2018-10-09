@@ -149,4 +149,45 @@ services:
         echo -e "\n--\n+> Setup Kibana objects"
         /scripts/setup-kibana.sh
         sleep infinity
+    volumes:
+     - $PWD/scripts:/scripts
+  mysql:
+    image: debezium/example-mysql:0.8
+    environment:
+     - MYSQL_ROOT_PASSWORD=debezium
+     - MYSQL_USER=mysqluser
+     - MYSQL_PASSWORD=mysqlpw
+    volumes:
+     - ./scripts/accounts.sql:/docker-entrypoint-initdb.d/z99_dump.sql
 
+  connect-debezium:
+    image: debezium/connect:0.8
+    depends_on:
+     - kafka
+     - mysql
+     - schema-registry
+    ports:
+     - 8083:8083
+    environment:
+     - BOOTSTRAP_SERVERS=kafka:29092
+     - CONNECT_REST_PORT=18083     
+     - CONNECT_REST_ADVERTISED_HOST_NAME="connect-debezium"
+     - GROUP_ID="debezium-mysql"
+     - CONFIG_STORAGE_TOPIC=debezium_connect_configs
+     - OFFSET_STORAGE_TOPIC=debezium_connect_offsets
+     - STATUS_STORAGE_TOPIC=debezium_connect_status
+    volumes:
+     - $PWD/scripts:/scripts
+    command: 
+      - bash 
+      - -c 
+      - |
+        /docker-entrypoint.sh start & 
+        echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -eq 000 ] ; do 
+          echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) " (waiting for 200)"
+          sleep 5 
+        done
+        echo -e "\n--\n+> Creating Kafka Connect Debezium source"
+        /scripts/create-debezium-source.sh 
+        sleep infinity

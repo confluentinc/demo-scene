@@ -1,7 +1,7 @@
 #!/bin/sh
 curl -XPUT "http://elasticsearch:9200/_template/kafkaconnect/" -H 'Content-Type: application/json' -d'
 {
-  "index_patterns": "*",
+  "index_patterns": "*atm*",
   "settings": {
     "number_of_shards": 1,
     "number_of_replicas": 0
