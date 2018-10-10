@@ -17,6 +17,9 @@ We're going to see here how taking a stream of inbound ATM transactions we can e
 * …but at a different location
 * …less than ten minutes after the previous one
 
+image::images/overview.png[]
+
+
 As part of the processing we'll also calculate the distance (as the crow flies) between the two suspect transactions, the time between them, and thus how fast someone would have had to travel to plausibly make the transaction. This could feed into a second iteration of processing to refine the detection further. 
 
 image::images/kafka_ksql_kibana_atm_fraud_01.png[]
