@@ -1,4 +1,4 @@
-= Kafka and KSQL for ATM Fraud Detection
+= ATM Fraud Detection with Apache Kafka® and KSQL
 Robin Moffatt <robin@confluent.io>
 v1.00, October 5, 2018
 
