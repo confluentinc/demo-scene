@@ -6,9 +6,6 @@ Use Case: Connected Cars - Real Time Streaming Analytics using Deep Learning. Fo
 
 If you want to build your own UDF in a similar way, check out this blog post for a detailed "how to" and potential issues during development and testing: [How to Build a UDF and/or UDAF in KSQL 5.0](https://www.confluent.io/blog/build-udf-udaf-ksql-5-0).
 
-## Source Code
-Here is the full source code for the [Anomaly Detection KSQL UDF](https://github.com/kaiwaehner/ksql-udf-deep-learning-mqtt-iot/blob/master/src/main/java/com/github/megachucky/kafka/streams/machinelearning/Anomaly.java).
-
 ## How to run it?
 
 ### Requirements
@@ -18,9 +15,9 @@ Here is the full source code for the [Anomaly Detection KSQL UDF](https://github
 - [kafkacat](https://github.com/edenhill/kafkacat) (optional - if you do not want to use MQTT Producers, and of course you can also use kafka-console-producer instead, but kafkacat is much more comfortable)
 
 ### Step-by-step demo
-[Install Confluent Platform](https://www.confluent.io/download/) and [Mosquitto](https://mosquitto.org/download/) (or any other MQTT Client). Then follow these steps to [deploy the UDF, create MQTT events and process them via KSQL leveraging the analytic model](https://github.com/kaiwaehner/ksql-udf-deep-learning-mqtt-iot/blob/master/live-demo.adoc).
 
+Follow these steps to [deploy the UDF, create MQTT events and process them via KSQL leveraging the analytic model](live-demo.adoc).
 
-
-
+## Source Code
+Here is the full source code for the [Anomaly Detection KSQL UDF](src/main/java/com/github/megachucky/kafka/streams/machinelearning/Anomaly.java).
 

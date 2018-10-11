@@ -44,7 +44,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.0.0-beta180702222458
+    image: confluentinc/cp-ksql-server:5.0.0
     depends_on:
       - kafka
       - schema-registry
@@ -55,7 +55,7 @@ services:
       KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
 
   connect:
-    image: confluentinc/cp-kafka-connect:5.0.0-beta180702222458
+    image: confluentinc/cp-kafka-connect:5.0.0
     ports:
       - "8083:8083"
     environment:

@@ -1,0 +1,104 @@
+= ATM Fraud Detection with Kafka and KSQL - Hands on Guide
+Robin Moffatt <robin@confluent.io>
+v1.00, October 9, 2018
+
+== Running the test rig
+
+=== Setup
+
+[source,bash]
+----
+git clone https://github.com/confluentinc/demo-scene.git
+cd ksql-atm-fraud-detection
+docker-compose up -d
+----
+
+This brings up the stack, and also loads the necessary Kafka Connect, Elasticsearch, and Kibana configuration. 
+
+To launch the ATM data generator: 
+
+[source,bash]
+----
+git clone https://github.com/rmoff/gess.git
+cd gess
+python scripts/gess-main.py
+----
+
+This emits the transactions on UDP - to stream these into a Kafka topic, run
+
+[source,bash]
+----
+nc -v -u -l 6900 | \
+  docker run --interactive --rm --network ksql-atm-fraud-detection_default confluentinc/cp-kafkacat \
+  kafkacat -b kafka:29092 -P -t atm_txns_gess
+----
+
+_Note that there will be no output from this as the output from `nc` is piped into `kafkacat` which routes it directly into the specified topic._
+
+=== KSQL application
+
+[source,sql]
+----
+include::atm_fraud_detection.ksql[]
+----
+
+View the resulting matches: 
+
+[source,sql]
+----
+SELECT ACCOUNT_ID, \
+        TIMESTAMPTOSTRING(T1_TIMESTAMP, 'yyyy-MM-dd HH:mm:ss'), TIMESTAMPTOSTRING(T2_TIMESTAMP, 'HH:mm:ss'), \
+        T1_ATM, T2_ATM, \
+        DISTANCE_BETWEEN_TXN_KM, MINUTES_DIFFERENCE \
+FROM ATM_POSSIBLE_FRAUD;  
+----
+
+++++
+<script src="https://asciinema.org/a/xuzkbePj2N9fsAZZew0eJUjCW.js" id="asciicast-xuzkbePj2N9fsAZZew0eJUjCW" async></script>
+++++
+
+=== Kibana
+
+* http://localhost:5601/app/kibana#/dashboard/fraudulent-atm-transactions
+* http://localhost:5601/app/kibana#/dashboard/atm-transactions
+
+== Sending test messages
+
+Send a couple of test messages to the ATM topic, using `kafkacat`: 
+
+[source,bash]
+----
+docker run --interactive --rm --network ksql-atm-fraud-detection_default confluentinc/cp-kafkacat \
+kafkacat -b kafka:29092 -P -t atm_txns << EOF
+{"account_id": "ac_01", "atm": "ID_2276369282", "amount": 20, "location": {"lat": "38.6956033", "lon": "-121.5922283"}, "transaction_id": "01"}
+{"account_id": "ac_02", "atm": "Flying Pig Bistro", "amount": 400, "location": {"lat": "37.766319", "lon": "-122.417422"}, "transaction_id": "02"}
+{"account_id": "ac_03", "atm": "Wells Fargo", "amount": 50, "location": {"lat": "37.5522855", "lon": "-121.9797997"}, "transaction_id": "04"}
+EOF
+----
+
+=== Launching KSQL
+
+[source,bash]
+----
+docker run --network ksql-atm-fraud-detection_default --interactive --tty --rm \
+    confluentinc/cp-ksql-cli:5.0.0 \
+    http://ksql-server:8088
+----
+
+=== Sending more test messages
+
+[source,bash]
+----
+docker run --interactive --rm --network ksql-atm-fraud-detection_default confluentinc/cp-kafkacat kafkacat -b kafka:29092 -P -t atm_txns << EOF
+{"account_id": "ac_02", "atm": "Flying Pig Bistro", "amount": 40, "location": {"lat": "37.766319", "lon": "-122.417422"}, "transaction_id": "03"}
+{"account_id": "ac_03", "atm": "Barclays", "amount": 500, "location": {"lat": "33.5522855", "lon": "-120.9797997"}, "transaction_id": "X05"}
+EOF
+----
+
+=== Finished KSQL statement for processing test messages
+
+[source,sql]
+----
+include::test_messages.ksql[]
+----
+

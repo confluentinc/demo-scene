@@ -16,7 +16,9 @@ CREATE STREAM RATINGS WITH (KAFKA_TOPIC='ratings',VALUE_FORMAT='AVRO');
 
 -- Perform the join, writing to a new topic.
 CREATE STREAM RATINGS_WITH_CUSTOMER_DATA \
-       WITH (PARTITIONS=1) AS \
+       WITH (PARTITIONS=1, \
+             KAFKA_TOPIC='ratings-enriched') \
+       AS \
 SELECT R.RATING_ID, R.MESSAGE, R.STARS, R.CHANNEL,\
       C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, \
       C.CLUB_STATUS, C.EMAIL \

@@ -2,17 +2,20 @@
 version: '2'
 services:
   zookeeper:
-    image: "confluentinc/cp-zookeeper:5.0.0-rc3"
+    image: confluentinc/cp-zookeeper:5.0.0
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: "confluentinc/cp-enterprise-kafka:5.0.0-rc3"
-    ports:
-      - '9092:9092'
+    image: confluentinc/cp-enterprise-kafka:5.0.0
     depends_on:
       - zookeeper
+    ports:
+    # Exposes 9092 for external connections to the broker
+    # Use kafka:29092 for connections internal on the docker network
+    # See https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
+      - 9092:9092
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -30,20 +33,22 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: "confluentinc/cp-schema-registry:5.0.0-rc3"
+    image: confluentinc/cp-schema-registry:5.0.0
     depends_on:
       - zookeeper
       - kafka
-    ports:
-      - '8081:8081'
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   kafka-connect-cp:
-    image: confluentinc/cp-kafka-connect:5.0.0-rc3
+    image: confluentinc/cp-kafka-connect:5.0.0
+    depends_on:
+      - zookeeper
+      - kafka
+      - schema-registry
     ports:
-      - "18083:18083"
+      - 18083:18083
     environment:
       CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
       CONNECT_REST_PORT: 18083
@@ -63,22 +68,17 @@ services:
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
-      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components'
-    depends_on:
-      - zookeeper
-      - kafka
-      - schema-registry
+      CONNECT_PLUGIN_PATH: '/usr/share/java'
     volumes:
       - $PWD/scripts:/scripts
-      - $PWD/aws_creds.txt:/root/.aws/credentials
-      - $PWD/gcp_creds.json:/root/gcp_creds.json
 
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.0.0-rc3
+    image: confluentinc/cp-ksql-server:5.0.0
     depends_on:
       - kafka
       - schema-registry
     environment:
+      KSQL_CUB_KAFKA_TIMEOUT: 120
       KSQL_BOOTSTRAP_SERVERS: kafka:29092
       KSQL_LISTENERS: http://0.0.0.0:8088
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
@@ -86,34 +86,27 @@ services:
 
   # Runs the Kafka KSQL data generator for ratings
   datagen-ratings:
-    image: "confluentinc/ksql-examples:4.1.0"
+    image: confluentinc/ksql-examples:5.0.0
     depends_on:
       - kafka
       - schema-registry
-    # Note: The container's `run` script will perform the same readiness checks
-    # for Kafka and Confluent Schema Registry, but that's ok because they complete fast.
-    # The reason we check for readiness here is that we can insert a sleep time
-    # for topic creation before we start the application.
     command: "bash -c 'echo Waiting for Kafka to be ready... && \
                        cub kafka-ready -b kafka:29092 1 300 && \
                        echo Waiting for Confluent Schema Registry to be ready... && \
                        cub sr-ready schema-registry 8081 300 && \
                        echo Waiting a few seconds for topic creation to finish... && \
                        sleep 20 && \
-                       java -jar /usr/share/java/ksql-examples/ksql-examples-4.1.1-SNAPSHOT-standalone.jar quickstart=ratings format=avro topic=ratings maxInterval=500 bootstrap-server=kafka:29092 schemaRegistryUrl=http://schema-registry:8081'"
-    environment:
-      KSQL_CONFIG_DIR: "/etc/ksql"
-      KSQL_LOG4J_OPTS: "-Dlog4j.configuration=file:/etc/ksql/log4j-rolling.properties"
-      STREAMS_BOOTSTRAP_SERVERS: kafka:29092
-      STREAMS_SCHEMA_REGISTRY_HOST: schema-registry
-      STREAMS_SCHEMA_REGISTRY_PORT: 8081
+                       ksql-datagen \
+                          quickstart=ratings \
+                          format=avro \
+                          topic=ratings \
+                          maxInterval=500 \
+                          bootstrap-server=kafka:29092 \
+                          schemaRegistryUrl=http://schema-registry:8081'"
 
 # Other systems
-
   mysql:
     image: debezium/example-mysql:0.8
-    ports:
-     - 3306:3306
     environment:
      - MYSQL_ROOT_PASSWORD=debezium
      - MYSQL_USER=mysqluser
@@ -123,12 +116,12 @@ services:
 
   connect-debezium:
     image: debezium/connect:0.8
-    ports:
-     - 8083:8083
-    links:
+    depends_on:
      - kafka
      - mysql
      - schema-registry
+    ports:
+     - 8083:8083
     environment:
      - BOOTSTRAP_SERVERS=kafka:29092
      - GROUP_ID=1
@@ -139,18 +132,13 @@ services:
      - VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter
      - CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
      - CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
-    depends_on:
-     - kafka
-     - schema-registry
     volumes:
      - $PWD/scripts:/scripts
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.3.0
-    depends_on:
-      - kafka-connect-cp
     ports:
-      - "9200:9200"
+      - 9200:9200
     environment:
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: "-Xms1g -Xmx1g"
@@ -162,7 +150,7 @@ services:
     depends_on:
       - elasticsearch
     ports:
-      - "5601:5601"
+      - 5601:5601
     environment:
       xpack.security.enabled: "false"
       discovery.type: "single-node"

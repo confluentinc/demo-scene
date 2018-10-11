@@ -61,3 +61,20 @@ CREATE STREAM flood_monitoring_L2481 \
                   RiverName VARCHAR,\
                   label VARCHAR> \
     ) WITH (KAFKA_TOPIC='flood-monitoring-L2481',VALUE_FORMAT='JSON');
+
+DROP STREAM flood_monitoring_3680;
+CREATE STREAM flood_monitoring_3680 \
+    (meta STRUCT<publisher VARCHAR, \
+                 comment VARCHAR>, \
+     items STRUCT<eaRegionName VARCHAR, \
+                  gridReference VARCHAR, \
+                  lat DOUBLE, \
+                  long DOUBLE, \
+                  measures ARRAY<STRUCT<label VARCHAR, \
+                        latestReading STRUCT<\
+                            dateTime VARCHAR, \
+                            value DOUBLE>,\
+                        parameterName VARCHAR, \
+                        unitName VARCHAR>>, \
+                  stationReference VARCHAR> \
+    ) WITH (KAFKA_TOPIC='flood-monitoring-3680',VALUE_FORMAT='JSON');

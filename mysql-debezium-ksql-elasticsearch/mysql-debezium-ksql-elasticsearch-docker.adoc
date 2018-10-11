@@ -1,6 +1,6 @@
 = Streaming ETL demo - Enriching event stream data with CDC data from MySQL, stream into Elasticsearch
 Robin Moffatt <robin@confluent.io>
-v1.15, 25 Jul 2018
+v1.20, August 22, 2018
 
 image:images/ksql-debezium-es.png[Kafka Connect / KSQL / Elasticsearch]
 
@@ -24,40 +24,24 @@ Start the environment
 ----
 cd docker-compose
 docker-compose up -d
-docker-compose logs -f kafka-connect-cp|grep "Kafka Connect started"
-----
-
-[source,bash]
-----
 ./scripts/setup.sh
 ----
-
-
-=== Setup Kibana
-
-1. Go to http://localhost:5601/app/kibana#/management/kibana/indices/ and set an index (any index) as default
-
-2. Go to http://localhost:5601/app/kibana#/management/kibana/objects and Import dashboard `kibana_objects.json` using the **Import** button 
-+
-image::images/kibana_ix01.png[Kibana indexes]
-
-3. Load the Kibana dashboard http://localhost:5601/app/kibana#/dashboard/02028f30-424c-11e8-af19-1188a9332246
-
 
 === Run KSQL CLI and MySQL CLI
 
 Optionally, use something like `screen` or `tmux` to have these both easily to hand. Or multiple Terminal tabs. Whatever works for you :)
-KSQL CLI:
 
+* KSQL CLI:
++
 [source,bash]
 ----
-docker run --network docker-compose_default --interactive --tty \
+docker run --network docker-compose_default --interactive --tty --rm \
      confluentinc/cp-ksql-cli:5.0.0 \
      http://ksql-server:8088
 ----
 
-MySQL CLI:
-
+* MySQL CLI:
++
 [source,bash]
 ----
 cd docker-compose
@@ -66,10 +50,18 @@ docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
 
 == Pre-flight checklist
 
-* Load Kibana dashboard: http://localhost:5601/app/kibana#/dashboard/02028f30-424c-11e8-af19-1188a9332246
+* Load Kibana dashboard: http://localhost:5601/app/kibana#/dashboard/mysql-ksql-kafka-es
 * Create iTerm window, using the `screencapture` profile
 * Load this instructions doc into Chrome
 * Close all other apps
+* Optional: 
+** `source slack_creds.sh`
+** `python python_kafka_notify.py`
+** Connect laptop to wifi
+** Connect iPhone to wifi
+** Sign into Slack on iPhone
+** Enable Slack notifications
+** Disable other notifications (WhatsApp/Messages/any other Slack etc)
 
 == Demo
 
@@ -253,6 +245,10 @@ SELECT ID, FIRST_NAME, LAST_NAME, CLUB_STATUS FROM CUSTOMERS_SRC;
 CREATE STREAM CUSTOMERS_SRC_REKEY WITH (PARTITIONS=1) AS SELECT * FROM CUSTOMERS_SRC PARTITION BY ID;
 -- Wait for a moment here; if you run the CTAS _immediately_ after the CSAS it may fail
 -- with error `Could not fetch the AVRO schema from schema registry. Subject not found.; error code: 40401`
+-- You may also get this error if you have not set 'auto.offset.reset'='earliest' and there is no 
+-- data flowing into the source CUSTOMERS topic, since no messages will have triggered the target stream 
+-- to be created.
+-- See https://github.com/confluentinc/ksql/issues/713
 CREATE TABLE CUSTOMERS WITH (KAFKA_TOPIC='CUSTOMERS_SRC_REKEY', VALUE_FORMAT ='AVRO', KEY='ID');
 SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS;
 ----
@@ -320,7 +316,9 @@ Persist this stream of data
 [source,sql]
 ----
 CREATE STREAM RATINGS_WITH_CUSTOMER_DATA \
-       WITH (PARTITIONS=1) AS \
+       WITH (PARTITIONS=1, \
+             KAFKA_TOPIC='ratings-enriched') \
+       AS \
 SELECT R.RATING_ID, R.MESSAGE, R.STARS, R.CHANNEL,\
       C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, \
       C.CLUB_STATUS, C.EMAIL \
@@ -398,9 +396,9 @@ SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') , FULL_NAME, RATINGS_CO
 
 === Slack notifications
 
-_This bit will need some config of your own, as you'll need your own Slack workspace and API key (both free). With this though, you can demo the idea of an event-driven app subscribing to a KSQL-populated stream of filtered events.
+_This bit will need some config of your own, as you'll need your own Slack workspace and API key (both free). With this though, you can demo the idea of an event-driven app subscribing to a KSQL-populated stream of filtered events._
 
-:image:images/slack_ratings.png[Slack push notifications driven from Kafka and KSQL]
+image:images/slack_ratings.png[Slack push notifications driven from Kafka and KSQL]
 
 To run, first export your API key as an environment variable:
 
@@ -408,6 +406,8 @@ To run, first export your API key as an environment variable:
 ----
 export SLACK_API_TOKEN=xyxyxyxyxyxyxyxyxyxyxyx
 ----
+
+Or if you've got it locally, run `source slack_creds.sh`
 
 then run the code:
 
@@ -417,3 +417,4 @@ python python_kafka_notify.py
 ----
 
 You will need to install `slackclient` and `confluent_kafka` libraries.
+

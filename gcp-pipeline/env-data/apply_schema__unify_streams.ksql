@@ -7,9 +7,9 @@ SELECT  items->stationreference AS stationreference, \
         items->RiverName AS RiverName, \
         items->label AS label, \
         items->lat AS lat, items->long AS long, \
-        items->measures->latestreading->datetime AS datetime, \
+        items->measures->latestreading->datetime AS reading_ts, \
         items->measures->parameterName AS parameterName, \
-        items->measures->latestreading->value AS value, \
+        items->measures->latestreading->value AS reading_ts, \
         items->measures->unitname AS unitname \
  FROM   flood_monitoring_L2404 ;
 
@@ -21,9 +21,9 @@ SELECT  items->stationreference AS stationreference, \
         items->RiverName AS RiverName, \
         items->label AS label, \
         items->lat AS lat, items->long AS long, \
-        items->measures->latestreading->datetime AS datetime, \
+        items->measures->latestreading->datetime AS reading_ts, \
         items->measures->parameterName AS parameterName, \
-        items->measures->latestreading->value AS value, \
+        items->measures->latestreading->value AS reading_ts, \
         items->measures->unitname AS unitname \
  FROM   flood_monitoring_L2481 ;
 
@@ -35,8 +35,8 @@ SELECT  items->stationreference AS stationreference, \
         items->RiverName AS RiverName, \
         items->label AS label, \
         items->lat AS lat, items->long AS long, \
-        items->measures->latestreading->datetime AS datetime, \
+        items->measures->latestreading->datetime AS reading_ts, \
         items->measures->parameterName AS parameterName, \
-        items->measures->latestreading->value AS value, \
+        items->measures->latestreading->value AS reading_ts, \
         items->measures->unitname AS unitname \
  FROM   flood_monitoring_059793 ;
