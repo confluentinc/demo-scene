@@ -1,0 +1,31 @@
+SET 'auto.offset.reset'='earliest';
+
+CREATE STREAM ATM_TXNS (account_id VARCHAR, \
+                            atm VARCHAR, \
+                            location STRUCT<lon DOUBLE, \
+                                            lat DOUBLE>, \
+                            amount INT, \
+                            transaction_id VARCHAR) \
+                    WITH (KAFKA_TOPIC='atm_txns', \
+                    VALUE_FORMAT='JSON');
+
+CREATE STREAM ATM_POSSIBLE_FRAUD_01  \
+    WITH (PARTITIONS=1) AS \
+SELECT T1.ROWTIME AS T1_TIMESTAMP, T2.ROWTIME AS T2_TIMESTAMP, \
+        GEO_DISTANCE(T1.location->lat, T1.location->lon, T2.location->lat, T2.location->lon, 'KM') AS DISTANCE_BETWEEN_TXN_KM, \
+        (T2.ROWTIME - T1.ROWTIME) AS MILLISECONDS_DIFFERENCE,  \
+        (CAST(T2.ROWTIME AS DOUBLE) - CAST(T1.ROWTIME AS DOUBLE)) / 1000 / 60 AS MINUTES_DIFFERENCE,  \
+        GEO_DISTANCE(T1.location->lat, T1.location->lon, T2.location->lat, T2.location->lon, 'KM') / ((CAST(T2.ROWTIME AS DOUBLE) - CAST(T1.ROWTIME AS DOUBLE)) / 1000 / 60 / 60) AS KMH_REQUIRED, \
+        T1.ACCOUNT_ID, \
+        T1.TRANSACTION_ID, T2.TRANSACTION_ID, \
+        T1.ATM, T2.ATM, \
+        CAST(T1.location->lat AS STRING) + ',' + CAST(T1.location->lon AS STRING) AS T1_LOCATION, \
+        CAST(T2.location->lat AS STRING) + ',' + CAST(T2.location->lon AS STRING) AS T2_LOCATION \
+FROM   ATM_TXNS T1 \
+       INNER JOIN ATM_TXNS_02 T2 \
+        WITHIN (0 MINUTES, 10 MINUTES) \
+        ON T1.ACCOUNT_ID = T2.ACCOUNT_ID \
+WHERE   T1.TRANSACTION_ID != T2.TRANSACTION_ID \
+  AND   (T1.location->lat != T2.location->lat OR \
+         T1.location->lon != T2.location->lon);
+         
