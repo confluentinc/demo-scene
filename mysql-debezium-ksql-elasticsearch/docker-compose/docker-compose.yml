@@ -68,14 +68,9 @@ services:
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
-      CONNECT_PLUGIN_PATH: '/usr/share/java,/etc/kafka-connect/jars,/connectors'
-      CONNECT_PRODUCER_CLIENT_ID: kafka-connect
-      CONNECT_PRODUCER_INTERCEPTOR_CLASSES: 'no.sysco.middleware.kafka.interceptor.zipkin.TracingProducerInterceptor'
-      CONNECT_CONSUMER_INTERCEPTOR_CLASSES: 'no.sysco.middleware.kafka.interceptor.zipkin.TracingConsumerInterceptor'
+      CONNECT_PLUGIN_PATH: '/usr/share/java'
     volumes:
       - $PWD/scripts:/scripts
-      - /Users/Robin/git/talk-kafka-zipkin/docker-images/confluent-kafka-connect/plugins/kafka-interceptor-zipkin-0.1.1-SNAPSHOT.jar:/etc/kafka-connect/jars/kafka-interceptor-zipkin-0.1.1-SNAPSHOT.jar
-      - /u01/connectors:/connectors
 
   ksql-server:
     image: confluentinc/cp-ksql-server:5.0.0
@@ -99,17 +94,15 @@ services:
                        cub kafka-ready -b kafka:29092 1 300 && \
                        echo Waiting for Confluent Schema Registry to be ready... && \
                        cub sr-ready schema-registry 8081 300 && \
-                       echo interceptor.classes=no.sysco.middleware.kafka.interceptor.zipkin.TracingProducerInterceptor > /datagen.properties && \
+                       echo Waiting a few seconds for topic creation to finish... && \
+                       sleep 20 && \
                        ksql-datagen \
                           quickstart=ratings \
                           format=avro \
                           topic=ratings \
                           maxInterval=500 \
                           bootstrap-server=kafka:29092 \
-                          propertiesFile=/datagen.properties
                           schemaRegistryUrl=http://schema-registry:8081'"
-    volumes:
-      - /Users/Robin/git/talk-kafka-zipkin/docker-images/confluent-kafka-connect/plugins/kafka-interceptor-zipkin-0.1.1-SNAPSHOT.jar:/usr/share/java/ksql-examples/kafka-interceptor-zipkin-0.1.1-SNAPSHOT.jar
 
 # Other systems
   mysql:
@@ -161,29 +154,3 @@ services:
     environment:
       xpack.security.enabled: "false"
       discovery.type: "single-node"
-
-
-  zipkin:
-    image: openzipkin/zipkin:2.11
-    environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      JAVA_OPTS: "-Dlogging.level.zipkin=DEBUG -Dlogging.level.zipkin2=DEBUG"
-    ports:
-      - 9411:9411
-    depends_on:
-      - kafka
-
-  postgres:
-    image: postgres
-    environment:
-      POSTGRES_PASSWORD: example
-    environment:
-     - POSTGRES_USER=postgres
-     - POSTGRES_PASSWORD=postgres
-    volumes:
-     - $PWD/customers.sql:/docker-entrypoint-initdb.d/z99_dump.sql
-
-  adminer:
-    image: adminer
-    ports:
-    - 18080:8080
