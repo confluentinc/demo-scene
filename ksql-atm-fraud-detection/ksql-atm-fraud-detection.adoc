@@ -13,7 +13,7 @@ KSQL is a _continuous query language_. Whilst you can use it for interactive exp
 
 We're going to see here how taking a stream of inbound ATM transactions we can easily set up an application to detect transactions which look fraudulent. We'll use a three key factors in determining if we think a transaction is fraudulent: 
 
-* The same account number as a previous transaction…
+* The same account number has a previous transaction…
 * …but at a different location
 * …less than ten minutes after the previous one
 
