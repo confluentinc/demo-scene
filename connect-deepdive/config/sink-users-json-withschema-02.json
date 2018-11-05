@@ -1,0 +1,11 @@
+{
+  "name": "sink-file-users-json-withschema-02",
+  "config": {
+    "connector.class": "org.apache.kafka.connect.file.FileStreamSinkConnector",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false",
+    "topics": "users-json-withschema",
+    "file": "/tmp/users-json-withschema-02.txt"
+  }
+}
