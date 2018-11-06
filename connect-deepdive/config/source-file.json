@@ -1,0 +1,10 @@
+{
+  "name": "source-file",
+  "config": {
+    "connector.class": "org.apache.kafka.connect.file.FileStreamSourceConnector",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "kafka.topic": "source-file",
+    "file":"/data/testdata.csv"
+  }
+}
