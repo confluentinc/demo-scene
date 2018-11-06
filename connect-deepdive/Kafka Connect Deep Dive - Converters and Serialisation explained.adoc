@@ -1,6 +1,6 @@
 = Kafka Connect Deep Dive - Converters and Serialisation explained
 
-Kafka Connect is part of Apache Kafka®, providing streaming integration between data stores and Kafka. For data engineers it requires just JSON configuration files to use; for developers it has a rich API in which connectors can be developed. There are connectors for common (and not-so-common) data stores out there already, including JDBC, Elasticsearch, HDFS, S3 to name but a few. 
+Kafka Connect is part of Apache Kafka®, providing streaming integration between data stores and Kafka. For data engineers it requires just JSON configuration files to use. There are connectors for common (and not-so-common) data stores out there already, including JDBC, Elasticsearch, HDFS, S3 to name but a few. For developers Kafka Connect has a rich API in which additional connectors can be developed if required.
 
 Kafka Connect is modular in nature, providing a very powerful way of handling integration requirements. Some key components include: 
 
@@ -17,6 +17,7 @@ Kafka messages are organised into topics, which can be partitioned. Each message
 An analogy: within a country, people speak the native language. But, when flying between countries, pilots and air traffic control have to standardise on a language. If they didn't, communication would be difficult or impossible. In the same way, Kafka Connect provides this "translation" between message format specific to the source system, and the serialisation format that you want to use in Kafka. 
 
 image::images/connect_converters_01.png[]
+image::images/connect_converters_02.png[]
 
 There are various serialisation formats, with common ones including: 
 
@@ -31,7 +32,7 @@ There are advantages and disadvantages to each of these. Well, except delimited,
 
 Some guiding principles for choosing a serialisation format include: 
 
-* **Schema**. A lot of the time your data will have a schema to it. You may not like the fact, but it's your responsibility as a developer to preserve and propagate this schema. The schema provides the http://TODO.link.to.gwens.qcon.talk[contract between your services]. Some message formats (such as Avro and Protobuf) have strong schema support, whilst others have lesser support (JSON) or none at all (delimited string). 
+* **Schema**. A lot of the time your data will have a schema to it. You may not like the fact, but it's your responsibility as a developer to preserve and propagate this schema. The schema provides the https://www.infoq.com/presentations/contracts-streaming-microservices[contract between your services]. Some message formats (such as Avro and Protobuf) have strong schema support, whilst others have lesser support (JSON) or none at all (delimited string). 
 * **Ecosystem compatibility**. Avro is a first-class citizen in Confluent Platform, with native support from the Schema Registry, Kafka Connect, KSQL, and more. Protobuf, on the other hand, relies on community contributions for partial levels of feature support. 
 * **Message size**. Whilst JSON is plain text and relies on any compression configured in Kafka itself, Avro and Protobuf are both binary formats and thus provide smaller message sizes
 * **Language support**. Support for Avro is strong in the Java space, but if your company is not Java-based then you may find it less easy to work with
@@ -129,6 +130,7 @@ The resulting message to Kafka would look like the following example, with `sche
 }
 ----
 
+Note the size of the message, and the proportion of it made up of the payload vs the schema. Consider that this is repeated in every message, and you can see why a format like Avro, in which the schema is stored separately and the message holds just the payload (and compressed at that) makes a lot of sense. 
 
 If you're _consuming_ JSON data from a Kafka topic into a Kafka Connect sink, you need to understand already if the data includes a schema. If it does—and it's in the same format as above, not some arbitrary schema-inclusion format—then you'd set
 
@@ -172,9 +174,13 @@ org.apache.kafka.connect.errors.ConnectException: Tolerance exceeded in error ha
    at org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execute(RetryWithToleranceOperator.java:104)
 ----
 
-after this error, you'll see a further stack trace describing exactly _why_ it errored.
+after this error, you'll see a further stack trace describing exactly _why_ it errored. **Be aware that the above error will be thrown for _any_ fatal error in a connector, so you may well see this for errors unrelated to serialisation.**
 
-=== Reading non-Json data with JsonConverter
+To quickly visualize what erorrs you can expect with which mis-configuration, here's a quick reference: 
+
+image::images/converters_matrix.png[]
+
+=== Problem: Reading non-Json data with JsonConverter
 
 If you have non-Json data on your source topic but try to read it with the JsonConverter, you can expect to see
 
@@ -203,9 +209,9 @@ Solution: If the data is actually in Avro, then change your Kafka Connect sink c
 "value.converter.schemas.enable": "false",
 ----
 
-=== Reading Non-Avro data with AvroConverter
+=== Probem: Reading Non-Avro data with AvroConverter
 
-This may be the #1 error that I see reported again and again on places like the Confluent Community https://groups.google.com/forum/#!forum/confluent-platform[mailing list] and https://slackpass.io/confluentcommunity[Slack group]. It happens when you try to use the Avro converter to read data from a topic that is not Avro. This would include data written by another Avro serializer than the Confluent Schema Registry's [Avro serializer](https://docs.confluent.io/5.0.0/schema-registry/docs/serializer-formatter.html#serializer), which has its own https://docs.confluent.io/5.0.0/schema-registry/docs/serializer-formatter.html#wire-format[wire format]. 
+This may be the most common error that I see reported again and again on places like the Confluent Community https://groups.google.com/forum/#!forum/confluent-platform[mailing list] and https://slackpass.io/confluentcommunity[Slack group]. It happens when you try to use the Avro converter to read data from a topic that is not Avro. This would include data written by another Avro serializer than the Confluent Schema Registry's [Avro serializer](https://docs.confluent.io/5.0.0/schema-registry/docs/serializer-formatter.html#serializer), which has its own https://docs.confluent.io/5.0.0/schema-registry/docs/serializer-formatter.html#wire-format[wire format]. 
 
 [source,bash]
 ----
@@ -224,7 +230,7 @@ The solution is to check the source topic's serialization format, and either swi
 "value.converter.schema.registry.url": "http://schema-registry:8081",
 ----
 
-=== Reading JSON message without the expected schema/payload structure
+=== Problem: Reading JSON message without the expected schema/payload structure
 
 As described earlier, Kafka Connect supports a special structure of JSON messages containing both payload _and_ schema. If you try to read JSON data that _does not contain the data in this structure_ you will get this error: 
 
@@ -232,6 +238,8 @@ As described earlier, Kafka Connect supports a special structure of JSON message
 ----
 org.apache.kafka.connect.errors.DataException: JsonConverter with schemas.enable requires "schema" and "payload" fields and may not contain additional fields. If you are trying to deserialize plain JSON data, set schemas.enable=false in your converter configuration.
 ----
+
+To be clear; the only JSON structure that is valid for `schemas.enable=true` is with the `schema` and `payload` fields as the top-level elements, as shown above. 
 
 As the message itself states, if you just have plain JSON data you should change your connector's configuration to : 
 
@@ -249,79 +257,115 @@ If you want to include the schema in the data, you can either switch to using Av
 "value.converter.schemas.enable": "true",
 ----
 
+== Troubleshooting tips
 
+=== Finding the Connect worker log
 
+To find the error log from Kafka Connect you need to locate the Kafka Connect worker's output, and the location of this depends on how you launched Kafka Connect. There are several ways to [install Kafka Connect](https://docs.confluent.io/current/installation/installing_cp/index.html#on-premises-deployments), including Docker, Confluent CLI, systemd, and manually from the downloaded archive. You'll find the worker log in : 
 
-$ docker-compose exec kafka-connect ls -l /tmp/
-total 28
-drwxr-xr-x 1 root root  4096 Nov  5 15:00 hsperfdata_root
--rw-r--r-- 1 root root  2242 Nov  5 15:01 users-avro.txt
--rw-r--r-- 1 root root     0 Nov  5 15:01 users-json-noschema-01.txt
--rw-r--r-- 1 root root  2618 Nov  5 15:01 users-json-noschema-02.txt
--rw-r--r-- 1 root root     0 Nov  5 15:01 users-json-noschema-03.txt
--rw-r--r-- 1 root root  2476 Nov  5 15:01 users-json-withschema-01.txt
--rw-r--r-- 1 root root 10474 Nov  5 15:01 users-json-withschema-02.txt
-[~/g/d/connect-deepdive] Robin@asgard02.moffatt.me  (connect-deepdive|…)
-$
+* Docker: `docker logs container_name`
+* Confluent CLI: `confluent log connect`
+* systemd: log file is written to `/var/log/confluent/kafka-connect`
+* Other: by default Kafka Connect sends its output to `stdout` so you'll find it in the terminal session that launched Kafka Connect
 
-$ docker-compose exec kafka-connect cat /tmp/users-json-noschema-02.txt
-{registertime=1506601103005, gender=MALE, regionid=Region_7, userid=User_6}
-{registertime=1494322512667, gender=FEMALE, regionid=Region_3, userid=User_6}
-{registertime=1512577119982, gender=OTHER, regionid=Region_3, userid=User_5}
+=== Finding the Kafka Connect configuration file
 
-$ docker-compose exec kafka-connect cat /tmp/users-json-withschema-01.txt
-Struct{registertime=1517206846485,userid=User_7,regionid=Region_8,gender=FEMALE}
-Struct{registertime=1488194613026,userid=User_9,regionid=Region_3,gender=FEMALE}
-Struct{registertime=1501337865395,userid=User_8,regionid=Region_3,gender=MALE}
+To change configuration properties for Kafka Connect workers (which apply to all connectors run), set it as follows: 
 
-$ docker-compose exec kafka-connect cat /tmp/users-avro.txt
-Struct{registertime=1494124940983,userid=User_6,regionid=Region_2,gender=OTHER}
-Struct{registertime=1507502362439,userid=User_9,regionid=Region_6,gender=FEMALE}
+* Docker: Set environment variables, for example in Docker Compose: 
++
+[source,bash]
+----
+CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+----
+* Confluent CLI: configuration file `etc/schema-registry/connect-avro-distributed.properties`
+* systemd (deb/rpm): configuration file `/etc/kafka/connect-distributed.properties`
+* Other: when you launch Kafka Connect you specify the worker properties file, for example
++
+[source,bash]
+----
+$ cd confluent-5.0.0
+$ ./bin/connect-distributed ./etc/kafka/connect-distributed.properties
+----
 
-$ docker-compose exec kafka-connect cat /tmp/users-json-withschema-02.txt
-{schema={name=ksql.users, optional=false, type=struct, fields=[{field=registertime, optional=false, type=int64}, {field=userid, optional=false, type=string}, {field=regionid, optional=false, type=string}, {field=gender, optional=false, type=string}]}, payload={registertime=1517206846485, gender=FEMALE, regionid=Region_8, userid=User_7}}
-{schema={name=ksql.users, optional=false, type=struct, fields=[{field=registertime, optional=false, type=int64}, {field=userid, optional=false, type=string}, {field=regionid, optional=false, type=string}, {field=gender, optional=false, type=string}]}, payload={registertime=1488194613026, gender=FEMALE, regionid=Region_3, userid=User_9}}
+=== Inspecting a Kafka topic
 
+Let's say we've hit one of the errors shown above, and want to troubleshoot why our Kafka Connect sink connector can't read from a topic. We need to check the data on the topic that is being read, and ensure it's in the serialization format that we think it is. Also bear in mind that _all_ the messages need to be in this format, so don't just assume that because you're _now_ sending messages in the correct format to the topic there won't be a problem. Existing messages on the topic are also read by Kafka Connect. 
 
-$ docker-compose exec kafka-connect \
-                      kafka-avro-console-consumer \
-                      --bootstrap-server kafka:29092 \
-                      --property schema.registry.url=http://schema-registry:8081 \
-                      --topic users-avro --from-beginning
-{"registertime":1513121421609,"userid":"User_6","regionid":"Region_4","gender":"OTHER"}
-{"registertime":1506980341594,"userid":"User_3","regionid":"Region_7","gender":"MALE"}
+* **If you think you've got string/JSON data**…
++
+You can use console tools including `kafkacat` and `kafka-console-consumer`. My personal preference is `kafkacat`: 
++
+[source,bash]
+----
+$ kafkacat -b localhost:9092 -t users-json-noschema -C -c1
+{"registertime":1493356576434,"userid":"User_8","regionid":"Region_2","gender":"MALE"}
+----
++
+Using the excellent https://stedolan.github.io/jq/[`jq`] you can also validate and format the JSON: 
++
+[source,bash]
+----
+$ kafkacat -b localhost:9092 -t users-json-noschema -C -c1|jq '.'
+{
+  "registertime": 1493356576434,
+  "userid": "User_8",
+  "regionid": "Region_2",
+  "gender": "MALE"
+}
+----
++
+If you get something like this, with a bunch of "weird" characters, chances are you're looking at binary data, as would be written by Avro or Protobuf, for example: 
++
+[source,bash]
+----
+$ kafkacat -b localhost:9092 -t users-avro -C -c1
+ڝ���VUser_9Region_MALE
+----
 
-$ docker run --rm -it --network connect-deepdive_default confluentinc/cp-kafkacat \
-    kafkacat -b kafka:29092 -t users-json-noschema -C
-{"registertime":1489869013625,"userid":"User_1","regionid":"Region_2","gender":"OTHER"}
-{"registertime":1501504484224,"userid":"User_9","regionid":"Region_4","gender":"OTHER"}
-{"registertime":1491945892920,"userid":"User_9","regionid":"Region_7","gender":"FEMALE"}
-{"registertime":1488720890186,"userid":"User_3","regionid":"Region_7","gender":"MALE"}
-{"registertime":1510412265433,"userid":"User_6","regionid":"Region_9","gender":"OTHER"}
-{"registertime":1499492089595,"userid":"User_8","regionid":"Region_9","gender":"MALE"}
-{"registertime":1511475499040,"userid":"User_6","regionid":"Region_6","gender":"OTHER"}
-{"registertime":1510299526935,"userid":"User_2","regionid":"Region_7","gender":"FEMALE"}
-{"registertime":1500969941178,"userid":"User_2","regionid":"Region_9","gender":"MALE"}
-{"registertime":1512623334159,"userid":"User_6","regionid":"Region_4","gender":"OTHER"}
-{"registertime":1512739946941,"userid":"User_7","regionid":"Region_3","gender":"FEMALE"}
-{"registertime":1498954239463,"userid":"User_2","regionid":"Region_6","gender":"OTHER"}
-% Reached end of topic users-json-noschema [0] at offset 12
-^C⏎                                                                                                                                                           [~/g/d/connect-deepdive] Robin@asgard02.moffatt.me  (connect-deepdive|…)
-$ docker run --rm -it --network connect-deepdive_default confluentinc/cp-kafkacat \
-    kafkacat -b kafka:29092 -t users-json-withschema -C
-{"schema":{"type":"struct","fields":[{"type":"int64","optional":false,"field":"registertime"},{"type":"string","optional":false,"field":"userid"},{"type":"string","optional":false,"field":"regionid"},{"type":"string","optional":false,"field":"gender"}],"optional":false,"name":"ksql.users"},"payload":{"registertime":1493819497170,"userid":"User_1","regionid":"Region_5","gender":"MALE"}}
-{"schema":{"type":"struct","fields":[{"type":"int64","optional":false,"field":"registertime"},{"type":"string","optional":false,"field":"userid"},{"type":"string","optional":false,"field":"regionid"},{"type":"string","optional":false,"field":"gender"}],"optional":false,"name":"ksql.users"},"payload":{"registertime":1518251837453,"userid":"User_1","regionid":"Region_4","gender":"MALE"}}
-{"schema":{"type":"struct","fields":[{"type":"int64","optional":false,"field":"registertime"},{"type":"string","optional":false,"field":"userid"},{"type":"string","optional":false,"field":"regionid"},{"type":"string","optional":false,"field":"gender"}],"optional":false,"name":"ksql.users"},"payload":{"registertime":1497903577404,"userid":"User_3","regionid":"Region_1","gender":"FEMALE"}}
-{"schema":{"type":"struct","fields":[{"type":"int64","optional":false,"field":"registertime"},{"type":"string","optional":false,"field":"userid"},{"type":"string","optional":false,"field":"regionid"},{"type":"string","optional":false,"field":"gender"}],"optional":false,"name":"ksql.users"},"payload":{"registertime":1491331304628,"userid":"User_6","regionid":"Region_6","gender":"OTHER"}}
-{"schema":{"type":"struct","fields":[{"type":"int64","optional":false,"field":"registertime"},{"type":"string","optional":false,"field":"userid"},{"type":"string","optional":false,"field":"regionid"},{"type":"string","optional":false,"field":"gender"}],"optional":false,"name":"ksql.users"},"payload":{"registertime":1500799220091,"userid":"User_7","regionid":"Region_4","gender":"OTHER"}}
-{"schema":{"type":"struct","fields":[{"type":"int64","optional":false,"field":"registertime"},{"type":"string","optional":false,"field":"userid"},{"type":"string","optional":false,"field":"regionid"},{"type":"string","optional":false,"field":"gender"}],"optional":false,"name":"ksql.users"},"payload":{"registertime":1497691680754,"userid":"User_2","regionid":"Region_1","gender":"FEMALE"}}
-{"schema":{"type":"struct","fields":[{"type":"int64","optional":false,"field":"registertime"},{"type":"string","optional":false,"field":"userid"},{"type":"string","optional":false,"field":"regionid"},{"type":"string","optional":false,"field":"gender"}],"optional":false,"name":"ksql.users"},"payload":{"registertime":1505775959533,"userid":"User_6","regionid":"Region_9","gender":"FEMALE"}}
-{"schema":{"type":"struct","fields":[{"type":"int64","optional":false,"field":"registertime"},{"type":"string","optional":false,"field":"userid"},{"type":"string","optional":false,"field":"regionid"},{"type":"string","optional":false,"field":"gender"}],"optional":false,"name":"ksql.users"},"payload":{"registertime":1504383956725,"userid":"User_1","regionid":"Region_3","gender":"MALE"}}
-{"schema":{"type":"struct","fields":[{"type":"int64","optional":false,"field":"registertime"},{"type":"string","optional":false,"field":"userid"},{"type":"string","optional":false,"field":"regionid"},{"type":"string","optional":false,"field":"gender"}],"optional":false,"name":"ksql.users"},"payload":{"registertime":1504160286552,"userid":"User_6","regionid":"Region_6","gender":"FEMALE"}}
-{"schema":{"type":"struct","fields":[{"type":"int64","optional":false,"field":"registertime"},{"type":"string","optional":false,"field":"userid"},{"type":"string","optional":false,"field":"regionid"},{"type":"string","optional":false,"field":"gender"}],"optional":false,"name":"ksql.users"},"payload":{"registertime":1499304573866,"userid":"User_4","regionid":"Region_3","gender":"MALE"}}
-% Reached end of topic users-json-withschema [0] at offset 10
+* **If you think you've got Avro data**…
++
+You should use a console tool designed for reading and deserialised Avro data. Currently there's only `kafka-avro-console-consumer` that does this. Make sure you specify the correct Schema Registry URL at which the schema is held: 
++
+[source,bash]
+----
+$ kafka-avro-console-consumer --bootstrap-server localhost:9092 \
+                              --property schema.registry.url=http://localhost:8081 \
+                              --topic users-avro \
+                              --from-beginning --max-messages 1
+{"registertime":1505213905022,"userid":"User_5","regionid":"Region_4","gender":"FEMALE"}
+----
++
+As before, you can pipe the resulting output through https://stedolan.github.io/jq/[`jq`] if you want to format it: 
++
+[source,bash]
+----
+$ kafka-avro-console-consumer --bootstrap-server localhost:9092 \
+                              --property schema.registry.url=http://localhost:8081 \
+                              --topic users-avro \
+                              --from-beginning --max-messages 1 | \
+                              jq '.'
+{
+  "registertime": 1505213905022,
+  "userid": "User_5",
+  "regionid": "Region_4",
+  "gender": "FEMALE"
+}
+----
 
+== Internal Converters
 
-== How to find the errors
+Kafka Connect, when run in Distributed mode, uses Kafka itself to store metadata about its operation, including connector configuration, offsets, and so on. These Kafka topics themselves can be configured to use different converters, through the `internal.key.converter` / `internal.value.converter` settings. However these settings are purely for internal use, and indeed have been https://cwiki.apache.org/confluence/display/KAFKA/KIP-174+-+Deprecate+and+remove+internal+converter+configs+in+WorkerConfig[deprecated as of Apache Kafka 2.0]. You should not change these, and you will get warnings from Apache Kafka as of 2.0 if you do try to configure them. 
 
-== Inspecting topic data
+== Applying a schema to messages without a schema
+
+A lot of the time Kafka Connect will be bringing in data from places where there is a schema already, and retaining that schema is just a matter of using a suitable serialization format such as Avro. All down-stream users of that data then benefit from the schema being available to them, with the compatibility guarantees that something like Schema Registry provide. What about if there is no explicit schema? Maybe you're reading data from a flat file (using the https://docs.confluent.io/current/connect/filestream_connector.html[FileSourceConnector]—not recommended for Production, but often used for PoCs), or pulling data from a REST endpoint using the https://github.com/llofberg/kafka-connect-rest[REST connector]. Since both of these, and others, have no inherant schema, it's up to you to declare it. 
+
+Sometimes you'll just want to pass the bytes through that you've read from the source and put them on a topic, but most of the time you'll want to do the Right Thing and apply a schema so that the data can be used. Doing it once as part of the ingestion, instead of pushing the problem onto each (potentially multiple) consumer, is a much better pattern to follow. 
+
+You can write your own Kafka Streams application to apply schema to data in a Kafka topic, but you can also use KSQL. https://www.confluent.io/blog/data-wrangling-apache-kafka-ksql[This post] shows how to do it against JSON data pulled from a REST endpoint. Let's look here at a simple example of applying a schema to some CSV data. Obviously to be able to do this, we have to know the schema itself! 
+
+We've got a Kafka topic 

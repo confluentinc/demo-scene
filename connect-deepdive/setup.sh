@@ -7,6 +7,8 @@ while [ $(curl -s -o /dev/null -w %{http_code} http://$CONNECT_REST_ADVERTISED_H
   sleep 5 
 done
 
+curl -X POST -H "Content-Type: application/json" --data @config/source-file.json http://localhost:8083/connectors
+
 curl -X POST -H "Content-Type: application/json" --data @config/source-data-users-avro.json http://localhost:8083/connectors
 curl -X POST -H "Content-Type: application/json" --data @config/source-data-users-json-noschema.json http://localhost:8083/connectors
 curl -X POST -H "Content-Type: application/json" --data @config/source-data-users-json-withschema.json http://localhost:8083/connectors
