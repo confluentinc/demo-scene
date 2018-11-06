@@ -1,6 +1,6 @@
 = Kafka Connect Deep Dive - Converters and Serialisation explained
 
-Kafka Connect is part of Apache Kafka®, providing streaming integration between data stores and Kafka. For data engineers it requires just JSON configuration files to use. There are connectors for common (and not-so-common) data stores out there already, including JDBC, Elasticsearch, HDFS, S3 to name but a few. For developers Kafka Connect has a rich API in which additional connectors can be developed if required.
+Kafka Connect is part of Apache Kafka®, providing streaming integration between data stores and Kafka. For data engineers it requires just JSON configuration files to use. There are connectors for common (and not-so-common) data stores out there already, including JDBC, Elasticsearch, IBM MQ, S3, and BigQuery—to name but a few. For developers Kafka Connect has a rich API in which additional connectors can be developed if required.
 
 Kafka Connect is modular in nature, providing a very powerful way of handling integration requirements. Some key components include: 
 
@@ -16,7 +16,6 @@ Kafka messages are organised into topics, which can be partitioned. Each message
 
 An analogy: within a country, people speak the native language. But, when flying between countries, pilots and air traffic control have to standardise on a language. If they didn't, communication would be difficult or impossible. In the same way, Kafka Connect provides this "translation" between message format specific to the source system, and the serialisation format that you want to use in Kafka. 
 
-image::images/connect_converters_01.png[]
 image::images/connect_converters_02.png[]
 
 There are various serialisation formats, with common ones including: 
@@ -48,6 +47,8 @@ Kafka Connect takes a default converter configuration at the _worker_ level, and
 image::images/connect_source_converter_01.png[]
 
 The configuration setting is `converter`, prefixed by `value` or `key`. Remember, Kafka messages are _just pairs of key/value bytes_, and you need to specify the converter for both. In some situations you may use different converters for the key and the value. 
+
+image::images/connect_sink_converter_01.png[]
 
 Here's an example of using the **String** converter. Since it's just a string, there's no schema to the data, and thus it's not so useful to use for the `value`: 
 
@@ -368,4 +369,155 @@ Sometimes you'll just want to pass the bytes through that you've read from the s
 
 You can write your own Kafka Streams application to apply schema to data in a Kafka topic, but you can also use KSQL. https://www.confluent.io/blog/data-wrangling-apache-kafka-ksql[This post] shows how to do it against JSON data pulled from a REST endpoint. Let's look here at a simple example of applying a schema to some CSV data. Obviously to be able to do this, we have to know the schema itself! 
 
-We've got a Kafka topic 
+Let's say we've got a Kafka topic, `testdata-csv`, with some CSV data in it. It looks like this: 
+
+[source,bash]
+----
+$ kafkacat -b localhost:9092 -t testdata-csv -C
+1,Rick Astley,Never Gonna Give You Up
+2,Johnny Cash,Ring of Fire
+----
+
+By eye-balling it we can guess at there being three fields, maybe something like: 
+
+* ID
+* Artist
+* Song
+
+If we leave the data in the topic like this then any application wanting to use the data—whether a Kafka Connect sink, bespoke Kafka application, or whatever—will need to guess at this schema each time. Or, just as bad, they'll need to constantly go back to the team providing the data to check about the schema and any changes to it. Just as Kafka decouples systems, this kind of schema-dependency forces a hard-coupling between teams, and it's not a good thing. 
+
+So what we'll do is simply apply a schema to the data using KSQL, and populate a new, derived, topic in which the schema is present. From KSQL, optionally inspect the topic data:
+
+[source,sql]
+----
+ksql> PRINT 'testdata-csv' FROM BEGINNING;
+Format:STRING
+11/6/18 2:41:23 PM UTC , NULL , 1,Rick Astley,Never Gonna Give You Up
+11/6/18 2:41:23 PM UTC , NULL , 2,Johnny Cash,Ring of Fire
+----
+
+The first two fields here (timestamp and NULL) are the timestamp and key of the Kafka message respectively. The remaining fields are from our CSV file. So now let's register this topic with KSQL, and declare the schema: 
+
+[source,sql]
+----
+ksql> CREATE STREAM TESTDATA_CSV (ID INT, ARTIST VARCHAR, SONG VARCHAR) WITH (KAFKA_TOPIC='testdata-csv', VALUE_FORMAT='DELIMITED');
+
+ Message
+----------------
+ Stream created
+----------------
+----
+
+Observe that KSQL now has a schema for the stream of data: 
+
+[source,sql]
+----
+ksql> DESCRIBE TESTDATA_CSV;
+
+Name                 : TESTDATA_CSV
+ Field   | Type
+-------------------------------------
+ ROWTIME | BIGINT           (system)
+ ROWKEY  | VARCHAR(STRING)  (system)
+ ID      | INTEGER
+ ARTIST  | VARCHAR(STRING)
+ SONG    | VARCHAR(STRING)
+-------------------------------------
+For runtime statistics and query details run: DESCRIBE EXTENDED <Stream,Table>;
+----
+
+Check that the data is as expected by querying the KSQL stream. Note that at this point we're simply acting as a Kafka consumer against the existing Kafka topic - we've not changed or duplicated any data yet.
+
+[source,sql]
+----
+ksql> SET 'auto.offset.reset' = 'earliest';
+Successfully changed local property 'auto.offset.reset' from 'null' to 'earliest'
+ksql> SELECT ID, ARTIST, SONG FROM TESTDATA_CSV;
+1 | Rick Astley | Never Gonna Give You Up
+2 | Johnny Cash | Ring of Fire
+----
+
+Finally, create a new Kafka topic, populated by the re-serialised data with schema. KSQL queries are continuous, so as well as sending any _existing_ data from the source topic to the target one, KSQL will send any _future_ data to the topic too. 
+
+[source,sql]
+----
+ksql> CREATE STREAM TESTDATA WITH (VALUE_FORMAT='AVRO') AS SELECT * FROM TESTDATA_CSV;
+
+ Message
+----------------------------
+ Stream created and running
+----------------------------
+----
+
+Verify the data, using the Avro console consumer: 
+
+[source,bash]
+----
+$ kafka-avro-console-consumer --bootstrap-server localhost:9092 \
+                                --property schema.registry.url=http://localhost:8081 \
+                                --topic TESTDATA \
+                                --from-beginning | \
+                                jq '.'
+{
+  "ID": {
+    "int": 1
+  },
+  "ARTIST": {
+    "string": "Rick Astley"
+  },
+  "SONG": {
+    "string": "Never Gonna Give You Up"
+  }
+}
+[…]
+----
+
+You can even check the Schema Registry for the registered schema: 
+
+[source,bash]
+----
+$ curl -s http://localhost:8081/subjects/TESTDATA-value/versions/latest|jq '.schema|fromjson'
+{
+  "type": "record",
+  "name": "KsqlDataSourceSchema",
+  "namespace": "io.confluent.ksql.avro_schemas",
+  "fields": [
+    {
+      "name": "ID",
+      "type": [
+        "null",
+        "int"
+      ],
+      "default": null
+    },
+    {
+      "name": "ARTIST",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    },
+    {
+      "name": "SONG",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    }
+  ]
+}
+----
+
+Any new messages written to the original topic (`testdata-csv`) are automagically processed by KSQL and written to the new `TESTDATA` topic in Avro. Now any application or team wanting to use this data can simply work with the `TESTDATA` topic and take advantage of the Avro-serialized data with declared schema. As well as re-serialising data, you can use this to change the number of partitions in a topic, change the partitioning key, and change the replication factor. 
+
+== Conclusion
+
+Kafka Connect is a very simple, yet powerful, tool to use for integrating other systems with Kafka. This article has addressed one of the most common sources of misunderstanding, the converters that Kafka Connect offers. Kafka messages are just key/value pairs, and it's important to understand which serialisation you should use and then standardise on that in your Kafka Connect connectors.
+
+The code samples used in this blog are available on https://github.com/confluentinc/demo-scene/blob/master/connect-deepdive[GitHub].
+
+For more information about Kafka Connect you can refer to the documentation, as well as find help on the Confluent Community https://groups.google.com/forum/#!forum/confluent-platform[mailing list] and https://slackpass.io/confluentcommunity[Slack group]. 
+
+The quick KSQL snippet above barely scratches the surface of what's possible with KSQL; check out the https://www.confluent.io/stream-processing-cookbook/ksql-recipes/[KSQL recipes] and https://www.confluent.io/blog/tag/ksql[blogs] for more.

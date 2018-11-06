@@ -1,0 +1,24 @@
+Run `docker-compose up -d  ; ./setup.sh` to bring up Docker Compose and create all of the connectors. 
+
+View the output from the connectors: 
+
+[source,bash]
+----
+$ docker-compose exec kafka-connect cat /tmp/users-json-noschema-02.txt
+{registertime=1506601103005, gender=MALE, regionid=Region_7, userid=User_6}
+{registertime=1494322512667, gender=FEMALE, regionid=Region_3, userid=User_6}
+{registertime=1512577119982, gender=OTHER, regionid=Region_3, userid=User_5}
+
+$ docker-compose exec kafka-connect cat /tmp/users-json-withschema-01.txt
+Struct{registertime=1517206846485,userid=User_7,regionid=Region_8,gender=FEMALE}
+Struct{registertime=1488194613026,userid=User_9,regionid=Region_3,gender=FEMALE}
+Struct{registertime=1501337865395,userid=User_8,regionid=Region_3,gender=MALE}
+
+$ docker-compose exec kafka-connect cat /tmp/users-avro.txt
+Struct{registertime=1494124940983,userid=User_6,regionid=Region_2,gender=OTHER}
+Struct{registertime=1507502362439,userid=User_9,regionid=Region_6,gender=FEMALE}
+
+$ docker-compose exec kafka-connect cat /tmp/users-json-withschema-02.txt
+{schema={name=ksql.users, optional=false, type=struct, fields=[{field=registertime, optional=false, type=int64}, {field=userid, optional=false, type=string}, {field=regionid, optional=false, type=string}, {field=gender, optional=false, type=string}]}, payload={registertime=1517206846485, gender=FEMALE, regionid=Region_8, userid=User_7}}
+{schema={name=ksql.users, optional=false, type=struct, fields=[{field=registertime, optional=false, type=int64}, {field=userid, optional=false, type=string}, {field=regionid, optional=false, type=string}, {field=gender, optional=false, type=string}]}, payload={registertime=1488194613026, gender=FEMALE, regionid=Region_3, userid=User_9}}
+----
