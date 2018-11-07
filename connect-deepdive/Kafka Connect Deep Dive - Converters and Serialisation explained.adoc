@@ -1,24 +1,24 @@
-= Kafka Connect Deep Dive - Converters and Serialisation explained
+= Kafka Connect Deep Dive - Converters and Serialization explained
 
-Kafka Connect is part of Apache Kafka®, providing streaming integration between data stores and Kafka. For data engineers it requires just JSON configuration files to use. There are connectors for common (and not-so-common) data stores out there already, including JDBC, Elasticsearch, IBM MQ, S3, and BigQuery—to name but a few. For developers Kafka Connect has a rich API in which additional connectors can be developed if required.
+Kafka Connect is part of Apache Kafka®, providing streaming integration between data stores and Kafka. For data engineers it just requires JSON configuration files to use. There are connectors for common (and not-so-common) data stores out there already, including https://www.confluent.io/connector/kafka-connect-jdbc/[JDBC], https://www.confluent.io/connector/kafka-connect-elasticsearch/[Elasticsearch], https://www.confluent.io/connector/kafka-connect-ibm-mq/[IBM MQ], https://www.confluent.io/connector/kafka-connect-s3/[S3], and https://www.confluent.io/connector/bigquery-sink-connector/[BigQuery]—to name but a few. For developers Kafka Connect has a https://docs.confluent.io/current/connect/javadocs/index.html[rich API] in which additional connectors can be https://docs.confluent.io/current/connect/devguide.html[developed] if required. In addition to this it also has a https://docs.confluent.io/current/connect/references/restapi.html[REST API] for configuration and management of connectors. 
 
-Kafka Connect is modular in nature, providing a very powerful way of handling integration requirements. Some key components include: 
+Kafka Connect is modular in nature, providing a very powerful way of handling integration requirements. You can read more about the key concepts in https://docs.confluent.io/current/connect/concepts.html[the documentation], but some of the key components include: 
 
 * Connectors - the JAR files that define how to integrate with the data store itself
-* Converters - handling serialisation and deserialisation of data
+* Converters - handling serialization and deserialization of data
 * Transforms - for in-flight manipulation of messages
 
-One of the most frequently asked questions around Kafka Connect involves the serialisation of data, which Kafka Connect handles using Converters. Let's take a good look at how these work, and illustrate some of the common issues encountered. 
+One of the more frequent sources of mistakes and misunderstanding around Kafka Connect involves the serialization of data, which Kafka Connect handles using Converters. Let's take a good look at how these work, and illustrate some of the common issues encountered. 
 
 == Kafka messages are just bytes
 
-Kafka messages are organised into topics, which can be partitioned. Each message is a key/value, but that is all that Kafka requires. Both key and value are just bytes when they are stored on Kafka. This is a very powerful construct, but also means that developers have the responsibility of deciding how to serialise the data. In configuring Kafka Connect, one of the key things to standardize on is the serialisation format. You need to make sure that anyone reading from the topic is using the same as those writing to the topic. Otherwise, confusion will ensue! 
+Kafka messages are organised into topics, which can be partitioned. Each message is a key/value, but that is all that Kafka requires. Both key and value are just bytes when they are stored on Kafka. This is a very powerful construct, but also means that developers have the responsibility of deciding how to serialise the data. In configuring Kafka Connect, one of the key things to standardize on is the serialization format. You need to make sure that anyone reading from the topic is using the same serialization format as those writing to the topic. Otherwise, confusion will ensue! 
 
-An analogy: within a country, people speak the native language. But, when flying between countries, pilots and air traffic control have to standardise on a language. If they didn't, communication would be difficult or impossible. In the same way, Kafka Connect provides this "translation" between message format specific to the source system, and the serialisation format that you want to use in Kafka. 
+An analogy: within a country, people speak the native language. But, when flying between countries, pilots and air traffic control have to standardise on a language. If they didn't, communication would be difficult or impossible. In the same way, Kafka Connect provides this "translation" between message format specific to the source system, and the serialization format that you want to use in Kafka. 
 
 image::images/connect_converters_02.png[]
 
-There are various serialisation formats, with common ones including: 
+There are several common serialization formats, including: 
 
 * JSON
 * Avro
@@ -29,7 +29,7 @@ There are advantages and disadvantages to each of these. Well, except delimited,
 
 === Choosing a serialization format
 
-Some guiding principles for choosing a serialisation format include: 
+Some guiding principles for choosing a serialization format include: 
 
 * **Schema**. A lot of the time your data will have a schema to it. You may not like the fact, but it's your responsibility as a developer to preserve and propagate this schema. The schema provides the https://www.infoq.com/presentations/contracts-streaming-microservices[contract between your services]. Some message formats (such as Avro and Protobuf) have strong schema support, whilst others have lesser support (JSON) or none at all (delimited string). 
 * **Ecosystem compatibility**. Avro is a first-class citizen in Confluent Platform, with native support from the Schema Registry, Kafka Connect, KSQL, and more. Protobuf, on the other hand, relies on community contributions for partial levels of feature support. 
@@ -38,11 +38,15 @@ Some guiding principles for choosing a serialisation format include:
 
 === Q: I need to write to my target in JSON, so I must use JSON for my topics? A: Nope.
 
-The format that you're reading data *from* or writing it *to* doesn't need to have a bearing on the format you use for your topics. Kafka Connect's converters serialise the data from source onto the topic, and from a topic out to the target. What this means is that you can have data on a topic in Avro (for example), and when you come to write it to HDFS (for example) you simply specify that you want https://docs.confluent.io/current/connect/kafka-connect-hdfs/configuration_options.html#connector[the sink connector to use that format].
+The format in which you’re reading data **from** a source, or writing it **to** an external data store, doesn’t need to have a bearing on the format you use for your topics. 
+
+A connector in Kafka Connect is responsible for taking the data from the source data store (for example, a database) and passing it as an https://docs.confluent.io/current/connect/javadocs/index.html?org/apache/kafka/connect/data/SchemaAndValue.html[internal representation of the data] to the converter. Kafka Connect’s converters then serialize this source data object onto the topic. The same happens in reverse, when using Kafka Connect as a sink—the converter deserializes the data from the topic into this internal representation, which is passed to the connector to write to the target data store using the appropriate method specific to the target.
+
+What this means is that you can have data on a topic in Avro (for example), and when you come to write it to HDFS (for example) you simply specify that you want https://docs.confluent.io/current/connect/kafka-connect-hdfs/configuration_options.html#connector[the sink connector to use that format].
 
 == Configuring converters
 
-Kafka Connect takes a default converter configuration at the _worker_ level, and it can also be overridden _per connector_. Since using the same serialisation format throughout your pipelines is generally a good idea, you'll often just set the converter at the worker, and never need to specify it in a connector. But maybe you're pulling data from someone else's topic and they've decided to use a different serialisation format—in that case you'd set this at the connector. 
+Kafka Connect takes a default converter configuration at the _worker_ level, and it can also be overridden _per connector_. Since using the same serialization format throughout your pipelines is generally a good idea, you'll often just set the converter at the worker, and never need to specify it in a connector. But maybe you're pulling data from someone else's topic and they've decided to use a different serialization format—in that case you'd set this in the connector configuration. Even though you override it in the connector's configuration, it's still the _converter_ that performs the work. **Connectors never do the [de-]serialization themselves**. 
 
 image::images/connect_source_converter_01.png[]
 
@@ -75,7 +79,7 @@ Common converters include:
 ** `org.apache.kafka.connect.json.JsonConverter`
 * ByteArray - part of Apache Kafka
 ** `org.apache.kafka.connect.converters.ByteArrayConverter`
-* Protobuf - https://www.confluent.io/connector/kafka-connect-protobuf-converter/[open source from the community]
+* Protobuf - https://www.confluent.io/connector/kafka-connect-protobuf-converter/[open source from the community] (❤️ to our friends at Blue Apron)
 ** `com.blueapron.connect.protobuf.ProtobufConverter`
 
 == JSON and schemas
@@ -175,9 +179,9 @@ org.apache.kafka.connect.errors.ConnectException: Tolerance exceeded in error ha
    at org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execute(RetryWithToleranceOperator.java:104)
 ----
 
-after this error, you'll see a further stack trace describing exactly _why_ it errored. **Be aware that the above error will be thrown for _any_ fatal error in a connector, so you may well see this for errors unrelated to serialisation.**
+after this error, you'll see a further stack trace describing exactly _why_ it errored. **Be aware that the above error will be thrown for _any_ fatal error in a connector, so you may well see this for errors unrelated to serialization.**
 
-To quickly visualize what erorrs you can expect with which mis-configuration, here's a quick reference: 
+To quickly visualize what errors you can expect with which mis-configuration, here's a quick reference: 
 
 image::images/converters_matrix.png[]
 
@@ -210,7 +214,7 @@ Solution: If the data is actually in Avro, then change your Kafka Connect sink c
 "value.converter.schemas.enable": "false",
 ----
 
-=== Probem: Reading Non-Avro data with AvroConverter
+=== Problem: Reading Non-Avro data with AvroConverter
 
 This may be the most common error that I see reported again and again on places like the Confluent Community https://groups.google.com/forum/#!forum/confluent-platform[mailing list] and https://slackpass.io/confluentcommunity[Slack group]. It happens when you try to use the Avro converter to read data from a topic that is not Avro. This would include data written by another Avro serializer than the Confluent Schema Registry's [Avro serializer](https://docs.confluent.io/5.0.0/schema-registry/docs/serializer-formatter.html#serializer), which has its own https://docs.confluent.io/5.0.0/schema-registry/docs/serializer-formatter.html#wire-format[wire format]. 
 
@@ -296,18 +300,24 @@ $ ./bin/connect-distributed ./etc/kafka/connect-distributed.properties
 
 Let's say we've hit one of the errors shown above, and want to troubleshoot why our Kafka Connect sink connector can't read from a topic. We need to check the data on the topic that is being read, and ensure it's in the serialization format that we think it is. Also bear in mind that _all_ the messages need to be in this format, so don't just assume that because you're _now_ sending messages in the correct format to the topic there won't be a problem. Existing messages on the topic are also read by Kafka Connect. 
 
-* **If you think you've got string/JSON data**…
-+
+Below I describe troubleshooting this from the command line, but there are a few other tools to be aware of : 
+
+* https://www.confluent.io/confluent-control-center/[Confluent Control Center] includes the feature to visually inspect topic contents including automagic determination of the serialization format. 
+* https://docs.confluent.io/current/ksql/docs/developer-guide/syntax-reference.html#print[KSQL's `PRINT`] command will print the contents of a topic to the console, including automagic determination of the serialization format. 
+* The https://docs.confluent.io/current/cli/index.html[`confluent` CLI] tool includes the `consume` command, which can be used to read both string and Avro data.
+
+=== Inspecting a topic—if you think you've got string/JSON data…
+
 You can use console tools including `kafkacat` and `kafka-console-consumer`. My personal preference is `kafkacat`: 
-+
+
 [source,bash]
 ----
 $ kafkacat -b localhost:9092 -t users-json-noschema -C -c1
 {"registertime":1493356576434,"userid":"User_8","regionid":"Region_2","gender":"MALE"}
 ----
-+
+
 Using the excellent https://stedolan.github.io/jq/[`jq`] you can also validate and format the JSON: 
-+
+
 [source,bash]
 ----
 $ kafkacat -b localhost:9092 -t users-json-noschema -C -c1|jq '.'
@@ -318,19 +328,19 @@ $ kafkacat -b localhost:9092 -t users-json-noschema -C -c1|jq '.'
   "gender": "MALE"
 }
 ----
-+
+
 If you get something like this, with a bunch of "weird" characters, chances are you're looking at binary data, as would be written by Avro or Protobuf, for example: 
-+
+
 [source,bash]
 ----
 $ kafkacat -b localhost:9092 -t users-avro -C -c1
 ڝ���VUser_9Region_MALE
 ----
 
-* **If you think you've got Avro data**…
-+
-You should use a console tool designed for reading and deserialised Avro data. Currently there's only `kafka-avro-console-consumer` that does this. Make sure you specify the correct Schema Registry URL at which the schema is held: 
-+
+=== Inspecting a topic—if you think you've got Avro data…
+
+You should use a console tool designed for reading and deserialized Avro data. Here I'm using `kafka-avro-console-consumer`. Make sure you specify the correct Schema Registry URL at which the schema is held: 
+
 [source,bash]
 ----
 $ kafka-avro-console-consumer --bootstrap-server localhost:9092 \
@@ -339,9 +349,9 @@ $ kafka-avro-console-consumer --bootstrap-server localhost:9092 \
                               --from-beginning --max-messages 1
 {"registertime":1505213905022,"userid":"User_5","regionid":"Region_4","gender":"FEMALE"}
 ----
-+
+
 As before, you can pipe the resulting output through https://stedolan.github.io/jq/[`jq`] if you want to format it: 
-+
+
 [source,bash]
 ----
 $ kafka-avro-console-consumer --bootstrap-server localhost:9092 \
@@ -514,7 +524,7 @@ Any new messages written to the original topic (`testdata-csv`) are automagicall
 
 == Conclusion
 
-Kafka Connect is a very simple, yet powerful, tool to use for integrating other systems with Kafka. This article has addressed one of the most common sources of misunderstanding, the converters that Kafka Connect offers. Kafka messages are just key/value pairs, and it's important to understand which serialisation you should use and then standardise on that in your Kafka Connect connectors.
+Kafka Connect is a very simple, yet powerful, tool to use for integrating other systems with Kafka. This article has addressed one of the most common sources of misunderstanding, the converters that Kafka Connect offers. Kafka messages are just key/value pairs, and it's important to understand which serialization you should use and then standardise on that in your Kafka Connect connectors.
 
 The code samples used in this blog are available on https://github.com/confluentinc/demo-scene/blob/master/connect-deepdive[GitHub].
 
