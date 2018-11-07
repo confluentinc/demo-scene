@@ -12,7 +12,7 @@ One of the more frequent sources of mistakes and misunderstanding around Kafka C
 
 == Kafka messages are just bytes
 
-Kafka messages are organised into topics, which can be partitioned. Each message is a key/value, but that is all that Kafka requires. Both key and value are just bytes when they are stored on Kafka. This is a very powerful construct, but also means that developers have the responsibility of deciding how to serialise the data. In configuring Kafka Connect, one of the key things to standardize on is the serialization format. You need to make sure that anyone reading from the topic is using the same serialization format as those writing to the topic. Otherwise, confusion will ensue! 
+Kafka messages are organised into topics, which can be partitioned. Each message is a key/value, but that is all that Kafka requires. Both key and value are just bytes when they are stored on Kafka. This is a very powerful construct, but also means that developers have the responsibility of deciding how to serialize the data. In configuring Kafka Connect, one of the key things to standardize on is the serialization format. You need to make sure that anyone reading from the topic is using the same serialization format as those writing to the topic. Otherwise, confusion will ensue! 
 
 An analogy: within a country, people speak the native language. But, when flying between countries, pilots and air traffic control have to standardise on a language. If they didn't, communication would be difficult or impossible. In the same way, Kafka Connect provides this "translation" between message format specific to the source system, and the serialization format that you want to use in Kafka. 
 
@@ -32,7 +32,7 @@ There are advantages and disadvantages to each of these. Well, except delimited,
 Some guiding principles for choosing a serialization format include: 
 
 * **Schema**. A lot of the time your data will have a schema to it. You may not like the fact, but it's your responsibility as a developer to preserve and propagate this schema. The schema provides the https://www.infoq.com/presentations/contracts-streaming-microservices[contract between your services]. Some message formats (such as Avro and Protobuf) have strong schema support, whilst others have lesser support (JSON) or none at all (delimited string). 
-* **Ecosystem compatibility**. Avro is a first-class citizen in Confluent Platform, with native support from the Schema Registry, Kafka Connect, KSQL, and more. Protobuf, on the other hand, relies on community contributions for partial levels of feature support. 
+* **Ecosystem compatibility**. Avro is a first-class citizen in the Confluent Platform, with native support from the Schema Registry, Kafka Connect, KSQL, and more. Protobuf, on the other hand, relies on community contributions for partial levels of feature support. 
 * **Message size**. Whilst JSON is plain text and relies on any compression configured in Kafka itself, Avro and Protobuf are both binary formats and thus provide smaller message sizes
 * **Language support**. Support for Avro is strong in the Java space, but if your company is not Java-based then you may find it less easy to work with
 
@@ -447,7 +447,7 @@ ksql> SELECT ID, ARTIST, SONG FROM TESTDATA_CSV;
 2 | Johnny Cash | Ring of Fire
 ----
 
-Finally, create a new Kafka topic, populated by the re-serialised data with schema. KSQL queries are continuous, so as well as sending any _existing_ data from the source topic to the target one, KSQL will send any _future_ data to the topic too. 
+Finally, create a new Kafka topic, populated by the reserialized data with schema. KSQL queries are continuous, so as well as sending any _existing_ data from the source topic to the target one, KSQL will send any _future_ data to the topic too. 
 
 [source,sql]
 ----
@@ -520,7 +520,7 @@ $ curl -s http://localhost:8081/subjects/TESTDATA-value/versions/latest|jq '.sch
 }
 ----
 
-Any new messages written to the original topic (`testdata-csv`) are automagically processed by KSQL and written to the new `TESTDATA` topic in Avro. Now any application or team wanting to use this data can simply work with the `TESTDATA` topic and take advantage of the Avro-serialized data with declared schema. As well as re-serialising data, you can use this to change the number of partitions in a topic, change the partitioning key, and change the replication factor. 
+Any new messages written to the original topic (`testdata-csv`) are automagically processed by KSQL and written to the new `TESTDATA` topic in Avro. Now any application or team wanting to use this data can simply work with the `TESTDATA` topic and take advantage of the Avro-serialized data with declared schema. As well as reserializing data, you can use this to change the number of partitions in a topic, change the partitioning key, and change the replication factor. 
 
 == Conclusion
 
