@@ -46,7 +46,7 @@ What this means is that you can have data on a topic in Avro (for example), and 
 
 == Configuring converters
 
-Kafka Connect takes a default converter configuration at the _worker_ level, and it can also be overridden _per connector_. Since using the same serialization format throughout your pipelines is generally a good idea, you'll often just set the converter at the worker, and never need to specify it in a connector. But maybe you're pulling data from someone else's topic and they've decided to use a different serialization format—in that case you'd set this in the connector configuration. Even though you override it in the connector's configuration, it's still the _converter_ that performs the work. **Connectors never do the [de-]serialization themselves**. 
+Kafka Connect takes a default converter configuration at the _worker_ level, and it can also be overridden _per connector_. Since using the same serialization format throughout your pipelines is generally a good idea, you'll often just set the converter at the worker, and never need to specify it in a connector. But maybe you're pulling data from someone else's topic and they've decided to use a different serialization format—in that case you'd set this in the connector configuration. Even though you override it in the connector's configuration, it's still the _converter_ that performs the work. **Connectors that are written properly never do the [de-]serialization themselves**. 
 
 image::images/connect_source_converter_01.png[]
 
@@ -308,7 +308,7 @@ Below I describe troubleshooting this from the command line, but there are a few
 
 === Inspecting a topic—if you think you've got string/JSON data…
 
-You can use console tools including `kafkacat` and `kafka-console-consumer`. My personal preference is `kafkacat`: 
+You can use console tools including `kafkacat` and `kafka-console-consumer`. My personal preference is https://github.com/edenhill/kafkacat[`kafkacat`]: 
 
 [source,bash]
 ----
@@ -524,7 +524,7 @@ Any new messages written to the original topic (`testdata-csv`) are automagicall
 
 == Conclusion
 
-Kafka Connect is a very simple, yet powerful, tool to use for integrating other systems with Kafka. This article has addressed one of the most common sources of misunderstanding, the converters that Kafka Connect offers. Kafka messages are just key/value pairs, and it's important to understand which serialization you should use and then standardise on that in your Kafka Connect connectors.
+Kafka Connect is a very simple, yet powerful, tool to use for integrating other systems with Kafka. This article has addressed one of the most common sources of misunderstanding, the converters that Kafka Connect offers. Kafka messages are just key/value pairs, and it's important to understand which serialization you should use and then standardize on that in your Kafka Connect connectors.
 
 The code samples used in this blog are available on https://github.com/confluentinc/demo-scene/blob/master/connect-deepdive[GitHub].
 
