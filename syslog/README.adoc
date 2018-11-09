@@ -105,8 +105,9 @@ $ kafka-avro-console-consumer \
 
 == Interested to see what you can do with Kafka and syslog data? Check out these blogs!
 
-<img src="https://www.confluent.io/wp-content/uploads/ksql_syslog01-1024x258.png"/>
-
-* https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-part-1-filtering
-* https://www.confluent.io/blog/real-time-syslog-processing-with-apache-kafka-and-ksql-part-2-event-driven-alerting-with-slack/
-* https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-enriching-events-with-external-data/
+* [We ❤️ syslogs: Real-time syslog Processing with Apache Kafka and KSQL – Part 1: Filtering
+](https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-part-1-filtering)
+* [https://www.confluent.io/blog/real-time-syslog-processing-with-apache-kafka-and-ksql-part-2-event-driven-alerting-with-slack/](We ❤ syslogs: Real-time syslog Processing with Apache Kafka and KSQL – Part 2: Event-Driven Alerting with Slack
+)
+* [We ❤️ syslogs: Real-time syslog processing with Apache Kafka and KSQL – Part 3: Enriching events with external data
+](https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-enriching-events-with-external-data/)
