@@ -105,7 +105,7 @@ $ kafka-avro-console-consumer \
 
 == Interested to see what you can do with Kafka and syslog data? Check out these blogs!
 
-![](https://www.confluent.io/wp-content/uploads/ksql_syslog01-1024x258.png)
+<img src="https://www.confluent.io/wp-content/uploads/ksql_syslog01-1024x258.png"/>
 
 * https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-part-1-filtering
 * https://www.confluent.io/blog/real-time-syslog-processing-with-apache-kafka-and-ksql-part-2-event-driven-alerting-with-slack/
