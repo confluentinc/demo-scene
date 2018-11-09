@@ -102,3 +102,9 @@ $ kafka-avro-console-consumer \
   "date": 1541771990000
 }
 ----
+
+== Interested to see what you can do with Kafka and syslog data? Check out these blogs!
+
+* https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-part-1-filtering
+* https://www.confluent.io/blog/real-time-syslog-processing-with-apache-kafka-and-ksql-part-2-event-driven-alerting-with-slack/
+* https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-enriching-events-with-external-data/
