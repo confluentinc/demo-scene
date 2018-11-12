@@ -266,7 +266,7 @@ If you want to include the schema in the data, you can either switch to using Av
 
 === Finding the Connect worker log
 
-To find the error log from Kafka Connect you need to locate the Kafka Connect worker's output, and the location of this depends on how you launched Kafka Connect. There are several ways to [install Kafka Connect](https://docs.confluent.io/current/installation/installing_cp/index.html#on-premises-deployments), including Docker, Confluent CLI, systemd, and manually from the downloaded archive. You'll find the worker log in : 
+To find the error log from Kafka Connect you need to locate the Kafka Connect worker's output, and the location of this depends on how you launched Kafka Connect. There are several ways to https://docs.confluent.io/current/installation/installing_cp/index.html#on-premises-deployments[install Kafka Connect], including Docker, Confluent CLI, systemd, and manually from the downloaded archive. You'll find the worker log in : 
 
 * Docker: `docker logs container_name`
 * Confluent CLI: `confluent log connect`
