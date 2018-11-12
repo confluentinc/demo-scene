@@ -216,7 +216,7 @@ Solution: If the data is actually in Avro, then change your Kafka Connect sink c
 
 === Problem: Reading Non-Avro data with AvroConverter
 
-This may be the most common error that I see reported again and again on places like the Confluent Community https://groups.google.com/forum/#!forum/confluent-platform[mailing list] and https://slackpass.io/confluentcommunity[Slack group]. It happens when you try to use the Avro converter to read data from a topic that is not Avro. This would include data written by another Avro serializer than the Confluent Schema Registry's [Avro serializer](https://docs.confluent.io/5.0.0/schema-registry/docs/serializer-formatter.html#serializer), which has its own https://docs.confluent.io/5.0.0/schema-registry/docs/serializer-formatter.html#wire-format[wire format]. 
+This may be the most common error that I see reported again and again on places like the Confluent Community https://groups.google.com/forum/#!forum/confluent-platform[mailing list] and https://slackpass.io/confluentcommunity[Slack group]. It happens when you try to use the Avro converter to read data from a topic that is not Avro. This would include data written by another Avro serializer than the Confluent Schema Registry's https://docs.confluent.io/5.0.0/schema-registry/docs/serializer-formatter.html#serializer[Avro serializer], which has its own https://docs.confluent.io/5.0.0/schema-registry/docs/serializer-formatter.html#wire-format[wire format]. 
 
 [source,bash]
 ----
