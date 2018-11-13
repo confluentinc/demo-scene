@@ -108,9 +108,10 @@ nc -k -l 42000 | kafkacat -b localhost:19092 -t test_topic -P -K:
 ----
 +
 Where:
-* `-k` tells `nc` not to hang up when the connection is closed
-* `-l` defines the port on which to listen
-* `localhost:19092` is the Kafka broker on the target cluster
++
+** `-k` tells `nc` not to hang up when the connection is closed
+** `-l` defines the port on which to listen
+** `localhost:19092` is the Kafka broker on the target cluster
 
 * On the source machine: 
 +
@@ -120,5 +121,6 @@ kafkacat -b localhost:9092 -t test_topic -C -K: -u -q | nc localhost 42000
 ----
 +
 Where: 
-* `localhost 42000` is the host and port on which the other `nc` is listening
-* `localhost:9092` is the Kafka broker on the source cluster
++
+** `localhost 42000` is the host and port on which the other `nc` is listening
+** `localhost:9092` is the Kafka broker on the source cluster
