@@ -1,0 +1,11 @@
+{
+  "name": "sink-file-users-avro-01",
+  "config": {
+    "connector.class": "org.apache.kafka.connect.file.FileStreamSinkConnector",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url": "http://schema-registry:8081",
+    "topics": "users-avro",
+    "file": "/tmp/users-avro-01.txt"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "source-data-users-json-withschema",
+  "config": {
+    "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+    "kafka.topic": "users-json-withschema",
+    "quickstart": "users",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "true",
+    "max.interval": 1000,
+    "iterations": 10,
+    "tasks.max": "1"
+  }
+}

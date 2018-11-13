@@ -1,6 +1,6 @@
 # demo-scene
 
-Scripts and samples to support Confluent Platform talks. May be rough around the edges. For automated tutorials and QA'd code, see https://github.com/confluentinc/quickstart-demos/
+Scripts and samples to support Confluent Platform talks. May be rough around the edges. For automated tutorials and QA'd code, see https://github.com/confluentinc/examples/
 
 ## Contents
 
@@ -13,6 +13,8 @@ Scripts and samples to support Confluent Platform talks. May be rough around the
 * [MQTT Connect Connector Demo](mqtt-connect-connector-demo)
 * [KSQL Troubleshooting](ksql-troubleshooting)
 * [ATM Fraud detection with Kafka and KSQL](ksql-atm-fraud-detection)
+* [Kafka Connect deepdive](connect-deepdive) - understanding converters and serialization
+* [Example syslog configuration and Docker Compose](syslog)
 
 ## Feedback & Questions
 
