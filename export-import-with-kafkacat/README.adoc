@@ -12,7 +12,7 @@ Populate some test data in Cluster "A":
 
 [source,bash]
 ----
-docker run --rm -it --network cos-two-cluster_default confluentinc/cp-kafkacat \
+docker run --rm -i --network export-import-with-kafkacat_default confluentinc/cp-kafkacat \
   kafkacat -b kafka-a:29092 -t test_topic -P -K: <<EOF
 1:{"hello":"world"}
 2:{"foo":"bar"}
@@ -23,7 +23,7 @@ Check it's there:
 
 [source,bash]
 ----
-docker run --rm -it --network cos-two-cluster_default confluentinc/cp-kafkacat \
+docker run --rm -it --network export-import-with-kafkacat_default confluentinc/cp-kafkacat \
   kafkacat -b kafka-a:29092 -t test_topic -C -f '\nKey (%K bytes): %k\t\nValue (%S bytes): %s\nTimestamp: %T\tPartition: %p\tOffset: %o\n--\n'
 ----
 
@@ -47,7 +47,7 @@ Timestamp: 1542086769945        Partition: 0    Offset: 1
 
 [source,bash]
 ----
-docker run --rm -it --network cos-two-cluster_default confluentinc/cp-kafkacat \
+docker run --rm -it --network export-import-with-kafkacat_default confluentinc/cp-kafkacat \
   kafkacat -b kafka-a:29092 -t test_topic -C -K: -e -q > export.json
 ----
 
@@ -66,7 +66,7 @@ Import to Cluster B the exported data from Cluster A:
 
 [source,bash]
 ----
-$ docker run --rm -it --volume $PWD:/data --network cos-two-cluster_default confluentinc/cp-kafkacat \
+$ docker run --rm -it --volume $PWD:/data --network export-import-with-kafkacat_default confluentinc/cp-kafkacat \
     kafkacat -b kafka-b:29092 -t test_topic -P -K: -l /data/export.json
 ----
 
@@ -76,7 +76,7 @@ Verify that the data is there in Cluster B:
 
 [source,bash]
 ----
-docker run --rm -it --network cos-two-cluster_default confluentinc/cp-kafkacat \
+docker run --rm -it --network export-import-with-kafkacat_default confluentinc/cp-kafkacat \
   kafkacat -b kafka-b:29092 -t test_topic -C -f '\nKey (%K bytes): %k\t\nValue (%S bytes): %s\nTimestamp: %T\tPartition: %p\tOffset: %o\n--\n'
 ----
 
