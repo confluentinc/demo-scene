@@ -1,0 +1,18 @@
+spring:
+  kafka:
+    bootstrap-servers:
+    - localhost:9092
+    consumer:
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+    streams:
+      application-id: kafka-films
+      properties:
+        cache.max.bytes.buffering: 10485760
+        commit.interval.ms: 1000
+        default.key.serde: org.apache.kafka.common.serialization.Serdes$LongSerde
+        default.value.serde: org.apache.kafka.common.serialization.Serdes$DoubleSerde
+        schema.registry.url: http://localhost:8081
+logging:
+  level:
+    root: info

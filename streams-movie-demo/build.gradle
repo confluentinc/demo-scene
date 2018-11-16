@@ -1,0 +1,140 @@
+buildscript {
+  ext {
+    springBootVersion = '2.1.0.M3'
+  }
+  repositories {
+    jcenter()
+    maven { url "https://repo.spring.io/milestone" }
+  }
+  dependencies {
+    classpath "com.commercehub.gradle.plugin:gradle-avro-plugin:0.14.2"
+    classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+  }
+}
+
+subprojects {
+  apply plugin: 'java'
+  apply plugin: 'idea'
+
+  sourceCompatibility = 1.8
+
+  repositories {
+    jcenter()
+    maven {
+      url 'http://packages.confluent.io/maven/'
+    }
+    maven { url "https://repo.spring.io/milestone" }
+  }
+}
+
+project(':core') {
+
+  apply plugin: "com.commercehub.gradle.plugin.avro"
+
+  avro {
+    stringType = "CharSequence"
+  }
+
+  dependencies {
+    compile 'org.apache.avro:avro:1.8.2'
+    compile 'org.apache.kafka:kafka-clients:2.0.0'
+    compile 'javax.json:javax.json-api:1.1.2'
+    runtime 'org.glassfish:javax.json:1.1.2'
+    compile 'io.confluent:kafka-streams-avro-serde:5.0.0'
+  }
+
+}
+
+project(':loader') {
+  apply plugin: 'groovy'
+  dependencies {
+    compile project(':core')
+    compile 'org.codehaus.groovy:groovy-all:2.4.15'
+  }
+
+  def env = System.getenv()
+
+  task streamJsonRatings(type: JavaExec) {
+    main = 'JSONRatingStreamer'
+    classpath = sourceSets.main.runtimeClasspath
+    args = [env['KAFKA_BOOTSTRAP_SERVERS'] ?: 'localhost:9092']
+  }
+
+  task streamAvroRatings(type: JavaExec) {
+    main = 'AvroRatingStreamer'
+    classpath = sourceSets.main.runtimeClasspath
+    args = [env['KAFKA_BOOTSTRAP_SERVERS'] ?: 'localhost:9092']
+  }
+
+  task loadAvroMovies(type: JavaExec) {
+    main = 'AvroMovieLoader'
+    classpath = sourceSets.main.runtimeClasspath
+    args "$projectDir/../data/movies.dat"
+    args env['KAFKA_BOOTSTRAP_SERVERS'] ?: 'localhost:9092'
+  }
+
+}
+
+project(':spring-web-loader') {
+  apply plugin: 'org.springframework.boot'
+  apply plugin: 'io.spring.dependency-management'
+
+  dependencies {
+    compile project(':core')
+
+    compile "org.springframework.boot:spring-boot-starter-web"
+    compile 'org.springframework.kafka:spring-kafka'
+  }
+
+  configurations.all {
+    exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+  }
+}
+
+project(':streams') {
+
+  dependencies {
+    compile project(':core')
+
+    compile 'org.apache.kafka:kafka-streams:2.0.0'
+    compile 'io.confluent:monitoring-interceptors:5.0.0'
+
+//  compile 'io.confluent:kafka-avro-serializer:3.3.0'
+//  compile 'io.confluent:kafka-schema-registry-client:3.3.0'
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.apache.kafka:kafka-streams-test-utils:2.0.0'
+    testCompile 'org.projectlombok:lombok:1.16.20'
+  }
+
+}
+
+project(':spring-streams') {
+  apply plugin: 'org.springframework.boot'
+  apply plugin: 'io.spring.dependency-management'
+
+  bootJar {
+    mainClassName = "io.confluent.demo.SpringStreamsDemo"
+  }
+
+  dependencies {
+    compile project(':streams')
+
+    compile "org.springframework.boot:spring-boot-starter-web"
+    compile 'org.springframework.kafka:spring-kafka'
+  }
+  // Greenwich.M1 due Sept 21; use boot for dep management instead
+  ext {
+    springCloudVersion = 'Finchley.RC2'
+  }
+
+  configurations.all {
+    exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+  }
+
+  dependencyManagement {
+    imports {
+//      mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+      mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+    }
+  }
+}
