@@ -1,0 +1,23 @@
+{
+  "namespace": "io.confluent.demo",
+  "type": "record",
+  "name": "RatedMovie",
+  "fields": [
+    {
+      "name": "movie_id",
+      "type": "long"
+    },
+    {
+      "name": "title",
+      "type": "string"
+    },
+    {
+      "name": "release_year",
+      "type": "int"
+    },
+    {
+      "name": "rating",
+      "type": "double"
+    }
+  ]
+}

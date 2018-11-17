@@ -1,0 +1,69 @@
+{
+  "namespace": "io.confluent.demo",
+  "type": "record",
+  "name": "Movie",
+  "fields": [
+    {
+      "name": "movie_id",
+      "type": "long"
+    },
+    {
+      "name": "title",
+      "type": "string"
+    },
+    {
+      "name": "release_year",
+      "type": "int"
+    },
+    {
+      "name": "country",
+      "type": "string"
+    },
+    {
+      "name": "genres",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    },
+    {
+      "name": "actors",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    },
+    {
+      "name": "directors",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    },
+    {
+      "name": "composers",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    },
+    {
+      "name": "screenwriters",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    },
+    {
+      "name": "cinematographer",
+      "type": "string"
+    },
+    {
+      "name": "production_companies",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    }
+  ]
+}
