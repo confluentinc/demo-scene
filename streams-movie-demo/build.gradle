@@ -27,6 +27,10 @@ subprojects {
   }
 }
 
+configure(subprojects.findAll { (it.name == "streams") }) {
+  apply plugin: 'application'
+}
+
 project(':core') {
 
   apply plugin: "com.commercehub.gradle.plugin.avro"
@@ -54,16 +58,12 @@ project(':loader') {
 
   def env = System.getenv()
 
-  task streamJsonRatings(type: JavaExec) {
-    main = 'JSONRatingStreamer'
-    classpath = sourceSets.main.runtimeClasspath
-    args = [env['KAFKA_BOOTSTRAP_SERVERS'] ?: 'localhost:9092']
-  }
-
-  task streamAvroRatings(type: JavaExec) {
-    main = 'AvroRatingStreamer'
-    classpath = sourceSets.main.runtimeClasspath
-    args = [env['KAFKA_BOOTSTRAP_SERVERS'] ?: 'localhost:9092']
+  ['AvroRatingStreamer', 'JSONRatingStreamer', 'RawRatingStreamer'].each { generatorName ->
+    tasks.create(name: "streamWith${generatorName}", type: JavaExec) {
+      main = generatorName
+      classpath = sourceSets.main.runtimeClasspath
+      args = [env['KAFKA_BOOTSTRAP_SERVERS'] ?: 'localhost:9092']
+    }
   }
 
   task loadAvroMovies(type: JavaExec) {
@@ -71,6 +71,16 @@ project(':loader') {
     classpath = sourceSets.main.runtimeClasspath
     args "$projectDir/../data/movies.dat"
     args env['KAFKA_BOOTSTRAP_SERVERS'] ?: 'localhost:9092'
+  }
+
+  jar {
+    manifest {
+      attributes "Main-Class": ""
+    }
+
+    from {
+      configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
   }
 
 }
@@ -92,6 +102,7 @@ project(':spring-web-loader') {
 }
 
 project(':streams') {
+  mainClassName = "io.confluent.demo.StreamsDemo"
 
   dependencies {
     compile project(':core')

@@ -1,5 +1,7 @@
 = Kafka Streams and KSQL Demo
 
+NOTE: ✨*NEW*✨: Full playbook is http://gamov.io/posts/2018/11/20/streaming-moview-ratings-with-kafka-streams-and-ksql.html[here]
+
 This repo is a storehouse of bits of code useful for demonstrating Kafka Streams and Confluent KSQL.
 By way of expectation management, it's not a coherent demo project as such, but it does have useful things in it that you might want to know how to use.
 

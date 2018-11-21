@@ -3,7 +3,6 @@ package io.confluent.demo;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.Deserializer;
-import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serdes.LongSerde;
 import org.apache.kafka.common.serialization.Serializer;
@@ -48,6 +47,7 @@ public class StreamsDemo {
   public static final String RAW_RATINGS_TOPIC_NAME = "raw-ratings";
   public static final String AVERAGE_RATINGS_TOPIC_NAME = "average-ratings";
   public static final String RAW_MOVIES_TOPIC_NAME = "raw-movies";
+  public static final String RATED_MOVIES_TOPIC_NAME = "rated-movies";
 
   public static void main(String args[]) {
 
@@ -70,7 +70,7 @@ public class StreamsDemo {
     // Movies processors
     final KTable<Long, Movie> movies = getMoviesTable(builder, movieSerde);
 
-    getRatedMoviesTable(movies, ratingAverage);
+    getRatedMoviesTable(movies, ratingAverage, ratedMovieSerde);
 
     // finish the topology
     Topology topology = builder.build();
@@ -132,14 +132,17 @@ public class StreamsDemo {
     return ratedMovieSerde;
   }
 
-  public static KTable<Long, String> getRatedMoviesTable(KTable<Long, Movie> movies,
-                                                         KTable<Long, Double> ratingAverage) {
+  public static KTable<Long, RatedMovie> getRatedMoviesTable(KTable<Long, Movie> movies,
+                                                             KTable<Long, Double> ratingAverage,
+                                                             SpecificAvroSerde<RatedMovie> ratedMovieSerde) {
 
-    //TODO: use RatedMovie.class
-    ValueJoiner<Double, Movie, String> joiner = (avg, movie) -> movie.getTitle() + "=" + avg;
-    KTable<Long, String> ratedMovies = ratingAverage.join(movies, joiner);
+    ValueJoiner<Double, Movie, RatedMovie> joiner = (avg, movie) -> new RatedMovie(movie.getMovieId(),
+                                                                                   movie.getTitle(),
+                                                                                   movie.getReleaseYear(),
+                                                                                   avg);
+    KTable<Long, RatedMovie> ratedMovies = ratingAverage.join(movies, joiner);
 
-    ratedMovies.toStream().to("rated-movies", Produced.with(Serdes.Long(), Serdes.String()));
+    ratedMovies.toStream().to(RATED_MOVIES_TOPIC_NAME, Produced.with(Serdes.Long(), ratedMovieSerde));
     return ratedMovies;
   }
 

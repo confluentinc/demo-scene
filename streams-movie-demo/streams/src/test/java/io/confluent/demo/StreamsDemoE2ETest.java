@@ -4,7 +4,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
@@ -20,12 +19,14 @@ import org.junit.Test;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import lombok.extern.slf4j.Slf4j;
 
+import static io.confluent.demo.StreamsDemo.*;
 import static io.confluent.demo.StreamsDemo.RAW_MOVIES_TOPIC_NAME;
 import static io.confluent.demo.StreamsDemo.RAW_RATINGS_TOPIC_NAME;
 import static io.confluent.demo.StreamsDemo.getMoviesTable;
@@ -44,6 +45,8 @@ import static java.util.Collections.singletonMap;
 public class StreamsDemoE2ETest {
 
   TopologyTestDriver td;
+  SpecificAvroSerde<RatedMovie> ratedMovieSerde;
+
 
   @Before
   public void setUp() {
@@ -55,12 +58,19 @@ public class StreamsDemoE2ETest {
     //building topology
     StreamsBuilder builder = new StreamsBuilder();
 
-    SpecificAvroSerde<Movie> movieSerde = new SpecificAvroSerde<>(new MockSchemaRegistryClient());
-    movieSerde.configure(singletonMap(SCHEMA_REGISTRY_URL_CONFIG, DUMMY_SR_CONFLUENT_CLOUD_8080), false);
+    final MockSchemaRegistryClient mockSRClient = new MockSchemaRegistryClient();
+    final Map<String, String> mockSerdeConfig = singletonMap(SCHEMA_REGISTRY_URL_CONFIG, DUMMY_SR_CONFLUENT_CLOUD_8080);
+    SpecificAvroSerde<Movie> movieSerde = new SpecificAvroSerde<>(mockSRClient);
+    movieSerde.configure(mockSerdeConfig, false);
+    ratedMovieSerde = new SpecificAvroSerde<>(mockSRClient);
+    ratedMovieSerde.configure(mockSerdeConfig, false);
+
     final KTable<Long, Movie> moviesTable = getMoviesTable(builder, movieSerde);
     final KStream<Long, String> rawRatingsStream = getRawRatingsStream(builder);
     final KTable<Long, Double> ratingAverageTable = getRatingAverageTable(rawRatingsStream);
-    final KTable<Long, String> ratedMoviesTable = getRatedMoviesTable(moviesTable, ratingAverageTable);
+    final KTable<Long, RatedMovie>
+        ratedMoviesTable =
+        getRatedMoviesTable(moviesTable, ratingAverageTable, ratedMovieSerde);
 
     final Topology topology = builder.build();
     log.info("Topology = {}\n", topology);
@@ -84,12 +94,15 @@ public class StreamsDemoE2ETest {
     }
     td.pipeInput(list);
 
-    List<ProducerRecord<Long, String>> result = new ArrayList<>();
+    List<ProducerRecord<Long, RatedMovie>> result = new ArrayList<>();
     for (int i = 0; i < 3; i++) {
-      result.add(td.readOutput("rated-movies", new LongDeserializer(), new StringDeserializer()));
+      result.add(td.readOutput(RATED_MOVIES_TOPIC_NAME, new LongDeserializer(), ratedMovieSerde.deserializer()));
     }
     result.forEach(record -> {
-      OutputVerifier.compareValue(record, "Lethal Weapon=9.0");
+      ProducerRecord<Long, RatedMovie>
+          lethalWeaponRecord =
+          new ProducerRecord<>(RATED_MOVIES_TOPIC_NAME, 362L, new RatedMovie(362L, "Lethal Weapon", 1987, 9.0));
+      OutputVerifier.compareValue(record, lethalWeaponRecord);
     });
 
 
