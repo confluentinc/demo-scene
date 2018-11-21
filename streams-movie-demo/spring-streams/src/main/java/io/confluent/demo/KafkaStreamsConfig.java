@@ -7,8 +7,6 @@ import static io.confluent.demo.StreamsDemo.getRatingAverageTable;
 import static io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.*;
 import static java.util.Collections.singletonMap;
 
-import java.util.Collections;
-
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.KStream;
@@ -19,8 +17,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.annotation.EnableKafkaStreams;
-
-import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
 
 @Configuration
 @EnableKafka
@@ -41,7 +37,7 @@ public class KafkaStreamsConfig {
         getMovieAvroSerde(singletonMap(SCHEMA_REGISTRY_URL_CONFIG,
                                        (String) kafkaProperties.buildStreamsProperties()
                                            .get(SCHEMA_REGISTRY_URL_CONFIG))));
-    return getRatedMoviesTable(moviesTable, ratingAverageTable);
+    return getRatedMoviesTable(moviesTable, ratingAverageTable, ratedMovieSerde);
   }
 
   @Bean

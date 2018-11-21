@@ -66,7 +66,7 @@ public class Parser {
    }
 
 
-   static JsonObject toJson(Rating rating) {
+   public static JsonObject toJson(Rating rating) {
       JsonBuilderFactory factory = Json.createBuilderFactory(null);
       return factory.createObjectBuilder()
          .add("movie_id", rating.getMovieId())
