@@ -126,7 +126,7 @@ public class StreamsDemo {
     return movieSerde;
   }
 
-  private static SpecificAvroSerde<RatedMovie> getRatedMovieAvroSerde(Map<String, String> serdeConfig) {
+  public static SpecificAvroSerde<RatedMovie> getRatedMovieAvroSerde(Map<String, String> serdeConfig) {
     SpecificAvroSerde<RatedMovie> ratedMovieSerde = new SpecificAvroSerde<>();
     ratedMovieSerde.configure(serdeConfig, false);
     return ratedMovieSerde;

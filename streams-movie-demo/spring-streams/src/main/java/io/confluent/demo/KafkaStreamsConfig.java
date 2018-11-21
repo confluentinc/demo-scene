@@ -18,6 +18,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.annotation.EnableKafkaStreams;
 
+import java.util.Map;
+
 @Configuration
 @EnableKafka
 @EnableKafkaStreams
@@ -32,12 +34,11 @@ public class KafkaStreamsConfig {
     final KStream<Long, String> rawRatingsStream = getRawRatingsStream(builder);
     final KTable<Long, Double> ratingAverageTable = getRatingAverageTable(rawRatingsStream);
 
-    final KTable<Long, Movie> moviesTable = getMoviesTable(
-        builder,
-        getMovieAvroSerde(singletonMap(SCHEMA_REGISTRY_URL_CONFIG,
-                                       (String) kafkaProperties.buildStreamsProperties()
-                                           .get(SCHEMA_REGISTRY_URL_CONFIG))));
-    return getRatedMoviesTable(moviesTable, ratingAverageTable, ratedMovieSerde);
+    final Map<String, String> serdeConfig = singletonMap(SCHEMA_REGISTRY_URL_CONFIG,
+                                                         (String) kafkaProperties.buildStreamsProperties()
+                                                             .get(SCHEMA_REGISTRY_URL_CONFIG));
+    final KTable<Long, Movie> moviesTable = getMoviesTable(builder, getMovieAvroSerde(serdeConfig));
+    return getRatedMoviesTable(moviesTable, ratingAverageTable, getRatedMovieAvroSerde(serdeConfig));
   }
 
   @Bean
