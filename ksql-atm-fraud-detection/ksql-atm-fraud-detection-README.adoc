@@ -1,6 +1,6 @@
 = ATM Fraud Detection with Kafka and KSQL - Hands on Guide
 Robin Moffatt <robin@confluent.io>
-v1.00, October 9, 2018
+v1.10, November 22, 2018
 
 == Running the test rig
 
@@ -13,29 +13,16 @@ cd ksql-atm-fraud-detection
 docker-compose up -d
 ----
 
-This brings up the stack, and also loads the necessary Kafka Connect, Elasticsearch, and Kibana configuration. 
-
-To launch the ATM data generator: 
-
-[source,bash]
-----
-git clone https://github.com/rmoff/gess.git
-cd gess
-python scripts/gess-main.py
-----
-
-This emits the transactions on UDP - to stream these into a Kafka topic, run
-
-[source,bash]
-----
-nc -v -u -l 6900 | \
-  docker run --interactive --rm --network ksql-atm-fraud-detection_default confluentinc/cp-kafkacat \
-  kafkacat -b kafka:29092 -P -t atm_txns_gess
-----
-
-_Note that there will be no output from this as the output from `nc` is piped into `kafkacat` which routes it directly into the specified topic._
+This brings up the stack, and also loads the necessary Kafka Connect, Elasticsearch, and Kibana configuration. It also launches the ATM data generator, streaming events to the `atm_txns_gess` topic.
 
 === KSQL application
+
+Launch the CLI: 
+
+[source,bash]
+----
+docker-compose exec ksql-cli ksql http://ksql-server:8088
+----
 
 [source,sql]
 ----
