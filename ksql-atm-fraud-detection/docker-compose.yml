@@ -2,19 +2,33 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.0.0
+    image: confluentinc/cp-zookeeper:5.0.1
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.0.0
+    image: confluentinc/cp-enterprise-kafka:5.0.1
     depends_on:
       - zookeeper
     ports:
-    # Exposes 9092 for external connections to the broker
-    # Use kafka:29092 for connections internal on the docker network
+    # "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-
+    # An important note about accessing Kafka from clients on other machines: 
+    # -----------------------------------------------------------------------
+    #
+    # The config used here exposes port 9092 for _external_ connections to the broker
+    # i.e. those from _outside_ the docker network. This could be from the host machine
+    # running docker, or maybe further afield if you've got a more complicated setup. 
+    # If the latter is true, you will need to change the value 'localhost' in 
+    # KAFKA_ADVERTISED_LISTENERS to one that is resolvable to the docker host from those 
+    # remote clients
+    #
+    # For connections _internal_ to the docker network, such as from other services
+    # and components, use kafka:29092.
+    #
     # See https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
+    # "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-
+    #
       - 9092:9092
     environment:
       KAFKA_BROKER_ID: 1
@@ -33,7 +47,7 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.0.0
+    image: confluentinc/cp-schema-registry:5.0.1
     depends_on:
       - zookeeper
       - kafka
@@ -42,7 +56,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.0.0
+    image: confluentinc/cp-ksql-server:5.0.1
     ports:
       - 8088:8088
     depends_on:
@@ -57,8 +71,15 @@ services:
       KSQL_KSQL_CACHE_MAX_BYTES_BUFFERING: 10000000
       KSQL_KSQL_STREAMS_AUTO_OFFSET_RESET: earliest
 
+  ksql-cli:
+    image: confluentinc/cp-ksql-cli:5.0.1
+    depends_on:
+      - ksql-server
+    entrypoint: /bin/sh
+    tty: true
+
   kafka-connect:
-    image: confluentinc/cp-kafka-connect:5.0.0
+    image: confluentinc/cp-kafka-connect:5.0.1
     depends_on:
       - zookeeper
       - kafka
@@ -196,3 +217,18 @@ services:
         echo -e "\n--\n+> Creating Kafka Connect Debezium source"
         /scripts/create-debezium-source.sh 
         sleep infinity
+
+  gess:
+    image: rmoff/gess
+    environment:
+     - TARGET_HOST=send-gess-to-kafka
+
+  send-gess-to-kafka:
+    image: confluentinc/cp-enterprise-kafka:5.0.1
+    command: 
+      - bash 
+      - -c 
+      - |
+        nc -v -u -l -p 6900 | \
+        kafka-console-producer --broker-list kafka:29092 --topic atm_txns_gess
+
