@@ -7,3 +7,4 @@ gcp-pipeline/docker-compose-ccloud_with_creds.yml
 slack_creds.sh
 credentials.py
 credentials.pyc
+.vscode
