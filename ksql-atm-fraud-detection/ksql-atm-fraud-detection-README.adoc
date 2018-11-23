@@ -44,48 +44,20 @@ FROM ATM_POSSIBLE_FRAUD;
 <script src="https://asciinema.org/a/xuzkbePj2N9fsAZZew0eJUjCW.js" id="asciicast-xuzkbePj2N9fsAZZew0eJUjCW" async></script>
 ++++
 
-=== Kibana
-
-* http://localhost:5601/app/kibana#/dashboard/fraudulent-atm-transactions
-* http://localhost:5601/app/kibana#/dashboard/atm-transactions
-
-== Sending test messages
-
-Send a couple of test messages to the ATM topic, using `kafkacat`: 
-
-[source,bash]
-----
-docker run --interactive --rm --network ksql-atm-fraud-detection_default confluentinc/cp-kafkacat \
-kafkacat -b kafka:29092 -P -t atm_txns << EOF
-{"account_id": "ac_01", "atm": "ID_2276369282", "amount": 20, "location": {"lat": "38.6956033", "lon": "-121.5922283"}, "transaction_id": "01"}
-{"account_id": "ac_02", "atm": "Flying Pig Bistro", "amount": 400, "location": {"lat": "37.766319", "lon": "-122.417422"}, "transaction_id": "02"}
-{"account_id": "ac_03", "atm": "Wells Fargo", "amount": 50, "location": {"lat": "37.5522855", "lon": "-121.9797997"}, "transaction_id": "04"}
-EOF
-----
-
-=== Launching KSQL
-
-[source,bash]
-----
-docker run --network ksql-atm-fraud-detection_default --interactive --tty --rm \
-    confluentinc/cp-ksql-cli:5.0.0 \
-    http://ksql-server:8088
-----
-
-=== Sending more test messages
-
-[source,bash]
-----
-docker run --interactive --rm --network ksql-atm-fraud-detection_default confluentinc/cp-kafkacat kafkacat -b kafka:29092 -P -t atm_txns << EOF
-{"account_id": "ac_02", "atm": "Flying Pig Bistro", "amount": 40, "location": {"lat": "37.766319", "lon": "-122.417422"}, "transaction_id": "03"}
-{"account_id": "ac_03", "atm": "Barclays", "amount": 500, "location": {"lat": "33.5522855", "lon": "-120.9797997"}, "transaction_id": "X05"}
-EOF
-----
-
-=== Finished KSQL statement for processing test messages
+View enriched data: 
 
 [source,sql]
 ----
-include::test_messages.ksql[]
+SELECT ACCOUNT_ID, CUSTOMER_NAME, CUSTOMER_PHONE, \
+        TIMESTAMPTOSTRING(T1_TIMESTAMP, 'yyyy-MM-dd HH:mm:ss'), TIMESTAMPTOSTRING(T2_TIMESTAMP, 'HH:mm:ss'), \
+        T1_ATM, T2_ATM \
+FROM ATM_POSSIBLE_FRAUD_ENRICHED;
 ----
+
+
+=== Kibana
+
+* http://localhost:5601/app/kibana#/dashboard/atm-transactions?_g=(refreshInterval:(pause:!f,value:30000),time:(from:now-15m,mode:quick,to:now))[All ATM transactions]
+
+* http://localhost:5601/app/kibana#/dashboard/fraudulent-atm-transactions?_g=(refreshInterval:(pause:!f,value:30000),time:(from:now-15m,mode:quick,to:now))[Possibly fraudulent transactions]
 
