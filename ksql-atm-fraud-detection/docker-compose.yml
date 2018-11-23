@@ -126,7 +126,7 @@ services:
         sleep infinity
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.5.1
     ports:
       - 9200:9200
     environment:
@@ -149,7 +149,7 @@ services:
         sleep infinity
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:6.4.2
+    image: docker.elastic.co/kibana/kibana:6.5.1
     depends_on:
       - elasticsearch
     ports:
@@ -167,6 +167,13 @@ services:
           echo -e $$(date) " Kibana listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://localhost:5601/) " (waiting for 200)"
           sleep 5 
         done
+        echo "Waiting for Kibana API to be available ⏳"
+        echo -e $$(date) " Kibana API response: " $$(curl -s 'http://localhost:5601/api/kibana/settings')
+        while [[ $$(curl -s http://localhost:5601/api/kibana/settings) == 'Kibana server is not ready yet' ]] ; do 
+          echo -e $$(date) " Kibana API response: " $$(curl -s 'http://localhost:5601/api/kibana/settings')
+          sleep 5 
+        done
+        sleep 60 
         echo -e "\n--\n+> Setup Kibana objects"
         /scripts/setup-kibana.sh
         sleep infinity
