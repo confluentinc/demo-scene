@@ -5,3 +5,5 @@ gcp-pipeline/run_it_on_gce_with_creds.sh
 gcp_creds.json
 gcp-pipeline/docker-compose-ccloud_with_creds.yml
 slack_creds.sh
+credentials.py
+credentials.pyc
