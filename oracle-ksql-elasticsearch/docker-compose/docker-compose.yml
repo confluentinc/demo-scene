@@ -1,45 +1,45 @@
 ---
 version: '2'
 services:
-  # zookeeper:
-  #   image: confluentinc/cp-zookeeper:5.0.1
-  #   environment:
-  #     ZOOKEEPER_CLIENT_PORT: 2181
-  #     ZOOKEEPER_TICK_TIME: 2000
+  zookeeper:
+    image: confluentinc/cp-zookeeper:5.0.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
 
-  # kafka:
-  #   image: confluentinc/cp-enterprise-kafka:5.0.1
-  #   depends_on:
-  #     - zookeeper
-  #   ports:
-  #   # Exposes 9092 for external connections to the broker
-  #   # Use kafka:29092 for connections internal on the docker network
-  #   # See https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
-  #     - 9092:9092
-  #   environment:
-  #     KAFKA_BROKER_ID: 1
-  #     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-  #     KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-  #     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-  #     KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-  #     KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
-  #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-  #     KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
-  #     CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092
-  #     CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
-  #     CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
-  #     CONFLUENT_METRICS_ENABLE: 'true'
-  #     CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+  kafka:
+    image: confluentinc/cp-enterprise-kafka:5.0.1
+    depends_on:
+      - zookeeper
+    ports:
+    # Exposes 9092 for external connections to the broker
+    # Use kafka:29092 for connections internal on the docker network
+    # See https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
+      - 9092:9092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092
+      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'true'
+      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
-  # schema-registry:
-  #   image: confluentinc/cp-schema-registry:5.0.1
-  #   depends_on:
-  #     - zookeeper
-  #     - kafka
-  #   environment:
-  #     SCHEMA_REGISTRY_HOST_NAME: schema-registry
-  #     SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
+  schema-registry:
+    image: confluentinc/cp-schema-registry:5.0.1
+    depends_on:
+      - zookeeper
+      - kafka
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   # kafka-connect-cp:
   #   image: confluentinc/cp-kafka-connect:5.0.1
@@ -107,37 +107,44 @@ services:
 # Other systems
   oracle:
     image: oracle/database:12.2.0.1-ee
-    container_name: oracle
+    environment:
+      - ORACLE_PWD=Admin123
     ports:
       - 1521:1521
-    #   - 8080:8080
-    #   - 5500:5500
-    # volumes:
-    #   - $PWD/img_data/jars:/jars
-    #   - $PWD/img_data/oradata:/opt/oracle/oradata
-    #   - $PWD/img_data/swingbench/:/home/oracle/swingbench
-    #   - $PWD/scripts/ora/setup:/opt/oracle/scripts/setup
+    volumes:
+      - $PWD/oradata:/opt/oracle/oradata
+      - $PWD/oradata/recovery_area:/opt/oracle/oradata/recovery_area
+      - $PWD/ora-setup-scripts:/opt/oracle/scripts/setup
+      - jar-share:/opt/oracle/product/12.2.0.1/dbhome_1/
 
-  # connect-debezium:
-  #   image: debezium/connect:0.8.3.Final
-  #   depends_on:
-  #    - kafka
-  #    - oracle
-  #    - schema-registry
-  #   ports:
-  #    - 8083:8083
-  #   environment:
-  #    - BOOTSTRAP_SERVERS=kafka:29092
-  #    - GROUP_ID=1
-  #    - CONFIG_STORAGE_TOPIC=my_connect_configs
-  #    - OFFSET_STORAGE_TOPIC=my_connect_offsets
-  #    - STATUS_STORAGE_TOPIC=my_connect_status
-  #    - KEY_CONVERTER=io.confluent.connect.avro.AvroConverter
-  #    - VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter
-  #    - CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
-  #    - CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
-  #   volumes:
-  #    - $PWD/scripts:/scripts
+  connect-debezium:
+    image: debezium/connect:0.8.3.Final
+    depends_on:
+     - kafka
+     - oracle
+     - schema-registry
+    ports:
+     - 8083:8083
+    environment:
+     - BOOTSTRAP_SERVERS=kafka:29092
+     - GROUP_ID=1
+     - CONFIG_STORAGE_TOPIC=my_connect_configs
+     - OFFSET_STORAGE_TOPIC=my_connect_offsets
+     - STATUS_STORAGE_TOPIC=my_connect_status
+     - KEY_CONVERTER=io.confluent.connect.avro.AvroConverter
+     - VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter
+     - CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
+     - CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
+    volumes:
+      - $PWD/scripts:/scripts
+      - jar-share:/jars-share/
+    command: 
+      - bash 
+      - -c 
+      - |
+        /docker-entrypoint.sh &
+        cp /jars-share/jdbc/lib/ojdbc8.jar /kafka/libs
+        cp /jars-share/rdbms/jlib/xstreams.jar /kafka/libs
 
   # elasticsearch:
   #   image: docker.elastic.co/elasticsearch/elasticsearch:6.3.0
@@ -158,3 +165,9 @@ services:
   #   environment:
   #     xpack.security.enabled: "false"
   #     discovery.type: "single-node"
+
+volumes:
+    jar-share: {}
+
+
+
