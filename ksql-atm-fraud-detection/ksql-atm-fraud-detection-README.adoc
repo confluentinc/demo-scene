@@ -33,22 +33,117 @@ nc -v -u -l 6900 | \
   kafkacat -b kafka:29092 -P -t atm_txns_gess
 ----
 
-_Note that there will be no output from this as the output from `nc` is piped into `kafkacat` which routes it directly into the specified topic._
-
-=== KSQL application
+Inspect source transactions: 
 
 [source,sql]
 ----
-include::atm_fraud_detection.ksql[]
+PRINT 'atm_txns_gess' FROM BEGINNING;
 ----
 
-View the resulting matches: 
+Register the topic as a KSQL stream: 
+
+[source,sql]
+----
+CREATE STREAM ATM_TXNS_GESS (account_id VARCHAR, \
+                            atm VARCHAR, \
+                            location STRUCT<lon DOUBLE, \
+                                            lat DOUBLE>, \
+                            amount INT, \
+                            timestamp VARCHAR, \
+                            transaction_id VARCHAR) \
+            WITH (KAFKA_TOPIC='atm_txns_gess', \
+            VALUE_FORMAT='JSON', \
+            TIMESTAMP='timestamp', \
+            TIMESTAMP_FORMAT='yyyy-MM-dd HH:mm:ss X');
+----
+
+Query the stream: 
+
+[source,sql]
+----
+ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss Z'), ACCOUNT_ID, ATM, AMOUNT FROM ATM_TXNS_GESS LIMIT 5;
+
+2018-11-23 11:57:45 +0000 | a136 | ATM : 48930597 | 200
+2018-11-23 11:57:46 +0000 | a552 | ATM : 1626440972 | 300
+2018-11-23 11:57:47 +0000 | a250 | Barclays | 400
+2018-11-23 11:57:47 +0000 | a327 | ATM : 1182516742 | 300
+2018-11-23 11:57:48 +0000 | a973 | ATM : 5920382950 | 400
+----
+
+Create a clone of the stream: 
+
+[source,sql]
+----
+CREATE STREAM ATM_TXNS_GESS_02 WITH (PARTITIONS=1) AS SELECT * FROM ATM_TXNS_GESS;
+----
+
+Join the stream (two in practice, but logically still just a single Kafka topic): 
+
+[source,sql]
+----
+SELECT S1.ACCOUNT_ID, \
+        TIMESTAMPTOSTRING(S1.ROWTIME, 'yyyy-MM-dd HH:mm:ss'), TIMESTAMPTOSTRING(S2.ROWTIME, 'HH:mm:ss'), \
+        S1.ATM, S2.ATM, \
+        S1.TRANSACTION_ID ,S2.TRANSACTION_ID \
+FROM   ATM_TXNS_GESS S1 \
+       INNER JOIN ATM_TXNS_GESS_02 S2 \
+        WITHIN 10 MINUTES \
+        ON S1.ACCOUNT_ID = S2.ACCOUNT_ID;
+----
+
+Filter out direct matches to self and exclude those in the same location: 
+
+[source,sql]
+----
+SELECT S1.ACCOUNT_ID, \
+        TIMESTAMPTOSTRING(S1.ROWTIME, 'yyyy-MM-dd HH:mm:ss'), TIMESTAMPTOSTRING(S2.ROWTIME, 'HH:mm:ss'), \
+        S1.ATM, S2.ATM, \
+        S1.TRANSACTION_ID ,S2.TRANSACTION_ID \
+FROM   ATM_TXNS_GESS S1 \
+       INNER JOIN ATM_TXNS_GESS_02 S2 \
+        WITHIN 10 MINUTES \
+        ON S1.ACCOUNT_ID = S2.ACCOUNT_ID \
+WHERE   S1.TRANSACTION_ID != S2.TRANSACTION_ID \
+  AND   (S1.location->lat != S2.location->lat OR \
+         S1.location->lon != S2.location->lon) \
+LIMIT 20;
+----
+
+
+Join only to future-dated events: 
+
+[source,sql]
+----
+SELECT S1.ACCOUNT_ID, \
+        TIMESTAMPTOSTRING(S1.ROWTIME, 'yyyy-MM-dd HH:mm:ss'), TIMESTAMPTOSTRING(S2.ROWTIME, 'HH:mm:ss'), \
+        S1.ATM, S2.ATM \
+FROM   ATM_TXNS_GESS S1 \
+       INNER JOIN ATM_TXNS_GESS_02 S2 \
+        WITHIN (0 MINUTES, 10 MINUTES) \
+        ON S1.ACCOUNT_ID = S2.ACCOUNT_ID \
+WHERE   S1.TRANSACTION_ID != S2.TRANSACTION_ID \
+  AND   (S1.location->lat != S2.location->lat OR \
+         S1.location->lon != S2.location->lon) \
+  AND   S2.ROWTIME != S1.ROWTIME;
+
+----
+
+Derive distance between ATMs: 
+
+Calculate time between events: 
+
+Calculate required speed: 
+
+Persist as a new stream: 
+
+
+View the resulting transactions: 
 
 [source,sql]
 ----
 SELECT ACCOUNT_ID, \
-        TIMESTAMPTOSTRING(T1_TIMESTAMP, 'yyyy-MM-dd HH:mm:ss'), TIMESTAMPTOSTRING(T2_TIMESTAMP, 'HH:mm:ss'), \
-        T1_ATM, T2_ATM, \
+        TIMESTAMPTOSTRING(S1_TIMESTAMP, 'yyyy-MM-dd HH:mm:ss'), TIMESTAMPTOSTRING(S2_TIMESTAMP, 'HH:mm:ss'), \
+        S1_ATM, S2_ATM, \
         DISTANCE_BETWEEN_TXN_KM, MINUTES_DIFFERENCE \
 FROM ATM_POSSIBLE_FRAUD;  
 ----
@@ -57,10 +152,10 @@ FROM ATM_POSSIBLE_FRAUD;
 <script src="https://asciinema.org/a/xuzkbePj2N9fsAZZew0eJUjCW.js" id="asciicast-xuzkbePj2N9fsAZZew0eJUjCW" async></script>
 ++++
 
-=== Kibana
+Add in Customer data: 
 
-* http://localhost:5601/app/kibana#/dashboard/fraudulent-atm-transactions
-* http://localhost:5601/app/kibana#/dashboard/atm-transactions
+
+View enriched data: 
 
 == Sending test messages
 
@@ -68,12 +163,10 @@ Send a couple of test messages to the ATM topic, using `kafkacat`:
 
 [source,bash]
 ----
-docker run --interactive --rm --network ksql-atm-fraud-detection_default confluentinc/cp-kafkacat \
-kafkacat -b kafka:29092 -P -t atm_txns << EOF
-{"account_id": "ac_01", "atm": "ID_2276369282", "amount": 20, "location": {"lat": "38.6956033", "lon": "-121.5922283"}, "transaction_id": "01"}
-{"account_id": "ac_02", "atm": "Flying Pig Bistro", "amount": 400, "location": {"lat": "37.766319", "lon": "-122.417422"}, "transaction_id": "02"}
-{"account_id": "ac_03", "atm": "Wells Fargo", "amount": 50, "location": {"lat": "37.5522855", "lon": "-121.9797997"}, "transaction_id": "04"}
-EOF
+SELECT ACCOUNT_ID, CUSTOMER_NAME, CUSTOMER_PHONE, \
+        TIMESTAMPTOSTRING(S1_TIMESTAMP, 'yyyy-MM-dd HH:mm:ss'), TIMESTAMPTOSTRING(S2_TIMESTAMP, 'HH:mm:ss'), \
+        S1_ATM, S2_ATM \
+FROM ATM_POSSIBLE_FRAUD_ENRICHED;
 ----
 
 === Launching KSQL
