@@ -1,1 +1,1 @@
-This has moved to the `oracle-ksql-elasticsearch` folder on https://github.com/confluentinc/quickstart-demos/
+see [mysql-debezium-ksql-elasticsearch-docker.adoc](mysql-debezium-ksql-elasticsearch-docker.adoc)
