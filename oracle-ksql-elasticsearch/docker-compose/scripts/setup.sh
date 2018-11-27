@@ -21,7 +21,6 @@ grep -q "Kafka Connect started" <(docker-compose logs -f $CONNECT_HOST)
 echo -e "\n--\n+> Creating Kafka Connect Elasticsearch sink"
 
 docker-compose exec kafka-connect-cp bash -c '/scripts/create-es-sink.sh'
-docker-compose exec kafka-connect-cp bash -c '/scripts/create-es-sink-lisa18.sh'
 
 echo -e "\n--\n+> Setting up Elasticsearch dummy data"
 
