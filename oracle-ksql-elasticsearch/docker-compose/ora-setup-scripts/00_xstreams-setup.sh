@@ -1,5 +1,7 @@
 #!/bin/sh
 
+echo 'Configuring Oracle for XStreams'
+
 # Set archive log mode and enable GG replication
 ORACLE_SID=ORCLCDB
 export ORACLE_SID

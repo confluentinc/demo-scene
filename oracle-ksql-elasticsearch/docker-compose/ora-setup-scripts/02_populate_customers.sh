@@ -1,3 +1,7 @@
+#!/bin/sh
+
+echo 'Creating and populating Debezium.customers table'
+
 sqlplus Debezium/dbz@//localhost:1521/ORCLPDB1  <<- EOF
 
 create table CUSTOMERS (

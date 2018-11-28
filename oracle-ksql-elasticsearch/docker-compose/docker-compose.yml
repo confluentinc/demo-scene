@@ -72,17 +72,24 @@ services:
   #   volumes:
   #     - $PWD/scripts:/scripts
 
-  # ksql-server:
-  #   image: confluentinc/cp-ksql-server:5.0.1
-  #   depends_on:
-  #     - kafka
-  #     - schema-registry
-  #   environment:
-  #     KSQL_CUB_KAFKA_TIMEOUT: 120
-  #     KSQL_BOOTSTRAP_SERVERS: kafka:29092
-  #     KSQL_LISTENERS: http://0.0.0.0:8088
-  #     KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-  #     KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
+  ksql-server:
+    image: confluentinc/cp-ksql-server:5.0.1
+    depends_on:
+      - kafka
+      - schema-registry
+    environment:
+      KSQL_CUB_KAFKA_TIMEOUT: 120
+      KSQL_BOOTSTRAP_SERVERS: kafka:29092
+      KSQL_LISTENERS: http://0.0.0.0:8088
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
+
+  ksql-cli:
+    image: confluentinc/cp-ksql-cli:5.0.1
+    depends_on:
+      - ksql-server
+    entrypoint: /bin/sh
+    tty: true
 
   # # Runs the Kafka KSQL data generator for ratings
   # datagen-ratings:
@@ -127,6 +134,7 @@ services:
      - 8083:8083
     environment:
      - BOOTSTRAP_SERVERS=kafka:29092
+     - LOG_LEVEL=INFO
      - GROUP_ID=1
      - CONFIG_STORAGE_TOPIC=my_connect_configs
      - OFFSET_STORAGE_TOPIC=my_connect_offsets
@@ -142,9 +150,10 @@ services:
       - bash 
       - -c 
       - |
-        /docker-entrypoint.sh &
+        /docker-entrypoint.sh start &
         cp /jars-share/jdbc/lib/ojdbc8.jar /kafka/libs
         cp /jars-share/rdbms/jlib/xstreams.jar /kafka/libs
+        sleep infinity
 
   # elasticsearch:
   #   image: docker.elastic.co/elasticsearch/elasticsearch:6.3.0

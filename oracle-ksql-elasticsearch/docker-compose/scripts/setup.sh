@@ -7,7 +7,7 @@ export CONNECT_HOST=connect-debezium
 echo -e "\n--\n\nWaiting for Kafka Connect to start on $CONNECT_HOST … ⏳"
 grep -q "Kafka Connect started" <(docker-compose logs -f $CONNECT_HOST)
 echo -e "\n--\n+> Creating Kafka Connect MySQL Debezium source"
-docker-compose exec connect-debezium bash -c '/scripts/create-mysql-source.sh'
+docker-compose exec connect-debezium bash -c '/scripts/create-ora-source.sh'
 
 echo -e "\n--\n\nWaiting for elasticsearch to start "
 grep -q "started" <(docker-compose logs -f elasticsearch)
