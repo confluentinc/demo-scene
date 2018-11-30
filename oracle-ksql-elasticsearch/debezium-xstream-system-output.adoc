@@ -1,0 +1,263 @@
+= Sample XStream monitoring queries output for a working Debezium/Kafka Connect process
+
+_This is the output from the various Oracle system views on a system where the Debezium CDC process is successfully running_. 
+
+Ref: https://docs.oracle.com/database/121/XSTRM/xstrm_xout_mon.htm#XSTRM1437
+
+[source,sql]
+----
+COLUMN ACTION HEADING 'XStream Component' FORMAT A30
+COLUMN SID HEADING 'Session ID' FORMAT 99999
+COLUMN SERIAL# HEADING 'Session|Serial|Number' FORMAT 99999999
+COLUMN PROCESS HEADING 'Operating System|Process ID' FORMAT A17
+COLUMN PROCESS_NAME HEADING 'XStream|Program|Name' FORMAT A7
+ 
+SELECT /*+PARAM('_module_action_old_length',0)*/ ACTION,
+       SID,
+       SERIAL#,
+       PROCESS,
+       SUBSTR(PROGRAM,INSTR(PROGRAM,'(')+1,4) PROCESS_NAME
+  FROM V$SESSION
+  WHERE MODULE ='XStream';
+----
+
+Expected output: 
+
+[source,sql]
+----
+
+                                            Session                   XStream
+                                             Serial Operating System  Program
+XStream Component              Session ID    Number Process ID        Name
+------------------------------ ---------- --------- ----------------- -------
+DBZXOUT - Apply Reader                  9      6842 3380              AS01
+DBZXOUT - Apply Server                 16     35968 1                 TNS
+DBZXOUT - Apply Server                145     13290 3382              AS02
+CAP$_DBZXOUT_1 - Capture              270     62826 3384              CP01
+DBZXOUT - Apply Coordinator           396     27273 3378              AP01
+DBZXOUT - Propagation Send/Rcv        399      6031 3386              CX01
+
+6 rows selected.
+----
+
+Note the `TNS` connection, which is the consuming application (here, Debezium).
+
+'''
+
+[source,sql]
+----
+COLUMN SERVER_NAME HEADING 'Outbound|Server|Name' FORMAT A10
+COLUMN CONNECT_USER HEADING 'Connect|User' FORMAT A10
+COLUMN CAPTURE_USER HEADING 'Capture|User' FORMAT A14
+COLUMN CAPTURE_NAME HEADING 'Capture|Process|Name' FORMAT A14
+COLUMN SOURCE_DATABASE HEADING 'Source|Database' FORMAT A11
+COLUMN QUEUE_OWNER HEADING 'Queue|Owner' FORMAT A14
+COLUMN QUEUE_NAME HEADING 'Queue|Name' FORMAT A14
+SET LINESIZE 100
+
+SELECT SERVER_NAME, 
+       CONNECT_USER, 
+       CAPTURE_USER, 
+       CAPTURE_NAME,
+       SOURCE_DATABASE,
+       QUEUE_OWNER,
+       QUEUE_NAME
+  FROM ALL_XSTREAM_OUTBOUND;
+----
+
+[source,sql]
+----
+Outbound                             Capture
+Server     Connect    Capture        Process        Source      Queue          Queue
+Name       User       User           Name           Database    Owner          Name
+---------- ---------- -------------- -------------- ----------- -------------- --------------
+DBZXOUT    C##XSTRM   C##XSTRMADMIN  CAP$_DBZXOUT_1 ORCLCDB     C##XSTRMADMIN  Q$_DBZXOUT_2
+----
+
+'''
+
+[source,sql]
+----
+COLUMN APPLY_NAME HEADING 'Outbound Server|Name' FORMAT A15
+COLUMN STATUS HEADING 'Status' FORMAT A8
+COLUMN ERROR_NUMBER HEADING 'Error Number' FORMAT 9999999
+COLUMN ERROR_MESSAGE HEADING 'Error Message' FORMAT A40
+
+SELECT APPLY_NAME, 
+       STATUS,
+       ERROR_NUMBER,
+       ERROR_MESSAGE
+  FROM DBA_APPLY
+  WHERE PURPOSE = 'XStream Out';
+----
+
+[source,sql]
+----
+Outbound Server
+Name            Status   Error Number Error Message
+--------------- -------- ------------ ----------------------------------------
+DBZXOUT         ENABLED
+----
+
+'''
+
+[source,sql]
+----
+COLUMN SERVER_NAME HEADING 'Outbound|Server|Name' FORMAT A10
+COLUMN 'Transaction ID' HEADING 'Transaction|ID' FORMAT A11
+COLUMN COMMITSCN HEADING 'Commit SCN' FORMAT 9999999999999
+COLUMN COMMIT_POSITION HEADING 'Commit Position' FORMAT A15
+COLUMN LAST_SENT_POSITION HEADING 'Last Sent|Position' FORMAT A15
+COLUMN MESSAGE_SEQUENCE HEADING 'Message|Number' FORMAT 999999999
+ 
+SELECT SERVER_NAME,
+       XIDUSN ||'.'|| 
+       XIDSLT ||'.'||
+       XIDSQN "Transaction ID",
+       COMMITSCN,
+       COMMIT_POSITION,
+       LAST_SENT_POSITION,
+       MESSAGE_SEQUENCE
+  FROM V$XSTREAM_OUTBOUND_SERVER;
+----
+
+
+[source,sql]
+----
+Outbound
+Server     Transaction                                Last Sent          Message
+Name       ID              Commit SCN Commit Position Position            Number
+---------- ----------- -------------- --------------- --------------- ----------
+DBZXOUT    4.23.467           1489384 000000000016B9E 000000000016B9E          2
+                                      800000001000000 800000001000000
+                                      01000000000016B 01000000000016B
+                                      9E8000000010000 9E8000000010000
+                                      000102          000102
+----
+
+'''
+
+[source,sql]
+----
+COLUMN SERVER_NAME HEADING 'Outbound|Server|Name' FORMAT A8
+COLUMN TOTAL_TRANSACTIONS_SENT HEADING 'Total|Trans|Sent' FORMAT 9999999
+COLUMN TOTAL_MESSAGES_SENT HEADING 'Total|LCRs|Sent' FORMAT 9999999999
+COLUMN BYTES_SENT HEADING 'Total|KB|Sent' FORMAT 99999999999999
+COLUMN ELAPSED_SEND_TIME HEADING 'Time|Sending|LCRs|(in seconds)' FORMAT 99999999
+COLUMN LAST_SENT_MESSAGE_NUMBER HEADING 'Last|Sent|Message|Number' FORMAT 99999999
+COLUMN LAST_SENT_MESSAGE_CREATE_TIME HEADING 'Last|Sent|Message|Creation|Time' FORMAT A14
+ 
+SELECT SERVER_NAME,
+       TOTAL_TRANSACTIONS_SENT,
+       TOTAL_MESSAGES_SENT,
+       (BYTES_SENT/1024) BYTES_SENT,
+       (ELAPSED_SEND_TIME/100) ELAPSED_SEND_TIME,
+       LAST_SENT_MESSAGE_NUMBER,
+       TO_CHAR(LAST_SENT_MESSAGE_CREATE_TIME,'HH24:MI:SS      YYYY-MON-DD') 
+          LAST_SENT_MESSAGE_CREATE_TIME
+  FROM V$XSTREAM_OUTBOUND_SERVER;
+----
+
+[source,sql]
+----
+                                                                     Last
+                                                      Time      Last Sent
+Outbound    Total       Total           Total      Sending      Sent Message
+Server      Trans        LCRs              KB         LCRs   Message Creation
+Name         Sent        Sent            Sent (in seconds)    Number Time
+-------- -------- ----------- --------------- ------------ --------- --------------
+DBZXOUT         7          16             300            0   1489384 14:12:06
+                                                                     2018-NOV-30
+----
+
+'''
+
+[source,sql]
+----
+COLUMN SERVER_NAME HEADING 'Outbound|Server|Name' FORMAT A10
+COLUMN SOURCE_DATABASE HEADING 'Source|Database' FORMAT A20
+COLUMN PROCESSED_LOW_POSITION HEADING 'Processed|Low LCR|Position' FORMAT A30
+COLUMN PROCESSED_LOW_TIME HEADING 'Processed|Low|Time' FORMAT A9
+
+SELECT SERVER_NAME,
+       SOURCE_DATABASE,
+       PROCESSED_LOW_POSITION,
+       TO_CHAR(PROCESSED_LOW_TIME,'HH24:MI:SS MM/DD/YY') PROCESSED_LOW_TIME
+FROM ALL_XSTREAM_OUTBOUND_PROGRESS; 
+----
+
+[source,sql]
+----
+Outbound                        Processed                      Processed
+Server     Source               Low LCR                        Low
+Name       Database             Position                       Time
+---------- -------------------- ------------------------------ ---------
+DBZXOUT    ORCLCDB              000000000016B9E700000000000000 14:14:58
+                                00000000000016B9E7000000000000 11/30/18
+                                000002
+----
+
+'''
+
+[source,sql]
+----
+COLUMN APPLY_NAME HEADING 'Outbound Server|Name' FORMAT A15
+COLUMN PARAMETER HEADING 'Parameter' FORMAT A30
+COLUMN VALUE HEADING 'Value' FORMAT A22
+COLUMN SET_BY_USER HEADING 'Set by|User?' FORMAT A10
+ 
+SELECT APPLY_NAME,
+       PARAMETER, 
+       VALUE,
+       SET_BY_USER  
+  FROM ALL_APPLY_PARAMETERS a, ALL_XSTREAM_OUTBOUND o
+  WHERE a.APPLY_NAME=o.SERVER_NAME
+  ORDER BY a.PARAMETER;
+----
+
+[source,sql]
+----
+Outbound Server                                                       Set by
+Name            Parameter                      Value                  User?
+--------------- ------------------------------ ---------------------- ----------
+DBZXOUT         ALLOW_DUPLICATE_ROWS           N                      NO
+DBZXOUT         APPLY_SEQUENCE_NEXTVAL         Y                      NO
+DBZXOUT         BATCHSQL_MODE                  SEQUENTIAL             NO
+DBZXOUT         CDGRANULARITY                  COLGROUP               NO
+DBZXOUT         COMMIT_SERIALIZATION           DEPENDENT_TRANSACTIONS NO
+DBZXOUT         COMPARE_KEY_ONLY               N                      NO
+DBZXOUT         COMPUTE_LCR_DEP_ON_ARRIVAL     N                      NO
+DBZXOUT         DISABLE_ON_ERROR               Y                      NO
+DBZXOUT         DISABLE_ON_LIMIT               N                      NO
+DBZXOUT         EAGER_SIZE                     9500                   NO
+DBZXOUT         ENABLE_XSTREAM_TABLE_STATS     Y                      NO
+DBZXOUT         EXCLUDETAG                                            NO
+DBZXOUT         EXCLUDETRANS                                          NO
+DBZXOUT         EXCLUDEUSER                                           NO
+DBZXOUT         EXCLUDEUSERID                                         NO
+DBZXOUT         GETAPPLOPS                     Y                      NO
+DBZXOUT         GETREPLICATES                  N                      NO
+DBZXOUT         GROUPTRANSOPS                  10000                  NO
+DBZXOUT         HANDLECOLLISIONS               N                      NO
+DBZXOUT         IGNORE_TRANSACTION                                    NO
+DBZXOUT         MAXIMUM_SCN                    INFINITE               NO
+DBZXOUT         MAX_PARALLELISM                1                      NO
+DBZXOUT         MAX_SGA_SIZE                   INFINITE               NO
+DBZXOUT         MESSAGE_TRACKING_FREQUENCY     0                      NO
+DBZXOUT         OPTIMIZE_PROGRESS_TABLE        N                      NO
+DBZXOUT         OPTIMIZE_SELF_UPDATES          Y                      NO
+DBZXOUT         PARALLELISM                    1                      NO
+DBZXOUT         PARALLELISM_INTERVAL           5                      NO
+DBZXOUT         PRESERVE_ENCRYPTION            Y                      NO
+DBZXOUT         RTRIM_ON_IMPLICIT_CONVERSION   Y                      NO
+DBZXOUT         STARTUP_SECONDS                0                      NO
+DBZXOUT         SUPPRESSTRIGGERS               Y                      NO
+DBZXOUT         TIME_LIMIT                     INFINITE               NO
+DBZXOUT         TRACE_LEVEL                    0                      NO
+DBZXOUT         TRANSACTION_LIMIT              INFINITE               NO
+DBZXOUT         TXN_AGE_SPILL_THRESHOLD        900                    NO
+DBZXOUT         TXN_LCR_SPILL_THRESHOLD        10000                  NO
+DBZXOUT         WRITE_ALERT_LOG                Y                      NO
+
+38 rows selected.
+----

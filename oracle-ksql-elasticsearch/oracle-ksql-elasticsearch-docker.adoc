@@ -34,9 +34,8 @@ Optionally, use something like `screen` or `tmux` to have these both easily to h
 +
 [source,bash]
 ----
-docker run --network docker-compose_default --interactive --tty --rm \
-     confluentinc/cp-ksql-cli:5.0.1 \
-     http://ksql-server:8088
+cd docker-compose
+docker-compose exec ksql-cli ksql http://ksql-server:8088
 ----
 
 * SQL*Plus
@@ -137,10 +136,11 @@ From the CLI:
 
 [source,bash]
 ----
-kafka-avro-console-consumer \
-    --bootstrap-server localhost:9092 \
-    --property schema.registry.url=http://localhost:8081 \
-    --topic asgard.DEBEZIUM.CUSTOMERS --from-beginning|jq '.'
+docker-compose exec kafka-connect-cp \
+                    kafka-avro-console-consumer \
+                    --bootstrap-server kafka:29092 \
+                    --property schema.registry.url=http://schema-registry:8081 \
+                    --topic asgard.DEBEZIUM.CUSTOMERS --from-beginning
 ----
 
 ==== Insert a row in Oracle, observe it in Kafka
@@ -215,7 +215,8 @@ Return to slides
 -- PRINT 'asgard.demo.CUSTOMERS' FROM BEGINNING;
 
 SET 'auto.offset.reset' = 'earliest';
-CREATE STREAM CUSTOMERS_STREAM_SRC WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
+CREATE STREAM CUSTOMERS_STREAM_SRC WITH (KAFKA_TOPIC='asgard.DEBEZIUM.CUSTOMERS', VALUE_FORMAT='AVRO');
+
 CREATE STREAM CUSTOMERS_STREAM WITH (PARTITIONS=1) AS SELECT * FROM CUSTOMERS_STREAM_SRC PARTITION BY ID;
 SELECT ID, FIRST_NAME, LAST_NAME, CLUB_STATUS FROM CUSTOMERS_STREAM WHERE ID=1;
 ----
