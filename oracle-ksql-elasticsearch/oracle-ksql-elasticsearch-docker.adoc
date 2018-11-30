@@ -43,9 +43,10 @@ docker-compose exec ksql-cli ksql http://ksql-server:8088
 [source,bash]
 ----
 cd docker-compose
-docker-compose exec oracle bash -c 'sqlplus Debezium/dbz@localhost:1521/ORCLPDB1'
+docker-compose exec oracle bash -c 'sleep 1;rlwrap sqlplus Debezium/dbz@localhost:1521/ORCLPDB1'
 ----
 
+_(the `sleep` is necessary to avoid `rlwrap: error: My terminal reports width=0 (is it emacs?)  I can't handle this, sorry!` https://github.com/moby/moby/issues/28009[ref])_
 
 == Pre-flight checklist
 
@@ -59,8 +60,8 @@ docker-compose exec oracle bash -c 'sqlplus Debezium/dbz@localhost:1521/ORCLPDB1
 ** `python push_bullet.py`
 ** Connect laptop to wifi
 ** Connect iPhone to laptop with USB
-** Launch QuickTime Player, select iPhone as source
-** Disable other notifications (WhatsApp/Messages/Slack etc)
+** Launch Reflector 3
+** Disable other notifications (WhatsApp/Messages/other Slack etc)
 
 == Demo
 
@@ -147,8 +148,9 @@ docker-compose exec kafka-connect-cp \
 
 [source,sql]
 ----
+SET AUTOCOMMIT ON;
+
 INSERT INTO CUSTOMERS (FIRST_NAME,LAST_NAME,CLUB_STATUS) VALUES ('Rick','Astley','Bronze');
-COMMIT;
 ----
 
 ==== Update a row in Oracle, observe it in Kafka
@@ -156,7 +158,6 @@ COMMIT;
 [source,sql]
 ----
 UPDATE CUSTOMERS SET CLUB_STATUS = 'Platinum' where ID=42;
-COMMIT;
 ----
 
 ---
@@ -217,7 +218,8 @@ Return to slides
 SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM CUSTOMERS_STREAM_SRC WITH (KAFKA_TOPIC='asgard.DEBEZIUM.CUSTOMERS', VALUE_FORMAT='AVRO');
 
-CREATE STREAM CUSTOMERS_STREAM WITH (PARTITIONS=1) AS SELECT * FROM CUSTOMERS_STREAM_SRC PARTITION BY ID;
+CREATE STREAM CUSTOMERS_STREAM1 WITH (PARTITIONS=1) AS SELECT AFTER->ID AS ID ,AFTER->FIRST_NAME AS FIRST_NAME ,AFTER->LAST_NAME AS LAST_NAME ,AFTER->EMAIL AS EMAIL ,AFTER->GENDER AS GENDER ,AFTER->CLUB_STATUS AS CLUB_STATUS ,AFTER->COMMENTS AS COMMENTS FROM CUSTOMERS_STREAM_SRC;
+CREATE STREAM CUSTOMERS_STREAM WITH (PARTITIONS=1) AS SELECT * FROM CUSTOMERS_STREAM1 PARTITION BY ID;
 SELECT ID, FIRST_NAME, LAST_NAME, CLUB_STATUS FROM CUSTOMERS_STREAM WHERE ID=1;
 ----
 
@@ -405,3 +407,14 @@ https://docs.oracle.com/database/121/XSTRM/xstrm_xout_config.htm
 
 https://groups.google.com/d/msg/debezium/Ujj9fj3aoGM/DihBfAR3AQAJ
 
+=== Monitoring lag
+
+[source,sql]
+----
+CREATE STREAM LAG_MONITOR AS SELECT ROWTIME, SOURCE->TS_MS, ROWTIME-SOURCE->TS_MS AS LAG , OP , SOURCE->SNAPSHOT FROM CUSTOMERS_STREAM_SRC;
+
+ Message
+----------------------------
+ Stream created and running
+----------------------------
+----
