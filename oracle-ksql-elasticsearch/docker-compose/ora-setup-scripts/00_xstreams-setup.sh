@@ -89,6 +89,7 @@ EOF
 
 # Create XStream Outbound server
 sqlplus c##xstrmadmin/xsa@//localhost:1521/ORCLCDB <<- EOF
+
 	DECLARE
 	  tables  DBMS_UTILITY.UNCL_ARRAY;
 	  schemas DBMS_UTILITY.UNCL_ARRAY;
@@ -115,3 +116,4 @@ sqlplus sys/Admin123@//localhost:1521/ORCLCDB as sysdba <<- EOF
 
   exit;
 EOF
+

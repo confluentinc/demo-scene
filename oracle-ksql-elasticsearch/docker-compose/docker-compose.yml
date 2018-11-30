@@ -34,6 +34,8 @@ services:
 
   schema-registry:
     image: confluentinc/cp-schema-registry:5.0.1
+    ports: 
+      - 8081:8081
     depends_on:
       - zookeeper
       - kafka
@@ -41,36 +43,36 @@ services:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
-  # kafka-connect-cp:
-  #   image: confluentinc/cp-kafka-connect:5.0.1
-  #   depends_on:
-  #     - zookeeper
-  #     - kafka
-  #     - schema-registry
-  #   ports:
-  #     - 18083:18083
-  #   environment:
-  #     CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
-  #     CONNECT_REST_PORT: 18083
-  #     CONNECT_GROUP_ID: compose-connect-group
-  #     CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
-  #     CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-offsets
-  #     CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
-  #     CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
-  #     CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-  #     CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
-  #     CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-  #     CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-  #     CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-  #     CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-cp"
-  #     CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
-  #     CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
-  #     CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
-  #     CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
-  #     CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
-  #     CONNECT_PLUGIN_PATH: '/usr/share/java'
-  #   volumes:
-  #     - $PWD/scripts:/scripts
+  kafka-connect-cp:
+    image: confluentinc/cp-kafka-connect:5.0.1
+    depends_on:
+      - zookeeper
+      - kafka
+      - schema-registry
+    ports:
+      - 18083:18083
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
+      CONNECT_REST_PORT: 18083
+      CONNECT_GROUP_ID: compose-connect-group
+      CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
+      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-cp"
+      CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
+      CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_PLUGIN_PATH: '/usr/share/java'
+    volumes:
+      - $PWD/scripts:/scripts
 
   ksql-server:
     image: confluentinc/cp-ksql-server:5.0.1
@@ -91,28 +93,30 @@ services:
     entrypoint: /bin/sh
     tty: true
 
-  # # Runs the Kafka KSQL data generator for ratings
-  # datagen-ratings:
-  #   image: confluentinc/ksql-examples:5.0.1
-  #   depends_on:
-  #     - kafka
-  #     - schema-registry
-  #   command: "bash -c 'echo Waiting for Kafka to be ready... && \
-  #                      cub kafka-ready -b kafka:29092 1 300 && \
-  #                      echo Waiting for Confluent Schema Registry to be ready... && \
-  #                      cub sr-ready schema-registry 8081 300 && \
-  #                      echo Waiting a few seconds for topic creation to finish... && \
-  #                      sleep 20 && \
-  #                      ksql-datagen \
-  #                         quickstart=ratings \
-  #                         format=avro \
-  #                         topic=ratings \
-  #                         maxInterval=750 \
-  #                         bootstrap-server=kafka:29092 \
-  #                         schemaRegistryUrl=http://schema-registry:8081'"
+  # Runs the Kafka KSQL data generator for ratings
+  datagen-ratings:
+    image: confluentinc/ksql-examples:5.0.1
+    depends_on:
+      - kafka
+      - schema-registry
+    command: "bash -c 'echo Waiting for Kafka to be ready... && \
+                       cub kafka-ready -b kafka:29092 1 300 && \
+                       echo Waiting for Confluent Schema Registry to be ready... && \
+                       cub sr-ready schema-registry 8081 300 && \
+                       echo Waiting a few seconds for topic creation to finish... && \
+                       sleep 20 && \
+                       ksql-datagen \
+                          quickstart=ratings \
+                          format=avro \
+                          topic=ratings \
+                          maxInterval=750 \
+                          bootstrap-server=kafka:29092 \
+                          schemaRegistryUrl=http://schema-registry:8081'"
 
 # Other systems
   oracle:
+    # You need to build this image first, following the instructions at 
+    # https://github.com/oracle/docker-images/blob/master/OracleDatabase/SingleInstance/README.md
     image: oracle/database:12.2.0.1-ee
     environment:
       - ORACLE_PWD=Admin123
@@ -122,10 +126,10 @@ services:
       - $PWD/oradata:/opt/oracle/oradata
       - $PWD/oradata/recovery_area:/opt/oracle/oradata/recovery_area
       - $PWD/ora-setup-scripts:/opt/oracle/scripts/setup
-      - jar-share:/opt/oracle/product/12.2.0.1/dbhome_1/
+      - db-leach:/opt/oracle/product/12.2.0.1/dbhome_1/
 
   connect-debezium:
-    image: debezium/connect:0.8.3.Final
+    image: debezium/connect:0.9
     depends_on:
      - kafka
      - oracle
@@ -134,49 +138,67 @@ services:
      - 8083:8083
     environment:
      - BOOTSTRAP_SERVERS=kafka:29092
-     - LOG_LEVEL=INFO
      - GROUP_ID=1
      - CONFIG_STORAGE_TOPIC=my_connect_configs
      - OFFSET_STORAGE_TOPIC=my_connect_offsets
      - STATUS_STORAGE_TOPIC=my_connect_status
+     - LD_LIBRARY_PATH=/kafka/libs/instant_client
      - KEY_CONVERTER=io.confluent.connect.avro.AvroConverter
      - VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter
      - CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
      - CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
     volumes:
       - $PWD/scripts:/scripts
-      - jar-share:/jars-share/
+      - db-leach:/db-leach/
     command: 
       - bash 
       - -c 
       - |
-        /docker-entrypoint.sh start &
-        cp /jars-share/jdbc/lib/ojdbc8.jar /kafka/libs
-        cp /jars-share/rdbms/jlib/xstreams.jar /kafka/libs
-        sleep infinity
+        cp /db-leach/jdbc/lib/ojdbc8.jar /kafka/libs
+        cp /db-leach/rdbms/jlib/xstreams.jar /kafka/libs
+        mkdir /kafka/libs/instant_client
+        cp /db-leach/bin/adrci /kafka/libs/instant_client/
+        cp /db-leach/bin/genezi /kafka/libs/instant_client/
+        cp /db-leach/bin/uidrvci /kafka/libs/instant_client/
+        cp /db-leach/inventory/Scripts/ext/lib/libociei.so /kafka/libs/instant_client/
+        cp /db-leach/jdbc/lib/ojdbc8.jar /kafka/libs/instant_client/
+        cp /db-leach/lib/libclntsh.so.12.1 /kafka/libs/instant_client/
+        cp /db-leach/lib/libclntshcore.so.12.1 /kafka/libs/instant_client/
+        cp /db-leach/lib/libipc1.so /kafka/libs/instant_client/
+        cp /db-leach/lib/libmql1.so /kafka/libs/instant_client/
+        cp /db-leach/lib/libnnz12.so /kafka/libs/instant_client/
+        cp /db-leach/lib/libocci.so.12.1 /kafka/libs/instant_client/
+        cp /db-leach/lib/libocijdbc12.so /kafka/libs/instant_client/
+        cp /db-leach/lib/libons.so /kafka/libs/instant_client/
+        cp /db-leach/lib/liboramysql12.so /kafka/libs/instant_client/
+        cp /db-leach/rdbms/jlib/xstreams.jar /kafka/libs/instant_client/
+        cp /db-leach/lib/stubs/libaio.so /kafka/libs/instant_client/
+        cp /db-leach/lib/stubs/libaio.so.1 /kafka/libs/instant_client/
+        sleep infinity &
+        /docker-entrypoint.sh start
 
-  # elasticsearch:
-  #   image: docker.elastic.co/elasticsearch/elasticsearch:6.3.0
-  #   ports:
-  #     - 9200:9200
-  #   environment:
-  #     xpack.security.enabled: "false"
-  #     ES_JAVA_OPTS: "-Xms1g -Xmx1g"
-  #   volumes:
-  #    - $PWD/scripts:/scripts
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.3.0
+    ports:
+      - 9200:9200
+    environment:
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+    volumes:
+     - $PWD/scripts:/scripts
 
-  # kibana:
-  #   image: docker.elastic.co/kibana/kibana:6.3.0
-  #   depends_on:
-  #     - elasticsearch
-  #   ports:
-  #     - 5601:5601
-  #   environment:
-  #     xpack.security.enabled: "false"
-  #     discovery.type: "single-node"
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.3.0
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5601:5601
+    environment:
+      xpack.security.enabled: "false"
+      discovery.type: "single-node"
 
 volumes:
-    jar-share: {}
+    db-leach: {}
 
 
 

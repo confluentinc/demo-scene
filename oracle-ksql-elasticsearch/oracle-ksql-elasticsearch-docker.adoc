@@ -1,4 +1,4 @@
-= Streaming ETL demo - Enriching event stream data with CDC data from MySQL, stream into Elasticsearch
+= Streaming ETL demo - Enriching event stream data with CDC data from Oracle, stream into Elasticsearch
 Robin Moffatt <robin@confluent.io>
 v1.30, October 30, 2018
 
@@ -50,7 +50,7 @@ docker-compose exec oracle bash -c 'sqlplus Debezium/dbz@localhost:1521/ORCLPDB1
 
 == Pre-flight checklist
 
-* Load http://localhost:5601/app/kibana#/dashboard/mysql-ksql-kafka-es?_g=(refreshInterval:('$$hashKey':'object:229',display:'30%20seconds',pause:!f,section:1,value:30000),time:(from:now-15m,mode:quick,to:now))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),panels:!((gridData:(h:15,i:'1',w:24,x:0,y:10),id:'0c118530-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'1',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'2',w:48,x:0,y:35),id:'39803a20-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'2',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'4',w:8,x:0,y:0),id:'5ef922e0-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'4',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'5',w:40,x:8,y:0),id:'2f3d2290-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'5',type:search,version:'6.3.0'),(gridData:(h:15,i:'6',w:24,x:24,y:10),id:c6344a70-6ff0-11e8-8fa0-279444e59a8f,panelIndex:'6',type:visualization,version:'6.3.0'),(embeddableConfig:(),gridData:(h:10,i:'7',w:48,x:0,y:25),id:'11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'7',sort:!(EXTRACT_TS,desc),type:search,version:'6.3.0')),query:(language:lucene,query:''),timeRestore:!f,title:'Ratings%20Data',viewMode:view)[Kibana ratings dashboard]
+* Load http://localhost:5601/app/kibana#/dashboard/Oracle-ksql-kafka-es?_g=(refreshInterval:('$$hashKey':'object:229',display:'30%20seconds',pause:!f,section:1,value:30000),time:(from:now-15m,mode:quick,to:now))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),panels:!((gridData:(h:15,i:'1',w:24,x:0,y:10),id:'0c118530-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'1',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'2',w:48,x:0,y:35),id:'39803a20-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'2',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'4',w:8,x:0,y:0),id:'5ef922e0-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'4',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'5',w:40,x:8,y:0),id:'2f3d2290-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'5',type:search,version:'6.3.0'),(gridData:(h:15,i:'6',w:24,x:24,y:10),id:c6344a70-6ff0-11e8-8fa0-279444e59a8f,panelIndex:'6',type:visualization,version:'6.3.0'),(embeddableConfig:(),gridData:(h:10,i:'7',w:48,x:0,y:25),id:'11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'7',sort:!(EXTRACT_TS,desc),type:search,version:'6.3.0')),query:(language:lucene,query:''),timeRestore:!f,title:'Ratings%20Data',viewMode:view)[Kibana ratings dashboard]
 * Create iTerm window, using the `screencapture` profile
 * Load this instructions doc into Chrome
 * Close all other apps
@@ -69,74 +69,28 @@ image:images/ksql-debezium-es.png[Kafka Connect / KSQL / Elasticsearch]
 
 == Part 01 - Kafka Connect
 
-=== Kafka to Elasticsearch
 
-Show Kafka Connect config
-
-[source,json]
-----
-curl -X "POST" "http://kafka-connect-cp:18083/connectors/" \
-     -H "Content-Type: application/json" \
-     -d '{
-    "name": "es_sink_lisa18",
-    "config": {
-    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
-    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-    "value.converter.schemas.enable": false,
-    "topics": "lisa18",
-    "key.ignore": "true",
-    "schema.ignore": "true",
-    "type.name": "type.name=kafkaconnect",
-    "connection.url": "http://elasticsearch:9200"
-  }
-}'
-----
-
-Launch http://localhost:5601/app/kibana#/discover?_g=(refreshInterval:('$$hashKey':'object:315',display:'1%20seconds',pause:!f,section:1,value:1000),time:(from:now-15m,mode:quick,to:now))&_a=(columns:!(_source),index:lisa18,interval:auto,query:(language:lucene,query:''),sort:!(_score,desc))[Kibana dashboard]
-
-From kafkacat prompt
-
-[source,bash]
-----
-docker run --rm -it --network docker-compose_default confluentinc/cp-kafkacat \
-  kafkacat -b kafka:29092 -t lisa18 -P
-----
-
-send some data - after each observe that dashboard reflects new data straight away
-
-[source,bash]
-----
-{"hello":"world"}
-{"hello":"lisa18"}
-{"lisa18":"is great!"}
-----
-
-
-
-=== Show MySQL table + contents
+=== Show Oracle table + contents
 
 [source,sql]
 ----
-mysql> show tables;
-+----------------+
-| Tables_in_demo |
-+----------------+
-| CUSTOMERS      |
-+----------------+
-1 row in set (0.00 sec)
+COL FIRST_NAME FOR A15
+COL LAST_NAME FOR A15
+COL ID FOR 999
+COL CLUB_STATUS FOR A12
+COL EMAIL FOR A30
+SET LINESIZE 200
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS 
+FETCH FIRST 5 ROWS ONLY;
 
-mysql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS LIMIT 5;
-+----+-------------+------------+------------------------+-------------+
-| ID | FIRST_NAME  | LAST_NAME  | EMAIL                  | CLUB_STATUS |
-+----+-------------+------------+------------------------+-------------+
-|  1 | Rica        | Blaisdell  | rblaisdell0@rambler.ru | bronze      |
-|  2 | Ruthie      | Brockherst | rbrockherst1@ow.ly     | platinum    |
-|  3 | Mariejeanne | Cocci      | mcocci2@techcrunch.com | bronze      |
-|  4 | Hashim      | Rumke      | hrumke3@sohu.com       | platinum    |
-|  5 | Hansiain    | Coda       | hcoda4@senate.gov      | platinum    |
-+----+-------------+------------+------------------------+-------------+
-5 rows in set (0.00 sec)
+ ID FIRST_NAME      LAST_NAME       EMAIL                          CLUB_STATUS
+--- --------------- --------------- ------------------------------ ------------
+  1 Rica            Blaisdell       rblaisdell0@rambler.ru         bronze
+  2 Ruthie          Brockherst      rbrockherst1@ow.ly             platinum
+  3 Mariejeanne     Cocci           mcocci2@techcrunch.com         bronze
+  4 Hashim          Rumke           hrumke3@sohu.com               platinum
+  5 Hansiain        Coda            hcoda4@senate.gov              platinum
+
 ----
 
 === Check status of Debezium connectors
@@ -144,63 +98,67 @@ mysql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS LIMIT
 [source,bash]
 ----
 curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
-mysql-source-demo-CUSTOMERS      |  RUNNING  |  RUNNING
-mysql-source-demo-CUSTOMERS-raw  |  RUNNING  |  RUNNING
+ora-source-demo-customers  |  RUNNING  |  RUNNING
 ----
 
 === Show Kafka topic has been created & populated
 
 In KSQL: 
 
-    LIST TOPICS;
+[source,sql]
+----
+ksql> list topics;
 
-    Kafka Topic                | Registered | Partitions | Partition Replicas | Consumers | ConsumerGroups
-    --------------------------------------------------------------------------------------------------------
-    _confluent-metrics         | false      | 12         | 1                  | 0         | 0
-    _schemas                   | false      | 1          | 1                  | 0         | 0
-    asgard                     | false      | 1          | 1                  | 0         | 0
-    asgard-raw                 | false      | 1          | 1                  | 0         | 0
-    asgard.demo.CUSTOMERS      | false      | 1          | 1                  | 0         | 0
-    asgard.demo.CUSTOMERS-raw  | false      | 1          | 1                  | 0         | 0
-    connect-status             | false      | 5          | 1                  | 0         | 0
-    dbhistory.demo             | false      | 1          | 1                  | 0         | 0
-    dbhistory.demo-raw         | false      | 1          | 1                  | 0         | 0
-    docker-connect-configs     | false      | 1          | 1                  | 0         | 0
-    docker-connect-offsets     | false      | 25         | 1                  | 0         | 0
-    docker-connect-status      | false      | 5          | 1                  | 0         | 0
-    lisa18                     | false      | 1          | 1                  | 1         | 1
-    my_connect_configs         | false      | 1          | 1                  | 0         | 0
-    my_connect_offsets         | false      | 25         | 1                  | 0         | 0
-    ratings                    | false      | 1          | 1                  | 0         | 0
-    ratings-enriched           | false      | 1          | 1                  | 1         | 1
-    UNHAPPY_PLATINUM_CUSTOMERS | false      | 1          | 1                  | 2         | 2
-    --------------------------------------------------------------------------------------------------------
+Kafka Topic                   | Registered | Partitions | Partition Replicas | Consumers | ConsumerGroups
+-----------------------------------------------------------------------------------------------------------
+_confluent-metrics            | false      | 12         | 1                  | 0         | 0
+_schemas                      | false      | 1          | 1                  | 0         | 0
+asgard.DEBEZIUM.CUSTOMERS     | true       | 1          | 1                  | 1         | 1
+connect-status                | false      | 5          | 1                  | 0         | 0
+my_connect_configs            | false      | 1          | 1                  | 0         | 0
+my_connect_offsets            | false      | 25         | 1                  | 0         | 0
+schema-changes.inventory      | false      | 1          | 1                  | 0         | 0
+-----------------------------------------------------------------------------------------------------------
+----
+
 
 Show topic contents
 
-    ksql> PRINT 'asgard.demo.CUSTOMERS' FROM BEGINNING;
-    Format:AVRO
-    11/13/18 12:52:09 PM UTC, , {"id": 1, "first_name": "Rica", "last_name": "Blaisdell", "email": "rblaisdell0@rambler.ru", "gender": "Female", "club_status": "bronze", "comments": "Universal optimal hierarchy", "create_ts": "2018-11-13T12:46:03Z", "update_ts": "2018-11-13T12:46:03Z", "messagetopic": "asgard.demo.CUSTOMERS", "messagesource": "Debezium CDC from MySQL on asgard"}
-    11/13/18 12:52:09 PM UTC, , {"id": 2, "first_name": "Ruthie", "last_name": "Brockherst", "email": "rbrockherst1@ow.ly", "gender": "Female", "club_status": "platinum", "comments": "Reverse-engineered tangible interface", "create_ts": "2018-11-13T12:46:03Z", "update_ts": "2018-11-13T12:46:03Z", "messagetopic": "asgard.demo.CUSTOMERS", "messagesource": "Debezium CDC from MySQL on asgard"}
+[source,sql]
+----
+ksql> PRINT 'asgard.DEBEZIUM.CUSTOMERS' FROM BEGINNING;
+Format:AVRO
+11/30/18 10:44:27 AM UTC, , {"before": null, "after": {"ID": {"bytes": "\u0001"}, "FIRST_NAME": "Rica", "LAST_NAME": "Blaisdell", "EMAIL": "rblaisdell0@rambler.ru", "GENDER": "Female", "CLUB_STATUS": "bronze", "COMMENTS": "Universal optimal hierarchy", "CREATE_TS": 1543515952219218, "UPDATE_TS": 1543515952219218}, "source": {"version": "0.9.0.Alpha2", "connector": "oracle", "name": "asgard", "ts_ms": 1543574662454, "txId": null, "scn": 1755382, "snapshot": true}, "op": "r", "ts_ms": 1543574662472}
+[...]
+----
 
 
-==== Insert a row in MySQL, observe it in Kafka
+From the CLI: 
 
+[source,bash]
+----
+kafka-avro-console-consumer \
+    --bootstrap-server localhost:9092 \
+    --property schema.registry.url=http://localhost:8081 \
+    --topic asgard.DEBEZIUM.CUSTOMERS --from-beginning|jq '.'
+----
+
+==== Insert a row in Oracle, observe it in Kafka
 
 [source,sql]
 ----
-INSERT INTO CUSTOMERS (ID,FIRST_NAME,LAST_NAME) VALUES (42,'Rick','Astley');
+INSERT INTO CUSTOMERS (FIRST_NAME,LAST_NAME,CLUB_STATUS) VALUES ('Rick','Astley','Bronze');
+COMMIT;
 ----
 
-==== Update a row in MySQL, observe it in Kafka
+==== Update a row in Oracle, observe it in Kafka
 
 [source,sql]
 ----
-UPDATE CUSTOMERS SET CLUB_STATUS = 'Bronze' where ID=1;
-UPDATE CUSTOMERS SET CLUB_STATUS = 'platinum' where ID=1;
+UPDATE CUSTOMERS SET CLUB_STATUS = 'Platinum' where ID=42;
+COMMIT;
 ----
 
-Point out before/after records in `raw` stream
 ---
 
 Return to slides 
@@ -234,12 +192,12 @@ SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
 
 [source,sql]
 ----
-CREATE STREAM POOR_REVIEWS AS \
+CREATE STREAM POOR_RATINGS AS \
 SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
 
-SELECT * FROM POOR_REVIEWS LIMIT 5;
+SELECT * FROM POOR_RATINGS LIMIT 5;
 
-DESCRIBE EXTENDED POOR_REVIEWS;
+DESCRIBE EXTENDED POOR_RATINGS;
 ----
 
 ---
@@ -346,10 +304,10 @@ Check out the ratings for customer id 2 only:
 ksql> SELECT * FROM RATINGS_WITH_CUSTOMER_DATA WHERE ID=2;
 ----
 
-In mysql, make a change to ID 2
+In Oracle, make a change to ID 2
 [source,sql]
 ----
-mysql> UPDATE CUSTOMERS SET FIRST_NAME = 'Thomas', LAST_NAME ='Smith' WHERE ID=2;
+Oracle> UPDATE CUSTOMERS SET FIRST_NAME = 'Thomas', LAST_NAME ='Smith' WHERE ID=2;
 ----
 
 Observe in the continuous KSQL query that the customer name has now changed.
@@ -425,4 +383,24 @@ python python_kafka_notify.py
 ----
 
 You will need to install `slackclient` and `confluent_kafka` libraries.
+
+=== XStream notes
+
+Create outbound server in CDB, from there can specify data from CDB+PDB or just PDB. By default (`source_database`,`source_container_name` both NULL) will stream data from both. 
+ref: https://docs.oracle.com/database/121/XSTRM/xstrm_gen_cncpt.htm#GUID-60589C03-2095-42AA-8F2F-AFD83B110F31__GUID-F2B0932E-2D66-4652-A805-A570A10E53C4
+
+
+https://debezium.io/docs/connectors/oracle/
+
+https://github.com/debezium/oracle-vagrant-box
+https://github.com/debezium/debezium-examples/tree/master/tutorial#using-oracle
+
+https://gitter.im/debezium/user
+
+https://docs.oracle.com/database/121/ARPLS/d_xstrm_adm.htm
+https://docs.oracle.com/database/121/XSTRM/xstrm_xout_mon.htm
+https://docs.oracle.com/database/121/XSTRM/xstrm_xout_trouble.htm
+https://docs.oracle.com/database/121/XSTRM/xstrm_xout_config.htm
+
+https://groups.google.com/d/msg/debezium/Ujj9fj3aoGM/DihBfAR3AQAJ
 
