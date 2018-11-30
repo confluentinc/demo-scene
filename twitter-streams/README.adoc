@@ -1,0 +1,185 @@
+= Kafka Connect Twitter demo
+Viktor Gamov <viktor@confluent.io>, © 2017 Confluent, Inc.
+2017-11-16
+:revdate: 2017-11-16 22:58:01 -0600
+:linkattrs:
+:ast: &ast;
+:y: &#10003;
+:n: &#10008;
+:y: icon:check-sign[role="green"]
+:n: icon:check-minus[role="red"]
+:c: icon:file-text-alt[role="blue"]
+:toc: auto
+:toc-placement: auto
+:toc-position: right
+:toc-title: Table of content
+:toclevels: 3
+:idprefix:
+:idseparator: -
+:sectanchors:
+:icons: font
+:source-highlighter: highlight.js
+:highlightjs-theme: idea
+:experimental:
+
+A demo setup demonstrates processing of twitter streams. Can be used in booth / conferences on analyze real-time social media data.
+
+toc::[]
+
+.Acknowledgements
+====
+The project structure inspired Confluent Platform demo footnote:[https://github.com/confluentinc/cp-demo]
+Actual demo logic is inspired by Robin's blog footnote:[https://www.confluent.io/blog/using-ksql-to-analyse-query-and-transform-data-in-kafka]
+====
+
+'''
+
+== Prerequisites
+
+- `docker` (locally) or ECS-optimized instance (AWS). Tested on (`17.x` and `18.x`)
+- `docker-compose`. Tested on (`1.21.x`)
+
+== Installation
+
+* Get example from GitHub
+** If you will follow steps below you should checkout only directory that has source code relevant to this post.
++
+
+[source,bash]
+----
+mkdir ~/temp/demo-scene
+cd ~/temp/demo-scene
+git init .
+git remote add origin -f https://github.com/confluentinc/demo-scene/
+git config core.sparsecheckout true
+echo "twitter-streams/*" >> .git/info/sparse-checkout
+git pull --depth=2 origin master
+cd twitter-streams
+ls -lh
+----
+// http://scriptedonachip.com/git-sparse-checkout
+
+== Startup
+
+----
+docker-compose up -d
+----
+
+. Wait till Confluent Control Center is running fully. Verify when it's ready when the logs show the following event
++
+
+[source,bash]
+----
+$ docker-compose logs -f control-center | grep -e HTTP
+control-center_1       | [2017-09-06 16:37:33,133] INFO Started NetworkTrafficServerConnector@26a529dc{HTTP/1.1}{0.0.0.0:9021} (org.eclipse.jetty.server.NetworkTrafficServerConnector)
+----
+
+. Use Google Chrome to view the Confluent Control Center GUI at [http://localhost:9021](http://localhost:9021). Click on the top right button that shows the current date, and change `Last 4 hours` to `Last 30 minutes`.
+
+. Init twitter connector
+
+[source,bash]
+----
+./scripts/02-start-twitter-connector.sh
+----
+
+== Teardown
+
+. Stop the Docker demo, destroy all components and clear all Docker volumes.
+
+[source,bash]
+----
+#!/bin/bash
+
+docker-compose down
+docker volume ls -q --filter dangling=true | xargs docker volume rm
+----
+
+== Useful links
+
+* https://github.com/confluentinc/ksql/blob/4.0.x/docs/syntax-reference.md[KSQL Syntax Reference]
+
+== Appendix: Running demo on AWS
+
+=== Prerequisites
+
+* Generate ssh key for github access
++
+
+[source,sh]
+----
+ssh-keygen -t rsa -b 4096 -C "github@email"
+cat .ssh/id_rsa.pub
+----
+
+.optional install zsh and git
+[source,sh]
+----
+sudo yum install git
+sudo yum install zsh  # <1>
+sudo yum install jq   # <2>
+----
+<1> optional install zsh
+<2> tool to work with JSON
+
+* clone repo
+
+[source,bash]
+----
+mkdir ~/temp/demo-scene
+cd ~/temp/demo-scene
+git init .
+git remote add origin -f https://github.com/confluentinc/demo-scene/
+git config core.sparsecheckout true
+echo "twitter-streams/*" >> .git/info/sparse-checkout
+git pull --depth=2 origin master
+cd twitter-streams
+ls -lh
+----
+// http://scriptedonachip.com/git-sparse-checkout
+
+* intall JDK 8
+
+[source,sh]
+----
+sudo yum install java-1.8.0-openjdk-devel
+sudo /usr/sbin/alternatives --config java
+sudo /usr/sbin/alternatives --config javac
+sudo yum remove java-1.7.0-openjdk # <1> optional, remove java 7
+----
+
+NOTE: How find java in debian - `JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")`
+
+
+.Optional, install `micro` because it's awesome
+[source,sh]
+----
+cd ~
+mkdir -p .local/bin
+cd .local/bin
+curl https://getmic.ro | bash
+----
+
+.Update twitter connector config
+[source,sh]
+----
+cd ~
+cd twitter-streams/
+micro connect_twitter.json
+----
+
+* install docker and docker-compose
++
+
+[source,sh]
+----
+sudo yum update
+sudo yum install -y docker
+sudo usermod -aG docker ec2-user
+sudo service docker start
+sudo su
+curl -L "https://github.com/docker/compose/releases/download/1.21.2/docker-compose-$(uname -s)-$(uname -m)" > /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+exit
+docker-compose --version
+----
