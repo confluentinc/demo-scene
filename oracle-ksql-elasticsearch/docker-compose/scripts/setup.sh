@@ -6,6 +6,9 @@ docker-compose up -d
 echo -e "\n--\n\nWaiting for Oracle to be available … ⏳"
 grep -q "DATABASE IS READY TO USE!" <(docker-compose logs -f oracle)
 
+echo -e "Installing rlwrap on Oracle container"
+docker exec --interactive --tty --user root --workdir / $(docker ps --filter "name=oracle" --quiet) bash -c 'rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm;yum install -y rlwrap'
+
 export CONNECT_HOST=connect-debezium
 echo -e "\n--\n\nWaiting for Kafka Connect to start on $CONNECT_HOST … ⏳"
 grep -q "Kafka Connect started" <(docker-compose logs -f $CONNECT_HOST)
