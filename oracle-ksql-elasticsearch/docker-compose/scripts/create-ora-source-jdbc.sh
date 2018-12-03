@@ -1,6 +1,6 @@
 #!/bin/sh
 curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://kafka-connect-cp:8083/connectors/ \
+    -H  "Content-Type:application/json" http://kafka-connect-cp:18083/connectors/ \
     -d '{
       "name": "ora-source-jdbc",
       "config": {
