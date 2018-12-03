@@ -126,6 +126,7 @@ services:
       - $PWD/oradata:/opt/oracle/oradata
       - $PWD/oradata/recovery_area:/opt/oracle/oradata/recovery_area
       - $PWD/ora-setup-scripts:/opt/oracle/scripts/setup
+      - $PWD/ora-startup-scripts:/opt/oracle/scripts/startup
       - db-leach:/opt/oracle/product/12.2.0.1/dbhome_1/
 
   connect-debezium:
