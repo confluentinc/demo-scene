@@ -3,7 +3,7 @@
 curl -i -X POST -H "Accept:application/json" \
     -H  "Content-Type:application/json" http://connect-debezium:8083/connectors/ \
     -d '{
-      "name": "ora-source-demo-customers",
+      "name": "ora-source-debezium-xstream",
       "config": {
             "connector.class": "io.debezium.connector.oracle.OracleConnector",
             "database.server.name" : "asgard",
@@ -20,7 +20,13 @@ curl -i -X POST -H "Accept:application/json" \
             "key.converter": "io.confluent.connect.avro.AvroConverter",
             "key.converter.schema.registry.url": "http://schema-registry:8081",
             "value.converter": "io.confluent.connect.avro.AvroConverter",
-            "value.converter.schema.registry.url": "http://schema-registry:8081"
+            "value.converter.schema.registry.url": "http://schema-registry:8081",
+            "transforms": "InsertTopic,InsertSourceDetails",
+            "transforms.InsertTopic.type":"org.apache.kafka.connect.transforms.InsertField$Value",
+            "transforms.InsertTopic.topic.field":"messagetopic",
+            "transforms.InsertSourceDetails.type":"org.apache.kafka.connect.transforms.InsertField$Value",
+            "transforms.InsertSourceDetails.static.field":"messagesource",
+            "transforms.InsertSourceDetails.static.value":"Debezium CDC from Oracle on asgard"
        }
     }'
 

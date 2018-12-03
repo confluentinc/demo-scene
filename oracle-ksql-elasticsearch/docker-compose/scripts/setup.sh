@@ -1,35 +1,41 @@
 #!/bin/bash
 
-echo -e "Firing up Docker Compose"
+echo -e $(date) "Firing up Docker Compose"
 docker-compose up -d
 
-echo -e "\n--\n\nWaiting for Oracle to be available … ⏳"
+# ---- Wait for Oracle DB to be up (takes several minutes to instantiate) ---
+echo -e "\n--\n\n$(date) Waiting for Oracle to be available … ⏳"
 grep -q "DATABASE IS READY TO USE!" <(docker-compose logs -f oracle)
+echo -e "$(date) Installing rlwrap on Oracle container"
+docker exec --interactive --tty --user root --workdir / $(docker ps --filter "name=oracle" --quiet) bash -c 'rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm'
+docker exec --interactive --tty --user root --workdir / $(docker ps --filter "name=oracle" --quiet) bash -c 'yum install -y rlwrap'
 
-echo -e "Installing rlwrap on Oracle container"
-docker exec --interactive --tty --user root --workdir / $(docker ps --filter "name=oracle" --quiet) bash -c 'rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm;yum install -y rlwrap'
-
+# ---- Set up Debezium source connector ---
 export CONNECT_HOST=connect-debezium
-echo -e "\n--\n\nWaiting for Kafka Connect to start on $CONNECT_HOST … ⏳"
+echo -e "\n--\n\n$(date) Waiting for Kafka Connect to start on $CONNECT_HOST … ⏳"
 grep -q "Kafka Connect started" <(docker-compose logs -f $CONNECT_HOST)
-echo -e "\n--\n+> Creating Kafka Connect Oracle Debezium source"
-docker-compose exec connect-debezium bash -c '/scripts/create-ora-source.sh'
+echo -e "\n--\n$(date) +> Creating Kafka Connect Oracle source (Debezium/XStream)"
+docker-compose exec connect-debezium bash -c '/scripts/create-ora-source-debezium-xstream.sh'
 
-echo -e "\n--\n\nWaiting for elasticsearch to start "
+# ---- Set up Elasticsearch ---
+echo -e "\n--\n\n$(date) Waiting for elasticsearch to start "
 grep -q "started" <(docker-compose logs -f elasticsearch)
-echo -e "\n--\n+> Creating Elasticsearch dynamic mapping"
+echo -e "\n--\n$(date) +> Creating Elasticsearch dynamic mapping"
 docker-compose exec elasticsearch bash -c '/scripts/create-dynamic-mapping.sh'
 
+# ---- Set up JDBC source connector and Elasticsearch sink ---
 export CONNECT_HOST=kafka-connect-cp
-echo -e "\n--\n\nWaiting for Kafka Connect to start on $CONNECT_HOST … ⏳"
+echo -e "\n--\n\n$(date) Waiting for Kafka Connect to start on $CONNECT_HOST … ⏳"
 grep -q "Kafka Connect started" <(docker-compose logs -f $CONNECT_HOST)
 
-echo -e "\n--\n+> Creating Kafka Connect Elasticsearch sink"
-
+echo -e "\n--\n$(date) +> Creating Kafka Connect Elasticsearch sink"
 docker-compose exec kafka-connect-cp bash -c '/scripts/create-es-sink.sh'
 
-echo -e "\n--\n+> Setting up Elasticsearch dummy data"
+echo -e "\n--\n$(date) +> Creating Kafka Connect Oracle source (JDBC)"
+docker-compose exec kafka-connect-cp bash -c '/scripts/create-ora-source-jdbc.sh'
 
+# ---- Set up dummy data in Elasticsearch ---
+echo -e "\n--\n$(date) +> Setting up Elasticsearch dummy data"
 curl -XPOST "http://localhost:9200/kafka-ratings-enriched-2018-08/type.name=kafkaconnect" -H 'Content-Type: application/json' -d'{
           "RATING_ID": 15486,
           "MESSAGE": "thank you for the most friendly, helpful experience today at your new lounge",
@@ -53,19 +59,20 @@ curl -XPOST "http://localhost:9200/lisa18/type.name=kafkaconnect" -H 'Content-Ty
           "foo": "bar"
         }'
 
-echo -e "\n--\n+> Opt out of Kibana telemetry"
+# ---- Set up Kibana objects ---
+echo -e "\n--\n$(date) +> Opt out of Kibana telemetry"
 curl 'http://localhost:5601/api/kibana/settings' -H 'kbn-version: 6.3.0' -H 'content-type: application/json' -H 'accept: application/json' --data-binary '{"changes":{"telemetry:optIn":false}}' --compressed
 
-echo -e "\n--\n+> Register Kibana indices"
+echo -e "\n--\n$(date) +> Register Kibana indices"
 #curl 'http://localhost:5601/api/saved_objects/index-pattern/ratings-enriched' -X DELETE -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' 
 curl -s 'http://localhost:5601/api/saved_objects/index-pattern/ratings-enriched' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"kafka-ratings-enriched-*","timeFieldName":"EXTRACT_TS"}}' --compressed 
 curl -s 'http://localhost:5601/api/saved_objects/index-pattern/unhappy_platinum_customers' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"unhappy_platinum_customers","timeFieldName":"EXTRACT_TS"}}' --compressed 
 curl -s 'http://localhost:5601/api/saved_objects/index-pattern/lisa18' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"lisa18"}}' --compressed 
 
-echo -e "\n--\n+> Set default Kibana index"
+echo -e "\n--\n$(date) +> Set default Kibana index"
 curl -s 'http://localhost:5601/api/kibana/settings' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"changes":{"defaultIndex":"ratings-enriched"}}' --compressed
 
-echo -e "\n--\n+> Import Kibana objects"
+echo -e "\n--\n$(date) +> Import Kibana objects"
 
 curl -s 'http://localhost:5601/api/saved_objects/search/2f3d2290-6ff0-11e8-8fa0-279444e59a8f?overwrite=true' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"Unhappy Platinum Customers","description":"","hits":0,"columns":["EMAIL","MESSAGE","STARS"],"sort":["EXTRACT_TS","desc"],"version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"unhappy_platinum_customers\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"}}}' --compressed 
 curl -s 'http://localhost:5601/api/saved_objects/search/11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97?overwrite=true' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"Ratings detail","description":"","hits":0,"columns":["FULL_NAME","EMAIL","CLUB_STATUS","STARS","MESSAGE","CHANNEL"],"sort":["_score","desc"],"version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"ratings-enriched\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"}}}' --compressed 
