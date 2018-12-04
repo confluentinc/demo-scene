@@ -42,6 +42,16 @@ DBZXOUT - Propagation Send/Rcv        399      6031 3386              CX01
 
 Note the `TNS` connection, which is the consuming application (here, Debezium).
 
+Watch out for the `CP`/`CX` capture processes not being present. The impact of this is that Debezium won't receive any changes! Check for corresponding error in Oracle logfile (e.g. `/opt/oracle/diag/rdbms/orclcdb/ORCLCDB/trace/alert_ORCLCDB.log`), such as: 
+
+[source,bash]
+----
+XStream CAPTURE CP01 for CAP$_DBZXOUT_1 with pid=75, OS id=721 stopped
+2018-12-03T11:19:09.173514+00:00
+Errors in file /opt/oracle/diag/rdbms/orclcdb/ORCLCDB/trace/ORCLCDB_cp01_721.trc:
+ORA-01031: insufficient privileges
+----
+
 '''
 
 [source,sql]

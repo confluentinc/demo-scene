@@ -73,7 +73,14 @@ services:
       CONNECT_PLUGIN_PATH: '/usr/share/java'
     volumes:
       - $PWD/scripts:/scripts
-
+      - db-leach:/db-leach/
+    command: 
+      - bash 
+      - -c 
+      - |
+        cp /db-leach/jdbc/lib/ojdbc8.jar /usr/share/java/kafka-connect-jdbc
+        sleep infinity &
+        /etc/confluent/docker/run
   ksql-server:
     image: confluentinc/cp-ksql-server:5.0.1
     depends_on:
@@ -177,6 +184,9 @@ services:
         cp /db-leach/lib/stubs/libaio.so.1 /kafka/libs/instant_client/
         sleep infinity &
         /docker-entrypoint.sh start
+
+  # swingbench:
+  #   image: domgiles/swingbench:latest
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.3.0

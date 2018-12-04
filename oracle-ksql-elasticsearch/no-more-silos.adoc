@@ -1,6 +1,6 @@
 = Streaming ETL demo - Enriching event stream data with CDC data from Oracle, stream into Elasticsearch
 Robin Moffatt <robin@confluent.io>
-v1.35, December 4, 2018
+v1.00, December 4, 2018
 
 image:images/ksql-debezium-es.png[Kafka Connect / KSQL / Elasticsearch]
 
@@ -50,7 +50,7 @@ _(the `sleep` is necessary to avoid `rlwrap: error: My terminal reports width=0 
 
 == Pre-flight checklist
 
-* Load http://localhost:5601/app/kibana#/dashboard/mysql-ksql-kafka-es?_g=(refreshInterval:('$$hashKey':'object:229',display:'30%20seconds',pause:!f,section:1,value:30000),time:(from:now-15m,mode:quick,to:now))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),panels:!((gridData:(h:15,i:'1',w:24,x:0,y:10),id:'0c118530-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'1',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'2',w:48,x:0,y:35),id:'39803a20-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'2',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'4',w:8,x:0,y:0),id:'5ef922e0-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'4',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'5',w:40,x:8,y:0),id:'2f3d2290-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'5',type:search,version:'6.3.0'),(gridData:(h:15,i:'6',w:24,x:24,y:10),id:c6344a70-6ff0-11e8-8fa0-279444e59a8f,panelIndex:'6',type:visualization,version:'6.3.0'),(embeddableConfig:(),gridData:(h:10,i:'7',w:48,x:0,y:25),id:'11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'7',sort:!(EXTRACT_TS,desc),type:search,version:'6.3.0')),query:(language:lucene,query:''),timeRestore:!f,title:'Ratings%20Data',viewMode:view)[Kibana ratings dashboard]
+* Load http://localhost:5601/app/kibana#/dashboard/Oracle-ksql-kafka-es?_g=(refreshInterval:('$$hashKey':'object:229',display:'30%20seconds',pause:!f,section:1,value:30000),time:(from:now-15m,mode:quick,to:now))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),panels:!((gridData:(h:15,i:'1',w:24,x:0,y:10),id:'0c118530-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'1',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'2',w:48,x:0,y:35),id:'39803a20-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'2',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'4',w:8,x:0,y:0),id:'5ef922e0-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'4',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'5',w:40,x:8,y:0),id:'2f3d2290-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'5',type:search,version:'6.3.0'),(gridData:(h:15,i:'6',w:24,x:24,y:10),id:c6344a70-6ff0-11e8-8fa0-279444e59a8f,panelIndex:'6',type:visualization,version:'6.3.0'),(embeddableConfig:(),gridData:(h:10,i:'7',w:48,x:0,y:25),id:'11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'7',sort:!(EXTRACT_TS,desc),type:search,version:'6.3.0')),query:(language:lucene,query:''),timeRestore:!f,title:'Ratings%20Data',viewMode:view)[Kibana ratings dashboard]
 * Create iTerm window, using the `screencapture` profile
 * Load this instructions doc into Chrome
 * Close all other apps
@@ -80,25 +80,25 @@ COL ID FOR 999
 COL CLUB_STATUS FOR A12
 COL EMAIL FOR A30
 SET LINESIZE 200
-SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS;
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS, UPDATE_TS FROM CUSTOMERS; 
 
- ID FIRST_NAME      LAST_NAME       EMAIL                          CLUB_STATUS  UPDATE_TS
----- --------------- --------------- ------------------------------ ------------ ---------------------------------------------------------------------------
-   1 Rica            Blaisdell       rblaisdell0@rambler.ru         bronze       04-DEC-18 10.56.37.000000 AM
-   2 Ruthie          Brockherst      rbrockherst1@ow.ly             platinum     04-DEC-18 10.56.37.000000 AM
-   3 Mariejeanne     Cocci           mcocci2@techcrunch.com         bronze       04-DEC-18 10.56.37.000000 AM
-   4 Hashim          Rumke           hrumke3@sohu.com               platinum     04-DEC-18 10.56.37.000000 AM
-   5 Hansiain        Coda            hcoda4@senate.gov              platinum     04-DEC-18 10.56.37.000000 AM
+  ID FIRST_NAME      LAST_NAME       EMAIL                          CLUB_STATUS  UPDATE_TS
+---- --------------- --------------- ------------------------------ ------------ --------------------
+   1 Rica            Blaisdell       rblaisdell0@rambler.ru         Platinum     03-DEC-18 03.44.20.0
+   2 Ruthie          Brockherst      rbrockherst1@ow.ly             platinum     03-DEC-18 03.14.08.0
+   3 Mariejeanne     Cocci           mcocci2@techcrunch.com         bronze       03-DEC-18 03.14.08.0
+   4 Hashim          Rumke           hrumke3@sohu.com               platinum     03-DEC-18 03.14.08.0
+   5 Hansiain        Coda            hcoda4@senate.gov              platinum     03-DEC-18 03.14.08.0
+
+
 ----
 
 === Check status of Debezium connectors
 
 [source,bash]
 ----
-curl -s "http://localhost:18083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:18083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
-es_sink_ratings-with-customer-data-tsrouter  |  RUNNING  |  RUNNING
-es_sink_unhappy_platinum_customers           |  RUNNING  |  RUNNING
-ora-source-jdbc                              |  RUNNING  |  RUNNING
+curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+ora-source-demo-customers  |  RUNNING  |  RUNNING
 ----
 
 === Show Kafka topic has been created & populated
@@ -113,7 +113,7 @@ Kafka Topic                   | Registered | Partitions | Partition Replicas | C
 -----------------------------------------------------------------------------------------------------------
 _confluent-metrics            | false      | 12         | 1                  | 0         | 0
 _schemas                      | false      | 1          | 1                  | 0         | 0
-ora-CUSTOMERS-jdbc     | true       | 1          | 1                  | 1         | 1
+asgard.DEBEZIUM.CUSTOMERS     | true       | 1          | 1                  | 1         | 1
 connect-status                | false      | 5          | 1                  | 0         | 0
 my_connect_configs            | false      | 1          | 1                  | 0         | 0
 my_connect_offsets            | false      | 25         | 1                  | 0         | 0
@@ -122,14 +122,38 @@ schema-changes.inventory      | false      | 1          | 1                  | 0
 ----
 
 
+From KSQL: 
+
+[source,sql]
+----
+SET 'auto.offset.reset' = 'earliest';
+CREATE STREAM CUSTOMERS_STREAM_SRC WITH (KAFKA_TOPIC='asgard.DEBEZIUM.CUSTOMERS', VALUE_FORMAT='AVRO');
+ksql> SELECT * FROM CUSTOMERS_STREAM_SRC WHERE AFTER->ID=1;
+1543835944888 |  | null | {ID=1, FIRST_NAME=Rica, LAST_NAME=Blaisdell, EMAIL=rblaisdell0@rambler.ru, GENDER=Female, CLUB_STATUS=bronze, COMMENTS=Universal optimal hierarchy, CREATE_TS=1543835767587184, UPDATE_TS=1543835767587184} | {VERSION=0.9.0.Alpha2, CONNECTOR=oracle, NAME=asgard, TS_MS=1543835943966, TXID=null, SCN=1680207, SNAPSHOT=true} | r | 1543835943997 | asgard.DEBEZIUM.CUSTOMERS | Debezium CDC from Oracle on asgard
+----
+
+
 Show topic contents
 
 [source,sql]
 ----
-ksql> PRINT 'ora-CUSTOMERS-jdbc' FROM BEGINNING;
+ksql> PRINT 'asgard.DEBEZIUM.CUSTOMERS' FROM BEGINNING;
 Format:AVRO
 11/30/18 10:44:27 AM UTC, , {"before": null, "after": {"ID": {"bytes": "\u0001"}, "FIRST_NAME": "Rica", "LAST_NAME": "Blaisdell", "EMAIL": "rblaisdell0@rambler.ru", "GENDER": "Female", "CLUB_STATUS": "bronze", "COMMENTS": "Universal optimal hierarchy", "CREATE_TS": 1543515952219218, "UPDATE_TS": 1543515952219218}, "source": {"version": "0.9.0.Alpha2", "connector": "oracle", "name": "asgard", "ts_ms": 1543574662454, "txId": null, "scn": 1755382, "snapshot": true}, "op": "r", "ts_ms": 1543574662472}
 [...]
+----
+
+
+
+From the CLI: 
+
+[source,bash]
+----
+docker-compose exec kafka-connect-cp \
+                    kafka-avro-console-consumer \
+                    --bootstrap-server kafka:29092 \
+                    --property schema.registry.url=http://schema-registry:8081 \
+                    --topic asgard.DEBEZIUM.CUSTOMERS --from-beginning
 ----
 
 ==== Insert a row in Oracle, observe it in Kafka
@@ -138,7 +162,7 @@ Format:AVRO
 ----
 SET AUTOCOMMIT ON;
 
-INSERT INTO CUSTOMERS (FIRST_NAME,LAST_NAME,EMAIL,CLUB_STATUS) VALUES ('Rick','Astley','nevergonna@giveyou.up','Bronze');
+INSERT INTO CUSTOMERS (FIRST_NAME,LAST_NAME,CLUB_STATUS) VALUES ('Rick','Astley','Bronze');
 ----
 
 ==== Update a row in Oracle, observe it in Kafka
@@ -155,6 +179,13 @@ Return to slides
 ---
 
 == Part 02 - KSQL for filtering streams
+
+=== Inspect topics
+
+[source,sql]
+----
+SHOW TOPICS;
+----
 
 === Inspect ratings & define stream
 
@@ -194,25 +225,27 @@ Return to slides
 [source,sql]
 ----
 -- Inspect raw topic data if you want
--- PRINT 'ora-CUSTOMERS-jdbc' FROM BEGINNING;
+-- PRINT 'asgard.demo.CUSTOMERS' FROM BEGINNING;
 
 SET 'auto.offset.reset' = 'earliest';
-CREATE STREAM CUSTOMERS_STREAM_SRC WITH (KAFKA_TOPIC='ora-CUSTOMERS-jdbc', VALUE_FORMAT='AVRO');
+CREATE STREAM CUSTOMERS_STREAM_SRC WITH (KAFKA_TOPIC='asgard.DEBEZIUM.CUSTOMERS', VALUE_FORMAT='AVRO');
 
-CREATE STREAM CUSTOMERS_STREAM WITH (PARTITIONS=1) AS SELECT * FROM CUSTOMERS_STREAM_SRC PARTITION BY ID;
-
-SELECT ID, FIRST_NAME, LAST_NAME, CLUB_STATUS FROM CUSTOMERS_STREAM WHERE ID=42;
+CREATE STREAM CUSTOMERS_STREAM1 WITH (PARTITIONS=1) AS SELECT AFTER->ID AS ID ,AFTER->FIRST_NAME AS FIRST_NAME ,AFTER->LAST_NAME AS LAST_NAME ,AFTER->EMAIL AS EMAIL ,AFTER->GENDER AS GENDER ,AFTER->CLUB_STATUS AS CLUB_STATUS ,AFTER->COMMENTS AS COMMENTS FROM CUSTOMERS_STREAM_SRC;
+CREATE STREAM CUSTOMERS_STREAM WITH (PARTITIONS=1) AS SELECT * FROM CUSTOMERS_STREAM1 PARTITION BY ID;
+SELECT ID, FIRST_NAME, LAST_NAME, CLUB_STATUS FROM CUSTOMERS_STREAM WHERE ID=1;
 ----
-
-
 
 === Re-key the customer data
-Wait for a moment here; if you run the CTAS _immediately_ after the CSAS it may fail with error `Could not fetch the AVRO schema from schema registry. Subject not found.; error code: 40401`. You may also get this error if you have not set 'auto.offset.reset'='earliest' and there is no data flowing into the source CUSTOMERS topic, since no messages will have triggered the target stream to be created. See https://github.com/confluentinc/ksql/issues/713.
-
 [source,sql]
 ----
+-- Wait for a moment here; if you run the CTAS _immediately_ after the CSAS it may fail
+-- with error `Could not fetch the AVRO schema from schema registry. Subject not found.; error code: 40401`
+-- You may also get this error if you have not set 'auto.offset.reset'='earliest' and there is no 
+-- data flowing into the source CUSTOMERS topic, since no messages will have triggered the target stream 
+-- to be created.
+-- See https://github.com/confluentinc/ksql/issues/713
 CREATE TABLE CUSTOMERS WITH (KAFKA_TOPIC='CUSTOMERS_STREAM', VALUE_FORMAT ='AVRO', KEY='ID');
-SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS WHERE ID=42;
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS WHERE ID=1;
 ----
 
 ==== [Optional] Demonstrate Stream / Table difference
@@ -309,8 +342,6 @@ WHERE  STARS < 3 \
 == View in Elasticsearch and Kibana
 
 Tested on Elasticsearch 6.3.0
-
-http://localhost:5601/app/kibana#/dashboard/mysql-ksql-kafka-es?_g=(refreshInterval:('$$hashKey':'object:229',display:'30%20seconds',pause:!f,section:1,value:30000),time:(from:now-15m,mode:quick,to:now))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),panels:!((gridData:(h:15,i:'1',w:24,x:0,y:10),id:'0c118530-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'1',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'2',w:48,x:0,y:35),id:'39803a20-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'2',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'4',w:8,x:0,y:0),id:'5ef922e0-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'4',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'5',w:40,x:8,y:0),id:'2f3d2290-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'5',type:search,version:'6.3.0'),(gridData:(h:15,i:'6',w:24,x:24,y:10),id:c6344a70-6ff0-11e8-8fa0-279444e59a8f,panelIndex:'6',type:visualization,version:'6.3.0'),(embeddableConfig:(),gridData:(h:10,i:'7',w:48,x:0,y:25),id:'11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'7',sort:!(EXTRACT_TS,desc),type:search,version:'6.3.0')),query:(language:lucene,query:''),timeRestore:!f,title:'Ratings%20Data',viewMode:view)[Kibana ratings dashboard]
 
 image:images/es01.png[Kibana]
 

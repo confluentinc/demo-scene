@@ -36,7 +36,8 @@ sqlplus sys/Admin123@//localhost:1521/ORCLCDB as sysdba <<- EOF
 	  QUOTA UNLIMITED ON xstream_adm_tbs
 	  CONTAINER=ALL;
 
-	GRANT CREATE SESSION, SET CONTAINER TO c##xstrmadmin CONTAINER=ALL;
+	GRANT DBA TO c##xstrmadmin CONTAINER=ALL;
+	-- GRANT CREATE SESSION, SET CONTAINER TO c##xstrmadmin CONTAINER=ALL;
 
 	BEGIN
 	   DBMS_XSTREAM_AUTH.GRANT_ADMIN_PRIVILEGE(
@@ -58,6 +59,7 @@ sqlplus sys/Admin123@//localhost:1521/ORCLPDB1 as sysdba <<- EOF
 	GRANT CREATE SESSION TO debezium;
 	GRANT CREATE TABLE TO debezium;
 	GRANT CREATE SEQUENCE TO debezium;
+	GRANT CREATE TRIGGER TO debezium;
 	ALTER USER debezium QUOTA 100M ON users;
 
 	exit;
@@ -88,32 +90,44 @@ sqlplus sys/Admin123@//localhost:1521/ORCLCDB as sysdba <<- EOF
 EOF
 
 # Create XStream Outbound server
-sqlplus c##xstrmadmin/xsa@//localhost:1521/ORCLCDB <<- EOF
 
-	DECLARE
-	  tables  DBMS_UTILITY.UNCL_ARRAY;
-	  schemas DBMS_UTILITY.UNCL_ARRAY;
+sqlplus c##xstrmadmin/xsa@//localhost:1521/ORCLCDB <<- EOF
 	BEGIN
-	    tables(1)  := NULL;
-	    schemas(1) := 'debezium';
 	  DBMS_XSTREAM_ADM.CREATE_OUTBOUND(
-	    server_name     =>  'dbzxout',
-	    table_names     =>  tables,
-	    schema_names    =>  schemas);
+	    server_name     =>  'dbzxout_new',
+	    schema_names    =>  'debezium',
+			connect_user => 'c##xstrm');
 	END;
 	/
-
 	exit;
 EOF
 
-sqlplus sys/Admin123@//localhost:1521/ORCLCDB as sysdba <<- EOF
-  BEGIN
-    DBMS_XSTREAM_ADM.ALTER_OUTBOUND(
-      server_name  => 'dbzxout',
-      connect_user => 'c##xstrm');
-  END;
-  /
+# sqlplus c##xstrmadmin/xsa@//localhost:1521/ORCLCDB <<- EOF
 
-  exit;
-EOF
+# 	DECLARE
+# 	  tables  DBMS_UTILITY.UNCL_ARRAY;
+# 	  schemas DBMS_UTILITY.UNCL_ARRAY;
+# 	BEGIN
+# 	    tables(1)  := NULL;
+# 	    schemas(1) := 'debezium';
+# 	  DBMS_XSTREAM_ADM.CREATE_OUTBOUND(
+# 	    server_name     =>  'dbzxout',
+# 	    table_names     =>  tables,
+# 	    schema_names    =>  schemas);
+# 	END;
+# 	/
+
+# 	exit;
+# EOF
+
+# sqlplus sys/Admin123@//localhost:1521/ORCLCDB as sysdba <<- EOF
+#   BEGIN
+#     DBMS_XSTREAM_ADM.ALTER_OUTBOUND(
+#       server_name  => 'dbzxout',
+#       connect_user => 'c##xstrm');
+#   END;
+#   /
+
+#   exit;
+# EOF
 

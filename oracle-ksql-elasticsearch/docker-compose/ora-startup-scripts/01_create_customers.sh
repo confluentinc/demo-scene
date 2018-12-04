@@ -15,16 +15,26 @@ sqlplus Debezium/dbz@//localhost:1521/ORCLPDB1  <<- EOF
           club_status VARCHAR(8),
           comments VARCHAR(90),
           create_ts timestamp DEFAULT CURRENT_TIMESTAMP ,
-          update_ts timestamp DEFAULT CURRENT_TIMESTAMP 
-  --        update_ts timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          update_ts timestamp 
   );
 
-  ALTER TABLE debezium.customers ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
-  GRANT SELECT ON debezium.customers to c##xstrm;
+  CREATE OR REPLACE TRIGGER TRG_CUSTOMERS_UPD 
+  BEFORE INSERT OR UPDATE ON DEBEZIUM.CUSTOMERS 
+  REFERENCING NEW AS NEW_ROW
+    FOR EACH ROW
+  BEGIN
+    SELECT SYSDATE
+          INTO :NEW_ROW.UPDATE_TS
+          FROM DUAL;
+  END;
+  /
+  
 EOF
 
 sqlplus sys/Admin123@//localhost:1521/ORCLPDB1 as sysdba <<- EOF
 
+  ALTER TABLE debezium.customers ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+  GRANT SELECT ON debezium.customers to c##xstrm;
 
   -- From https://xanpires.wordpress.com/2013/06/26/how-to-check-the-supplemental-log-information-in-oracle/
   COLUMN LOG_GROUP_NAME HEADING 'Log Group' FORMAT A20
