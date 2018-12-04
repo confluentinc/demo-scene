@@ -7,8 +7,8 @@ docker-compose up -d
 echo -e "\n--\n\n$(date) Waiting for Oracle to be available … ⏳"
 grep -q "DATABASE IS READY TO USE!" <(docker-compose logs -f oracle)
 echo -e "$(date) Installing rlwrap on Oracle container"
-docker exec --interactive --tty --user root --workdir / $(docker ps --filter "name=oracle" --quiet) bash -c 'rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm'
-docker exec --interactive --tty --user root --workdir / $(docker ps --filter "name=oracle" --quiet) bash -c 'yum install -y rlwrap'
+#docker exec --interactive --tty --user root --workdir / $(docker ps --filter "name=oracle" --quiet) bash -c 'rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm'
+#docker exec --interactive --tty --user root --workdir / $(docker ps --filter "name=oracle" --quiet) bash -c 'yum install -y rlwrap'
 
 # ---- Set up Debezium source connector ---
 export CONNECT_HOST=connect-debezium
