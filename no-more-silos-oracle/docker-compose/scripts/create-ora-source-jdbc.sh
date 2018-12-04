@@ -1,35 +1,35 @@
 #!/bin/sh
-
+# https://docs.confluent.io/current/connect/kafka-connect-jdbc/source-connector/source_config_options.html
 curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://connect-debezium:8083/connectors/ \
+    -H  "Content-Type:application/json" http://kafka-connect-cp:18083/connectors/ \
     -d '{
-      "name": "ora-source-debezium-xstream",
+      "name": "ora-source-jdbc",
       "config": {
-            "connector.class": "io.debezium.connector.oracle.OracleConnector",
-            "database.server.name" : "asgard",
-            "database.hostname" : "oracle",
-            "database.port" : "1521",
-            "database.user" : "c##xstrm",
-            "database.password" : "xs",
-            "database.dbname" : "ORCLCDB",
-            "database.pdb.name" : "ORCLPDB1",
-            "database.out.server.name" : "dbzxout_new",
-            "database.history.kafka.bootstrap.servers" : "kafka:29092",
-            "database.history.kafka.topic": "schema-changes.inventory",
-            "include.schema.changes": "true",
-            "table.blacklist":"ORCLPDB1.AUDSYS.*",
-            "key.converter": "io.confluent.connect.avro.AvroConverter",
-            "key.converter.schema.registry.url": "http://schema-registry:8081",
-            "value.converter": "io.confluent.connect.avro.AvroConverter",
-            "value.converter.schema.registry.url": "http://schema-registry:8081",
-            "transforms": "InsertTopic,InsertSourceDetails",
+            "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+            "connection.url": "jdbc:oracle:thin:@oracle:1521/ORCLPDB1",
+            "connection.user":"Debezium",
+            "connection.password":"dbz",
+            "numeric.mapping":"best_fit",
+            "mode":"timestamp",
+            "poll.interval.ms":"1000",
+            "validate.non.null":"false",
+            "table.whitelist":"CUSTOMERS",
+            "timestamp.column.name":"UPDATE_TS",
+            "topic.prefix":"ora-",
+            "transforms": "addTopicSuffix,InsertTopic,InsertSourceDetails",
             "transforms.InsertTopic.type":"org.apache.kafka.connect.transforms.InsertField$Value",
             "transforms.InsertTopic.topic.field":"messagetopic",
             "transforms.InsertSourceDetails.type":"org.apache.kafka.connect.transforms.InsertField$Value",
             "transforms.InsertSourceDetails.static.field":"messagesource",
-            "transforms.InsertSourceDetails.static.value":"Debezium CDC from Oracle on asgard"
+            "transforms.InsertSourceDetails.static.value":"JDBC Source Connector from Oracle on asgard",
+            "transforms.addTopicSuffix.type":"org.apache.kafka.connect.transforms.RegexRouter",
+            "transforms.addTopicSuffix.regex":"(.*)",
+            "transforms.addTopicSuffix.replacement":"$1-jdbc"
        }
     }'
+
+            # "mode":"incrementing",
+            # "incrementing.column.name":"ID",
 
             # ,
             # "transforms": "addTopicSuffix",

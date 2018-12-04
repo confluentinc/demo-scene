@@ -52,6 +52,18 @@ Errors in file /opt/oracle/diag/rdbms/orclcdb/ORCLCDB/trace/ORCLCDB_cp01_721.trc
 ORA-01031: insufficient privileges
 ----
 
+To restart a capture process: 
+
+[source,sql]
+----
+SQL> call DBMS_CAPTURE_ADM.START_CAPTURE('CAP$_DBZXOUT_1');
+
+Call completed.
+
+SQL>
+----
+
+
 '''
 
 [source,sql]
