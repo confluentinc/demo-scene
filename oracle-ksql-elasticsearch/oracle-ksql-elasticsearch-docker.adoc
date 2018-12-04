@@ -330,58 +330,21 @@ SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') , FULL_NAME, RATINGS_CO
 
 === Slack/PushBullet notifications
 
-_This bit will need some config of your own, as you'll need your own Slack workspace and API key (both free). With this though, you can demo the idea of an event-driven app subscribing to a KSQL-populated stream of filtered events._
-
-_A newer version of the push notification script uses PushBullet, see `ios_push_notifications/push_bullet.py`._
-
 image:images/slack_ratings.png[Slack push notifications driven from Kafka and KSQL]
 
-To run, first export your API key as an environment variable:
+You'll need a Slack API key, and create the following file as `docker-compose/docker-compose.override.yml`. By default Docker Compose will load this _in addition to `docker-compose.yml`_. The docker image [source is here](https://github.com/rmoff/kafka-slack-notify-unhappy-users). 
 
 [source,bash]
 ----
-export SLACK_API_TOKEN=xyxyxyxyxyxyxyxyxyxyxyx
+---
+version: '2'
+
+services:
+  kafka-slack-notify-unhappy-users:
+    image: rmoff/kafka-slack-notify-unhappy-users:latest
+    environment: 
+      - BOOTSTRAP_SERVERS=kafka:29092
+      - SLACK_API_TOKEN=xxx-token-xxx
+
 ----
 
-Or if you've got it locally, run `source slack_creds.sh`
-
-then run the code:
-
-[source,bash]
-----
-python python_kafka_notify.py
-----
-
-You will need to install `slackclient` and `confluent_kafka` libraries.
-
-=== XStream notes
-
-Create outbound server in CDB, from there can specify data from CDB+PDB or just PDB. By default (`source_database`,`source_container_name` both NULL) will stream data from both. 
-ref: https://docs.oracle.com/database/121/XSTRM/xstrm_gen_cncpt.htm#GUID-60589C03-2095-42AA-8F2F-AFD83B110F31__GUID-F2B0932E-2D66-4652-A805-A570A10E53C4
-
-
-https://debezium.io/docs/connectors/oracle/
-
-https://github.com/debezium/oracle-vagrant-box
-https://github.com/debezium/debezium-examples/tree/master/tutorial#using-oracle
-
-https://gitter.im/debezium/user
-
-https://docs.oracle.com/database/121/ARPLS/d_xstrm_adm.htm
-https://docs.oracle.com/database/121/XSTRM/xstrm_xout_mon.htm
-https://docs.oracle.com/database/121/XSTRM/xstrm_xout_trouble.htm
-https://docs.oracle.com/database/121/XSTRM/xstrm_xout_config.htm
-
-https://groups.google.com/d/msg/debezium/Ujj9fj3aoGM/DihBfAR3AQAJ
-
-=== Monitoring lag
-
-[source,sql]
-----
-CREATE STREAM LAG_MONITOR AS SELECT ROWTIME, SOURCE->TS_MS, ROWTIME-SOURCE->TS_MS AS LAG , OP , SOURCE->SNAPSHOT FROM CUSTOMERS_STREAM_SRC;
-
- Message
-----------------------------
- Stream created and running
-----------------------------
-----
