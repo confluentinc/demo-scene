@@ -11,6 +11,7 @@ curl -i -X POST -H "Accept:application/json" \
             "connection.password":"dbz",
             "numeric.mapping":"best_fit",
             "mode":"timestamp",
+            "poll.interval.ms":"1000",
             "validate.non.null":"false",
             "table.whitelist":"CUSTOMERS",
             "timestamp.column.name":"UPDATE_TS",
