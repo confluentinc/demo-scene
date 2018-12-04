@@ -80,7 +80,7 @@ COL ID FOR 999
 COL CLUB_STATUS FOR A12
 COL EMAIL FOR A30
 SET LINESIZE 200
-SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS;
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS, UPDATE_TS FROM CUSTOMERS;
 
  ID FIRST_NAME      LAST_NAME       EMAIL                          CLUB_STATUS  UPDATE_TS
 ---- --------------- --------------- ------------------------------ ------------ ---------------------------------------------------------------------------
@@ -182,6 +182,17 @@ SELECT * FROM POOR_RATINGS LIMIT 5;
 DESCRIBE EXTENDED POOR_RATINGS;
 ----
 
+=== Show that it's populating a Kafka topic
+
+[source,sql]
+----
+
+
+LIST TOPICS;
+
+PRINT 'POOR_RATINGS';
+----
+
 ---
 
 Return to slides 
@@ -221,20 +232,16 @@ Here's the stream - every event, which in this context is every change event on 
 
 [source,sql]
 ----
-ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS_STREAM WHERE ID=1;
-1 | Rica | Blaisdell | rblaisdell0@rambler.ru | bronze
-1 | Bob | Blaisdell | rblaisdell0@rambler.ru | bronze
-1 | Fred | Blaisdell | rblaisdell0@rambler.ru | bronze
-^CQuery terminated
-ksql>
+ksql> SELECT ID, FIRST_NAME, LAST_NAME, CLUB_STATUS FROM CUSTOMERS_STREAM WHERE ID=42;
+42 | Rick | Astley | Bronze
+42 | Rick | Astley | Platinum
 ----
 
 Here's the table - the latest value for a given key
 [source,sql]
 ----
-ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS WHERE ID=1;
-1 | Fred | Blaisdell | rblaisdell0@rambler.ru | bronze
-^CQuery terminated
+ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS WHERE ID=42;
+42 | Rick | Astley | nevergonna@giveyou.up | Platinum
 ----
 
 === Join live stream of ratings to customer data
@@ -257,7 +264,7 @@ ksql> SELECT R.RATING_ID, R.MESSAGE, \
 …
 ----
 
-Persist this stream of data
+Persist this stream of data & create stream of unhappy VIPs
 
 [source,sql]
 ----
@@ -272,39 +279,18 @@ SELECT R.RATING_ID, R.MESSAGE, R.STARS, R.CHANNEL,\
         LEFT JOIN CUSTOMERS C \
         ON R.USER_ID = C.ID \
       WHERE C.FIRST_NAME IS NOT NULL;
-----
 
-The `WITH (PARTITIONS=1)` is only necessary if the Elasticsearch connector has already been defined, as it will create the topic before KSQL does, and using a single partition (not 4, as KSQL wants to by default).
-
-=== Examine changing reference data
-
-CUSTOMERS is a KSQL _table_, which means that we have the latest value for a given key.
-
-Check out the ratings for customer id 2 only:
-[source,sql]
-----
-ksql> SELECT * FROM RATINGS_WITH_CUSTOMER_DATA WHERE ID=2;
-----
-
-In Oracle, make a change to ID 2
-[source,sql]
-----
-Oracle> UPDATE CUSTOMERS SET FIRST_NAME = 'Thomas', LAST_NAME ='Smith' WHERE ID=2;
-----
-
-Observe in the continuous KSQL query that the customer name has now changed.
-
-=== Create stream of unhappy VIPs
-
-[source,sql]
-----
 CREATE STREAM UNHAPPY_PLATINUM_CUSTOMERS \
        WITH (VALUE_FORMAT='JSON', PARTITIONS=1) AS \
 SELECT FULL_NAME, CLUB_STATUS, EMAIL, STARS, MESSAGE \
 FROM   RATINGS_WITH_CUSTOMER_DATA \
 WHERE  STARS < 3 \
   AND  CLUB_STATUS = 'platinum';
+
 ----
+
+The `WITH (PARTITIONS=1)` is only necessary if the Elasticsearch connector has already been defined, as it will create the topic before KSQL does, and using a single partition (not 4, as KSQL wants to by default).
+
 
 == View in Elasticsearch and Kibana
 
