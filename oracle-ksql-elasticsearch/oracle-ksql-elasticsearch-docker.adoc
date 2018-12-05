@@ -47,8 +47,8 @@ docker-compose exec oracle bash -c 'sleep 1;rlwrap sqlplus Debezium/dbz@localhos
 ----
 +
 _(the `sleep` is necessary to avoid `rlwrap: error: My terminal reports width=0 (is it emacs?)  I can't handle this, sorry!` https://github.com/moby/moby/issues/28009[ref])_
-
-* This uses rlwrap, which isn't in the vanilla Oracle image. To include it in your own image, add this to `OracleDatabase/SingleInstance/dockerfiles/12.2.0.1/Dockerfile` (or use https://github.com/rmoff/docker-images[this fork]): 
++
+** This uses rlwrap, which isn't in the vanilla Oracle image. To include it in your own image, add this to `OracleDatabase/SingleInstance/dockerfiles/12.2.0.1/Dockerfile` (or use https://github.com/rmoff/docker-images[this fork]): 
 +
 [source,bash]
 ----
@@ -58,8 +58,10 @@ RUN yum install -y rlwrap
 
 * Load http://localhost:5601/app/kibana#/dashboard/mysql-ksql-kafka-es?_g=(refreshInterval:('$$hashKey':'object:229',display:'30%20seconds',pause:!f,section:1,value:30000),time:(from:now-15m,mode:quick,to:now))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),panels:!((gridData:(h:15,i:'1',w:24,x:0,y:10),id:'0c118530-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'1',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'2',w:48,x:0,y:35),id:'39803a20-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'2',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'4',w:8,x:0,y:0),id:'5ef922e0-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'4',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'5',w:40,x:8,y:0),id:'2f3d2290-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'5',type:search,version:'6.3.0'),(gridData:(h:15,i:'6',w:24,x:24,y:10),id:c6344a70-6ff0-11e8-8fa0-279444e59a8f,panelIndex:'6',type:visualization,version:'6.3.0'),(embeddableConfig:(),gridData:(h:10,i:'7',w:48,x:0,y:25),id:'11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'7',sort:!(EXTRACT_TS,desc),type:search,version:'6.3.0')),query:(language:lucene,query:''),timeRestore:!f,title:'Ratings%20Data',viewMode:view)[Kibana ratings dashboard]
 
-* Launch Reflector 3
-* Disable other notifications (WhatsApp/Messages/other Slack etc)
+* Launch Reflector 3, mirror phone to Mac
+* Disable other phone notifications (WhatsApp/Messages/other Slack etc)
+* Disable Mac notifications
+* Disable Flux
 
 == Demo
 
