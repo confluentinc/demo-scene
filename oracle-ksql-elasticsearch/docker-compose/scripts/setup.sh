@@ -6,7 +6,7 @@ docker-compose up -d
 # ---- Wait for Oracle DB to be up (takes several minutes to instantiate) ---
 echo -e "\n--\n\n$(date) Waiting for Oracle to be available … ⏳"
 grep -q "DATABASE IS READY TO USE!" <(docker-compose logs -f oracle)
-echo -e "$(date) Installing rlwrap on Oracle container"
+#echo -e "$(date) Installing rlwrap on Oracle container"
 #docker exec --interactive --tty --user root --workdir / $(docker ps --filter "name=oracle" --quiet) bash -c 'rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm'
 #docker exec --interactive --tty --user root --workdir / $(docker ps --filter "name=oracle" --quiet) bash -c 'yum install -y rlwrap'
 

@@ -45,7 +45,7 @@ docker-compose exec ksql-cli ksql http://ksql-server:8088
 cd docker-compose
 docker-compose exec oracle bash -c 'sleep 1;rlwrap sqlplus Debezium/dbz@localhost:1521/ORCLPDB1'
 ----
-
++
 _(the `sleep` is necessary to avoid `rlwrap: error: My terminal reports width=0 (is it emacs?)  I can't handle this, sorry!` https://github.com/moby/moby/issues/28009[ref])_
 
 * This uses rlwrap, which isn't in the vanilla Oracle image. To include it in your own image, add this to `OracleDatabase/SingleInstance/dockerfiles/12.2.0.1/Dockerfile` (or use https://github.com/rmoff/docker-images[this fork]): 
@@ -56,20 +56,10 @@ RUN rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.
 RUN yum install -y rlwrap
 ----
 
-== Pre-flight checklist
-
 * Load http://localhost:5601/app/kibana#/dashboard/mysql-ksql-kafka-es?_g=(refreshInterval:('$$hashKey':'object:229',display:'30%20seconds',pause:!f,section:1,value:30000),time:(from:now-15m,mode:quick,to:now))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),panels:!((gridData:(h:15,i:'1',w:24,x:0,y:10),id:'0c118530-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'1',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'2',w:48,x:0,y:35),id:'39803a20-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'2',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'4',w:8,x:0,y:0),id:'5ef922e0-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'4',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'5',w:40,x:8,y:0),id:'2f3d2290-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'5',type:search,version:'6.3.0'),(gridData:(h:15,i:'6',w:24,x:24,y:10),id:c6344a70-6ff0-11e8-8fa0-279444e59a8f,panelIndex:'6',type:visualization,version:'6.3.0'),(embeddableConfig:(),gridData:(h:10,i:'7',w:48,x:0,y:25),id:'11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'7',sort:!(EXTRACT_TS,desc),type:search,version:'6.3.0')),query:(language:lucene,query:''),timeRestore:!f,title:'Ratings%20Data',viewMode:view)[Kibana ratings dashboard]
-* Create iTerm window, using the `screencapture` profile
-* Load this instructions doc into Chrome
-* Close all other apps
-* Optional: 
-** Make sure phone is on wifi/internet
-** `cd ios_push_notifications`
-** `python push_bullet.py`
-** Connect laptop to wifi
-** Connect iPhone to laptop with USB
-** Launch Reflector 3
-** Disable other notifications (WhatsApp/Messages/other Slack etc)
+
+* Launch Reflector 3
+* Disable other notifications (WhatsApp/Messages/other Slack etc)
 
 == Demo
 
@@ -121,7 +111,7 @@ Kafka Topic                   | Registered | Partitions | Partition Replicas | C
 -----------------------------------------------------------------------------------------------------------
 _confluent-metrics            | false      | 12         | 1                  | 0         | 0
 _schemas                      | false      | 1          | 1                  | 0         | 0
-ora-CUSTOMERS-jdbc     | true       | 1          | 1                  | 1         | 1
+ora-CUSTOMERS-jdbc            | true       | 1          | 1                  | 1         | 1
 connect-status                | false      | 5          | 1                  | 0         | 0
 my_connect_configs            | false      | 1          | 1                  | 0         | 0
 my_connect_offsets            | false      | 25         | 1                  | 0         | 0
@@ -184,7 +174,10 @@ SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
 ----
 CREATE STREAM POOR_RATINGS AS \
 SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
+----
 
+[source,sql]
+----
 SELECT * FROM POOR_RATINGS LIMIT 5;
 
 DESCRIBE EXTENDED POOR_RATINGS;
@@ -321,11 +314,14 @@ Return to slides
 
 === Aggregations
 
-Simple aggregation - count of ratings per person, per minute:
+Simple aggregations
+
 
 [source,sql]
 ----
-ksql> SELECT FULL_NAME,COUNT(*) FROM RATINGS_WITH_CUSTOMER_DATA WINDOW TUMBLING (SIZE 1 MINUTE) GROUP BY FULL_NAME;
+SELECT FULL_NAME,COUNT(*) FROM RATINGS_WITH_CUSTOMER_DATA WINDOW TUMBLING (SIZE 5 MINUTE) GROUP BY FULL_NAME;
+
+SELECT CLUB_STATUS, COUNT(*) FROM RATINGS_WITH_CUSTOMER_DATA WINDOW TUMBLING (SIZE 5 MINUTE) GROUP BY CLUB_STATUS;
 ----
 
 Persist this and show the timestamp:
@@ -336,7 +332,7 @@ CREATE TABLE RATINGS_PER_CUSTOMER_PER_MINUTE AS SELECT FULL_NAME,COUNT(*) AS RAT
 SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') , FULL_NAME, RATINGS_COUNT FROM RATINGS_PER_CUSTOMER_PER_MINUTE;
 ----
 
-=== Slack/PushBullet notifications
+=== Slack notifications
 
 image:images/slack_ratings.png[Slack push notifications driven from Kafka and KSQL]
 
