@@ -41,8 +41,22 @@ docker-compose exec ksql-cli ksql http://ksql-server:8088
 cd docker-compose
 docker-compose exec oracle bash -c 'sleep 1;rlwrap sqlplus Debezium/dbz@localhost:1521/ORCLPDB1'
 ----
-
++
 _(the `sleep` is necessary to avoid `rlwrap: error: My terminal reports width=0 (is it emacs?)  I can't handle this, sorry!` https://github.com/moby/moby/issues/28009[ref])_
+
+* Oracle log
++
+[source,bash]
+----
+docker-compose logs -f oracle
+----
+
+* Debezium log 
++
+[source,bash]
+----
+docker-compose logs -f connect-debezium
+----
 
 * This uses rlwrap, which isn't in the vanilla Oracle image. To include it in your own image, add this to `OracleDatabase/SingleInstance/dockerfiles/12.2.0.1/Dockerfile` (or use https://github.com/rmoff/docker-images[this fork]): 
 +
@@ -104,15 +118,6 @@ In KSQL:
 [source,sql]
 ----
 ksql> list topics;
-
-----
-
-
-Show contents
-
-[source,sql]
-----
-PRINT 'ora-CUSTOMERS-jdbc' FROM BEGINNING;
 ----
 
 Show contents
@@ -148,13 +153,26 @@ Create a stream
 ----
 SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM CUSTOMERS_STREAM_DBZ_SRC WITH (KAFKA_TOPIC='asgard.DEBEZIUM.CUSTOMERS', VALUE_FORMAT='AVRO');
+CREATE STREAM CUSTOMERS_STREAM_JDBC_SRC WITH (KAFKA_TOPIC='ora-CUSTOMERS-jdbc', VALUE_FORMAT='AVRO');
+
+LIST STREAMS;
+
 ----
+
+It also supports nested data
 
 [source,sql]
 ----
-SET 'auto.offset.reset' = 'earliest';
-CREATE STREAM CUSTOMERS_STREAM_JDBC_SRC WITH (KAFKA_TOPIC='ora-CUSTOMERS-jdbc', VALUE_FORMAT='AVRO');
+DESCRIBE CUSTOMERS_STREAM_DBZ_SRC;
 ----
+
+Pretty-print the source data to show why nested
+
+[source,bash]
+----
+echo '{"before": {"ID": 42, "FIRST_NAME": "Rick", "LAST_NAME": "Astley", "EMAIL": null, "GENDER": null, "CLUB_STATUS": "Bronze", "COMMENTS": null, "CREATE_TS": 1544000706681769, "UPDATE_TS": 1544000706000000}, "after": {"ID": 42, "FIRST_NAME": "Rick", "LAST_NAME": "Astley", "EMAIL": null, "GENDER": null, "CLUB_STATUS": "Platinum", "COMMENTS": null, "CREATE_TS": 1544000706681769, "UPDATE_TS": 1544000742000000}, "source": {"version": "0.9.0.Alpha2", "connector": "oracle", "name": "asgard", "ts_ms": 1544000742000, "txId": "6.26.734", "scn": 2796831, "snapshot": false}, "op": "u", "ts_ms": 1544000745823, "messagetopic": "asgard.DEBEZIUM.CUSTOMERS", "messagesource": "Debezium CDC from Oracle on asgard"}'|jq '.'
+----
+
 
 Look at before & after: 
 
@@ -216,18 +234,20 @@ Checking lag
 
 [source,sql]
 ----
+CREATE STREAM LAG_MONITOR_DBZ AS \
+SELECT ROWTIME, \
+       SOURCE->TS_MS, \
+       ROWTIME - SOURCE->TS_MS AS LAG, \
+       OP, \
+       SOURCE->SNAPSHOT, \
+       BEFORE->ID, \
+       AFTER->ID \
+FROM CUSTOMERS_STREAM_DBZ_SRC;
 
-CREATE STREAM LAG_MONITOR_JDBC AS SELECT ROWTIME, UPDATE_TS, ROWTIME-UPDATE_TS AS LAG, ID FROM CUSTOMERS_STREAM_JDBC_SRC;
-
-
-CREATE STREAM LAG_MONITOR_DBZ AS SELECT ROWTIME, SOURCE->TS_MS, ROWTIME-SOURCE->TS_MS AS LAG , OP , SOURCE->SNAPSHOT, ID FROM CUSTOMERS_STREAM_DBZ_SRC;
-
-SELECT ID, TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss Z'), LAG, OP FROM LAG_MONITOR_DBZ;
-SELECT ID, TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss Z'), LAG FROM LAG_MONITOR_JDBC;
-
+SELECT BEFORE__ID, AFTER__ID, TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss Z'), LAG, OP FROM LAG_MONITOR_DBZ;
 ----
 
-
+(what would be nice here is to hook up `LAG_MONITOR_DBZ` to Elasticsearch or InfluxDB and have a little monitoring chart)
 
 == More cool stuff with KSQL
 
@@ -241,4 +261,46 @@ u | 5
 d | 3
 ----
 
+
+== JDBC
+
+=== Show Kafka topic has been created & populated
+
+In KSQL: 
+
+[source,sql]
+----
+ksql> list topics;
+----
+
+Show contents
+
+[source,sql]
+----
+PRINT 'ora-CUSTOMERS-jdbc' FROM BEGINNING;
+----
+
+
+[source,sql]
+----
+SET 'auto.offset.reset' = 'earliest';
+CREATE STREAM CUSTOMERS_STREAM_JDBC_SRC WITH (KAFKA_TOPIC='ora-CUSTOMERS-jdbc', VALUE_FORMAT='AVRO');
+----
+
+KSQL applies the schema to the data
+
+[source,sql]
+----
+DESCRIBE CUSTOMERS_STREAM_JDBC_SRC;
+----
+
+Lag
+
+[source,sql]
+----
+CREATE STREAM LAG_MONITOR_JDBC AS SELECT ROWTIME, UPDATE_TS, ROWTIME-UPDATE_TS AS LAG, ID FROM CUSTOMERS_STREAM_JDBC_SRC;
+
+SELECT ID, TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss Z'), LAG FROM LAG_MONITOR_JDBC;
+
+----
 
