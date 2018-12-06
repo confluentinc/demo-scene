@@ -1,0 +1,15 @@
+{
+  "namespace": "io.confluent.demo",
+  "type": "record",
+  "name": "Rating",
+  "fields": [
+    {
+      "name": "movie_id",
+      "type": "long"
+    },
+    {
+      "name": "rating",
+      "type": "double"
+    }
+  ]
+}

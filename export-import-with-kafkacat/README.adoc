@@ -1,0 +1,126 @@
+= Using kafkacat to export data from one Kafka cluster and load to another
+
+Sometimes it's useful to be able to copy the contents of a topic from one Kafka cluster to another. For example, a set of data to support a demo, or some data against which to test an application. 
+
+https://github.com/edenhill/kafkacat[kafkacat] is a commandline tool for interacting with Kafka, including producing and sending messages. 
+
+You can run all the steps in this example using Docker to simulate two single-node Kafka clusters, using `kafkacat` to dump data from one and import to the other. Using `kafkacat` to 'sync' a topic via a 
+
+== Demo setup
+
+Populate some test data in Cluster "A": 
+
+[source,bash]
+----
+docker run --rm -i --network export-import-with-kafkacat_default confluentinc/cp-kafkacat \
+  kafkacat -b kafka-a:29092 -t test_topic -P -K: <<EOF
+1:{"hello":"world"}
+2:{"foo":"bar"}
+EOF
+----
+
+Check it's there: 
+
+[source,bash]
+----
+docker run --rm -it --network export-import-with-kafkacat_default confluentinc/cp-kafkacat \
+  kafkacat -b kafka-a:29092 -t test_topic -C -f '\nKey (%K bytes): %k\t\nValue (%S bytes): %s\nTimestamp: %T\tPartition: %p\tOffset: %o\n--\n'
+----
+
+Should look like: 
+
+[source,bash]
+----
+Key (1 bytes): 1
+Value (17 bytes): {"hello":"world"}
+Timestamp: 1542086750978        Partition: 0    Offset: 0
+--
+
+Key (1 bytes): 2
+Value (13 bytes): {"foo":"bar"}
+Timestamp: 1542086769945        Partition: 0    Offset: 1
+--
+% Reached end of topic test_topic [0] at offset 2
+----
+
+== Export
+
+[source,bash]
+----
+docker run --rm -it --network export-import-with-kafkacat_default confluentinc/cp-kafkacat \
+  kafkacat -b kafka-a:29092 -t test_topic -C -K: -e -q > export.json
+----
+
+Generated export file should look like: 
+
+[source,bash]
+----
+$ cat export.json
+1:{"hello":"world"}
+2:{"foo":"bar"}
+----
+
+== Import
+
+Import to Cluster B the exported data from Cluster A: 
+
+[source,bash]
+----
+$ docker run --rm -it --volume $PWD:/data --network export-import-with-kafkacat_default confluentinc/cp-kafkacat \
+    kafkacat -b kafka-b:29092 -t test_topic -P -K: -l /data/export.json
+----
+
+(if you're not using Docker, you'll need to amend the path in `-l` accordingly)
+
+Verify that the data is there in Cluster B: 
+
+[source,bash]
+----
+docker run --rm -it --network export-import-with-kafkacat_default confluentinc/cp-kafkacat \
+  kafkacat -b kafka-b:29092 -t test_topic -C -f '\nKey (%K bytes): %k\t\nValue (%S bytes): %s\nTimestamp: %T\tPartition: %p\tOffset: %o\n--\n'
+----
+
+Should look like: 
+
+[source,bash]
+----
+Key (1 bytes): 1
+Value (18 bytes): {"hello":"world"}
+Timestamp: 1542087361395        Partition: 0    Offset: 0
+--
+
+Key (1 bytes): 2
+Value (14 bytes): {"foo":"bar"}
+Timestamp: 1542087361395        Partition: 0    Offset: 1
+--
+% Reached end of topic test_topic [0] at offset 2
+----
+
+== Sync via netcat
+
+Since kafkacat can stream and consume messages using pipes, we can pair it with netcat (`nc`) to stream messages between Kafka clusters. This is obviously a very inferior method of replicating data compared to MirrorMaker or Confluent's Replicator tool!
+
+* On the target machine: 
++
+[source,bash]
+----
+nc -k -l 42000 | kafkacat -b localhost:19092 -t test_topic -P -K:
+----
++
+Where:
++
+** `-k` tells `nc` not to hang up when the connection is closed
+** `-l` defines the port on which to listen
+** `localhost:19092` is the Kafka broker on the target cluster
+
+* On the source machine: 
++
+[source,bash]
+----
+kafkacat -b localhost:9092 -t test_topic -C -K: -u -q | nc localhost 42000
+----
++
+Where: 
++
+** `localhost 42000` is the host and port on which the other `nc` is listening
+** `localhost:9092` is the Kafka broker on the source cluster

@@ -1,6 +1,6 @@
 = Streaming ETL demo - Enriching event stream data with CDC data from MySQL, stream into Elasticsearch
 Robin Moffatt <robin@confluent.io>
-v1.20, August 22, 2018
+v1.30, October 30, 2018
 
 image:images/ksql-debezium-es.png[Kafka Connect / KSQL / Elasticsearch]
 
@@ -23,7 +23,6 @@ Start the environment
 [source,bash]
 ----
 cd docker-compose
-docker-compose up -d
 ./scripts/setup.sh
 ----
 
@@ -36,7 +35,7 @@ Optionally, use something like `screen` or `tmux` to have these both easily to h
 [source,bash]
 ----
 docker run --network docker-compose_default --interactive --tty --rm \
-     confluentinc/cp-ksql-cli:5.0.0 \
+     confluentinc/cp-ksql-cli:5.0.1 \
      http://ksql-server:8088
 ----
 
@@ -48,18 +47,80 @@ cd docker-compose
 docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
 ----
 
+* kafkacat:
++
+[source,bash]
+----
+docker run --rm -it --network docker-compose_default confluentinc/cp-kafkacat \
+  kafkacat -b kafka:29092 -t lisa18 -P
+----
+
 == Pre-flight checklist
 
-* Load Kibana dashboard: http://localhost:5601/app/kibana#/dashboard/mysql-ksql-kafka-es
+* Load http://localhost:5601/app/kibana#/dashboard/mysql-ksql-kafka-es?_g=(refreshInterval:('$$hashKey':'object:229',display:'30%20seconds',pause:!f,section:1,value:30000),time:(from:now-15m,mode:quick,to:now))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),panels:!((gridData:(h:15,i:'1',w:24,x:0,y:10),id:'0c118530-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'1',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'2',w:48,x:0,y:35),id:'39803a20-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'2',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'4',w:8,x:0,y:0),id:'5ef922e0-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'4',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'5',w:40,x:8,y:0),id:'2f3d2290-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'5',type:search,version:'6.3.0'),(gridData:(h:15,i:'6',w:24,x:24,y:10),id:c6344a70-6ff0-11e8-8fa0-279444e59a8f,panelIndex:'6',type:visualization,version:'6.3.0'),(embeddableConfig:(),gridData:(h:10,i:'7',w:48,x:0,y:25),id:'11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'7',sort:!(EXTRACT_TS,desc),type:search,version:'6.3.0')),query:(language:lucene,query:''),timeRestore:!f,title:'Ratings%20Data',viewMode:view)[Kibana ratings dashboard]
+* Launch http://localhost:5601/app/kibana#/discover?_g=(refreshInterval:('$$hashKey':'object:315',display:'1%20seconds',pause:!f,section:1,value:1000),time:(from:now-15m,mode:quick,to:now))&_a=(columns:!(_source),index:lisa18,interval:auto,query:(language:lucene,query:''),sort:!(_score,desc))[Kibana dashboard showing es-sink]
 * Create iTerm window, using the `screencapture` profile
 * Load this instructions doc into Chrome
 * Close all other apps
+* Optional: 
+** Make sure phone is on wifi/internet
+** `cd ios_push_notifications`
+** `python push_bullet.py`
+** Connect laptop to wifi
+** Connect iPhone to laptop with USB
+** Launch QuickTime Player, select iPhone as source
+** Disable other notifications (WhatsApp/Messages/Slack etc)
 
 == Demo
 
 image:images/ksql-debezium-es.png[Kafka Connect / KSQL / Elasticsearch]
 
 == Part 01 - Kafka Connect
+
+=== Kafka to Elasticsearch
+
+Show Kafka Connect config
+
+[source,json]
+----
+curl -X "POST" "http://kafka-connect-cp:18083/connectors/" \
+     -H "Content-Type: application/json" \
+     -d '{
+    "name": "es_sink_lisa18",
+    "config": {
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": false,
+    "topics": "lisa18",
+    "key.ignore": "true",
+    "schema.ignore": "true",
+    "type.name": "type.name=kafkaconnect",
+    "connection.url": "http://elasticsearch:9200"
+  }
+}'
+----
+
+Launch http://localhost:5601/app/kibana#/discover?_g=(refreshInterval:('$$hashKey':'object:315',display:'1%20seconds',pause:!f,section:1,value:1000),time:(from:now-15m,mode:quick,to:now))&_a=(columns:!(_source),index:lisa18,interval:auto,query:(language:lucene,query:''),sort:!(_score,desc))[Kibana dashboard]
+
+From kafkacat prompt
+
+[source,bash]
+----
+docker run --rm -it --network docker-compose_default confluentinc/cp-kafkacat \
+  kafkacat -b kafka:29092 -t lisa18 -P
+----
+
+send some data - after each observe that dashboard reflects new data straight away
+
+[source,bash]
+----
+{"hello":"world"}
+{"hello":"lisa18"}
+{"lisa18":"is great!"}
+----
+
+
 
 === Show MySQL table + contents
 
@@ -73,19 +134,17 @@ mysql> show tables;
 +----------------+
 1 row in set (0.00 sec)
 
-mysql> select id, first_name, last_name, club_status from CUSTOMERS;
-+----+-------------+------------+-------------+
-| id | first_name  | last_name  | club_status |
-+----+-------------+------------+-------------+
-|  1 | Bob         | Blaisdell  | bronze      |
-|  2 | Ruthie      | Brockherst | platinum    |
-|  3 | Mariejeanne | Cocci      | bronze      |
-|  4 | Hashim      | Rumke      | platinum    |
-|  5 | Hansiain    | Coda       | platinum    |
-|  6 | Robinet     | Leheude    | platinum    |
-|  7 | Fay         | Huc        | bronze      |
-|  8 | Patti       | Rosten     | silver      |
-…
+mysql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS LIMIT 5;
++----+-------------+------------+------------------------+-------------+
+| ID | FIRST_NAME  | LAST_NAME  | EMAIL                  | CLUB_STATUS |
++----+-------------+------------+------------------------+-------------+
+|  1 | Rica        | Blaisdell  | rblaisdell0@rambler.ru | bronze      |
+|  2 | Ruthie      | Brockherst | rbrockherst1@ow.ly     | platinum    |
+|  3 | Mariejeanne | Cocci      | mcocci2@techcrunch.com | bronze      |
+|  4 | Hashim      | Rumke      | hrumke3@sohu.com       | platinum    |
+|  5 | Hansiain    | Coda       | hcoda4@senate.gov      | platinum    |
++----+-------------+------------+------------------------+-------------+
+5 rows in set (0.00 sec)
 ----
 
 === Check status of Debezium connectors
@@ -99,81 +158,57 @@ mysql-source-demo-CUSTOMERS-raw  |  RUNNING  |  RUNNING
 
 === Show Kafka topic has been created & populated
 
-Show contents:
+In KSQL: 
 
-[source,bash]
-----
-$ docker-compose exec -T kafka-connect-cp \
-                 kafka-avro-console-consumer \
-                  --bootstrap-server kafka:29092 \
-                  --property schema.registry.url=http://schema-registry:8081 \
-                  --topic asgard.demo.CUSTOMERS \
-                  --from-beginning \
-                  | jq '.'
-{
-  "id": 1,
-  "first_name": {
-    "string": "Bibby"
-  },
-  "last_name": {
-    "string": "Argabrite"
-  },
-  "email": {
-    "string": "bargabrite0@google.com.hk"
-  },
-  "gender": {
-    "string": "Female"
-  },
-  "comments": {
-    "string": "Reactive exuding productivity"
-  },
-  "messagetopic": {
-    "string": "asgard.demo.CUSTOMERS"
-  },
-  "messagesource": {
-    "string": "Debezium CDC from MySQL on asgard"
-  }
-}
-----
+    LIST TOPICS;
 
-=== Show CDC in action with before/after record data
+    Kafka Topic                | Registered | Partitions | Partition Replicas | Consumers | ConsumerGroups
+    --------------------------------------------------------------------------------------------------------
+    _confluent-metrics         | false      | 12         | 1                  | 0         | 0
+    _schemas                   | false      | 1          | 1                  | 0         | 0
+    asgard                     | false      | 1          | 1                  | 0         | 0
+    asgard-raw                 | false      | 1          | 1                  | 0         | 0
+    asgard.demo.CUSTOMERS      | false      | 1          | 1                  | 0         | 0
+    asgard.demo.CUSTOMERS-raw  | false      | 1          | 1                  | 0         | 0
+    connect-status             | false      | 5          | 1                  | 0         | 0
+    dbhistory.demo             | false      | 1          | 1                  | 0         | 0
+    dbhistory.demo-raw         | false      | 1          | 1                  | 0         | 0
+    docker-connect-configs     | false      | 1          | 1                  | 0         | 0
+    docker-connect-offsets     | false      | 25         | 1                  | 0         | 0
+    docker-connect-status      | false      | 5          | 1                  | 0         | 0
+    lisa18                     | false      | 1          | 1                  | 1         | 1
+    my_connect_configs         | false      | 1          | 1                  | 0         | 0
+    my_connect_offsets         | false      | 25         | 1                  | 0         | 0
+    ratings                    | false      | 1          | 1                  | 0         | 0
+    ratings-enriched           | false      | 1          | 1                  | 1         | 1
+    UNHAPPY_PLATINUM_CUSTOMERS | false      | 1          | 1                  | 2         | 2
+    --------------------------------------------------------------------------------------------------------
 
-[source,bash]
-----
-docker-compose exec -T kafka-connect-cp \
- kafka-avro-console-consumer \
- --bootstrap-server kafka:29092 \
- --property schema.registry.url=http://schema-registry:8081 \
- --topic asgard.demo.CUSTOMERS-raw --from-beginning  | jq  '.'
-----
+Show topic contents
+
+    ksql> PRINT 'asgard.demo.CUSTOMERS' FROM BEGINNING;
+    Format:AVRO
+    11/13/18 12:52:09 PM UTC, , {"id": 1, "first_name": "Rica", "last_name": "Blaisdell", "email": "rblaisdell0@rambler.ru", "gender": "Female", "club_status": "bronze", "comments": "Universal optimal hierarchy", "create_ts": "2018-11-13T12:46:03Z", "update_ts": "2018-11-13T12:46:03Z", "messagetopic": "asgard.demo.CUSTOMERS", "messagesource": "Debezium CDC from MySQL on asgard"}
+    11/13/18 12:52:09 PM UTC, , {"id": 2, "first_name": "Ruthie", "last_name": "Brockherst", "email": "rbrockherst1@ow.ly", "gender": "Female", "club_status": "platinum", "comments": "Reverse-engineered tangible interface", "create_ts": "2018-11-13T12:46:03Z", "update_ts": "2018-11-13T12:46:03Z", "messagetopic": "asgard.demo.CUSTOMERS", "messagesource": "Debezium CDC from MySQL on asgard"}
+
 
 ==== Insert a row in MySQL, observe it in Kafka
 
-If not running the console consumer, then run `PRINT 'asgard.demo.CUSTOMERS' FROM BEGINNING;` to see the topic contents and and new messages. 
 
 [source,sql]
 ----
-insert into CUSTOMERS (id,first_name,last_name) values (42,'Rick','Astley');
+INSERT INTO CUSTOMERS (ID,FIRST_NAME,LAST_NAME) VALUES (42,'Rick','Astley');
 ----
 
 ==== Update a row in MySQL, observe it in Kafka
 
 [source,sql]
 ----
-update CUSTOMERS set first_name='Bob' where id=1;
+UPDATE CUSTOMERS SET CLUB_STATUS = 'Bronze' where ID=1;
+UPDATE CUSTOMERS SET CLUB_STATUS = 'platinum' where ID=1;
 ----
 
 Point out before/after records in `raw` stream
-
-==== Optional Delete a row in MySQL, observe it in Kafka
-
-[source,sql]
-----
-DELETE FROM CUSTOMERS WHERE ID=8;
-----
-
-Point out before/after records in `raw` stream
-
 ---
 
 Return to slides 
@@ -193,7 +228,6 @@ SHOW TOPICS;
 
 [source,sql]
 ----
-PRINT 'ratings';
 CREATE STREAM RATINGS WITH (KAFKA_TOPIC='ratings',VALUE_FORMAT='AVRO');
 ----
 
@@ -210,6 +244,10 @@ SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
 ----
 CREATE STREAM POOR_REVIEWS AS \
 SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
+
+SELECT * FROM POOR_REVIEWS LIMIT 5;
+
+DESCRIBE EXTENDED POOR_REVIEWS;
 ----
 
 ---
@@ -226,19 +264,23 @@ Return to slides
 -- Inspect raw topic data if you want
 -- PRINT 'asgard.demo.CUSTOMERS' FROM BEGINNING;
 
-CREATE STREAM CUSTOMERS_SRC WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
 SET 'auto.offset.reset' = 'earliest';
-SELECT ID, FIRST_NAME, LAST_NAME, CLUB_STATUS FROM CUSTOMERS_SRC;
+CREATE STREAM CUSTOMERS_STREAM_SRC WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
+CREATE STREAM CUSTOMERS_STREAM WITH (PARTITIONS=1) AS SELECT * FROM CUSTOMERS_STREAM_SRC PARTITION BY ID;
+SELECT ID, FIRST_NAME, LAST_NAME, CLUB_STATUS FROM CUSTOMERS_STREAM WHERE ID=1;
 ----
 
 === Re-key the customer data
 [source,sql]
 ----
-CREATE STREAM CUSTOMERS_SRC_REKEY WITH (PARTITIONS=1) AS SELECT * FROM CUSTOMERS_SRC PARTITION BY ID;
 -- Wait for a moment here; if you run the CTAS _immediately_ after the CSAS it may fail
 -- with error `Could not fetch the AVRO schema from schema registry. Subject not found.; error code: 40401`
-CREATE TABLE CUSTOMERS WITH (KAFKA_TOPIC='CUSTOMERS_SRC_REKEY', VALUE_FORMAT ='AVRO', KEY='ID');
-SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS;
+-- You may also get this error if you have not set 'auto.offset.reset'='earliest' and there is no 
+-- data flowing into the source CUSTOMERS topic, since no messages will have triggered the target stream 
+-- to be created.
+-- See https://github.com/confluentinc/ksql/issues/713
+CREATE TABLE CUSTOMERS WITH (KAFKA_TOPIC='CUSTOMERS_STREAM', VALUE_FORMAT ='AVRO', KEY='ID');
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS WHERE ID=1;
 ----
 
 ==== [Optional] Demonstrate Stream / Table difference
@@ -247,7 +289,7 @@ Here's the stream - every event, which in this context is every change event on 
 
 [source,sql]
 ----
-ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS_SRC WHERE ID=1;
+ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS_STREAM WHERE ID=1;
 1 | Rica | Blaisdell | rblaisdell0@rambler.ru | bronze
 1 | Bob | Blaisdell | rblaisdell0@rambler.ru | bronze
 1 | Fred | Blaisdell | rblaisdell0@rambler.ru | bronze
@@ -262,22 +304,6 @@ ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS WHERE 
 1 | Fred | Blaisdell | rblaisdell0@rambler.ru | bronze
 ^CQuery terminated
 ----
-
-==== [Optional] Demonstrate why the re-key is required
-
-[source,sql]
-----
-ksql> SELECT C.ROWKEY, C.ID FROM CUSTOMERS_SRC C LIMIT 3;
- | 1
- | 2
- | 3
-
-ksql> SELECT C.ROWKEY, C.ID FROM CUSTOMERS C LIMIT 3;
-1 | 1
-2 | 2
-3 | 3
-----
-
 
 === Join live stream of ratings to customer data
 
@@ -382,9 +408,11 @@ CREATE TABLE RATINGS_PER_CUSTOMER_PER_MINUTE AS SELECT FULL_NAME,COUNT(*) AS RAT
 SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') , FULL_NAME, RATINGS_COUNT FROM RATINGS_PER_CUSTOMER_PER_MINUTE;
 ----
 
-=== Slack notifications
+=== Slack/PushBullet notifications
 
 _This bit will need some config of your own, as you'll need your own Slack workspace and API key (both free). With this though, you can demo the idea of an event-driven app subscribing to a KSQL-populated stream of filtered events._
+
+_A newer version of the push notification script uses PushBullet, see `ios_push_notifications/push_bullet.py`._
 
 image:images/slack_ratings.png[Slack push notifications driven from Kafka and KSQL]
 
@@ -395,6 +423,8 @@ To run, first export your API key as an environment variable:
 export SLACK_API_TOKEN=xyxyxyxyxyxyxyxyxyxyxyx
 ----
 
+Or if you've got it locally, run `source slack_creds.sh`
+
 then run the code:
 
 [source,bash]
@@ -403,3 +433,4 @@ python python_kafka_notify.py
 ----
 
 You will need to install `slackclient` and `confluent_kafka` libraries.
+

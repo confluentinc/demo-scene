@@ -1,6 +1,6 @@
 = ATM Fraud Detection with Kafka and KSQL - Hands on Guide
 Robin Moffatt <robin@confluent.io>
-v1.00, October 9, 2018
+v1.10, November 22, 2018
 
 == Running the test rig
 
@@ -13,24 +13,15 @@ cd ksql-atm-fraud-detection
 docker-compose up -d
 ----
 
-This brings up the stack, and also loads the necessary Kafka Connect, Elasticsearch, and Kibana configuration. 
+This brings up the stack, and also loads the necessary Kafka Connect, Elasticsearch, and Kibana configuration. It also launches the ATM data generator, streaming events to the `atm_txns_gess` topic.
 
-To launch the ATM data generator: 
+=== KSQL application
 
-[source,bash]
-----
-git clone https://github.com/rmoff/gess.git
-cd gess
-python scripts/gess-main.py
-----
-
-This emits the transactions on UDP - to stream these into a Kafka topic, run
+Launch the CLI: 
 
 [source,bash]
 ----
-nc -v -u -l 6900 | \
-  docker run --interactive --rm --network ksql-atm-fraud-detection_default confluentinc/cp-kafkacat \
-  kafkacat -b kafka:29092 -P -t atm_txns_gess
+docker-compose exec ksql-cli ksql http://ksql-server:8088
 ----
 
 Inspect source transactions: 
@@ -173,25 +164,16 @@ FROM ATM_POSSIBLE_FRAUD_ENRICHED;
 
 [source,bash]
 ----
-docker run --network ksql-atm-fraud-detection_default --interactive --tty --rm \
-    confluentinc/cp-ksql-cli:5.0.0 \
-    http://ksql-server:8088
+SELECT ACCOUNT_ID, CUSTOMER_NAME, CUSTOMER_PHONE, \
+        TIMESTAMPTOSTRING(T1_TIMESTAMP, 'yyyy-MM-dd HH:mm:ss'), TIMESTAMPTOSTRING(T2_TIMESTAMP, 'HH:mm:ss'), \
+        T1_ATM, T2_ATM \
+FROM ATM_POSSIBLE_FRAUD_ENRICHED;
 ----
 
-=== Sending more test messages
 
-[source,bash]
-----
-docker run --interactive --rm --network ksql-atm-fraud-detection_default confluentinc/cp-kafkacat kafkacat -b kafka:29092 -P -t atm_txns << EOF
-{"account_id": "ac_02", "atm": "Flying Pig Bistro", "amount": 40, "location": {"lat": "37.766319", "lon": "-122.417422"}, "transaction_id": "03"}
-{"account_id": "ac_03", "atm": "Barclays", "amount": 500, "location": {"lat": "33.5522855", "lon": "-120.9797997"}, "transaction_id": "X05"}
-EOF
-----
+=== Kibana
 
-=== Finished KSQL statement for processing test messages
+* http://localhost:5601/app/kibana#/dashboard/atm-transactions?_g=(refreshInterval:(pause:!f,value:30000),time:(from:now-15m,mode:quick,to:now))[All ATM transactions]
 
-[source,sql]
-----
-include::test_messages.ksql[]
-----
+* http://localhost:5601/app/kibana#/dashboard/fraudulent-atm-transactions?_g=(refreshInterval:(pause:!f,value:30000),time:(from:now-15m,mode:quick,to:now))[Possibly fraudulent transactions]
 

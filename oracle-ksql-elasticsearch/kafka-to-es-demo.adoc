@@ -1,0 +1,64 @@
+== Pre-Flight Setup
+
+Start the environment
+
+[source,bash]
+----
+cd docker-compose
+./scripts/setup.sh
+----
+
+Get a prompt
+
+[source,bash]
+----
+docker run --rm -it --network docker-compose_default confluentinc/cp-kafkacat \
+  kafkacat -b kafka:29092 -t lisa18 -P
+----
+
+Launch http://localhost:5601/app/kibana#/discover?_g=(refreshInterval:('$$hashKey':'object:315',display:'1%20seconds',pause:!f,section:1,value:1000),time:(from:now-15m,mode:quick,to:now))&_a=(columns:!(_source),index:lisa18,interval:auto,query:(language:lucene,query:''),sort:!(_score,desc))[Kibana dashboard]
+
+== Demo
+
+Show Kafka Connect config
+
+[source,json]
+----
+curl -X "POST" "http://kafka-connect-cp:18083/connectors/" \
+     -H "Content-Type: application/json" \
+     -d '{
+    "name": "es_sink_lisa18",
+    "config": {
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": false,
+    "topics": "lisa18",
+    "key.ignore": "true",
+    "schema.ignore": "true",
+    "type.name": "type.name=kafkaconnect",
+    "connection.url": "http://elasticsearch:9200"
+  }
+}'
+
+
+----
+
+
+From kafkacat prompt
+
+[source,bash]
+----
+docker run --rm -it --network docker-compose_default confluentinc/cp-kafkacat \
+  kafkacat -b kafka:29092 -t lisa18 -P
+----
+
+send some data: 
+
+[source,bash]
+----
+{"hello":"world"}
+{"hello":"lisa18"}
+{"lisa18":"is great!"}
+----
+
