@@ -22,7 +22,8 @@ Viktor Gamov <viktor@confluent.io>, © 2017 Confluent, Inc.
 :highlightjs-theme: idea
 :experimental:
 
-A demo setup demonstrates processing of twitter streams. Can be used in booth / conferences on analyze real-time social media data.
+A demo setup demonstrates processing of twitter streams.
+Can be used in booth / conferences on analyze real-time social media data.
 
 toc::[]
 
@@ -30,74 +31,8 @@ toc::[]
 ====
 The project structure inspired Confluent Platform demo footnote:[https://github.com/confluentinc/cp-demo]
 Actual demo logic is inspired by Robin's blog footnote:[https://www.confluent.io/blog/using-ksql-to-analyse-query-and-transform-data-in-kafka]
+https://gamov.io/posts/2018/11/28/who-is-tweeting-about-ksql.html[Playbook] is available!
 ====
-
-'''
-
-== Prerequisites
-
-- `docker` (locally) or ECS-optimized instance (AWS). Tested on (`17.x` and `18.x`)
-- `docker-compose`. Tested on (`1.21.x`)
-
-== Installation
-
-* Get example from GitHub
-** If you will follow steps below you should checkout only directory that has source code relevant to this post.
-+
-
-[source,bash]
-----
-mkdir ~/temp/demo-scene
-cd ~/temp/demo-scene
-git init .
-git remote add origin -f https://github.com/confluentinc/demo-scene/
-git config core.sparsecheckout true
-echo "twitter-streams/*" >> .git/info/sparse-checkout
-git pull --depth=2 origin master
-cd twitter-streams
-ls -lh
-----
-// http://scriptedonachip.com/git-sparse-checkout
-
-== Startup
-
-----
-docker-compose up -d
-----
-
-. Wait till Confluent Control Center is running fully. Verify when it's ready when the logs show the following event
-+
-
-[source,bash]
-----
-$ docker-compose logs -f control-center | grep -e HTTP
-control-center_1       | [2017-09-06 16:37:33,133] INFO Started NetworkTrafficServerConnector@26a529dc{HTTP/1.1}{0.0.0.0:9021} (org.eclipse.jetty.server.NetworkTrafficServerConnector)
-----
-
-. Use Google Chrome to view the Confluent Control Center GUI at [http://localhost:9021](http://localhost:9021). Click on the top right button that shows the current date, and change `Last 4 hours` to `Last 30 minutes`.
-
-. Init twitter connector
-
-[source,bash]
-----
-./scripts/02-start-twitter-connector.sh
-----
-
-== Teardown
-
-. Stop the Docker demo, destroy all components and clear all Docker volumes.
-
-[source,bash]
-----
-#!/bin/bash
-
-docker-compose down
-docker volume ls -q --filter dangling=true | xargs docker volume rm
-----
-
-== Useful links
-
-* https://github.com/confluentinc/ksql/blob/4.0.x/docs/syntax-reference.md[KSQL Syntax Reference]
 
 == Appendix: Running demo on AWS
 
