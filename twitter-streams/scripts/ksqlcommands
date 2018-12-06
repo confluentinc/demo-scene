@@ -1,0 +1,3 @@
+set 'producer.interceptor.classes'='io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor';
+set 'consumer.interceptor.classes'='io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor';
+set 'application.id'='ksql-twitter-streams';
