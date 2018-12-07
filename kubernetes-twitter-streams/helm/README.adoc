@@ -1,0 +1,39 @@
+= Kafka Twitter Connector for Kubernetes
+Viktor Gamov <viktor@confluent.io>, © 2018 Confluent, Inc.
+2018-12-06
+:revdate: 2018-12-06 22:18:21 -0600
+:linkattrs:
+:ast: &ast;
+:y: &#10003;
+:n: &#10008;
+:y: icon:check-sign[role="green"]
+:n: icon:check-minus[role="red"]
+:c: icon:file-text-alt[role="blue"]
+:toc: auto
+:toc-placement: auto
+:toc-position: right
+:toc-title: Table of content
+:toclevels: 3
+:idprefix:
+:idseparator: -
+:sectanchors:
+:icons: font
+:source-highlighter: highlight.js
+:highlightjs-theme: idea
+:experimental:
+
+For now, it's a scratch pad of bringing tweeting demo to Kubernetes
+
+toc::[]
+
+
+.Dry run commands
+----
+helm install --dry-run -f ./kafka-connect-twitter/values.yaml ./kafka-connect-twitter --name connect-twitter --namespace operator --set kafka.bootstrapEndpoint=kafka:9071 --debug | c -l yaml
+----
+
+
+.Deploy Chart
+----
+helm install -f ./kafka-connect-twitter/values.yaml ./kafka-connect-twitter --name connect-twitter --namespace operator --set kafka.bootstrapEndpoint=kafka:9071
+----

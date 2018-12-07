@@ -30,3 +30,24 @@ Create chart name and version as used by the chart label.
 {{- define "kafka-connect-twitter.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
+
+{{/*
+Form the Kafka URL. If Kafka is installed as part of this chart, use k8s service discovery,
+else use user-provided URL
+*/}}
+{{- define "kafka-connect.kafka.bootstrapServers" -}}
+{{- if $.Values.kafka.tls.enabled -}}bootstrap.servers=SASL_SSL://{{- $.Values.kafka.bootstrapEndpoint }}
+{{- else }}bootstrap.servers=SASL_PLAINTEXT://{{- $.Values.kafka.bootstrapEndpoint }}
+{{- end }}
+{{- end -}}
+
+{{/*
+Default GroupId to Release Name but allow it to be overridden
+*/}}
+{{- define "kafka-connect.groupId" -}}
+{{- if $.Values.overrideGroupId -}}
+{{- .Values.overrideGroupId -}}
+{{- else -}}
+{{- .Release.Name -}}
+{{- end -}}
+{{- end -}}

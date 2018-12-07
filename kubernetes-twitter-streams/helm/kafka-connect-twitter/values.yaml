@@ -1,16 +1,76 @@
 # Default values for kafka-connect-twitter.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+global:
+  apikey:
+    username: test
+    password: test123
 
 replicaCount: 1
 
+## Image Info
+## ref: https://hub.docker.com/r/confluentinc/cp-kafka/
 image:
-  repository: nginx
-  tag: stable
-  pullPolicy: IfNotPresent
+#  repository: jcustenborder/kafka-connect-twitter
+  repository: gcr.io/cloud-private-dev/gamussa/kafka-connect-twitter
+  tag: 0.2.32
 
-nameOverride: ""
-fullnameOverride: ""
+## Specify a imagePullPolicy
+## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+imagePullPolicy: IfNotPresent
+
+servicePort: 8083
+
+overrideGroupId: "connect-twitter"
+
+## Kafka Connect properties
+## ref: https://docs.confluent.io/current/connect/userguide.html#configuring-workers
+configurationOverrides:
+  "config.storage.topic": "connect-config"
+  "config.storage.replication.factor": "2"
+  "offset.storage.topic": "connect-offsets"
+  "offset.storage.replication.factor": "2"
+  "status.storage.topic": "connect-status"
+  "status.storage.replication.factor": "2"
+  "plugin.path": "/usr/share/java,/usr/share/confluent-hub-components"
+  "key.converter": "org.apache.kafka.connect.storage.StringConverter"
+  "value.converter": "org.apache.kafka.connect.json.JsonConverter"
+  "key.converter.schemas.enable": "false"
+  "value.converter.schemas.enable": "false"
+  "internal.key.converter": "org.apache.kafka.connect.json.JsonConverter"
+  "internal.value.converter": "org.apache.kafka.connect.json.JsonConverter"
+  "producer.interceptor.classes": "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+  "producer.confluent.monitoring.interceptor.sasl.mechanism": "SASL_PLAINTEXT"
+  # TODO: template it out
+  "producer.confluent.monitoring.interceptor.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";"
+  "consumer.interceptor.classes": "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+  "consumer.confluent.monitoring.interceptor.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";"
+  "consumer.confluent.monitoring.interceptor.security.protocol": "SASL_PLAINTEXT"
+  "security.protocol": "SASL_PLAINTEXT"
+  "sasl.mechanism": "PLAIN"
+  "sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";"
+  "log4j.root.loglevel": "INFO"
+  "log4j.loggers": "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+
+## Additional env variables
+customEnv: {}
+
+## Monitoring
+## Kafka Connect JMX Settings
+## ref: https://kafka.apache.org/documentation/#connect_monitoring
+jmx:
+  port: 5555
+
+kafka:
+  name: kafka
+  tls:
+    enabled: false
+  bootstrapEndpoint: ""
+
+nameOverride: "connect-twitter"
+fullnameOverride: "kafka-connect-twitter"
+
+readinessInitialDelay: 20
 
 service:
   type: ClusterIP
@@ -20,7 +80,7 @@ ingress:
   enabled: false
   annotations: {}
     # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
+  # kubernetes.io/tls-acme: "true"
   path: /
   hosts:
     - chart-example.local
@@ -39,7 +99,7 @@ resources: {}
   #  memory: 128Mi
   # requests:
   #  cpu: 100m
-  #  memory: 128Mi
+#  memory: 128Mi
 
 nodeSelector: {}
 

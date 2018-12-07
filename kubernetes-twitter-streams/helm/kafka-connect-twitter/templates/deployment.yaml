@@ -1,3 +1,5 @@
+{{- $username := $.Values.global.apikey.username }}
+{{- $password := $.Values.global.apikey.password }}
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
@@ -5,8 +7,8 @@ metadata:
   labels:
     app.kubernetes.io/name: {{ include "kafka-connect-twitter.name" . }}
     helm.sh/chart: {{ include "kafka-connect-twitter.chart" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -18,25 +20,48 @@ spec:
       labels:
         app.kubernetes.io/name: {{ include "kafka-connect-twitter.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+        release: {{ .Release.Name}}
     spec:
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{ template "kafka-connect-twitter.name" . }}-server
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
           ports:
-            - name: http
-              containerPort: 80
+            - name: kafka-connect
+              containerPort: {{ .Values.servicePort}}
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /
-              port: http
+              path: /connectors
+              port: 8083
           readinessProbe:
+            initialDelaySeconds: {{ .Values.readinessInitialDelay}}
             httpGet:
-              path: /
-              port: http
+              path: /connectors
+              port: 8083
           resources:
 {{ toYaml .Values.resources | indent 12 }}
+          env:
+            - name: CONNECT_REST_ADVERTISED_HOST_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: CONNECT_BOOTSTRAP_SERVERS
+              value: {{ template "kafka-connect.kafka.bootstrapServers" . }}
+            - name: CONNECT_GROUP_ID
+              value: {{ template "kafka-connect.groupId" . }}
+            {{- range $key, $value := .Values.configurationOverrides }}
+            - name: {{ printf "CONNECT_%s" $key | replace "." "_" | upper | quote }}
+              value: {{ $value | quote }}
+                  {{- end }}
+                  {{- range $key, $value := .Values.customEnv }}
+            - name: {{ $key | quote }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- if .Values.jmx.port }}
+            - name: KAFKA_JMX_PORT
+              value: "{{ .Values.jmx.port }}"
+            {{- end }}
     {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
