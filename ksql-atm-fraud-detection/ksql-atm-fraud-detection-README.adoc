@@ -115,6 +115,10 @@ WHERE   S1.TRANSACTION_ID != S2.TRANSACTION_ID \
 LIMIT 20;
 ----
 
+--- 
+
+== Speed + Distance calculations
+
 Derive distance between ATMs & calculate required speed: 
 
 [source,sql]
@@ -149,9 +153,9 @@ SELECT S1.ROWTIME AS TX1_TIMESTAMP, S2.ROWTIME AS TX2_TIMESTAMP, \
         (CAST(S2.ROWTIME AS DOUBLE) - CAST(S1.ROWTIME AS DOUBLE)) / 1000 / 60 AS MINUTES_DIFFERENCE,  \
         GEO_DISTANCE(S1.location->lat, S1.location->lon, S2.location->lat, S2.location->lon, 'KM') / ((CAST(S2.ROWTIME AS DOUBLE) - CAST(S1.ROWTIME AS DOUBLE)) / 1000 / 60 / 60) AS KMH_REQUIRED, \
         S1.ACCOUNT_ID AS ACCOUNT_ID, \
-        S1.TRANSACTION_ID, S2.TRANSACTION_ID, \
-        S1.AMOUNT, S2.AMOUNT, \
-        S1.ATM, S2.ATM, \
+        S1.TRANSACTION_ID AS TX1_TRANSACTION_ID, S2.TRANSACTION_ID AS TX2_TRANSACTION_ID, \
+        S1.AMOUNT AS TX1_AMOUNT, S2.AMOUNT AS TX2_AMOUNT, \
+        S1.ATM AS TX1_ATM, S2.ATM AS TX2_ATM, \
         CAST(S1.location->lat AS STRING) + ',' + CAST(S1.location->lon AS STRING) AS TX1_LOCATION, \
         CAST(S2.location->lat AS STRING) + ',' + CAST(S2.location->lon AS STRING) AS TX2_LOCATION \
 FROM   ATM_TXNS_GESS S1 \
@@ -179,7 +183,26 @@ FROM ATM_POSSIBLE_FRAUD;
 <script src="https://asciinema.org/a/xuzkbePj2N9fsAZZew0eJUjCW.js" id="asciicast-xuzkbePj2N9fsAZZew0eJUjCW" async></script>
 ++++
 
-Add in Customer data: 
+<<<
+
+== Customers
+
+[source,bash]
+----
+docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
+----
+
+[source,sql]
+----
+SHOW TABLES;
+----
+
+[source,sql]
+----
+SELECT ACCOUNT_ID, FIRST_NAME, LAST_NAME, EMAIL, PHONE FROM accounts LIMIT 5;
+----
+
+In KSQL, examine Customer data: 
 
 [source,sql]
 ----
@@ -191,6 +214,30 @@ CREATE STREAM ACCOUNTS_REKEYED WITH (PARTITIONS=1) AS SELECT * FROM ACCOUNTS_STR
 SELECT * FROM ACCOUNTS_REKEYED LIMIT 1;
 CREATE TABLE ACCOUNTS WITH (KAFKA_TOPIC='ACCOUNTS_REKEYED',VALUE_FORMAT='AVRO',KEY='ACCOUNT_ID');
 ----
+
+Show updates from DB reflected in KSQL table : 
+
+[source,sql]
+----
+SELECT ACCOUNT_ID, FIRST_NAME, LAST_NAME, EMAIL, PHONE FROM ACCOUNTS WHERE ACCOUNT_ID='a42';
+----
+
+[source,sql]
+----
+UPDATE accounts SET EMAIL='none' WHERE ACCOUNT_ID='a42';
+UPDATE accounts SET EMAIL='robin@rmoff.net' WHERE ACCOUNT_ID='a42';
+UPDATE accounts SET EMAIL='robin@confluent.io' WHERE ACCOUNT_ID='a42';
+----
+
+
+Optionally, explore stream/table difference: 
+
+[source,sql]
+----
+SELECT ACCOUNT_ID, FIRST_NAME, LAST_NAME, EMAIL, PHONE FROM ACCOUNTS_STREAM WHERE ACCOUNT_ID='a42';
+----
+
+---
 
 Write enriched data to new stream: 
 
@@ -228,5 +275,7 @@ SELECT ACCOUNT_ID, CUSTOMER_NAME, CUSTOMER_PHONE, \
 FROM ATM_POSSIBLE_FRAUD_ENRICHED;  
 ----
 
-Show suspect transactions in Kibana: http://localhost:5601/app/kibana#/dashboard/fraudulent-atm-transactions?_g=(refreshInterval:(pause:!f,value:30000),time:(from:now-15m,mode:quick,to:now))[Possibly fraudulent transactions]
+http://localhost:5601/app/kibana#/dashboard/fraudulent-atm-transactions?_g=(refreshInterval:(pause:!f,value:30000),time:(from:now-15m,mode:quick,to:now))[Show suspect transactions in Kibana]
+
+http://localhost:5601/app/kibana#/discover/90f2e7f0-ef15-11e8-a410-976398351471?_g=(refreshInterval:(pause:!f,value:30000),time:(from:now-15m,mode:quick,to:now))&_a=(columns:!(ACCOUNT_ID,CUSTOMER_NAME,TX1_ATM,TX1_AMOUNT,TX2_ATM,TX2_AMOUNT,DISTANCE_BETWEEN_TXN_KM,MINUTES_DIFFERENCE),filters:!(),index:atm-possible-fraud-enriched,interval:auto,query:(language:lucene,query:''),sort:!(TX1_TIMESTAMP,desc))[Show detail view in Kibana]
 
