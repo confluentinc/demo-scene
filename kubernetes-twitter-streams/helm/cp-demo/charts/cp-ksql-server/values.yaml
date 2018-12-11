@@ -20,7 +20,11 @@ imagePullSecrets:
 
 servicePort: 8088
 
+overrideServiceId: "ksql-service"
+
 configurationOverrides:
+  "application.id": "cp-demo"
+  "listeners": "http://0.0.0.0:8088"
   "config.dir": "/etc/ksql"
   "log4j.opts": "-Dlog4j.configuration=file:/etc/ksql/log4j-rolling.properties"
   "cache.max.bytes.buffering": 0
@@ -48,7 +52,7 @@ resources: {}
   #  memory: 128Mi
   # requests:
   #  cpu: 100m
-  #  memory: 128Mi
+#  memory: 128Mi
 
 ## Custom pod annotations
 podAnnotations: {}

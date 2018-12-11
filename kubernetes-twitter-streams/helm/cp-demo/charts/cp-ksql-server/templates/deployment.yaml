@@ -77,6 +77,10 @@ spec:
                       - name: KSQL_KSQL_SCHEMA_REGISTRY_URL
                         value: {{ template "cp-ksql-server.cp-schema-registry.service-name" . }}
                           {{- if .Values.ksql.headless }}
+                      - name:   KSQL_HOST_NAME
+                        valueFrom:
+                            fieldRef:
+                                fieldPath: metadata.name
                       - name: KSQL_KSQL_QUERIES_FILE
                         value: /etc/ksql/queries/queries.sql
                           {{- else }}
@@ -89,7 +93,7 @@ spec:
                           {{- range $key, $value := .Values.configurationOverrides }}
                       - name: {{ printf "KSQL_%s" $key | replace "." "_" | upper | quote }}
                         value: {{ $value | quote }}
-                    {{- end }}
+                          {{- end }}
                     {{- end }}
                 {{- if .Values.imagePullSecrets }}
             imagePullSecrets:

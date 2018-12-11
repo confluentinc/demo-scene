@@ -20,7 +20,7 @@ spec:
                 app.kubernetes.io/instance: {{ .Release.Name }}
                 release: {{ .Release.Name}}
             annotations:
-            {{- if .Values.prometheus.jmx.enabled }}
+                    {{- if .Values.prometheus.jmx.enabled }}
                 prometheus.io/scrape: "true"
                 prometheus.io/port: {{ .Values.prometheus.jmx.port | quote }}
             {{- end }}
@@ -30,6 +30,11 @@ spec:
                 - name: connect-config
                   configMap:
                       name: {{ template "kafka-connect-twitter.fullname" . }}-connect-twiiter-json-configmap
+                          {{- end }}
+                    {{- if .Values.prometheus.jmx.enabled }}
+                - name: jmx-config
+                  configMap:
+                      name: {{ template "kafka-connect-twitter.fullname" . }}-jmx-configmap
                 {{- end }}
             containers:
                 - name: {{ template "kafka-connect-twitter.name" . }}-server
@@ -48,21 +53,14 @@ spec:
                       httpGet:
                           path: /connectors
                           port: 8083
-                        {{- if .Values.twitter.enabled }}
-                  lifecycle:
-                      postStart:
-                          exec:
-                              command:
-                                  - |
-                                      cd /etc/connect/
-                                      curl -s -X POST -H 'Content-Type: application/json' --data @connect_twitter.json http://localhost:8083/connectors
+                              {{- if .Values.twitter.enabled }}
                         {{- end}}
                   resources:
                         {{ toYaml .Values.resources | indent 12 }}
                   volumeMounts:
                           {{- if .Values.twitter.enabled }}
-                      - name: connect_twiiter.json
-                        mountPath: /etc/connect/connect_twitter.json
+                      - name: connect-config
+                        mountPath: /etc/connect/
                         {{- end }}
                   env:
                       - name: CONNECT_REST_ADVERTISED_HOST_NAME

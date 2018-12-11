@@ -2,8 +2,8 @@ dependencies:
   - name: kafka-connect-twitter
     version: ">=1.0.0"
     repository: file://./charts/kafka-connect-twitter
-    condition: connect-twitter.enabled
-  - name: ksql-server
+    condition: kafka-connect-twitter.enabled
+  - name: cp-ksql-server
     version: ">=1.0.0"
     repository:  file://.charts/cp-ksql-server
-    condition: ksql-server.enabled
+    condition: cp-ksql-server.enabled

@@ -26,6 +26,16 @@ For now, it's a scratch pad of bringing tweeting demo to Kubernetes
 
 toc::[]
 
+== Prerequisite
+
+Provision Confluent Platform
+
+----
+helm install --dry-run -f ./providers/kubecon.yaml ./confluent-operator --name confluent-platform --namespace operator --debug  #<1>
+helm install -f ./providers/kubecon.yaml ./confluent-operator --name confluent-platform --namespace operator  #<2>
+----
+<1> dry run command
+<2> deploy
 
 .Dry run commands
 ----

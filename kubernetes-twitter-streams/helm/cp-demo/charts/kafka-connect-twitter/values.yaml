@@ -45,7 +45,13 @@ configurationOverrides:
   "security.protocol": "SASL_PLAINTEXT"
   "sasl.mechanism": "PLAIN"
   "sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";"
-  "log4j.root.loglevel": "INFO"
+  "producer.sasl.mechanism": "PLAIN"
+  "producer.security.protocol": "SASL_PLAINTEXT"
+  "producer.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";"
+  "consumer.sasl.mechanism": "PLAIN"
+  "consumer.security.protocol": "SASL_PLAINTEXT"
+  "consumer.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";"
+  "log4j.root.loglevel": "DEBUG"
   "log4j.loggers": "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
 
 twitter:
@@ -65,6 +71,7 @@ twitter:
     topic: "twitter_json_01"
     deleteTopic: "twitter_deletes_json_01"
   maxTasks: 1
+  debug: true
 
 ## Additional env variables
 customEnv: {}
@@ -104,7 +111,7 @@ service:
 ingress:
   enabled: false
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
+  # kubernetes.io/ingress.class: nginx
   # kubernetes.io/tls-acme: "true"
   path: /
   hosts:
@@ -120,7 +127,7 @@ resources: {}
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   # limits:
-  #  cpu: 100m
+#  cpu: 100m
 #  memory: 128Mi
 # requests:
 #  cpu: 100m

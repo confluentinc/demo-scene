@@ -1,10 +1,33 @@
 global:
+  jaasConfig: |
+    org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";
   apikey:
     username: test
     password: test123
 
 kafka-connect-twitter:
-  enabled: true
+  enabled: false
+  kafka:
+    tls:
+      enabled: false
+    bootstrapEndpoint: kafka:9071
+  twitter:
+    enabled: true
+    accessToken: ""
+    secret: ""
+    key: ""
+    accessTokenSecret: ""
+    filterKeywords:
+      - kubecon
+      - apachekafka
+      - confluent
+      - confluentinc
+      - ksql
 
 cp-ksql-server:
-  enabled: true
+  enabled: false
+  kafka:
+    bootstrapEndpoint: kafka:9071
+  cp-schema-registry:
+    url: "schemaregistry:8088"
+

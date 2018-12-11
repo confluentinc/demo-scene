@@ -18,15 +18,16 @@ data:
             "key.converter": "org.apache.kafka.connect.json.JsonConverter",
             "value.converter.schemas.enable": false,
             "key.converter.schemas.enable": false,
-            "twitter.oauth.accessToken": {{ .Values.twitter.accessToken }},
-            "twitter.oauth.consumerSecret": {{ .Values.twitter.secret }},
-            "twitter.oauth.consumerKey": {{ .Values.twitter.key }},
-            "twitter.oauth.accessTokenSecret": {{ .Values.twitter.accessTokenSecret }},
-            "kafka.status.topic": {{ .Values.twitter.kafka.topic }},
-            "kafka.delete.topic": {{ .Values.twitter.kafka.deleteTopic }},
+            "twitter.oauth.accessToken": "{{ .Values.twitter.accessToken }}",
+            "twitter.oauth.consumerSecret": "{{ .Values.twitter.secret }}",
+            "twitter.oauth.consumerKey": "{{ .Values.twitter.key }}",
+            "twitter.oauth.accessTokenSecret": "{{ .Values.twitter.accessTokenSecret }}",
+            "kafka.status.topic": "{{ .Values.twitter.kafka.topic }}",
+            "kafka.delete.topic": "{{ .Values.twitter.kafka.deleteTopic }}",
             "process.deletes": true,
             "filter.keywords": "{{ template "helm-toolkit.utils.joinListWithComma" .Values.twitter.filterKeywords}}",
-            "tasks.max": {{ .Values.twitter.maxTasks}}
+            "tasks.max": {{ .Values.twitter.maxTasks}},
+            "twitter.debug": {{ .Values.twitter.debug}}
             }
         }
 {{- end}}
