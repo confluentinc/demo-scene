@@ -1,0 +1,103 @@
+# Default values for cp-ksql-server.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+## Image Info
+## ref: https://hub.docker.com/r/confluentinc/cp-ksql-server/
+image: confluentinc/cp-ksql-server
+imageTag: 5.0.1
+
+## Specify a imagePullPolicy
+## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+imagePullPolicy: IfNotPresent
+
+## Specify an array of imagePullSecrets.
+## Secrets must be manually created in the namespace.
+## ref: https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod
+imagePullSecrets:
+
+servicePort: 8088
+
+configurationOverrides:
+  "config.dir": "/etc/ksql"
+  "log4j.opts": "-Dlog4j.configuration=file:/etc/ksql/log4j-rolling.properties"
+  "cache.max.bytes.buffering": 0
+  "producer.interceptor.classes": "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+  "producer.confluent.monitoring.interceptor.sasl.mechanism": "SASL_PLAINTEXT"
+  # TODO: template it out
+  "producer.confluent.monitoring.interceptor.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";"
+  "consumer.interceptor.classes": "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+  "consumer.confluent.monitoring.interceptor.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";"
+  "consumer.confluent.monitoring.interceptor.security.protocol": "SASL_PLAINTEXT"
+  "security.protocol": "SASL_PLAINTEXT"
+  "sasl.mechanism": "PLAIN"
+  "sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";"
+  "log4j.root.loglevel": "INFO"
+  "log4j.loggers": "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+
+## Custom pod annotations
+podAnnotations: {}
+
+## Node labels for pod assignment
+## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+nodeSelector: {}
+
+## Taints to tolerate on node assignment:
+## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+tolerations: {}
+
+## Monitoring
+## JMX Settings
+## ref: https://docs.confluent.io/current/ksql/docs/operations.html
+jmx:
+  port: 5555
+
+## Prometheus Exporter Configuration
+## ref: https://prometheus.io/docs/instrumenting/exporters/
+prometheus:
+  ## JMX Exporter Configuration
+  ## ref: https://github.com/prometheus/jmx_exporter
+  jmx:
+    enabled: true
+    image: solsson/kafka-prometheus-jmx-exporter@sha256
+    imageTag: 6f82e2b0464f50da8104acd7363fb9b995001ddff77d248379f8788e78946143
+    port: 5556
+
+## External Access
+## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-loadbalancer
+external:
+  enabled: false
+  type: LoadBalancer
+  externalTrafficPolicy: Cluster
+  port: 8088
+
+## Headless mode
+## ref: https://docs.confluent.io/current/ksql/docs/installation/server-config/index.html
+ksql:
+  headless: false
+
+## You can list load balanced service endpoint, or list of all brokers (which is hard in K8s).  e.g.:
+## bootstrapServers: "PLAINTEXT://dozing-prawn-kafka-headless:9092"
+kafka:
+  tls:
+    enabled: false
+  bootstrapEndpoint: ""
+
+## e.g. gnoble-panther-cp-schema-registry:8081
+cp-schema-registry:
+  url: ""

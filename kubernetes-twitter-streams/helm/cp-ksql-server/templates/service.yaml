@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "cp-ksql-server.fullname" . }}
+  labels:
+    app: {{ template "cp-ksql-server.name" . }}
+    chart: {{ template "cp-ksql-server.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  ports:
+      - name: ksql-server
+        port: {{ .Values.servicePort }}
+  selector:
+    app: {{ template "cp-ksql-server.name" . }}
+    release: {{ .Release.Name }}

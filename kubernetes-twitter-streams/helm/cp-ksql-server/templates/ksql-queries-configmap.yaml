@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: {{ template "cp-ksql-server.fullname" . }}-ksql-queries-configmap
+    labels:
+        app: {{ template "cp-ksql-server.name" . }}
+        chart: {{ template "cp-ksql-server.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+data:
+  {{- $files := .Files }}
+  {{- range tuple "queries.sql" }}
+  {{ . }}: |-
+{{ $files.Get . | indent 4 }}
+  {{- end }}

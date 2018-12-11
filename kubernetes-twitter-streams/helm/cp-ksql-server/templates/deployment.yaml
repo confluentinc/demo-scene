@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: {{ template "cp-ksql-server.fullname" . }}
+    labels:
+        app: {{ template "cp-ksql-server.name" . }}
+        chart: {{ template "cp-ksql-server.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+spec:
+    replicas: {{ .Values.replicaCount }}
+    selector:
+        matchLabels:
+            app: {{ template "cp-ksql-server.name" . }}
+            release: {{ .Release.Name }}
+    template:
+        metadata:
+            labels:
+                app: {{ template "cp-ksql-server.name" . }}
+                release: {{ .Release.Name }}
+                {{- if or .Values.podAnnotations .Values.prometheus.jmx.enabled }}
+            annotations:
+                    {{- range $key, $value := .Values.podAnnotations }}
+                    {{ $key }}: {{ $value | quote }}
+                    {{- end }}
+                    {{- if .Values.prometheus.jmx.enabled }}
+                prometheus.io/scrape: "true"
+                prometheus.io/port: {{ .Values.prometheus.jmx.port | quote }}
+                {{- end }}
+            {{- end }}
+        spec:
+            containers:
+                    {{- if .Values.prometheus.jmx.enabled }}
+                - name: prometheus-jmx-exporter
+                  image: "{{ .Values.prometheus.jmx.image }}:{{ .Values.prometheus.jmx.imageTag }}"
+                  command:
+                      - java
+                      - -XX:+UnlockExperimentalVMOptions
+                      - -XX:+UseCGroupMemoryLimitForHeap
+                      - -XX:MaxRAMFraction=1
+                      - -XshowSettings:vm
+                      - -jar
+                      - jmx_prometheus_httpserver.jar
+                      - {{ .Values.prometheus.jmx.port | quote }}
+                      - /etc/jmx-ksql-server/jmx-ksql-server-prometheus.yml
+                  ports:
+                      - containerPort: {{ .Values.prometheus.jmx.port }}
+                  resources:
+                        {{ toYaml .Values.prometheus.jmx.resources | indent 12 }}
+                  volumeMounts:
+                      - name: jmx-config
+                        mountPath: /etc/jmx-ksql-server
+                    {{- end }}
+                - name: {{ template "cp-ksql-server.name" . }}
+                  image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+                  imagePullPolicy: "{{ .Values.imagePullPolicy }}"
+                  ports:
+                      - name: server
+                        containerPort: {{ .Values.servicePort}}
+                        protocol: TCP
+                          {{- if .Values.prometheus.jmx.enabled }}
+                      - containerPort: {{ .Values.jmx.port }}
+                        name: jmx
+                        {{- end }}
+                  resources:
+                        {{ toYaml .Values.resources | indent 12 }}
+                  volumeMounts:
+                          {{- if .Values.ksql.headless }}
+                      - name: ksql-queries
+                        mountPath: /etc/ksql/queries
+                        {{- end }}
+                  env:
+                      - name: KSQL_BOOTSTRAP_SERVERS
+                        value: {{ template "cp-ksql-server.kafka.bootstrapServers" . }}
+                      - name: KSQL_KSQL_SERVICE_ID
+                        value: {{ template "cp-ksql-server.serviceId" . }}
+                      - name: KSQL_KSQL_SCHEMA_REGISTRY_URL
+                        value: {{ template "cp-ksql-server.cp-schema-registry.service-name" . }}
+                          {{- if .Values.ksql.headless }}
+                      - name: KSQL_KSQL_QUERIES_FILE
+                        value: /etc/ksql/queries/queries.sql
+                          {{- else }}
+                      - name: KSQL_LISTENERS
+                        value: http://0.0.0.0:8088
+                                {{- end }}
+                          {{- if .Values.jmx.port }}
+                      - name: KSQL_JMX_PORT
+                        value: "{{ .Values.jmx.port }}"
+                          {{- range $key, $value := .Values.configurationOverrides }}
+                      - name: {{ printf "KSQL_%s" $key | replace "." "_" | upper | quote }}
+                        value: {{ $value | quote }}
+                    {{- end }}
+                    {{- end }}
+                {{- if .Values.imagePullSecrets }}
+            imagePullSecrets:
+                {{ toYaml .Values.imagePullSecrets | indent 8 }}
+                {{- end }}
+            volumes:
+                    {{- if .Values.prometheus.jmx.enabled }}
+                - name: jmx-config
+                  configMap:
+                      name: {{ template "cp-ksql-server.fullname" . }}-jmx-configmap
+                          {{- end }}
+                    {{- if .Values.ksql.headless }}
+                - name: ksql-queries
+                  configMap:
+                      name: {{ template "cp-ksql-server.fullname" . }}-ksql-queries-configmap
+                    {{- end }}
+                {{- if .Values.nodeSelector }}
+            nodeSelector:
+                {{ toYaml .Values.nodeSelector | indent 8 }}
+                {{- end }}
+                {{- if .Values.tolerations }}
+            tolerations:
+            {{ toYaml .Values.tolerations | indent 8 }}
+        {{- end }}
