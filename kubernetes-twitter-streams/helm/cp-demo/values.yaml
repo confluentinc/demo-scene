@@ -1,0 +1,10 @@
+global:
+  apikey:
+    username: test
+    password: test123
+
+kafka-connect-twitter:
+  enabled: true
+
+cp-ksql-server:
+  enabled: true
