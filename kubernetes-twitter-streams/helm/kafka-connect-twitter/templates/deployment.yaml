@@ -1,76 +1,120 @@
-{{- $username := $.Values.global.apikey.username }}
-{{- $password := $.Values.global.apikey.password }}
-apiVersion: apps/v1beta2
+apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "kafka-connect-twitter.fullname" . }}
-  labels:
-    app.kubernetes.io/name: {{ include "kafka-connect-twitter.name" . }}
-    helm.sh/chart: {{ include "kafka-connect-twitter.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-spec:
-  replicas: {{ .Values.replicaCount }}
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: {{ include "kafka-connect-twitter.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
-  template:
-    metadata:
-      labels:
+    name: {{ include "kafka-connect-twitter.fullname" . }}
+    labels:
         app.kubernetes.io/name: {{ include "kafka-connect-twitter.name" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-        release: {{ .Release.Name}}
-    spec:
-      containers:
-        - name: {{ template "kafka-connect-twitter.name" . }}-server
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.imagePullPolicy }}
-          ports:
-            - name: kafka-connect
-              containerPort: {{ .Values.servicePort}}
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /connectors
-              port: 8083
-          readinessProbe:
-            initialDelaySeconds: {{ .Values.readinessInitialDelay}}
-            httpGet:
-              path: /connectors
-              port: 8083
-          resources:
-{{ toYaml .Values.resources | indent 12 }}
-          env:
-            - name: CONNECT_REST_ADVERTISED_HOST_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-            - name: CONNECT_BOOTSTRAP_SERVERS
-              value: {{ template "kafka-connect.kafka.bootstrapServers" . }}
-            - name: CONNECT_GROUP_ID
-              value: {{ template "kafka-connect.groupId" . }}
-            {{- range $key, $value := .Values.configurationOverrides }}
-            - name: {{ printf "CONNECT_%s" $key | replace "." "_" | upper | quote }}
-              value: {{ $value | quote }}
-                  {{- end }}
-                  {{- range $key, $value := .Values.customEnv }}
-            - name: {{ $key | quote }}
-              value: {{ $value | quote }}
+        helm.sh/chart: {{ include "kafka-connect-twitter.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+spec:
+    replicas: {{ .Values.replicaCount }}
+    selector:
+        matchLabels:
+            app.kubernetes.io/name: {{ include "kafka-connect-twitter.name" . }}
+            app.kubernetes.io/instance: {{ .Release.Name }}
+    template:
+        metadata:
+            labels:
+                app.kubernetes.io/name: {{ include "kafka-connect-twitter.name" . }}
+                app.kubernetes.io/instance: {{ .Release.Name }}
+                release: {{ .Release.Name}}
+            annotations:
+            {{- if .Values.prometheus.jmx.enabled }}
+                prometheus.io/scrape: "true"
+                prometheus.io/port: {{ .Values.prometheus.jmx.port | quote }}
             {{- end }}
-            {{- if .Values.jmx.port }}
-            - name: KAFKA_JMX_PORT
-              value: "{{ .Values.jmx.port }}"
-            {{- end }}
-    {{- with .Values.nodeSelector }}
-      nodeSelector:
-{{ toYaml . | indent 8 }}
-    {{- end }}
-    {{- with .Values.affinity }}
-      affinity:
-{{ toYaml . | indent 8 }}
-    {{- end }}
-    {{- with .Values.tolerations }}
-      tolerations:
-{{ toYaml . | indent 8 }}
-    {{- end }}
+        spec:
+            volumes:
+                    {{- if .Values.twitter.enabled }}
+                - name: connect-config
+                  configMap:
+                      name: {{ template "kafka-connect-twitter.fullname" . }}-connect-twiiter-json-configmap
+                {{- end }}
+            containers:
+                - name: {{ template "kafka-connect-twitter.name" . }}-server
+                  image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+                  imagePullPolicy: {{ .Values.imagePullPolicy }}
+                  ports:
+                      - name: kafka-connect
+                        containerPort: {{ .Values.servicePort}}
+                        protocol: TCP
+                  livenessProbe:
+                      httpGet:
+                          path: /connectors
+                          port: 8083
+                  readinessProbe:
+                      initialDelaySeconds: {{ .Values.readinessInitialDelay}}
+                      httpGet:
+                          path: /connectors
+                          port: 8083
+                        {{- if .Values.twitter.enabled }}
+                  lifecycle:
+                      postStart:
+                          exec:
+                              command:
+                                  - |
+                                      cd /etc/connect/
+                                      curl -s -X POST -H 'Content-Type: application/json' --data @connect_twitter.json http://localhost:8083/connectors
+                        {{- end}}
+                  resources:
+                        {{ toYaml .Values.resources | indent 12 }}
+                  volumeMounts:
+                          {{- if .Values.twitter.enabled }}
+                      - name: connect_twiiter.json
+                        mountPath: /etc/connect/connect_twitter.json
+                        {{- end }}
+                  env:
+                      - name: CONNECT_REST_ADVERTISED_HOST_NAME
+                        valueFrom:
+                            fieldRef:
+                                fieldPath: status.podIP
+                      - name: CONNECT_BOOTSTRAP_SERVERS
+                        value: {{ template "kafka-connect.kafka.bootstrapServers" . }}
+                      - name: CONNECT_GROUP_ID
+                        value: {{ template "kafka-connect.groupId" . }}
+                          {{- range $key, $value := .Values.configurationOverrides }}
+                      - name: {{ printf "CONNECT_%s" $key | replace "." "_" | upper | quote }}
+                        value: {{ $value | quote }}
+                              {{- end }}
+                          {{- range $key, $value := .Values.customEnv }}
+                      - name: {{ $key | quote }}
+                        value: {{ $value | quote }}
+                              {{- end }}
+                          {{- if .Values.jmx.port }}
+                      - name: KAFKA_JMX_PORT
+                        value: "{{ .Values.jmx.port }}"
+                          {{- end }}
+                    {{- if .Values.prometheus.jmx.enabled }}
+                - name: prometheus-jmx-exporter
+                  image: "{{ .Values.prometheus.jmx.image }}:{{ .Values.prometheus.jmx.imageTag }}"
+                  command:
+                      - java
+                      - -XX:+UnlockExperimentalVMOptions
+                      - -XX:+UseCGroupMemoryLimitForHeap
+                      - -XX:MaxRAMFraction=1
+                      - -XshowSettings:vm
+                      - -jar
+                      - jmx_prometheus_httpserver.jar
+                      - {{ .Values.prometheus.jmx.port | quote }}
+                      - /etc/jmx-kafka-connect/jmx-kafka-connect-prometheus.yml
+                  ports:
+                      - containerPort: {{ .Values.prometheus.jmx.port }}
+                  resources:
+                        {{ toYaml .Values.prometheus.jmx.resources | indent 12 }}
+                  volumeMounts:
+                      - name: jmx-config
+                        mountPath: /etc/jmx-kafka-connect
+                    {{- end}}
+                {{- with .Values.nodeSelector }}
+            nodeSelector:
+                {{ toYaml . | indent 8 }}
+                {{- end }}
+                {{- with .Values.affinity }}
+            affinity:
+                {{ toYaml . | indent 8 }}
+                {{- end }}
+                {{- with .Values.tolerations }}
+            tolerations:
+            {{ toYaml . | indent 8 }}
+        {{- end }}

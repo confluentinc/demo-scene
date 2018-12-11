@@ -3,3 +3,4 @@ appVersion: "1.0"
 description: A Helm chart for Kafka Connect Twitter connector
 name: kafka-connect-twitter
 version: 0.2.32
+icon: "https://www.confluent.io/wp-content/themes/confluent/assets/images/confluent-logo-300.png"

@@ -51,3 +51,23 @@ Default GroupId to Release Name but allow it to be overridden
 {{- .Release.Name -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+From https://github.com/openstack/openstack-helm-infra/blob/master/helm-toolkit/templates/utils/_joinListWithComma.tpl
+
+abstract: |
+  Joins a list of values into a comma seperated string
+values: |
+  test:
+    - foo
+    - bar
+usage: |
+  {{ include "helm-toolkit.utils.joinListWithComma" .Values.test }}
+return: |
+  foo,bar
+
+*/}}
+{{- define "helm-toolkit.utils.joinListWithComma" -}}
+{{- $local := dict "first" true -}}
+{{- range $k, $v := . -}}{{- if not $local.first -}},{{- end -}}{{- $v -}}{{- $_ := set $local "first" false -}}{{- end -}}
+{{- end -}}

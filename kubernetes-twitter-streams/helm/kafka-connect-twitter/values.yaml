@@ -11,7 +11,7 @@ replicaCount: 1
 ## Image Info
 ## ref: https://hub.docker.com/r/confluentinc/cp-kafka/
 image:
-#  repository: jcustenborder/kafka-connect-twitter
+  #  repository: jcustenborder/kafka-connect-twitter
   repository: gcr.io/cloud-private-dev/gamussa/kafka-connect-twitter
   tag: 0.2.32
 
@@ -52,6 +52,24 @@ configurationOverrides:
   "log4j.root.loglevel": "INFO"
   "log4j.loggers": "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
 
+twitter:
+  enabled: true
+  ## Grab actual values from https://apps.twitter.com
+  accessToken: "xxx"
+  secret: "xxx"
+  key:  "xxx"
+  accessTokenSecret: "xxx"
+  filterKeywords:
+    - apachekafka
+    - ksql
+    - gamussa
+    - kafkastreams
+    - kstreams
+  kafka:
+    topic: "twitter_json_01"
+    deleteTopic: "twitter_deletes_json_01"
+  maxTasks: 1
+
 ## Additional env variables
 customEnv: {}
 
@@ -60,6 +78,17 @@ customEnv: {}
 ## ref: https://kafka.apache.org/documentation/#connect_monitoring
 jmx:
   port: 5555
+
+## Prometheus Exporter Configuration
+## ref: https://prometheus.io/docs/instrumenting/exporters/
+prometheus:
+  ## JMX Exporter Configuration
+  ## ref: https://github.com/prometheus/jmx_exporter
+  jmx:
+    enabled: true
+    image: solsson/kafka-prometheus-jmx-exporter@sha256
+    imageTag: 6f82e2b0464f50da8104acd7363fb9b995001ddff77d248379f8788e78946143
+    port: 5556
 
 kafka:
   name: kafka
@@ -96,9 +125,9 @@ resources: {}
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   # limits:
   #  cpu: 100m
-  #  memory: 128Mi
-  # requests:
-  #  cpu: 100m
+#  memory: 128Mi
+# requests:
+#  cpu: 100m
 #  memory: 128Mi
 
 nodeSelector: {}

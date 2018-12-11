@@ -1,0 +1,32 @@
+{{- if and .Values.twitter.enabled}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: {{ template "kafka-connect-twitter.fullname" . }}-connect-twiiter-json-configmap
+    labels:
+        app: {{ template "kafka-connect-twitter.name" . }}
+        chart: {{ template "kafka-connect-twitter.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+data:
+    connect_twitter.json: |
+        {
+        "name": "twitter_source",
+        "config": {
+            "connector.class": "com.github.jcustenborder.kafka.connect.twitter.TwitterSourceConnector",
+            "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+            "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+            "value.converter.schemas.enable": false,
+            "key.converter.schemas.enable": false,
+            "twitter.oauth.accessToken": {{ .Values.twitter.accessToken }},
+            "twitter.oauth.consumerSecret": {{ .Values.twitter.secret }},
+            "twitter.oauth.consumerKey": {{ .Values.twitter.key }},
+            "twitter.oauth.accessTokenSecret": {{ .Values.twitter.accessTokenSecret }},
+            "kafka.status.topic": {{ .Values.twitter.kafka.topic }},
+            "kafka.delete.topic": {{ .Values.twitter.kafka.deleteTopic }},
+            "process.deletes": true,
+            "filter.keywords": "{{ template "helm-toolkit.utils.joinListWithComma" .Values.twitter.filterKeywords}}",
+            "tasks.max": {{ .Values.twitter.maxTasks}}
+            }
+        }
+{{- end}}

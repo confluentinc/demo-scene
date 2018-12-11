@@ -37,3 +37,18 @@ helm install --dry-run -f ./kafka-connect-twitter/values.yaml ./kafka-connect-tw
 ----
 helm install -f ./kafka-connect-twitter/values.yaml ./kafka-connect-twitter --name connect-twitter --namespace operator --set kafka.bootstrapEndpoint=kafka:9071
 ----
+
+
+== Adding Prometheus and Grafana Monitoring into the mix
+
+JMX Metrics are enabled by default for all components, Prometheus JMX
+Exporter is installed as a sidecar container along with all Pods.
+
+.Install Prometheus and Grafana in same Kubernetes cluster using helm
+----
+helm install stable/prometheus
+helm install stable/grafana
+----
+
+. Add Prometheus as Data Source in Grafana, url should be something like: `http://illmannered-marmot-prometheus-server:9090`
+. Import dashboard under grafana-dashboard into Grafana
