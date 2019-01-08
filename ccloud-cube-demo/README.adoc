@@ -248,7 +248,7 @@ SELECT CONCAT('AND THE WINNER IS ----------> ', NAME) AS MESSAGE FROM SELECTED_W
 
 == Step 7: Destroying the Demo
 
-In this step, you are going to destroy all the resources created by Terraform. This is important because these resources will cost money from the AWS account being used in the demo.
+In this step, you are going to destroy all the resources created by Terraform in the AWS account. This is important because the resources created costs money and are billed by the hour, therefore you don't want to just leave them there.
 
 1. Navigate to the */terraform/aws* directory.
 +
