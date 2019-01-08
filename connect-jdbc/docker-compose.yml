@@ -65,20 +65,31 @@ services:
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
-      CONNECT_LOG4J_ROOT_LOGLEVEL: "DEBUG"
+      CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
       CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_PLUGIN_PATH: '/usr/share/java'
     # volumes:
+    #   - db-leach:/db-leach/
     #   - /my/local/folder/with/jdbc-driver.jar:/usr/share/java/kafka-connect-jdbc/jars/
     command: 
       - /bin/bash
       - -c 
       - |
+        # JDBC Drivers
+        # ------------
+        # MySQL
         cd /usr/share/java/kafka-connect-jdbc/
-        curl https://cdn.mysql.com//Downloads/Connector-J/mysql-connector-java-8.0.13.tar.gz | tar xz 
+        curl https://cdn.mysql.com/Downloads/Connector-J/mysql-connector-java-8.0.13.tar.gz | tar xz 
+        # MS SQL
+        cd /usr/share/java/kafka-connect-jdbc/
+        curl http://central.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/7.0.0.jre8/mssql-jdbc-7.0.0.jre8.jar --output mssql-jdbc-7.0.0.jre8.jar
+        # # Oracle
+        # cp /db-leach/jdbc/lib/ojdbc8.jar /usr/share/java/kafka-connect-jdbc
+        # Now launch Kafka Connect
+        sleep infinity &
         /etc/confluent/docker/run 
 
   ksql-server:
@@ -110,9 +121,66 @@ services:
      - MYSQL_USER=connect_user
      - MYSQL_PASSWORD=asgard
     volumes:
-     - ./data/:/docker-entrypoint-initdb.d/
+     - ./data/mysql:/docker-entrypoint-initdb.d/
 
+  postgres:
+    image: postgres:11
+    environment:
+     - POSTGRES_USER=postgres
+     - POSTGRES_PASSWORD=postgres
+    volumes:
+     - ./data/postgres:/docker-entrypoint-initdb.d/
 
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2017-latest
+    environment: 
+      - SA_PASSWORD=Admin123
+      - ACCEPT_EULA=Y
+    volumes:
+     - ./data/mssql:/scripts/
+    command:
+      - /bin/bash
+      - -c 
+      - |
+        # Launch MSSQL and send to background
+        /opt/mssql/bin/sqlservr &
+        # Wait for it to be available
+        echo "Waiting for MS SQL to be available ⏳"
+        /opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -h-1 -V1 -U sa -P $$SA_PASSWORD -Q "SET NOCOUNT ON SELECT \"YAY WE ARE UP\" , @@servername"
+        is_up=$$?
+        while [ $$is_up -ne 0 ] ; do 
+          echo -e $$(date) 
+          /opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -h-1 -V1 -U sa -P $$SA_PASSWORD -Q "SET NOCOUNT ON SELECT \"YAY WE ARE UP\" , @@servername"
+          is_up=$$?
+          sleep 5 
+        done
+
+        # Run every script in /scripts
+        # TODO set a flag so that this is only done once on creation, 
+        #      and not every time the container runs
+        for foo in /scripts/*.sql
+          do /opt/mssql-tools/bin/sqlcmd -U sa -P $$SA_PASSWORD -l 30 -e -i $$foo
+        done
+        # So that the container doesn't shut down, sleep this thread
+        sleep infinity
+
+#   oracle:
+#     # You need to build this image first, following the instructions at 
+#     # https://github.com/oracle/docker-images/blob/master/OracleDatabase/SingleInstance/README.md
+#     image: oracle/database:12.2.0.1-ee
+#     environment:
+#       - ORACLE_PWD=Admin123
+#     ports:
+#       - 1521:1521
+#     volumes:
+#       - $PWD/data/oracle/oradata:/opt/oracle/oradata
+#       - $PWD/data/oracle/oradata/recovery_area:/opt/oracle/oradata/recovery_area
+# #      - $PWD/data/oracle/ora-setup-scripts:/opt/oracle/scripts/setup
+# #      - $PWD/data/oracle/ora-startup-scripts:/opt/oracle/scripts/startup
+#       - db-leach:/opt/oracle/product/12.2.0.1/dbhome_1/
+
+# volumes:
+#     db-leach: {}
 
 
 

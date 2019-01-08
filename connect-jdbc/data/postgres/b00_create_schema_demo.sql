@@ -1,0 +1,1 @@
+CREATE SCHEMA demo AUTHORIZATION connect_user;
