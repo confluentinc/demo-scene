@@ -203,7 +203,6 @@ ksql KSQL_SERVER_ENDPOINT
 ----
 
 7. In KSQL CLI, execute the following command:
-+
 
 [source,bash]
 ----
@@ -217,6 +216,7 @@ PRINT _NUMBERS FROM BEGINNING;
 {"ROWTIME":1546904994645,"ROWKEY":"2","NUMBER":2,"X":1,"Y":-90,"Z":1}
 {"ROWTIME":1546904994645,"ROWKEY":"4","NUMBER":4,"X":1,"Y":90,"Z":-1}
 ----
++
 
 8. Explain to the audience that these are the coordinates from each number stored in the Kafka topic. Ask them to write down the coordinates for number 3, which is *X: -180, Y: 0, Z: 180*.
 +
