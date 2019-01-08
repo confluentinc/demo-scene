@@ -258,6 +258,7 @@ cd terraform/aws
 ----
 
 2. Run the following command:
++
 
 [source,bash]
 ----
