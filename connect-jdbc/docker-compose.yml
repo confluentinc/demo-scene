@@ -65,14 +65,14 @@ services:
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
-      CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
+      CONNECT_LOG4J_ROOT_LOGLEVEL: "DEBUG"
       CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_PLUGIN_PATH: '/usr/share/java'
-    # volumes:
-    #   - db-leach:/db-leach/
+    volumes:
+      - db-leach:/db-leach/
     #   - /my/local/folder/with/jdbc-driver.jar:/usr/share/java/kafka-connect-jdbc/jars/
     command: 
       - /bin/bash
@@ -87,7 +87,7 @@ services:
         cd /usr/share/java/kafka-connect-jdbc/
         curl http://central.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/7.0.0.jre8/mssql-jdbc-7.0.0.jre8.jar --output mssql-jdbc-7.0.0.jre8.jar
         # # Oracle
-        # cp /db-leach/jdbc/lib/ojdbc8.jar /usr/share/java/kafka-connect-jdbc
+        cp /db-leach/jdbc/lib/ojdbc8.jar /usr/share/java/kafka-connect-jdbc
         # Now launch Kafka Connect
         sleep infinity &
         /etc/confluent/docker/run 
@@ -164,23 +164,23 @@ services:
         # So that the container doesn't shut down, sleep this thread
         sleep infinity
 
-#   oracle:
-#     # You need to build this image first, following the instructions at 
-#     # https://github.com/oracle/docker-images/blob/master/OracleDatabase/SingleInstance/README.md
-#     image: oracle/database:12.2.0.1-ee
-#     environment:
-#       - ORACLE_PWD=Admin123
-#     ports:
-#       - 1521:1521
-#     volumes:
-#       - $PWD/data/oracle/oradata:/opt/oracle/oradata
-#       - $PWD/data/oracle/oradata/recovery_area:/opt/oracle/oradata/recovery_area
-# #      - $PWD/data/oracle/ora-setup-scripts:/opt/oracle/scripts/setup
-# #      - $PWD/data/oracle/ora-startup-scripts:/opt/oracle/scripts/startup
-#       - db-leach:/opt/oracle/product/12.2.0.1/dbhome_1/
+  oracle:
+    # You need to build this image first, following the instructions at 
+    # https://github.com/oracle/docker-images/blob/master/OracleDatabase/SingleInstance/README.md
+    image: oracle/database:12.2.0.1-ee
+    environment:
+      - ORACLE_PWD=Admin123
+    ports:
+      - 1521:1521
+    volumes:
+      - $PWD/data/oracle/oradata:/opt/oracle/oradata
+      - $PWD/data/oracle/oradata/recovery_area:/opt/oracle/oradata/recovery_area
+      - $PWD/data/oracle/ora-setup-scripts:/opt/oracle/scripts/setup
+      - $PWD/data/oracle/ora-startup-scripts:/opt/oracle/scripts/startup
+      - db-leach:/opt/oracle/product/12.2.0.1/dbhome_1/
 
-# volumes:
-#     db-leach: {}
+volumes:
+    db-leach: {}
 
 
 
