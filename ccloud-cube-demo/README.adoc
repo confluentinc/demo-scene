@@ -131,7 +131,7 @@ In this step, you run Terraform, so it can create the infrastructure and deploy 
 cd terraform/aws
 ----
 
-2. Open the *webapp.tf* file in a text editor to edit its contents. In the section that declares a variable called "bucket_suffix"; you must replace the current content with a suffix that would be unique to you, such as your last name. This is important to prevent race conditions if two or more persons are running the demo simultaneously.
+2. Open the *webapp.tf* file in a text editor to edit its contents. In the section that declares a variable called _*bucket_suffix*_; you must replace the current content with a suffix that would be unique to you, such as your last name. This is important to prevent race conditions if two or more persons are running the demo simultaneously.
 +
 
 [source,bash]
