@@ -131,7 +131,24 @@ In this step, you run Terraform, so it can create the infrastructure and deploy 
 cd terraform/aws
 ----
 
-2. Initialize the folder to download the required plugins. This step is only required once.
+2. Open the *webapp.tf* file in a text editor to edit its contents. In the section that declares a variable called "bucket_suffix"; you must replace the current content with a suffix that would be unique to you, such as your last name. This is important to prevent race conditions if two or more persons are running the demo simultaneously.
++
+
+[source,bash]
+----
+###########################################
+################ S3 Bucket ################
+###########################################
+
+variable "bucket_suffix" {
+
+    default = "SET_YOUR_OWN_PREFIX_WITHIN_THESE_DOUBLE_QUOTES"
+
+}
+----
+
+
+3. Initialize the folder to download the required plugins. This step is only required once.
 +
 
 [source,bash]
@@ -139,7 +156,7 @@ cd terraform/aws
 terraform init
 ----
 
-3. Perform a dry-run of the install by planning what is going to be created, modified and destroyed.
+4. Perform a dry-run of the install by planning what is going to be created, modified and destroyed.
 +
 
 [source,bash]
@@ -147,7 +164,7 @@ terraform init
 terraform plan
 ----
 
-4. Apply the plan configuration in AWS. After running the command below.
+5. Apply the plan configuration in AWS. After running the command below.
 +
 
 [source,bash]
@@ -155,7 +172,7 @@ terraform plan
 terraform apply -auto-approve
 ----
 
-5. The provisioning process may take *~5 minutes to complete*. Once it finishes, it will show all relevant endpoints like this:
+6. The provisioning process may take *~5 minutes to complete*. Once it finishes, it will show all relevant endpoints like this:
 +
 
 [source,bash]

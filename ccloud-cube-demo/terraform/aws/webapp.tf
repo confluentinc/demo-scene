@@ -4,7 +4,7 @@
 
 variable "bucket_suffix" {
 
-    default = "-riferrei"
+    default = "riferrei"
 
 }
 
@@ -24,7 +24,7 @@ data "template_file" "cc_props_template" {
 
 resource "aws_s3_bucket" "ccloud_demo" {
 
-    bucket = "ccloud-demo${var.bucket_suffix}"
+    bucket = "ccloud-demo-${var.bucket_suffix}"
     acl = "public-read"
 
     cors_rule {
