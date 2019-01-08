@@ -29,7 +29,7 @@ This demo was created based on the open-source project called ccloud-tools: http
 2. You need to have Terraform installed locally. You can find more details about how to install it https://learn.hashicorp.com/terraform/getting-started/install.html[here].
 +
 
-3. You need to have the Confluent Cloud CLI installed locally. You can find more details abouy how to install it https://docs.confluent.io/current/cloud/cli/install.html[here]. Make sure to have the Confluent Cloud CLI in the path of your O.S, since the provisioning process creates the necessary topics from your computer using the 'ccloud' utility.
+3. You need to have the Confluent Cloud CLI installed locally. You can find more details about how to install it https://docs.confluent.io/current/cloud/cli/install.html[here]. Make sure to have the Confluent Cloud CLI in the path of your O.S, since the provisioning process creates the necessary topics from your computer using the 'ccloud' utility.
 
 
 == Step 1: Create Kafka Cluster in Confluent Cloud
@@ -51,14 +51,14 @@ image:images/cloud-pay-launch.png[Launch Cluster]
 
 == Step 2: Get Connectivity Details from your Confluent Cloud Cluster
 
-In this step, you retrieve the connectivity details from your Confluent Cloud cluster. The actions shown here are usually performed when you want to install the Confluent Cloud CLI and interact with your cluster. However, you don’t need to perform a full install of the Confluent Cloud CLI. We only need the connectivity details that are created as part of the process.
+In this step, you are going to retrieve the connectivity details from your Confluent Cloud cluster. The data obtained in this step will be further used when Terraform will provision the Confluent Platform components in AWS, and these components will need to connect to the Kafka cluster running on Confluent Cloud.
 
 1. From the *Management -> Clusters* page, click the ellipses on the right-hand side of your cluster name and click *Client config*.
 +
 
 image:images/cloud-view-details.png[View Cluster Details]
 
-2. Follow the on-screen Confluent Cloud installation instructions, starting from the section *Configure Confluent Cloud CLI*. You don’t need to perform any steps from that section, because you’re not installing the Confluent Cloud CLI. Just click *Create Kafka Cluster API key & secret* to generate a new credential key pair.
+2. Follow the on-screen Confluent Cloud installation instructions, starting from the section *Configure Confluent Cloud CLI*. Click in the *Create Kafka Cluster API key & secret* button to generate a new credential key pair.
 +
 
 image:images/cloud-cli-config.png[Client Config]
@@ -102,7 +102,7 @@ aws_secret_key = "<YOUR_AWS_SECRET_KEY>"
 
 == Step 4: Specify the Confluent Cloud Cluster Connectivity Details
 
-In this step, you configure your Confluent Cloud cluster connectivity details, so that once the tools are provisioned, they can connect to the cluster automatically. The information used here was gathered during Step 2: Get Connectivity Details from your Confluent Cloud Cluster.
+In this step, you configure your Confluent Cloud cluster connectivity details, so that once the Confluent components are provisioned, they can connect to the Kafka cluster automatically. The information used here was gathered during Step 2: Get Connectivity Details from your Confluent Cloud Cluster.
 
 1. Navigate to the */terraform/aws* directory.
 +
