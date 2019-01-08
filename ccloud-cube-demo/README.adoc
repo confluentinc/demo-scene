@@ -155,7 +155,7 @@ terraform plan
 terraform apply -auto-approve
 ----
 
-5. The provisioning process may take ~5 minutes to complete. Once it finishes, it will show all relevant endpoints like this:
+5. The provisioning process may take *~5 minutes to complete*. Once it finishes, it will show all relevant endpoints like this:
 
 [source,bash]
 ----
