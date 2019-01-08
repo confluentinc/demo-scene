@@ -15,7 +15,7 @@ image:images/the_cube.jpg[The Cube, 300, 500, role="center"]
 
 The application itself is nothing but a set of HTML pages stored in an S3 bucket in AWS, and this S3 bucket has been configured to act as a web server. Therefore, users can access from anywhere as long as they are using an HTTP-enabled device. The application presents the user with a cube that moves as the user moves its hands and body. It relies on the device orientation API found in most modern devices.
 
-Anyone capable of perfectly positioning the cube to these coordinates will be shown in a KSQL query. This query is executed against a table called *SELECTED_WINNERS*, that is the result of a join between the inbound streams and a table that holds the information of the coordinates.
+Anyone capable of perfectly positioning the cube using the coordinates the represents the number three will be shown in the output of a KSQL query. This query is executed against a table called *SELECTED_WINNERS*, that is the result of a join between the inbound streams (created around the _EVENTS topic) and a table that holds the information of the coordinates.
 
 image:images/selected_winner.png[Selected Winner]
 
