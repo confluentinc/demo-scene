@@ -11,7 +11,7 @@ While users play with the application from their mobile devices, events containi
 
 image:images/the_cube.jpg[The Cube]
 
-Anyone capable of perfectly positioning the cube to these coordinates will be shown in a KSQL query. This query is executed against a table called "SELECTED_WINNERS", that is the result of a join between the inbound streams and a table that holds the information of the coordinates.
+Anyone capable of perfectly positioning the cube to these coordinates will be shown in a KSQL query. This query is executed against a table called *SELECTED_WINNERS*, that is the result of a join between the inbound streams and a table that holds the information of the coordinates.
 
 image:images/selected_winner.png[Selected Winner]
 
