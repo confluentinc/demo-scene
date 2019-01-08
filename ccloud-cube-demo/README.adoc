@@ -5,11 +5,15 @@ v1.00, January 4, 2019
 
 == Introduction
 
-This code contains a sample application called "The Cube" that allow users to interact with Kafka clusters running on Confluent Cloud by using their movile devices.
+This code contains a sample application called "The Cube" that allow users to interact with Kafka clusters running on Confluent Cloud by using their mobile devices. While users play with the application from their mobile devices, events containing their moves are emitted to a topic.
 
-While users play with the application from their mobile devices, events containing their moves are emitted to a topic. This topic holds the log of all events and it is the basis for a set of inbound streams created by KSQL. The game is about having people moving the cube in their mobile devices, trying to position the number 3 using a set of coordinates.
+image:images/rest-api-call.png[REST API Call]
+
+As you can see in the diagram above, the application performs a REST call into a REST Proxy deployment that runs on its own VPC. This REST Proxy deployment, in turn, serializes the record using Avro and writes to a topic called *_EVENTS* that sits on a cluster running on Confluent Cloud.
 
 image:images/the_cube.jpg[The Cube, 300, 500, role="center"]
+
+The application itself is nothing but a set of HTML pages stored in an S3 bucket in AWS, and this S3 bucket has been configured to act as a web server. Therefore, users can access from anywhere as long as they are using an HTTP-enabled device. The application presents the user with a cube that moves as the user moves its hands and body. It relies on the device orientation API found in most modern devices.
 
 Anyone capable of perfectly positioning the cube to these coordinates will be shown in a KSQL query. This query is executed against a table called *SELECTED_WINNERS*, that is the result of a join between the inbound streams and a table that holds the information of the coordinates.
 
