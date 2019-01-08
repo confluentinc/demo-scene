@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<title>Confluent Cloud "The Cube" Demo</title>
+
+<head>
+
+    <meta charset=UTF-8>
+    <meta name=viewport content="width=device-width,initial-scale=0">
+
+    <style>
+        * {
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+        }
+
+        body {
+            max-width: 500px;
+            margin: 2em auto;
+            padding: 0 0.5em;
+            font-size: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .api-support {
+            display: block;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .cube {
+            width: 150px;
+            height: 150px;
+            position: relative;
+            margin: 30px auto;
+            -webkit-transform-style: preserve-3d;
+            transform-style: preserve-3d;
+        }
+
+        .face {
+            width: 150px;
+            height: 150px;
+            position: absolute;
+            font-size: 80px;
+            text-align: center;
+            line-height: 150px;
+            background-color: #999999;
+            box-shadow: inset 0 0 20px #333333;
+            opacity: 0.6;
+        }
+
+        .cube .one {
+            -webkit-transform: translateZ(75px);
+            transform: translateZ(75px);
+        }
+
+        .cube .two {
+            -webkit-transform: rotateY(90deg) translateZ(75px);
+            transform: rotateY(90deg) translateZ(75px);
+        }
+
+        .cube .three {
+            -webkit-transform: rotateY(180deg) translateZ(75px);
+            transform: rotateY(180deg) translateZ(75px);
+        }
+
+        .cube .four {
+            -webkit-transform: rotateY(-90deg) translateZ(75px);
+            transform: rotateY(-90deg) translateZ(75px);
+        }
+
+        .cube .five {
+            -webkit-transform: rotateX(90deg) translateZ(75px);
+            transform: rotateX(90deg) translateZ(75px);
+        }
+
+        .cube .six {
+            -webkit-transform: rotateX(-90deg) translateZ(75px) rotate(0deg);
+            transform: rotateX(-90deg) translateZ(75px) rotate(0deg);
+        }
+
+        .value {
+            font-weight: bold;
+        }
+
+        .author {
+            display: block;
+            margin-top: 1em;
+        }
+        
+    </style>
+
+
+    <script>
+
+      function checkName() {
+          
+          if (window.name == null | window.name.length == 0) {
+              
+              window.name = "Cheater";
+
+          }
+
+      }
+
+      function move() {
+
+	      var x = document.getElementById('x').value;
+          var y = document.getElementById('y').value;
+          var z = document.getElementById('z').value;
+
+          document.getElementById('cube').style.webkitTransform =
+	         document.getElementById('cube').style.transform =
+                'rotateX(' + x + 'deg) ' +
+                'rotateY(' + y + 'deg) ' +
+                'rotateZ(' + z + 'deg)';
+
+      }
+
+      function cheat() {
+
+          var x = parseInt(document.getElementById('x').value);
+          var y = parseInt(document.getElementById('y').value);
+          var z = parseInt(document.getElementById('z').value);
+          
+          var record = {};
+          record.name = window.name;
+          
+          record.motion = {
+
+             "x" : x,
+             "y" : y,
+             "z" : z
+
+          };
+
+          record.speed = {
+
+             "x" : 0,
+             "y" : 0,
+             "z" : 0
+
+          };
+
+          publishEvent(record);
+
+      }
+
+        function publishEvent(record) {
+
+            var eventData = {};
+
+            eventData.value_schema_id = 1;
+            eventData.records = [{"value" : {
+                "event" : {}
+            }}];
+
+            eventData.records[0].value.event = record;
+
+            var json = JSON.stringify(eventData);
+            const request = new XMLHttpRequest();
+            const url = "${rest_proxy_endpoint}/topics/_EVENTS";
+            request.open("POST", url, true);
+
+            request.setRequestHeader("Content-Type", "application/vnd.kafka.avro.v2+json");
+            request.send(json);
+
+        }
+  
+    </script>
+
+</head>
+
+<body onload="checkName()">
+
+    <center>
+
+      <img src="ccloud-logo.jpg" />
+
+      <table>
+        <tr>
+            <td>
+
+                    <div id=cubeArea>
+
+                            <div id=cube class=cube>
+                                <div class="face one">1</div>
+                                <div class="face two">2</div>
+                                <div class="face three">3</div>
+                                <div class="face four">4</div>
+                                <div class="face five">5</div>
+                                <div class="face six">6</div>
+                            </div>
+                    
+                        </div>
+
+            </td>
+            <td>
+
+                    <table border="1">
+                            <tr>
+                                <td>X: </td>
+                                <td><input type="text" id="x" value="0" /></td>
+                            </tr>
+                            <tr>
+                                <td>Y: </td>
+                                <td><input type="text" id="y" value="0" /></td>
+                            </tr>
+                            <tr>
+                                <td>Z: </td>
+                                <td><input type="text" id="z" value="0" /></td>
+                            </tr>
+                          </table>
+                    
+                          <input type="button" value="Move" onclick="move()" />
+                          <input type="button" value="Cheat" onclick="cheat()" />
+
+            </td>
+        </tr>
+      </table>
+
+    </center>
+
+</body>
+
+</html>
