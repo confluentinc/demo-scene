@@ -19,6 +19,8 @@ Anyone capable of perfectly positioning the cube using the coordinates the repre
 
 image:images/selected_winner.png[Selected Winner]
 
+This demo was created based on the open-source project called ccloud-tools: https://github.com/confluentinc/ccloud-tools
+
 == Step 1: Create Kafka Cluster in Confluent Cloud
 
 1. Login to Confluent Cloud at https://confluent.cloud.
