@@ -9,7 +9,7 @@ This code contains a sample application called "The Cube" that allow users to in
 
 While users play with the application from their mobile devices, events containing their moves are emitted to a topic. This topic holds the log of all events and it is the basis for a set of inbound streams created by KSQL. The game is about having people moving the cube in their mobile devices, trying to position the number 3 using a set of coordinates.
 
-image:images/the_cube.jpg[The Cube, 300, 300, role="center"]
+image:images/the_cube.jpg[The Cube, 300, 500, role="center"]
 
 Anyone capable of perfectly positioning the cube to these coordinates will be shown in a KSQL query. This query is executed against a table called *SELECTED_WINNERS*, that is the result of a join between the inbound streams and a table that holds the information of the coordinates.
 
