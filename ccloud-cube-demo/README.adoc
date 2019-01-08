@@ -31,7 +31,6 @@ image:images/cloud-create-topic.png[Create Cluster]
 image:images/cloud-pay-launch.png[Launch Cluster]
 
 4. Confirm your cluster subscription details, payment information, and click *Save and launch cluster*.
-+
 
 == Step 2: Get Connectivity Details from your Confluent Cloud Cluster
 
@@ -48,7 +47,6 @@ image:images/cloud-view-details.png[View Cluster Details]
 image:images/cloud-cli-config.png[Client Config]
 
 3. Take note of the information provided by this page, especifically the *Bootstrap Broker List*, the *API Key* and *API Secret*, and keep it in a safe place. You’ll provide this information later, during the Terraform setup.
-+
 
 == Step 3: Specify the Cloud Provider (AWS) Credentials Details
 
@@ -84,7 +82,6 @@ aws_secret_key = "<YOUR_AWS_SECRET_KEY>"
 ----
 
 4. Provide the requested information accordingly and save the changes in the file.
-+
 
 == Step 4: Specify the Confluent Cloud Cluster Connectivity Details
 
@@ -121,7 +118,6 @@ ccloud_secret_key = "<CCLOUD_SECRET_KEY>"
 ----
 
 4. Provide the requested information accordingly and save the changes in the file.
-+
 
 == Step 5: Run Terraform
 
@@ -160,7 +156,6 @@ terraform apply -auto-approve
 ----
 
 5. The provisioning process may take ~5 minutes to complete. Once it finishes, it will show all relevant endpoints like this:
-+
 
 [source,bash]
 ----
@@ -252,7 +247,6 @@ SELECT CONCAT('AND THE WINNER IS ----------> ', NAME) AS MESSAGE FROM SELECTED_W
 +
 
 12. Provide the url of the game to the audience. That is the same url that you used on step number one. You might want to use a URL shortener before providing that url. That will make easy for the audience to write it down in their mobile devices.
-+
 
 == Step 7: Destroying the Demo
 
@@ -267,7 +261,6 @@ cd terraform/aws
 ----
 
 2. Run the following command:
-+
 
 [source,bash]
 ----
