@@ -1,4 +1,4 @@
-= Confluent Cloud "The Cube" Demo - Hands On guide
+= Confluent Cloud "The Cube" Demo
 
 Ricardo Ferreira, <ricardo@confluent.io>
 v1.00, January 4, 2019
