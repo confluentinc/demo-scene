@@ -65,7 +65,7 @@ services:
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
-      CONNECT_LOG4J_ROOT_LOGLEVEL: "DEBUG"
+      CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
       CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
@@ -105,6 +105,10 @@ services:
       KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
 
   ksql-cli:
+    # *-----------------------------*
+    # To connect to the KSQL CLI: 
+    #   docker-compose exec ksql-cli ksql http://ksql-server:8088
+    # *-----------------------------*
     image: confluentinc/cp-ksql-cli:5.1.0
     depends_on:
       - ksql-server
@@ -113,6 +117,10 @@ services:
       
 # Other systems
   mysql:
+    # *-----------------------------*
+    # To connect to the DB: 
+    #   docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
+    # *-----------------------------*
     image: mysql
     ports:
       - 3306:3306
@@ -124,6 +132,10 @@ services:
      - ./data/mysql:/docker-entrypoint-initdb.d/
 
   postgres:
+    # *-----------------------------*
+    # To connect to the DB: 
+    #   docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+    # *-----------------------------*
     image: postgres:11
     environment:
      - POSTGRES_USER=postgres
@@ -132,6 +144,10 @@ services:
      - ./data/postgres:/docker-entrypoint-initdb.d/
 
   mssql:
+    # *-----------------------------*
+    # To connect to the DB: 
+    #   docker-compose exec mssql bash -c '/opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -U sa -P $SA_PASSWORD'
+    # *-----------------------------*
     image: mcr.microsoft.com/mssql/server:2017-latest
     environment: 
       - SA_PASSWORD=Admin123
@@ -167,6 +183,11 @@ services:
   oracle:
     # You need to build this image first, following the instructions at 
     # https://github.com/oracle/docker-images/blob/master/OracleDatabase/SingleInstance/README.md
+    #
+    # *-----------------------------*
+    # To connect to the DB: 
+    #   docker-compose exec oracle bash -c 'sleep 1;rlwrap sqlplus sys/$ORACLE_PWD@localhost:1521/ORCLCDB as sysdba'
+    # *-----------------------------*
     image: oracle/database:12.2.0.1-ee
     environment:
       - ORACLE_PWD=Admin123
@@ -181,6 +202,3 @@ services:
 
 volumes:
     db-leach: {}
-
-
-
