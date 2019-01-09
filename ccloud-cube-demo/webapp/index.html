@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+
+  <title>Confluent Cloud "The Cube" Demo</title>
+
+<head>
+
+  <meta charset=UTF-8>
+  <meta name=viewport content="width=device-width,initial-scale=0">
+
+  <script>
+
+    function play() {
+
+      var name = document.getElementById("name").value;
+
+      if (name == null || name == '') {
+
+        alert('You need to provide a name to play');
+        return;
+
+      }
+
+      window.name = document.getElementById("name").value;
+      window.location.href = "play.html";
+
+    }
+
+  </script>
+
+</head>
+
+<body>
+
+    <center><img src="ccloud-logo.jpg" /></center>
+
+    <center>
+      <table>
+        <tr>
+          <td><h2>Your Name:</h2></td><td></td>
+        </tr>
+        <tr>
+          <td><input type="text" id="name" style="border-radius: 8px;width: 200px; font-size:18pt;" /></td>
+          <td><input type="button" style="font-size:18pt;background-color: #008CBA;border-radius: 8px;width: 80px; color: white;" onclick="play()" value="Play"></td>
+        </tr>
+      </table>
+    </center>
+
+</body>
+
+</html>
