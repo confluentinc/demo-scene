@@ -1,0 +1,5 @@
+= Kafka Connect JDBC test environment
+
+This Docker Compose can be used to spin up an environment in which to explore and test the Kafka Connect JDBC source connector. It includes MySQL, Postgres, Oracle, and MS SQL Server. 
+
+The associated blog article can be found at https://confluent.io/blog
