@@ -24,6 +24,9 @@ Scripts and samples to support Confluent Platform talks. May be rough around the
   * [Kafka Connect JDBC Source demo environment](connect-jdbc)
   * [Example Kafka Connect syslog configuration and Docker Compose](syslog)
 
+* Confluent Cloud
+  * [Confluent Cloud "The Cube" Demo](ccloud-cube-demo)
+
 * Misc
   * [Hacky export/import between Kafka clusters](export-import-with-kafkacat) using `kafkacat`
   * Docker Compose for just the [community licensed components of Confluent Platform](cos)

@@ -1,1 +1,1 @@
-This has moved to https://github.com/confluentinc/quickstart-demos/
+This has moved to https://github.com/confluentinc/examples/
