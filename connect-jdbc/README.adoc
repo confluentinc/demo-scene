@@ -2,6 +2,8 @@
 
 This Docker Compose can be used to spin up an environment in which to explore and test the Kafka Connect JDBC source connector. 
 
+The associated blog article can be found at https://confluent.io/blog
+
 .Current environment
 
 |=====================================================================
@@ -12,4 +14,39 @@ This Docker Compose can be used to spin up an environment in which to explore an
 |Oracle             | 12.2.0.1.0
 |=====================================================================
 
-The associated blog article can be found at https://confluent.io/blog
+== Getting a CLI session
+
+* KSQL
++
+[source,bash]
+----
+docker-compose exec ksql-cli ksql http://ksql-server:8088
+----
+
+* MySQL
++
+[source,bash]
+----
+docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
+----
+
+* Postgres
++
+[source,bash]
+----
+docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+----
+
+* Oracle
++
+[source,bash]
+----
+docker-compose exec oracle bash -c 'sqlplus sys/$ORACLE_PWD@localhost:1521/ORCLCDB as sysdba'
+----
+
+* MS SQL Server
++
+[source,bash]
+----
+docker-compose exec mssql bash -c '/opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -U sa -P $SA_PASSWORD'
+----
