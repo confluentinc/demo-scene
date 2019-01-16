@@ -5,13 +5,13 @@
 version: '2'
 services:
   zookeeper:
-    image: "confluentinc/cp-zookeeper:5.0.1"
+    image: "confluentinc/cp-zookeeper:5.1.0"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: "confluentinc/cp-enterprise-kafka:5.0.1"
+    image: "confluentinc/cp-enterprise-kafka:5.1.0"
     ports:
       - '9092:9092'
     depends_on:
@@ -33,7 +33,7 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: "confluentinc/cp-schema-registry:5.0.1"
+    image: "confluentinc/cp-schema-registry:5.1.0"
     depends_on:
       - zookeeper
       - kafka
@@ -44,7 +44,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.0.1
+    image: confluentinc/cp-ksql-server:5.1.0
     depends_on:
       - kafka
       - schema-registry
@@ -54,8 +54,15 @@ services:
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
 
+  ksql-cli:
+    image: confluentinc/cp-ksql-cli:5.0.1
+    depends_on:
+      - ksql-server
+    entrypoint: /bin/sh
+    tty: true
+
   connect:
-    image: confluentinc/cp-kafka-connect:5.0.1
+    image: confluentinc/cp-kafka-connect:5.1.0
     ports:
       - "8083:8083"
     environment:
