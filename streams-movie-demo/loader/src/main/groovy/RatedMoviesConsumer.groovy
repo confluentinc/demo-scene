@@ -1,5 +1,4 @@
 import groovy.transform.CompileStatic
-import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.LongDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -25,8 +24,8 @@ class RatedMoviesConsumer {
 
     while (true) {
       def records = consumer.poll(ofMillis(100))
-      records.forEach { ConsumerRecord it ->
-        println it.value()
+      for (record in records) {
+        println record.value()
       }
     }
   }
