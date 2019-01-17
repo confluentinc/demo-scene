@@ -1,6 +1,3 @@
-# N.B. This assumes that you have a /u01/connectors folder and within it the Connectors that you plan to use.
-#      You can get these from hub.confluent.io and confluent-hub install <connector>
-#      You can also download the source code and put the built object in this path. 
 ---
 version: '2'
 services:
@@ -11,6 +8,23 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
+    # "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-
+    # An important note about accessing Kafka from clients on other machines: 
+    # -----------------------------------------------------------------------
+    #
+    # The config used here exposes port 9092 for _external_ connections to the broker
+    # i.e. those from _outside_ the docker network. This could be from the host machine
+    # running docker, or maybe further afield if you've got a more complicated setup. 
+    # If the latter is true, you will need to change the value 'localhost' in 
+    # KAFKA_ADVERTISED_LISTENERS to one that is resolvable to the docker host from those 
+    # remote clients
+    #
+    # For connections _internal_ to the docker network, such as from other services
+    # and components, use kafka:29092.
+    #
+    # See https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
+    # "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-
+    #  
     image: "confluentinc/cp-enterprise-kafka:5.1.0"
     ports:
       - '9092:9092'
@@ -29,7 +43,7 @@ services:
       CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092
       CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
       CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
-      CONFLUENT_METRICS_ENABLE: 'true'
+      CONFLUENT_METRICS_ENABLE: 'false'
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
@@ -55,7 +69,7 @@ services:
       KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
 
   ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.0.1
+    image: confluentinc/cp-ksql-cli:5.1.0
     depends_on:
       - ksql-server
     entrypoint: /bin/sh
@@ -84,10 +98,8 @@ services:
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
-      CONNECT_PLUGIN_PATH: '/usr/share/java,/u01/connectors'
+      CONNECT_PLUGIN_PATH: '/usr/share/java'
     depends_on:
       - zookeeper
       - kafka
       - schema-registry
-    volumes:
-      - /u01/connectors:/u01/connectors
