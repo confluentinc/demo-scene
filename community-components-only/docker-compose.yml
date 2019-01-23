@@ -1,11 +1,23 @@
+# A note about JMX:
+#
+# * If you want to be able to access JMX from within the Docker network: 
+#     -> Set JMX_HOSTNAME to the container's hostname and no need to expose the port 
+# * If you want to be able to access JMX from your host machine
+#     -> Set JMX_HOSTNAME to "localhost" and expose the JMX_PORT
+#
+# See also https://rmoff.net/2018/09/19/exploring-jmx-with-jmxterm/
 ---
 version: '2'
 services:
   zookeeper:
     image: "confluentinc/cp-zookeeper:5.1.0"
+    ports:
+      - '31000:31000'
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_JMX_HOSTNAME: "localhost"
+      KAFKA_JMX_PORT: 31000
 
   kafka:
     # "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-
@@ -28,6 +40,7 @@ services:
     image: "confluentinc/cp-enterprise-kafka:5.1.0"
     ports:
       - '9092:9092'
+      - '31001:31001'
     depends_on:
       - zookeeper
     environment:
@@ -45,6 +58,8 @@ services:
       CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
       CONFLUENT_METRICS_ENABLE: 'false'
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+      KAFKA_JMX_HOSTNAME: "localhost"
+      KAFKA_JMX_PORT: 31001
 
   schema-registry:
     image: "confluentinc/cp-schema-registry:5.1.0"
@@ -53,20 +68,27 @@ services:
       - kafka
     ports:
       - '8081:8081'
+      - '31002:31002'
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
+      SCHEMA_REGISTRY_JMX_HOSTNAME: "localhost"
+      SCHEMA_REGISTRY_JMX_PORT: 31002
 
   ksql-server:
     image: confluentinc/cp-ksql-server:5.1.0
     depends_on:
       - kafka
       - schema-registry
+    ports:
+      - '31003:31003'
     environment:
       KSQL_BOOTSTRAP_SERVERS: kafka:29092
       KSQL_LISTENERS: http://0.0.0.0:8088
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
+      KSQL_JMX_HOSTNAME: "localhost"
+      KSQL_JMX_PORT: 31003
 
   ksql-cli:
     image: confluentinc/cp-ksql-cli:5.1.0
@@ -78,10 +100,11 @@ services:
   connect:
     image: confluentinc/cp-kafka-connect:5.1.0
     ports:
-      - "8083:8083"
+      - '8083:8083'
+      - '31004:31004'
     environment:
       CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
-      CONNECT_REST_PORT: 18083
+      CONNECT_REST_PORT: 31003
       CONNECT_GROUP_ID: compose-connect-group
       CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
       CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-offsets
@@ -99,7 +122,26 @@ services:
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_PLUGIN_PATH: '/usr/share/java'
+      KAFKA_JMX_HOSTNAME: "localhost"
+      KAFKA_JMX_PORT: 31004
     depends_on:
       - zookeeper
       - kafka
       - schema-registry
+
+  rest-proxy:
+    image: confluentinc/cp-kafka-rest:5.1.0
+    depends_on:
+      - zookeeper
+      - broker
+      - schema-registry
+    ports:
+      - '8082:8082'
+      - '31005:31005'
+    environment:
+      KAFKA_REST_HOST_NAME: rest-proxy
+      KAFKA_REST_BOOTSTRAP_SERVERS: 'broker:9092'
+      KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
+      KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      KAFKAREST_JMX_HOSTNAME: "localhost"
+      KAFKAREST_JMX_PORT: 31005
