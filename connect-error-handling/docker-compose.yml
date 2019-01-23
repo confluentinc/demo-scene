@@ -60,9 +60,12 @@ services:
       - kafka
     ports:
       - '8081:8081'
+      - "18090:18090"
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
+      SCHEMA_REGISTRY_JMX_PORT: 18090
+      SCHEMA_REGISTRY_JMX_HOSTNAME: localhost
 
   ksql-server:
     image: confluentinc/cp-ksql-server:5.1.0
@@ -94,7 +97,7 @@ services:
       - schema-registry
     ports:
       - "8083:8083"
-      - "18088:18088"
+      # - "18088:18088"
     environment:
       CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
       CONNECT_REST_PORT: 8083
@@ -115,13 +118,15 @@ services:
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_PLUGIN_PATH: '/usr/share/java'
-      # CONNECT_JMX_HOSTNAME: "localhost"
-      # CONNECT_JMX_PORT: 18088
-      KAFKA_JMX_HOSTNAME: "localhost"
+      # Set JMX_HOSTNAME to localhost and expose port 18088 if you want to be
+      #  able to access JMX from your host machine. Set it to kafka-connect if you
+      #  want to be able to access JMX from within the Docker network
+      # KAFKA_JMX_HOSTNAME: "localhost"
+      KAFKA_JMX_HOSTNAME: "kafka-connect"
       KAFKA_JMX_PORT: 18088
     volumes:
       - $PWD/data:/data
-      # - /Users/Robin/git/kafka-connect-transform-common/target/kafka-connect-target/usr/share/kafka-connect/kafka-connect-transform-common:/usr/share/java/kafka-connect-transform-common
+      - /Users/Robin/git/kafka-connect-transform-common/target/kafka-connect-target/usr/share/kafka-connect/kafka-connect-transform-common:/usr/share/java/kafka/kafka-connect-transform-common
 
 
   kafkacat:
@@ -147,3 +152,38 @@ services:
                 sleep 0.5
               done
           done
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_PATHS_DATA=/var/lib/grafana
+      - GF_DEFAULT_THEME=light
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+# $ curl --user admin:admin -X POST http://localhost:3000/api/datasources -H "Content-Type: application/json" -d '{"orgId":1,"name":"InfluxDB","type":"influxdb","typeLogoUrl":"","access":"proxy","url":"http://influxdb:8086","password":"","user":"","database":"influx","basicAuth":false,"basicAuthUser":"","basicAuthPassword":"","withCredentials":false,"isDefault":true,"jsonData":{"keepCookies":[]},"secureJsonFields":{},"version":2,"readOnly":false}'
+
+  jmxtrans:
+    image: jmxtrans/jmxtrans:latest
+    depends_on:
+      - influxdb
+    environment:
+      - SECONDS_BETWEEN_RUNS=5
+    volumes:
+      - ./config/kafka-connect.json:/var/lib/jmxtrans/jmx.json
+
+  influxdb:
+    image: influxdb:latest
+    ports:
+      - 8086:8086
+    volumes:
+      - ./data/influx/:/var/lib/influxdb
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.5.4
+    ports:
+      - 9200:9200
+    environment:
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"

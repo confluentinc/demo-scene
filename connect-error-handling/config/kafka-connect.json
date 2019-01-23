@@ -1,0 +1,158 @@
+{
+    "servers": [
+        {
+            "alias": "Kafka Connect",
+            "host": "kafka-connect",
+            "port": "18088",
+            "queries": [
+                {
+                    "obj": "kafka.connect:type=connect-worker-metrics",
+                    "resultAlias": "connect-worker-metrics",
+                    "outputWriters": [
+                        {
+                            "@class": "com.googlecode.jmxtrans.model.output.InfluxDbWriterFactory",
+                            "url": "http://influxdb:8086",
+                            "username": "root",
+                            "password": "root",
+                            "database": "influx"
+                        }
+                    ]
+                },
+                {
+                    "obj": "kafka.connect:type=connect-worker-rebalance-metrics",
+                    "resultAlias": "connect-worker-rebalance-metrics",
+                    "outputWriters": [
+                        {
+                            "@class": "com.googlecode.jmxtrans.model.output.InfluxDbWriterFactory",
+                            "url": "http://influxdb:8086",
+                            "username": "root",
+                            "password": "root",
+                            "database": "influx"
+                        }
+                    ]
+                },
+                {
+                    "obj": "kafka.connect:type=app-info",
+                    "resultAlias": "connect-app-info",
+                    "outputWriters": [
+                        {
+                            "@class": "com.googlecode.jmxtrans.model.output.InfluxDbWriterFactory",
+                            "url": "http://influxdb:8086",
+                            "username": "root",
+                            "password": "root",
+                            "database": "influx"
+                        }
+                    ]
+                },
+                {
+                    "obj": "kafka.connect:type=connector-metrics,connector=*",
+                    "resultAlias": "connector-metrics",
+                    "outputWriters": [
+                        {
+                            "@class": "com.googlecode.jmxtrans.model.output.InfluxDbWriterFactory",
+                            "url": "http://influxdb:8086",
+                            "username": "root",
+                            "password": "root",
+                            "database": "influx"
+                        }
+                    ]
+                },
+                {
+                    "obj": "kafka.connect:type=connector-task-metrics,connector=*,task=*",
+                    "resultAlias": "connector-task-metrics",
+                    "outputWriters": [
+                        {
+                            "@class": "com.googlecode.jmxtrans.model.output.InfluxDbWriterFactory",
+                            "url": "http://influxdb:8086",
+                            "username": "root",
+                            "password": "root",
+                            "database": "influx"
+                        }
+                    ]
+                },
+                {
+                    "obj": "kafka.connect:type=task-error-metrics,connector=*,task=*",
+                    "resultAlias": "task-error-metrics",
+                    "outputWriters": [
+                        {
+                            "@class": "com.googlecode.jmxtrans.model.output.InfluxDbWriterFactory",
+                            "url": "http://influxdb:8086",
+                            "username": "root",
+                            "password": "root",
+                            "database": "influx"
+                        }
+                    ]
+                },
+                {
+                    "obj": "kafka.connect:type=sink-task-metrics,connector=*,task=*",
+                    "resultAlias": "sink-task-metrics",
+                    "outputWriters": [
+                        {
+                            "@class": "com.googlecode.jmxtrans.model.output.InfluxDbWriterFactory",
+                            "url": "http://influxdb:8086",
+                            "username": "root",
+                            "password": "root",
+                            "database": "influx"
+                        }
+                    ]
+                },
+                {
+                    "obj": "kafka.connect:type=source-task-metrics,connector=*,task=*",
+                    "resultAlias": "source-task-metrics",
+                    "outputWriters": [
+                        {
+                            "@class": "com.googlecode.jmxtrans.model.output.InfluxDbWriterFactory",
+                            "url": "http://influxdb:8086",
+                            "username": "root",
+                            "password": "root",
+                            "database": "influx"
+                        }
+                    ]
+                },
+                {
+                    "obj": "kafka.consumer:type=consumer-metrics,client-id=*",
+                    "attr": [
+                        "incoming-byte-rate",
+                        "io-time-ns-avg",
+                        "io-wait-time-ns-avg",
+                        "network-io-rate",
+                        "outgoing-byte-rate",
+                        "request-rate",
+                        "response-rate"
+                    ],
+                    "resultAlias": "kafka-consumer-metrics",
+                    "outputWriters": [
+                        {
+                            "@class": "com.googlecode.jmxtrans.model.output.InfluxDbWriterFactory",
+                            "url": "http://influxdb:8086",
+                            "username": "root",
+                            "password": "root",
+                            "database": "influx"
+                        }
+                    ]
+                },
+                {
+                    "obj": "kafka.producer:client-id=*,type=producer-metrics",
+                    "attr": [
+                        "batch-size-avg",
+                        "incoming-byte-rate",
+                        "io-time-ns-avg",
+                        "io-wait-time-ns-avg",
+                        "network-io-rate",
+                        "outgoing-byte-rate"
+                    ],
+                    "resultAlias": "kafka-producer-metrics",
+                    "outputWriters": [
+                        {
+                            "@class": "com.googlecode.jmxtrans.model.output.InfluxDbWriterFactory",
+                            "url": "http://influxdb:8086",
+                            "username": "root",
+                            "password": "root",
+                            "database": "influx"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
