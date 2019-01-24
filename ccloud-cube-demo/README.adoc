@@ -214,6 +214,11 @@ In this step, you are going to execute a script that will create certain resourc
 These resources include the schema that will be used for the _EVENTS topic, a sample record produced into that topic, as well as a couple streams and tables necessary to play the demo.
 Note that the 'initialze.sh' script is created by Terraform, so don't worry if you don't see this file *before* running Terraform. This script is created by Terraform to make sure that the endpoints used are up-to-date with the infrastructure created.
 
+[source,bash]
+----
+sh initialize.sh
+----
+
 == Step 7: Presenting the Demo
 
 In this step, you are going to present the demo to the audience and play the game with them. Keep in mind that the steps shown here are mandatory; and though you might be tempted to skip some of them and go straight to the action, that will cause the demo to fail.
