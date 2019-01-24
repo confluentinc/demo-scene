@@ -2,13 +2,13 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.0.1
+    image: confluentinc/cp-zookeeper:5.1.0
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.0.1
+    image: confluentinc/cp-enterprise-kafka:5.1.0
     depends_on:
       - zookeeper
     ports:
@@ -47,7 +47,7 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.0.1
+    image: confluentinc/cp-schema-registry:5.1.0
     depends_on:
       - zookeeper
       - kafka
@@ -56,7 +56,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.0.1
+    image: confluentinc/cp-ksql-server:5.1.0
     ports:
       - 8088:8088
     depends_on:
@@ -72,14 +72,14 @@ services:
       KSQL_KSQL_STREAMS_AUTO_OFFSET_RESET: earliest
 
   ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.0.1
+    image: confluentinc/cp-ksql-cli:5.1.0
     depends_on:
       - ksql-server
     entrypoint: /bin/sh
     tty: true
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect:5.0.1
+    image: confluentinc/cp-kafka-connect:5.1.0
     depends_on:
       - zookeeper
       - kafka
@@ -231,7 +231,7 @@ services:
      - TARGET_HOST=send-gess-to-kafka
 
   send-gess-to-kafka:
-    image: confluentinc/cp-enterprise-kafka:5.0.1
+    image: confluentinc/cp-enterprise-kafka:5.1.0
     command: 
       - bash 
       - -c 

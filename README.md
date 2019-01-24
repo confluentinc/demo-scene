@@ -21,6 +21,7 @@ Scripts and samples to support Confluent Platform talks. May be rough around the
 * Kafka Connect
   * [MQTT Connect Connector Demo](mqtt-connect-connector-demo)
   * [Kafka Connect deepdive](connect-deepdive) - understanding converters and serialization
+  * [Kafka Connect JDBC Source demo environment](connect-jdbc)
   * [Example Kafka Connect syslog configuration and Docker Compose](syslog)
 
 * Confluent Cloud
