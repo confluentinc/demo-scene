@@ -24,10 +24,6 @@ cat > ksql-server-ccloud.properties <<- "EOF"
 ${ksql_server_properties}
 EOF
 
-cat > ksql-queries.sql <<- "EOF"
-${ksql_queries}
-EOF
-
 ########### Creating the Service ############
 
 cat > /lib/systemd/system/ksql-server.service <<- "EOF"
@@ -61,9 +57,3 @@ bash -c '/etc/confluent/confluent-5.1.0/bin/kafka-console-producer --broker-list
 3:{"NUMBER" : 3, "X": -180, "Y" : 0, "Z" : 180}
 4:{"NUMBER" : 4, "X": 1, "Y" : 90, "Z" : -1}
 EOF'
-
-###### Create Streams and Tables #######
-
-#bash -c "/etc/confluent/confluent-5.1.0/bin/ksql <<EOF
-#RUN SCRIPT '/etc/confluent/confluent-5.1.0/etc/ksql/ksql-queries.sql';
-#EOF"

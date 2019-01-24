@@ -194,7 +194,7 @@ terraform apply -auto-approve
 
 [source,bash]
 ----
-Apply complete! Resources: 50 added, 0 changed, 0 destroyed.
+Apply complete! Resources: 51 added, 0 changed, 0 destroyed.
 
 Outputs:
 
@@ -208,7 +208,13 @@ REST Proxy                    = http://rest-proxy-900948845.us-east-1.elb.amazon
 Schema Registry               = http://schema-registry-689395304.us-east-1.elb.amazonaws.com
 ----
 
-== Step 6: Presenting the Demo
+== Step 6: Execute the 'initialize.sh' Script
+
+In this step, you are going to execute a script that will create certain resources in the infrastructure just created by Terraform.
+These resources include the schema that will be used for the _EVENTS topic, a sample record produced into that topic, as well as a couple streams and tables necessary to play the demo.
+Note that the 'initialze.sh' script is created by Terraform, so don't worry if you don't see this file *before* running Terraform. This script is created by Terraform to make sure that the endpoints used are up-to-date with the infrastructure created.
+
+== Step 7: Presenting the Demo
 
 In this step, you are going to present the demo to the audience and play the game with them. Keep in mind that the steps shown here are mandatory; and though you might be tempted to skip some of them and go straight to the action, that will cause the demo to fail.
 
@@ -253,21 +259,7 @@ PRINT _NUMBERS FROM BEGINNING;
 8. Explain to the audience that these are the coordinates from each number stored in the Kafka topic. Ask them to write down the coordinates for number 3, which is *X: -180, Y: 0, Z: 180*.
 +
 
-9. Create the streams and tables necessary to run the demo using the DDL statements below:
-+
-
-[source,bash]
-----
-CREATE TABLE NUMBERS (NUMBER BIGINT, X INTEGER, Y INTEGER, Z INTEGER) WITH (KAFKA_TOPIC='_NUMBERS', VALUE_FORMAT='JSON', KEY='NUMBER');
-
-CREATE STREAM EVENTS WITH (KAFKA_TOPIC='_EVENTS', VALUE_FORMAT='AVRO');
-
-CREATE STREAM EVENTS_ENRICHED AS SELECT NAME, MOTION->X AS X, MOTION->Y AS Y, MOTION->Z AS Z, 3 AS NUMBER FROM EVENTS;
-
-CREATE TABLE SELECTED_WINNERS AS SELECT E.NAME AS NAME, COUNT(*) AS TOTAL FROM EVENTS_ENRICHED E LEFT OUTER JOIN NUMBERS N ON E.NUMBER = N.NUMBER WHERE E.X = N.X AND E.Y = N.Y AND E.Z = N.Z GROUP BY NAME;
-----
-
-10. To prepare for the audience to play with the demo, execute the following query in the KSQL CLI:
+9. To prepare for the audience to play with the demo, execute the following query in the KSQL CLI:
 +
 
 [source,bash]
@@ -275,12 +267,12 @@ CREATE TABLE SELECTED_WINNERS AS SELECT E.NAME AS NAME, COUNT(*) AS TOTAL FROM E
 SELECT CONCAT('AND THE WINNER IS ----------> ', NAME) AS MESSAGE FROM SELECTED_WINNERS;
 ----
 
-11. Explain the logic of the demo to the audience. The first person that correctly position the number 3 in the cube using the coordinates given previously will show up in the query that was just executed. The winner might win a prize... blah...
+10. Explain the logic of the demo to the audience. The first person that correctly position the number 3 in the cube using the coordinates given previously will show up in the query that was just executed. The winner might win a prize... blah...
 +
 
-12. Provide the url of the game to the audience. That is the same url that you used on step number one. You might want to use a URL shortener before providing that url. That will make easy for the audience to write it down in their mobile devices.
+11. Provide the url of the game to the audience. That is the same url that you used on step number one. You might want to use a URL shortener before providing that url. That will make easy for the audience to write it down in their mobile devices.
 
-== Step 7: Destroying the Demo
+== Step 8: Destroying the Demo
 
 In this step, you are going to destroy all the resources created by Terraform in the AWS account. This is important because the resources created costs money and are billed by the hour, therefore you don't want to just leave them there.
 

@@ -45,10 +45,3 @@ EOF
 
 systemctl enable schema-registry
 systemctl start schema-registry
-
-########### Register Schema ############
-
-
-bash -c 'while netstat -lnt | awk '$4 ~ /:8081$/ {exit 1}'; do sleep 10; done'
-
-curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" -d '{ "schema": "[{ \"type\": \"record\", \"name\": \"event\", \"fields\": [ { \"name\": \"name\", \"type\": \"string\" }, { \"name\": \"motion\", \"type\": { \"name\": \"motion\", \"type\": \"record\", \"fields\":[ { \"name\":\"x\", \"type\":\"int\" }, { \"name\":\"y\", \"type\":\"int\" }, { \"name\":\"z\", \"type\":\"int\" } ] } }, { \"name\": \"speed\", \"type\": { \"name\": \"speed\", \"type\": \"record\", \"fields\":[ { \"name\":\"x\", \"type\":\"int\" }, { \"name\":\"y\", \"type\":\"int\" }, { \"name\":\"z\", \"type\":\"int\" } ] } } ] } ]"}' http://localhost:8081/subjects/_EVENTS-value/versions

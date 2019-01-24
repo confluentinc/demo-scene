@@ -4,7 +4,7 @@
 
 variable "bucket_suffix" {
 
-    default = "riferrei"
+    default = "<SET_YOUR_OWN_SUFFIX_WITHIN_THESE_DOUBLE_QUOTES>"
 
 }
 

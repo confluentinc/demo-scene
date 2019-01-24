@@ -45,9 +45,3 @@ EOF
 
 systemctl enable kafka-rest
 systemctl start kafka-rest
-
-############## Populate Data ##############
-
-bash -c 'while netstat -lnt | awk '$4 ~ /:8082$/ {exit 1}'; do sleep 10; done'
-
-curl -X POST -H "Content-Type: application/vnd.kafka.avro.v2+json" -d '{"value_schema_id" : 1, "records" : [{"value" : { "event" : { "name" : "ccloud-demo", "motion" : { "x" : 0, "y" : 0, "z" : 0 }, "speed" : { "x" : 0, "y" : 0, "z" : 0 }}}}]}' http://localhost:8082/topics/_EVENTS

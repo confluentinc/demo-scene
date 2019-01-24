@@ -104,12 +104,6 @@ data "template_file" "kafka_connect_bootstrap" {
 ######### KSQL Server Bootstrap ###########
 ###########################################
 
-data "template_file" "ksql_queries" {
-
-  template = "${file("templates/ksql-artifacts.sql")}"
-
-}
-
 data "template_file" "ksql_server_properties" {
 
   template = "${file("../util/ksql-server.properties")}"
@@ -136,7 +130,6 @@ data "template_file" "ksql_server_bootstrap" {
     confluent_platform_location = "${var.confluent_platform_location}"
     ksql_server_properties = "${data.template_file.ksql_server_properties.rendered}"
     broker_list = "${var.ccloud_broker_list}"
-    ksql_queries = "${data.template_file.ksql_queries.rendered}"
 
   }
 
