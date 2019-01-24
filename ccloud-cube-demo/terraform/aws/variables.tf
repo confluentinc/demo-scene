@@ -23,7 +23,7 @@ variable "instance_count" {
     "kafka_connect"    =  0
     "ksql_server"      =  1
     "control_center"   =  1
-    "bastion_server"   =  0
+    "bastion_server"   =  1
 
   }
 

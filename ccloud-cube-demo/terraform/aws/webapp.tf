@@ -4,7 +4,7 @@
 
 variable "bucket_suffix" {
 
-    default = "<SET_YOUR_OWN_SUFFIX_WITHIN_THESE_DOUBLE_QUOTES>"
+    default = "riferrei"
 
 }
 
@@ -44,7 +44,7 @@ resource "aws_s3_bucket" "ccloud_demo" {
             "Effect": "Allow",
             "Principal": "*",
             "Action": "s3:GetObject",
-            "Resource": "arn:aws:s3:::ccloud-demo${var.bucket_suffix}/*"
+            "Resource": "arn:aws:s3:::ccloud-demo-${var.bucket_suffix}/*"
         }
     ]
 }

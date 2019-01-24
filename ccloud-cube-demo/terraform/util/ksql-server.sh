@@ -53,7 +53,7 @@ systemctl start ksql-server
 
 ############# Populate Data ############
 
-bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:8088/info)" != "200" ]]; do sleep 5; done'
+bash -c 'while netstat -lnt | awk '$4 ~ /:808$/ {exit 1}'; do sleep 10; done'
 
 bash -c '/etc/confluent/confluent-5.1.0/bin/kafka-console-producer --broker-list ${broker_list} --producer.config /etc/confluent/confluent-5.1.0/etc/ksql/ksql-server-ccloud.properties --topic _NUMBERS --property "parse.key=true" --property "key.separator=:" <<EOF
 1:{"NUMBER" : 1, "X": 1, "Y" : 0, "Z" : 0}
