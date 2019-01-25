@@ -29,7 +29,10 @@ This demo was created based on the open-source project called ccloud-tools: http
 2. You need to have Terraform installed locally. You can find more details about how to install it https://learn.hashicorp.com/terraform/getting-started/install.html[here].
 +
 
-3. You need to have the Confluent Cloud CLI installed locally. You can find more details about how to install it https://docs.confluent.io/current/cloud/cli/install.html[here]. Make sure to have the Confluent Cloud CLI in the path of your O.S, since the provisioning process creates the necessary topics from your computer using the 'ccloud' utility.
+3. You need to have the Confluent Cloud CLI installed locally. You can find more details about how to install it https://docs.confluent.io/current/cloud/cli/install.html[here]. Make sure to have the Confluent Cloud CLI in the path of your O.S, since the provisioning process creates the necessary topics from your computer using the 'ccloud' tool.
++
+
+4. You need to have the KSQL CLI installed locally. You can find more details about how to install it https://docs.confluent.io/current/ksql/docs/installation/installing.html#installation-instructions[here]. Make sure to have the KSQL CLI in the path of your O.S, since the provisioning process creates the necessary Streams/Tables from your computer using the 'ksql' tool.
 
 
 == Step 1: Create Kafka Cluster in Confluent Cloud
