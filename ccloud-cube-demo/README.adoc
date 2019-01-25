@@ -194,7 +194,7 @@ terraform apply -auto-approve
 
 [source,bash]
 ----
-Apply complete! Resources: 51 added, 0 changed, 0 destroyed.
+Apply complete! Resources: 53 added, 0 changed, 0 destroyed.
 
 Outputs:
 
@@ -208,12 +208,12 @@ REST Proxy                    = http://rest-proxy-900948845.us-east-1.elb.amazon
 Schema Registry               = http://schema-registry-689395304.us-east-1.elb.amazonaws.com
 ----
 
-== Step 6: Execute the 'initialize.sh' Script
+== Step 6: Execute the Initialization Script
 
-In this step, you are going to execute a script that will create certain resources in the infrastructure just created by Terraform.
-These resources include the schema that will be used for the _EVENTS topic, a sample record produced into that topic, as well as a couple streams and tables necessary to play the demo.
+In this step, you are going to execute a script that will create certain resources in the infrastructure just provisioned by Terraform.
+These resources include the schema that will be used for the _EVENTS topic, a record produced into that same topic, as well as a couple Streams and Tables necessary to play the demo.
 
-Note that the 'initialze.sh' script is created by Terraform, so don't worry if you don't see this file *before* running Terraform. This script is created by Terraform to make sure that the endpoints used are up-to-date with the infrastructure created.
+Note that the 'initialize.sh' script is created by Terraform, so don't worry if you don't see this file before running Terraform. This script is created by Terraform to make sure that the endpoints used are up-to-date with the infrastructure provisioned.
 
 [source,bash]
 ----

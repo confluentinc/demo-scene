@@ -57,32 +57,6 @@ resource "aws_s3_bucket" "ccloud_demo" {
 
     }
 
-    ###########################################
-    ########### Local Provisioning ############
-    ###########################################
-
-    provisioner "local-exec" {
-
-        command = "echo '${data.template_file.cc_props_template.rendered}' >> ~/.ccloud/config"
-        interpreter = ["bash", "-c"]
-        on_failure = "continue"
-
-    }
-
-    provisioner "local-exec" {
-
-        command = "ccloud topic create _NUMBERS --partitions 4 --replication-factor 3"
-        on_failure = "continue"
-
-    }
-
-    provisioner "local-exec" {
-
-        command = "ccloud topic create _EVENTS --partitions 4 --replication-factor 3"
-        on_failure = "continue"
-
-    }
-
 }
 
 resource "aws_s3_bucket_object" "index" {
