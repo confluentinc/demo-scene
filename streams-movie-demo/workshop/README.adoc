@@ -1,10 +1,10 @@
 = Pre-requisites
 :doctype: book
 
-* Docker version 17.06.1-ce
-* Docker Compose version 1.14.0 with Docker Compose file format 2.1
+* Docker CE Version 18.09.1
+* Docker Compose Version 1.20.0 | with Docker Compose file format 2.1
 * https://docs.confluent.io/current/cloud-quickstart.html#step-2-install-ccloud-cli[Confluent Cloud CLI]
-* https://confluent.cloud[An initialized Confluent Cloud cluster used for development only]
+* https://confluent.cloud[An initialized Confluent Cloud Cluster used for Development Only]
 
 = Setup
 
@@ -46,20 +46,6 @@ $ docker-compose up -d
 $ docker-compose up -d schema-registry
 ----
 
-== Kafka Connect
-
-[source,bash]
-----
-$ docker-compose up -d connect
-----
-
-== Confluent Control Center
-
-[source,bash]
-----
-$ docker-compose up -d control-center
-----
-
 == KSQL Server
 
 [source,bash]
@@ -74,9 +60,9 @@ $ docker-compose up -d ksql-server
 $ docker-compose up -d ksql-cli
 ----
 
-== Confluent REST Proxy
+== Confluent Control Center
 
 [source,bash]
 ----
-$ docker-compose up -d rest-proxy
+$ docker-compose up -d control-center
 ----
