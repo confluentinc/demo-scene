@@ -26,18 +26,68 @@ Step 2: Source that file of ENV variables
 $ source ./delta_configs/env.delta
 ----
 
-= Bring up services
+= Creating Raw Topics
+
+[source,bash]
+----
+$ ccloud topic create raw-movies --partitions 1 --replication-factor 3
+$ ccloud topic create raw-ratings --partitions 1 --replication-factor 3
+----
+
+= Producing and Consuming Data using CCloud CLI
+
+Open a terminal to consume records from the 'raw-movies' topic using the following command:
+
+[source,bash]
+----
+$ ccloud consume -t raw-movies
+----
+
+Open another terminal to produce records to the 'raw-movies' topic using the following command:
+
+[source,bash]
+----
+$ cat ../data/movies.dat | ccloud produce -t raw-movies
+----
+
+Open another terminal to consume records from the 'raw-ratings' topic using the following command:
+
+[source,bash]
+----
+$ ccloud consume -t raw-ratings
+----
+
+Open another terminal to produce records to the 'raw-ratings' topic using the following command:
+
+[source,bash]
+----
+$ cat ../data/ratings.dat | ccloud produce -t raw-ratings
+----
+
+= Creating Demo Topics
+
+[source,bash]
+----
+$ ccloud topic create movies --partitions 1 --replication-factor 3
+$ ccloud topic create rating-sums --partitions 1 --replication-factor 3
+$ ccloud topic create rating-counts --partitions 1 --replication-factor 3
+$ ccloud topic create rating-averages --partitions 1 --replication-factor 3
+$ ccloud topic create rated-movies --partitions 1 --replication-factor 3
+----
+
+= Bring up Services from Confluent Platform
 
 Make sure you completed the steps in the Setup section above before proceeding.
+You may bring up all services in the Docker Compose file at once...
 
-You may bring up all services in the Docker Compose file at once or individually.
-
-== All services at once
+== All Services At-Once
 
 [source,bash]
 ----
 $ docker-compose up -d
 ----
+
+...or individually...
 
 == Confluent Schema Registry
 
@@ -66,3 +116,48 @@ $ docker-compose up -d ksql-cli
 ----
 $ docker-compose up -d control-center
 ----
+
+= Validate if KSQL is Working Properly
+
+Before moving forward with this workshop you need to validate if KSQL is working as expected.
+Thus, bring up the KSQL CLI using the command below:
+
+[source,bash]
+----
+$ docker run --network workshop_default --rm --interactive --tty confluentinc/cp-ksql-cli:5.1.0 http://ksql-server:8088
+----
+
+You should be presented with a prompt as shown below:
+
+[source,bash]
+----
+                  
+                  ===========================================
+                  =        _  __ _____  ____  _             =
+                  =       | |/ // ____|/ __ \| |            =
+                  =       | ' /| (___ | |  | | |            =
+                  =       |  <  \___ \| |  | | |            =
+                  =       | . \ ____) | |__| | |____        =
+                  =       |_|\_\_____/ \___\_\______|       =
+                  =                                         =
+                  =  Streaming SQL Engine for Apache Kafka® =
+                  ===========================================
+
+Copyright 2017-2018 Confluent Inc.
+
+CLI v5.1.0, Server v5.1.0 located at http://ksql-server:8088
+
+Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
+
+ksql> 
+----
+
+This means that the KSQL CLI was able to connect the KSQL Server and therefore, able to present a working prompt.
+In the KSQL CLI prompt, enter the following command:
+
+[source,bash]
+----
+PRINT 'raw-movies' FROM BEGINNING;
+----
+
+You should see all the records that you loaded into the topic 'raw-movies' previously. Press 'Ctrl + C' to interrupt the print command and go back to the KSQL CLI prompt, and thereafter type 'exit' then ENTER to exit the prompt and finish the KSQL CLI session.
