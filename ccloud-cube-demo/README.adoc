@@ -201,14 +201,14 @@ Apply complete! Resources: 52 added, 0 changed, 0 destroyed.
 
 Outputs:
 
-1) Playing the Game           = http://ccloud-demo-riferrei.s3-website-us-east-1.amazonaws.com
+1) Playing the Game           = http://ccloud-demo-custom.s3-website-us-east-1.amazonaws.com
 Bastion Server IP Address     = Bastion Server has been disabled
 Bastion Server Private Key    = Bastion Server has been disabled
-Control Center                = http://control-center-1113398061.us-east-1.elb.amazonaws.com
-KSQL Server                   = http://ksql-server-1946425298.us-east-1.elb.amazonaws.com
+Control Center                = http://control-center-0000000000.us-east-1.elb.amazonaws.com
+KSQL Server                   = http://ksql-server-0000000000000.us-east-1.elb.amazonaws.com
 Kafka Connect                 = Kafka Connect has been disabled
-REST Proxy                    = http://rest-proxy-900948845.us-east-1.elb.amazonaws.com
-Schema Registry               = http://schema-registry-689395304.us-east-1.elb.amazonaws.com
+REST Proxy                    = http://rest-proxy-00000000000000.us-east-1.elb.amazonaws.com
+Schema Registry               = http://schema-registry-000000000.us-east-1.elb.amazonaws.com
 ----
 
 == Step 6: Execute the Initialization Script
@@ -265,7 +265,7 @@ ksql http://ksql-server-000000000.us-east-1.elb.amazonaws.com
 
 Copyright 2017-2018 Confluent Inc.
 
-CLI v5.1.0, Server v5.1.0 located at http://ksql-server-507587899.us-east-1.elb.amazonaws.com
+CLI v5.1.0, Server v5.1.0 located at http://ksql-server-000000000.us-east-1.elb.amazonaws.com
 
 Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
 
