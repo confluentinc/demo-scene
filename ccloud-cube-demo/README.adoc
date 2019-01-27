@@ -197,7 +197,7 @@ terraform apply -auto-approve
 
 [source,bash]
 ----
-Apply complete! Resources: 53 added, 0 changed, 0 destroyed.
+Apply complete! Resources: 52 added, 0 changed, 0 destroyed.
 
 Outputs:
 
@@ -249,20 +249,46 @@ image:images/demo-using-c3.png[Playing the Game]
 
 [source,bash]
 ----
-ksql KSQL_SERVER_ENDPOINT
+ksql http://ksql-server-000000000.us-east-1.elb.amazonaws.com
+
+
+                  ===========================================
+                  =        _  __ _____  ____  _             =
+                  =       | |/ // ____|/ __ \| |            =
+                  =       | ' /| (___ | |  | | |            =
+                  =       |  <  \___ \| |  | | |            =
+                  =       | . \ ____) | |__| | |____        =
+                  =       |_|\_\_____/ \___\_\______|       =
+                  =                                         =
+                  =  Streaming SQL Engine for Apache Kafka® =
+                  ===========================================
+
+Copyright 2017-2018 Confluent Inc.
+
+CLI v5.1.0, Server v5.1.0 located at http://ksql-server-507587899.us-east-1.elb.amazonaws.com
+
+Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
+
+ksql>
 ----
 
-7. In KSQL CLI, execute the following command:
+7. In KSQL CLI, execute the following commands:
 +
 
 [source,bash]
 ----
-PRINT _NUMBERS FROM BEGINNING;
+SET 'auto.offset.reset' = 'earliest';
+----
++
 
-{"ROWTIME":1546904994638,"ROWKEY":"1","NUMBER":1,"X":1,"Y":0,"Z":0}
-{"ROWTIME":1546904994645,"ROWKEY":"3","NUMBER":3,"X":-180,"Y":0,"Z":180}
-{"ROWTIME":1546904994645,"ROWKEY":"2","NUMBER":2,"X":1,"Y":-90,"Z":1}
-{"ROWTIME":1546904994645,"ROWKEY":"4","NUMBER":4,"X":1,"Y":90,"Z":-1}
+[source,bash]
+----
+SELECT * FROM NUMBERS;
+
+1548605261506 | 1 | 1 | 1 | 0 | 0
+1548605261514 | 2 | 2 | 1 | -90 | 1
+1548605261515 | 3 | 3 | -180 | 0 | 180
+1548605261515 | 4 | 4 | 1 | 90 | -1
 ----
 
 8. Explain to the audience that these are the coordinates from each number stored in the Kafka topic. Ask them to write down the coordinates for number 3, which is *X: -180, Y: 0, Z: 180*.
