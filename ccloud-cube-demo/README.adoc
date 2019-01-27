@@ -292,11 +292,11 @@ The following results will be shown in the KSQL CLI terminal:
 1548605261515 | 3 | 3 | -180 | 0 | 180
 1548605261515 | 4 | 4 | 1 | 90 | -1
 ----
-
-8. Explain to the audience that these are the coordinates from each number stored in the Kafka topic. Ask them to write down the coordinates for number 3, which is *X: -180, Y: 0, Z: 180*.
 +
 
-9. To prepare for the audience to play with the demo, execute the following query in the KSQL CLI:
+Explain to the audience that these are the coordinates from each number stored in the Kafka topic. Ask them to write down the coordinates for number 3, which is *X: -180, Y: 0, Z: 180*.
+
+8. To prepare for the audience to play with the demo, execute the following query in the KSQL CLI:
 +
 
 [source,bash]
@@ -304,10 +304,10 @@ The following results will be shown in the KSQL CLI terminal:
 SELECT CONCAT('AND THE WINNER IS ----------> ', NAME) AS MESSAGE FROM SELECTED_WINNERS;
 ----
 
-10. Explain the logic of the demo to the audience. The first person that correctly position the number 3 in the cube using the coordinates given previously will show up in the query that was just executed. The winner might win a prize... blah...
+9. Explain the logic of the demo to the audience. The first person that correctly position the number 3 in the cube using the coordinates given previously will show up in the query that was just executed. The winner might win a prize... blah...
 +
 
-11. Provide the url of the game to the audience. That is the same url that you used on step number one. You might want to use a URL shortener before providing that url. That will make easy for the audience to write it down in their mobile devices.
+10. Provide the url of the game to the audience. That is the same url that you used on step number one. You might want to use a URL shortener before providing that url. That will make easy for the audience to write it down in their mobile devices.
 
 == Step 8: Destroying the Demo
 
