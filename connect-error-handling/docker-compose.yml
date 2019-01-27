@@ -3,13 +3,9 @@ version: '2'
 services:
   zookeeper:
     image: "confluentinc/cp-zookeeper:5.1.0"
-    ports:
-      - '18086:18086'
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-      KAFKA_JMX_HOSTNAME: "localhost"
-      KAFKA_JMX_PORT: 18086
 
   kafka:
     # "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-
@@ -32,7 +28,6 @@ services:
     image: "confluentinc/cp-enterprise-kafka:5.1.0"
     ports:
       - '9092:9092'
-      - '18087:18087'
     depends_on:
       - zookeeper
     environment:
@@ -45,13 +40,34 @@ services:
       KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
-      KAFKA_JMX_HOSTNAME: "localhost"
-      KAFKA_JMX_PORT: 18087
       CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092
       CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
       CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
       CONFLUENT_METRICS_ENABLE: 'false'
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+    command: 
+      - bash 
+      - -c 
+      - |
+        rm /data/kafka-is-up
+        # Launch Kafka
+        /etc/confluent/docker/run &
+        # Wait for Kafka to start and then create a file to 
+        # indicate that it's listening
+        echo "Waiting for Kafka to start listening on 9092 ⏳"
+        nc -vz localhost 9092
+        is_up=$$?
+        while [ $$is_up -ne 0 ] ; do 
+          echo -e $$(date) $$(nc -z localhost 9092)
+          nc -vz localhost 9092
+          is_up=$$?
+          sleep 5 
+        done
+        echo "Kakfa is now listening! :-)"
+        touch /data/kafka-is-up
+        sleep infinity
+    volumes:
+      - up-flag:/data
 
   schema-registry:
     image: "confluentinc/cp-schema-registry:5.1.0"
@@ -60,17 +76,12 @@ services:
       - kafka
     ports:
       - '8081:8081'
-      - "18090:18090"
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
-      SCHEMA_REGISTRY_JMX_PORT: 18090
-      SCHEMA_REGISTRY_JMX_HOSTNAME: localhost
 
   ksql-server:
     image: confluentinc/cp-ksql-server:5.1.0
-    ports:
-      - "18089:18089"
     depends_on:
       - kafka
       - schema-registry
@@ -79,8 +90,6 @@ services:
       KSQL_LISTENERS: http://0.0.0.0:8088
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
-      KSQL_JMX_HOSTNAME: "localhost"
-      KSQL_JMX_PORT: 18089
 
   ksql-cli:
     image: confluentinc/cp-ksql-cli:5.1.0
@@ -97,7 +106,6 @@ services:
       - schema-registry
     ports:
       - "8083:8083"
-      # - "18088:18088"
     environment:
       CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
       CONNECT_REST_PORT: 8083
@@ -118,10 +126,6 @@ services:
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_PLUGIN_PATH: '/usr/share/java'
-      # Set JMX_HOSTNAME to localhost and expose port 18088 if you want to be
-      #  able to access JMX from your host machine. Set it to kafka-connect if you
-      #  want to be able to access JMX from within the Docker network
-      # KAFKA_JMX_HOSTNAME: "localhost"
       KAFKA_JMX_HOSTNAME: "kafka-connect"
       KAFKA_JMX_PORT: 18088
     volumes:
@@ -129,7 +133,7 @@ services:
       - /Users/Robin/git/kafka-connect-transform-common/target/kafka-connect-target/usr/share/kafka-connect/kafka-connect-transform-common:/usr/share/java/kafka/kafka-connect-transform-common
 
 
-  kafkacat:
+  json-producer:
     image: confluentinc/cp-kafkacat:latest
     depends_on:
       - kafka
@@ -137,22 +141,101 @@ services:
       - bash 
       - -c 
       - |
-        while [ 1 -eq 1 ] 
+        echo "Waiting for flag that Kafka is up… ⏳"
+        until [ -f /data/flags/kafka-is-up ]
+        do
+            echo -e $$(date) ": Waiting for flag that Kafka is up… ⏳"
+            sleep 5
+        done
+        echo -e $$(date) ": \o/ Got the flag that Kafka is up!"
+        for i in {1..20}
           do
-            for i in {1..20}
-              do
-                echo '{"foo":"bar'$$i'"}'  
-                echo '{"foo":"bar'$$i'"}' | kafkacat -b kafka:29092 -P -t test_topic
-                sleep 0.5
-              done
-            for i in {1..5}
-              do 
-                echo '{brokenjson-:"bar'$$i'"}'
-                echo '{brokenjson-:"bar'$$i'"}' | kafkacat -b kafka:29092 -P -t test_topic
-                sleep 0.5
-              done
+            echo '{"json foo":"seq '$$i' @ '$$(date)'"}'
+            echo '{"json foo":"seq '$$i' @ '$$(date)'"}' | kafkacat -b kafka:29092 -P -t test_topic_json
           done
+    volumes:
+      - up-flag:/data/flags
 
+  json-producer-to-avro-topic:
+    image: confluentinc/cp-kafkacat:latest
+    depends_on:
+      - kafka
+    command: 
+      - bash 
+      - -c 
+      - |
+        echo "Waiting for flag that Kafka is up… ⏳"
+        until [ -f /data/flags/kafka-is-up ]
+        do
+            echo -e $$(date) ": Waiting for flag that Kafka is up… ⏳"
+            sleep 5
+        done
+        echo -e $$(date) ": \o/ Got the flag that Kafka is up!"
+        for i in {1..20}
+          do
+            echo '{"json foo":"seq '$$i' @ '$$(date)'"}'
+            echo '{"json foo":"seq '$$i' @ '$$(date)'"}' | kafkacat -b kafka:29092 -P -t test_topic_avro
+          done
+    volumes:
+      - up-flag:/data/flags
+
+  json-corrupt-producer:
+    image: confluentinc/cp-kafkacat:latest
+    depends_on:
+      - kafka
+    command: 
+      - bash 
+      - -c 
+      - |
+        echo "Waiting for flag that Kafka is up… ⏳"
+        until [ -f /data/flags/kafka-is-up ]
+        do
+            echo -e $$(date) ": Waiting for flag that Kafka is up… ⏳"
+            sleep 5
+        done
+        echo -e $$(date) ": \o/ Got the flag that Kafka is up!"
+        for i in {1..5}
+          do 
+            echo '{json foo:"seq '$$i' @ '$$(date)'"}'
+            echo '{json foo:"seq '$$i' @ '$$(date)'"}' | kafkacat -b kafka:29092 -P -t test_topic_json
+          done
+    volumes:
+      - up-flag:/data/flags
+
+  avro-producer:
+    image: "confluentinc/cp-schema-registry:5.1.0"
+    depends_on:
+      - zookeeper
+      - kafka
+      - schema-registry
+    command:
+      - bash 
+      - -c 
+      - |
+        echo "Waiting for flag that Kafka is up… ⏳"
+        until [ -f /data/flags/kafka-is-up ]
+        do
+            echo -e $$(date) ": Waiting for flag that Kafka is up… ⏳"
+            sleep 5
+        done
+        echo -e $$(date) ": \o/ Got the flag that Kafka is up!"
+        echo "Waiting for Schema Registry to be available ⏳"
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081/) -eq 000 ] ; do 
+          echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081/) " (waiting for 200)"
+          sleep 5 
+        done
+        for i in {1..20}
+          do
+            echo '{"foo":"avro seq '$$i' @ '$$(date)'"}'
+            echo '{"foo":"avro seq '$$i' @ '$$(date)'"}' | kafka-avro-console-producer \
+                                                      --broker-list kafka:29092\
+                                                      --topic test_topic_avro \
+                                                      --property schema.registry.url=http://schema-registry:8081 \
+                                                      --property value.schema='{"type":"record","name":"myrecord","fields":[{"name":"foo","type":"string"}]}' 
+          done
+    volumes:
+      - up-flag:/data/flags
+        
   grafana:
     image: grafana/grafana:latest
     ports:
@@ -187,3 +270,6 @@ services:
     environment:
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+
+volumes:
+    up-flag: {}
