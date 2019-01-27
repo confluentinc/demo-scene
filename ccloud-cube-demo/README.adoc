@@ -278,13 +278,15 @@ ksql>
 [source,bash]
 ----
 SET 'auto.offset.reset' = 'earliest';
+
+SELECT * FROM NUMBERS;
 ----
++
+The following results will be shown in the KSQL CLI terminal:
 +
 
 [source,bash]
 ----
-SELECT * FROM NUMBERS;
-
 1548605261506 | 1 | 1 | 1 | 0 | 0
 1548605261514 | 2 | 2 | 1 | -90 | 1
 1548605261515 | 3 | 3 | -180 | 0 | 180
