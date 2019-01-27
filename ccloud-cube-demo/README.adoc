@@ -213,8 +213,8 @@ Schema Registry               = http://schema-registry-000000000.us-east-1.elb.a
 
 == Step 6: Execute the Initialization Script
 
-In this step, you are going to execute a script that will create certain resources in the infrastructure just provisioned by Terraform.
-These resources include the schema that will be used for the _EVENTS topic, a record produced into that same topic, as well as a couple Streams and Tables necessary to play the demo.
+In this step, you are going to execute a script that will create certain resources in the infrastructure provisioned by Terraform.
+These resources include the Avro schema that will be used for the _EVENTS topic, a record produced into that same topic, as well as a couple Streams and Tables necessary to play the demo.
 
 Note that the 'initialize.sh' script is created by Terraform, so don't worry if you don't see this file before running Terraform. This script is created by Terraform to make sure that the endpoints used are up-to-date with the infrastructure provisioned.
 
