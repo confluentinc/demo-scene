@@ -130,7 +130,7 @@ services:
       KAFKA_JMX_PORT: 18088
     volumes:
       - $PWD/data:/data
-      - /Users/Robin/git/kafka-connect-transform-common/target/kafka-connect-target/usr/share/kafka-connect/kafka-connect-transform-common:/usr/share/java/kafka/kafka-connect-transform-common
+      # - /Users/Robin/git/kafka-connect-transform-common/target/kafka-connect-target/usr/share/kafka-connect/kafka-connect-transform-common:/usr/share/java/kafka/kafka-connect-transform-common
 
 
   json-producer:
@@ -171,7 +171,7 @@ services:
             sleep 5
         done
         echo -e $$(date) ": \o/ Got the flag that Kafka is up!"
-        for i in {1..20}
+        for i in {1..4}
           do
             echo '{"json foo":"seq '$$i' @ '$$(date)'"}'
             echo '{"json foo":"seq '$$i' @ '$$(date)'"}' | kafkacat -b kafka:29092 -P -t test_topic_avro
@@ -202,6 +202,29 @@ services:
     volumes:
       - up-flag:/data/flags
 
+  json-corrupt-producer-to-avro-topic:
+    image: confluentinc/cp-kafkacat:latest
+    depends_on:
+      - kafka
+    command: 
+      - bash 
+      - -c 
+      - |
+        echo "Waiting for flag that Kafka is up… ⏳"
+        until [ -f /data/flags/kafka-is-up ]
+        do
+            echo -e $$(date) ": Waiting for flag that Kafka is up… ⏳"
+            sleep 5
+        done
+        echo -e $$(date) ": \o/ Got the flag that Kafka is up!"
+        for i in {1..5}
+          do 
+            echo '{json foo:"seq '$$i' @ '$$(date)'"}'
+            echo '{json foo:"seq '$$i' @ '$$(date)'"}' | kafkacat -b kafka:29092 -P -t test_topic_avro
+          done
+    volumes:
+      - up-flag:/data/flags
+
   avro-producer:
     image: "confluentinc/cp-schema-registry:5.1.0"
     depends_on:
@@ -224,15 +247,13 @@ services:
           echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081/) " (waiting for 200)"
           sleep 5 
         done
-        for i in {1..20}
-          do
-            echo '{"foo":"avro seq '$$i' @ '$$(date)'"}'
-            echo '{"foo":"avro seq '$$i' @ '$$(date)'"}' | kafka-avro-console-producer \
-                                                      --broker-list kafka:29092\
-                                                      --topic test_topic_avro \
-                                                      --property schema.registry.url=http://schema-registry:8081 \
-                                                      --property value.schema='{"type":"record","name":"myrecord","fields":[{"name":"foo","type":"string"}]}' 
-          done
+        rm /tmp/foo
+        for i in {1..20};  do echo '{"foo":"avro seq '$$i' @ '$$(date)'"}' >> /tmp/foo;  done
+        cat /tmp/foo | kafka-avro-console-producer \
+                          --broker-list kafka:29092\
+                          --topic test_topic_avro \
+                          --property schema.registry.url=http://schema-registry:8081 \
+                          --property value.schema='{"type":"record","name":"myrecord","fields":[{"name":"foo","type":"string"}]}' 
     volumes:
       - up-flag:/data/flags
         
