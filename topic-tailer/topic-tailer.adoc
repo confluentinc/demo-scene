@@ -4,6 +4,9 @@ v1.00, January 26, 2019
 
 Topic Tailer can stream the tail end of multiple topics directly to the browser. Topic Tailer was designed to help with KSQL/KStreams demos or just as an alternative to the console-consumer during developemnt.
 
+
+image:images/topic-tailer-example.png[Topic-Tailer]
+
 == Pre-reqs
 
 * Node.js - https://nodejs.org/en/download/[Download & Install Node.js] and the npm package manager. 
