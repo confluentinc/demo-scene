@@ -1,16 +1,41 @@
-= Pre-requisites
-:doctype: book
+= Building a Streaming Data Pipeline with Kafka Streams and KSQL
+Ricardo Ferreira<ricardo@confluent.io>, Viktor Gamov <viktor@confluent.io>, © 2019 Confluent, Inc.
+:toc: auto
+:toc-placement: auto
+:toc-position: right
+:toc-title: Table of content
+:icons: font
+:source-highlighter: highlight.js
+:highlightjs-theme: idea
+:experimental:
+
+== Prerequisites
+
+Welcome to the https://www.jfokus.se/jfokus19/talks/2585[«Building a Streaming Data Pipeline with Kafka Streams and KSQL»] workshop.
+
+To be successful in executing all exercises, you need to have following installed.
 
 * Docker CE Version 18.09.1
++
+NOTE: It's OK to use Windows but the trainers are not Windows users and may not be able to help with Windows related issues
+* Git
+* JDK (min JDK 8)
+** Recommended way 
+*** Install https://sdkman.io/install[sdkman] 
+*** `sdk list java`
+*** `sdk install java <verison-provider>` e.g. `sdk install java 8.0.201-zulu`
+* https://www.jetbrains.com/idea/download/[IntelliJ IDEA Community Edition]
+* https://docs.docker.com/install/[Docker CE]
 * Docker Compose Version 1.20.0 | with Docker Compose file format 2.1
 * https://docs.confluent.io/current/cloud-quickstart.html#step-2-install-ccloud-cli[Confluent Cloud CLI]
 * https://confluent.cloud[An initialized Confluent Cloud Cluster used for Development Only]
+** We will perform this exercise in the class
 
-= Setup
+== Setup
 
 NOTE: Use this in a _non-production_ Confluent Cloud instance for development purposes only.
 
-On the host from which you are running Docker, ensure that you have properly initialized Confluent Cloud CLI and have a valid configuration file at `$HOME/.ccloud/config`.
+On the host from which you are running Docker, ensure that you have correctly initialized Confluent Cloud CLI and have a valid configuration file at `$HOME/.ccloud/config`.
 
 Step 1: Generate a file of ENV variables used by Docker to set the bootstrap servers and security configuration
 
