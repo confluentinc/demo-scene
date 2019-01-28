@@ -275,7 +275,7 @@ services:
     environment:
       - SECONDS_BETWEEN_RUNS=5
     volumes:
-      - ./config/kafka-connect.json:/var/lib/jmxtrans/jmx.json
+      - ./config/jmx/kafka-connect.json:/var/lib/jmxtrans/jmx.json
 
   influxdb:
     image: influxdb:latest
