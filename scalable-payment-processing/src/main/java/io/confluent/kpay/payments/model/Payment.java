@@ -3,20 +3,19 @@ package io.confluent.kpay.payments.model;
 import io.confluent.kpay.util.JsonDeserializer;
 import io.confluent.kpay.util.JsonSerializer;
 import io.confluent.kpay.util.WrapperSerde;
-import org.apache.kafka.common.serialization.Deserializer;
-import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.streams.KeyValue;
-import org.apache.kafka.streams.kstream.Transformer;
 import org.apache.kafka.streams.kstream.TransformerSupplier;
 import org.apache.kafka.streams.processor.ProcessorContext;
-
-import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
  * States: incoming, debit, credit, complete, confirmed
  */
 public class Payment {
+
+    static Logger log = LoggerFactory.getLogger(Payment.class);
 
     public enum State {incoming, debit, credit, complete, confirmed};
 
@@ -105,7 +104,7 @@ public class Payment {
                 ", from='" + from + '\'' +
                 ", to='" + to + '\'' +
                 ", amount=" + amount +
-                ", state=" + state +
+                ", state=" + getState() +
                 '}';
     }
 
@@ -127,6 +126,9 @@ public class Payment {
      * Used to by InflightProcessor to either 1) change payment from 'incoming' --> 'debit' 2) ignore/filter 'complete' payments
      */
     static public class InflightTransformer implements TransformerSupplier<String, Payment, KeyValue<String, Payment>> {
+
+        static Logger log = LoggerFactory.getLogger(InflightTransformer.class);
+
         @Override
         public org.apache.kafka.streams.kstream.Transformer<String, Payment, KeyValue<String, Payment>> get() {
             return new org.apache.kafka.streams.kstream.Transformer<String, Payment, KeyValue<String, Payment>>() {
@@ -139,6 +141,8 @@ public class Payment {
 
                 @Override
                 public KeyValue<String, Payment> transform(String key, Payment payment) {
+
+                    log.info("transform 'incoming' to 'debit': {}", payment);
 
                     if (payment.getState() == State.incoming) {
                         payment.setState(State.debit);

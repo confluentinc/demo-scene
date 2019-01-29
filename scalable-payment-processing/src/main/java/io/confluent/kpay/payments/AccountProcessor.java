@@ -5,6 +5,7 @@ import io.confluent.kpay.payments.model.Payment;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.*;
@@ -35,20 +36,39 @@ public class AccountProcessor {
         Materialized<String, AccountBalance, KeyValueStore<Bytes, byte[]>> account = Materialized.as("account");
         Materialized<String, AccountBalance, KeyValueStore<Bytes, byte[]>> accountStore = account.withKeySerde(new StringSerde()).withValueSerde(new AccountBalance.Serde());
 
-        accountBalanceKTable = inflight
-                .groupByKey()
+
+
+        // debit & credit processing topology
+        accountBalanceKTable = inflight.groupByKey()
                 .aggregate(
                         AccountBalance::new,
                         (key, value, aggregate) -> aggregate.handle(key, value),
                         accountStore
                 );
 
-        Predicate<? super String, ? super Payment> isCreditRecord = (Predicate<String, Payment>) (key, value) -> value.getState() == Payment.State.credit;
-        Predicate<? super String, ? super Payment> isCompleteRecord = (Predicate<String, Payment>) (key, value) -> value.getState() == Payment.State.complete;
+        Predicate<String, Payment> isCreditRecord =  (key, value) -> value.getState() == Payment.State.credit;
+        Predicate<String, Payment> isCompleteRecord =  (key, value) -> value.getState() == Payment.State.complete;
 
-        KStream<String, Payment>[] branch = accountBalanceKTable.toStream().transform(new AccountBalance.FlipTransformerSupplier()).branch(isCreditRecord, isCompleteRecord);
+        // handle payment state
+        KStream<String, Payment>[] branch = inflight
+                .map((KeyValueMapper<String, Payment, KeyValue<String, Payment>>) (key, value) -> {
+                    if (value.getState() == Payment.State.debit) {
+                        value.setState(Payment.State.credit);
+                    } else if (value.getState() == Payment.State.credit) {
+                        value.setState(Payment.State.complete);
+                    } else if (value.getState() == Payment.State.complete) {
+                        log.error("Invalid payment:{}", value);
+                        throw new RuntimeException("Invalid payment state:" + value);
+                    }
+                    return new KeyValue<>(value.getId(), value);
+                })
+                .branch(isCreditRecord, isCompleteRecord);
+
+
         branch[0].to(paymentsInflightTopic);
         branch[1].to(paymentsCompleteTopic);
+
+
 
         topology = builder.build();
     }
@@ -59,6 +79,8 @@ public class AccountProcessor {
     public void start() {
         streams = new KafkaStreams(topology, streamsConfig);
         streams.start();
+
+        log.info(topology.describe().toString());
     }
 
     public void stop() {

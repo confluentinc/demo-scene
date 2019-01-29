@@ -1,7 +1,7 @@
 package io.confluent.kpay.payments;
 
+import io.confluent.kpay.payments.model.ConfirmedStats;
 import io.confluent.kpay.payments.model.Payment;
-import io.confluent.kpay.payments.model.PaymentStats;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
@@ -22,7 +22,7 @@ public class PaymentsConfirmed {
     long ONE_DAY = 24 * 60 * 60 * 1000L;
 
     private static final Logger log = LoggerFactory.getLogger(PaymentsConfirmed.class);
-    private final KTable<Windowed<String>, PaymentStats> paymentStatsKTable;
+    private final KTable<Windowed<String>, ConfirmedStats> paymentStatsKTable;
     private final Topology topology;
     private Properties streamsConfig;
     private KafkaStreams streams;
@@ -37,14 +37,14 @@ public class PaymentsConfirmed {
         // emit the payments as Confirmed once they have been processed
         complete.transform(new CompleteTransformer()).to(paymentsConfirmedTopic);
 
-        Materialized<String, PaymentStats, WindowStore<Bytes, byte[]>> completeStore = Materialized.as("complete");
-        Materialized<String, PaymentStats, WindowStore<Bytes, byte[]>> completeWindowStore = completeStore.withKeySerde(new StringSerde()).withValueSerde(new PaymentStats.Serde());
+        Materialized<String, ConfirmedStats, WindowStore<Bytes, byte[]>> completeStore = Materialized.as("complete");
+        Materialized<String, ConfirmedStats, WindowStore<Bytes, byte[]>> completeWindowStore = completeStore.withKeySerde(new StringSerde()).withValueSerde(new ConfirmedStats.Serde());
 
         paymentStatsKTable = complete
                 .groupBy((key, value) -> "all-payments") // will force a repartition-topic
                 .windowedBy(TimeWindows.of(ONE_DAY))
                 .aggregate(
-                        PaymentStats::new,
+                        ConfirmedStats::new,
                         (key, value, aggregate) -> aggregate.update(value),
                         completeWindowStore
                 );
@@ -58,6 +58,8 @@ public class PaymentsConfirmed {
     public void start() {
         streams = new KafkaStreams(topology, streamsConfig);
         streams.start();
+
+        log.info(topology.describe().toString());
     }
 
     public void stop() {
@@ -65,7 +67,7 @@ public class PaymentsConfirmed {
         streams.cleanUp();
     }
 
-    public ReadOnlyWindowStore<String, PaymentStats> getStore() {
+    public ReadOnlyWindowStore<String, ConfirmedStats> getStore() {
         return streams.store(paymentStatsKTable.queryableStoreName(), QueryableStoreTypes.windowStore());
     }
 

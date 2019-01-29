@@ -18,9 +18,11 @@ import java.util.Arrays;
 import java.util.Properties;
 
 public class PaymentsInFlight {
-    long ONE_DAY = 24 * 60 * 60 * 1000L;
-
     private static final Logger log = LoggerFactory.getLogger(PaymentsInFlight.class);
+
+    private static long ONE_DAY = 24 * 60 * 60 * 1000L;
+
+
     private final KTable<Windowed<String>, PaymentStats> paymentStatsKTable;
     private final Topology topology;
     private Properties streamsConfig;
@@ -58,6 +60,8 @@ public class PaymentsInFlight {
     public void start() {
         streams = new KafkaStreams(topology, streamsConfig);
         streams.start();
+
+        log.info(topology.describe().toString());
     }
 
     public void stop() {

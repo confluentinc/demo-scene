@@ -16,9 +16,11 @@
 package io.confluent.kpay.payments;
 
 import io.confluent.kpay.payments.model.AccountBalance;
+import io.confluent.kpay.payments.model.ConfirmedStats;
 import io.confluent.kpay.payments.model.Payment;
 import io.confluent.kpay.payments.model.PaymentStats;
 import io.confluent.kpay.utils.IntegrationTestHarness;
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -26,6 +28,7 @@ import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.TopologyTestDriver;
 import org.apache.kafka.streams.kstream.Windowed;
 import org.apache.kafka.streams.state.KeyValueIterator;
+import org.apache.kafka.streams.state.ReadOnlyWindowStore;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -92,7 +95,7 @@ public class PaymentsIntegrationTest {
     Assert.assertEquals(Payment.State.confirmed, confirmed.values().iterator().next().getState());
 
 
-    System.out.println("Test Confirmed:"+ confirmed);
+    System.out.println("Test payment confirmed:"+ confirmed);
 
     // verify the postal state of each processor, i.e. inflight == 0; neil == -10; john == 10; confirmed == 10
 
@@ -106,38 +109,72 @@ public class PaymentsIntegrationTest {
 
     KeyValueIterator<String, AccountBalance> all1 = accountProcessor.getStore().all();
     while (all1.hasNext()) {
-      System.out.println("Test account:" + all1.next().value);
+      System.out.println("Test:" + all1.next().value);
     }
 
-    System.out.println();
 
-
+    /**
+     * Verify we have confirmation status
+     */
+    ReadOnlyWindowStore<String, ConfirmedStats> confirmedStore = paymentsConfirmed.getStore();
+    for (KeyValueIterator<Windowed<String>, ConfirmedStats> it = confirmedStore.all(); it.hasNext(); ) {
+      ConfirmedStats value1 = it.next().value;
+      System.out.println("Test Confirmed Processor:" + value1);
+      Assert.assertEquals("Confirmed Processor", 10, value1.getAmount(), 0);
+    }
   }
 
+  @Test
+  public void serviceMultiplePayments() throws Exception {
 
-//  @Test
-//  public void serviceMultiplePayments() throws Exception {
-//
-//    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncoming, paymentsinflight, getProperties(bootstrapServers));
-//    paymentsInFlight.start();
-//
-//    Map<String, Payment> records = new HashMap<>();//
-//    records.put("1", new Payment("id", "1", "neil", "john", 10, Payment.State.incoming));
-//    records.put("2", new Payment("id", "1", "neil", "john", 100, Payment.State.incoming));
-//    records.put("3", new Payment("id", "1", "neil", "john", 1000, Payment.State.incoming));
-//
-//    testHarness.produceData(paymentsIncoming, records, new Payment.Serde().serializer(), System.currentTimeMillis());
-//
-//    Map<String, Payment> inflightPayment = testHarness.consumeData(paymentsinflight, 1, new StringDeserializer(), new Payment.Serde().deserializer(), 1000);
-//
-//    Assert.assertTrue(inflightPayment.size() > 0);
-//
-//    System.out.println("Inflight:"+ inflightPayment);
-//
-//    KeyValueIterator<Windowed<String>, PaymentStats> all = paymentsInFlight.getStore().all();
-//    Object value = all.next().value;
-//    System.out.println(value);
-//  }
+    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers));
+    paymentsInFlight.start();
+
+    AccountProcessor accountProcessor = new AccountProcessor(paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers));
+    accountProcessor.start();
+
+    PaymentsConfirmed paymentsConfirmed = new PaymentsConfirmed(paymentsCompleteTopic, paymentsConfirmedTopic, getProperties(bootstrapServers));
+    paymentsConfirmed.start();
+
+
+    Map<String, Payment> records = new HashedMap();
+    for (int i = 0; i < 10; i++) {
+      records.put("record-" + i, new Payment("txn-" + i, "id-" +i, "frank-" + i, "neil", 100, Payment.State.incoming));
+    }
+    testHarness.produceData(paymentsIncomingTopic, records, new Payment.Serde().serializer(), System.currentTimeMillis());
+
+
+    // if the payment flowed through all 4 processing stages (2x account processors) - then we expect a paymentsConfirmed event
+    Map<String, Payment> confirmed = testHarness.consumeData(paymentsConfirmedTopic, 10, new StringDeserializer(), new Payment.Serde().deserializer(), 1000);
+
+
+    Assert.assertNotNull(confirmed);
+    Assert.assertEquals(Payment.State.confirmed, confirmed.values().iterator().next().getState());
+
+    for (Payment value : records.values()) {
+      System.out.println("Test payment confirmed:"+ value);
+    }
+
+    // verify the postal state of each processor, i.e. inflight == 0; neil == -10; john == 10; confirmed == 10
+
+    KeyValueIterator<Windowed<String>, PaymentStats> inflightStatus = paymentsInFlight.getStore().all();
+
+    PaymentStats inflightStats = inflightStatus.next().value;
+
+    // should be 0
+    System.out.println("Test Inflight:" + inflightStats);
+
+
+    KeyValueIterator<String, AccountBalance> allAccounts = accountProcessor.getStore().all();
+    while (allAccounts.hasNext()) {
+      System.out.println("Test:" + allAccounts.next().value);
+    }
+
+    ReadOnlyWindowStore<String, ConfirmedStats> confirmedStore = paymentsConfirmed.getStore();
+    for (KeyValueIterator<Windowed<String>, ConfirmedStats> it = confirmedStore.all(); it.hasNext(); ) {
+      System.out.println("Test Confirmed Processor:" + it.next().value);
+    }
+  }
 
 
 
