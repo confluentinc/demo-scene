@@ -20,8 +20,8 @@ To be successful in executing all exercises, you need to have following installe
 NOTE: It's OK to use Windows but the trainers are not Windows users and may not be able to help with Windows related issues
 * Git
 * JDK (min JDK 8)
-** Recommended way 
-*** Install https://sdkman.io/install[sdkman] 
+** Recommended way
+*** Install https://sdkman.io/install[sdkman]
 *** `sdk list java`
 *** `sdk install java <verison-provider>` e.g. `sdk install java 8.0.201-zulu`
 * https://www.jetbrains.com/idea/download/[IntelliJ IDEA Community Edition]
@@ -37,21 +37,23 @@ NOTE: Use this in a _non-production_ Confluent Cloud instance for development pu
 
 On the host from which you are running Docker, ensure that you have correctly initialized Confluent Cloud CLI and have a valid configuration file at `$HOME/.ccloud/config`.
 
-Step 1: Generate a file of ENV variables used by Docker to set the bootstrap servers and security configuration
+=== Step 1: Generate a file of ENV variables used by Docker to set the bootstrap servers and security configuration
 
 [source,bash]
 ----
 $ ./ccloud-generate-env-vars.sh
 ----
 
-Step 2: Source that file of ENV variables
+=== Step 2: Source that file of ENV variables
 
 [source,bash]
 ----
 $ source ./delta_configs/env.delta
 ----
 
-= Creating Raw Topics
+== Creating Topics and validate that data flows
+
+=== Creating Raw Data Topics
 
 [source,bash]
 ----
@@ -59,37 +61,37 @@ $ ccloud topic create raw-movies --partitions 1 --replication-factor 3
 $ ccloud topic create raw-ratings --partitions 1 --replication-factor 3
 ----
 
-= Producing and Consuming Data using CCloud CLI
+=== Producing and Consuming Data using CCloud CLI
 
-Open a terminal to consume records from the 'raw-movies' topic using the following command:
+Open a terminal to consume records from the `raw-movies` topic using the following command:
 
 [source,bash]
 ----
 $ ccloud consume -t raw-movies
 ----
 
-Open another terminal to produce records to the 'raw-movies' topic using the following command:
+Open another terminal to produce records to the `raw-movies` topic using the following command:
 
 [source,bash]
 ----
 $ cat ../data/movies.dat | ccloud produce -t raw-movies
 ----
 
-Open another terminal to consume records from the 'raw-ratings' topic using the following command:
+Open another terminal to consume records from the `raw-ratings` topic using the following command:
 
 [source,bash]
 ----
 $ ccloud consume -t raw-ratings
 ----
 
-Open another terminal to produce records to the 'raw-ratings' topic using the following command:
+Open another terminal to produce records to the `raw-ratings` topic using the following command:
 
 [source,bash]
 ----
 $ cat ../data/ratings.dat | ccloud produce -t raw-ratings
 ----
 
-= Creating Demo Topics
+=== Creating Demo Topics
 
 [source,bash]
 ----
@@ -100,49 +102,49 @@ $ ccloud topic create rating-averages --partitions 1 --replication-factor 3
 $ ccloud topic create rated-movies --partitions 1 --replication-factor 3
 ----
 
-= Bring up Services from Confluent Platform
+== Bring up Services from Confluent Platform
 
 Make sure you completed the steps in the Setup section above before proceeding.
 You may bring up all services in the Docker Compose file at once...
 
-== All Services At-Once
+=== All Services At-Once
 
 [source,bash]
 ----
 $ docker-compose up -d
 ----
 
-...or individually...
+=== ...or individually...
 
-== Confluent Schema Registry
+==== Confluent Schema Registry
 
 [source,bash]
 ----
 $ docker-compose up -d schema-registry
 ----
 
-== KSQL Server
+==== KSQL Server
 
 [source,bash]
 ----
 $ docker-compose up -d ksql-server
 ----
 
-== KSQL CLI
+==== KSQL CLI
 
 [source,bash]
 ----
 $ docker-compose up -d ksql-cli
 ----
 
-== Confluent Control Center
+==== Confluent Control Center
 
 [source,bash]
 ----
 $ docker-compose up -d control-center
 ----
 
-= Validate if KSQL is Working Properly
+= Validate If KSQL Server And CLI Is Working Properly
 
 Before moving forward with this workshop you need to validate if KSQL is working as expected.
 Thus, bring up the KSQL CLI using the command below:
@@ -156,7 +158,7 @@ You should be presented with a prompt as shown below:
 
 [source,bash]
 ----
-                  
+
                   ===========================================
                   =        _  __ _____  ____  _             =
                   =       | |/ // ____|/ __ \| |            =
@@ -174,7 +176,7 @@ CLI v5.1.0, Server v5.1.0 located at http://ksql-server:8088
 
 Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
 
-ksql> 
+ksql>
 ----
 
 This means that the KSQL CLI was able to connect the KSQL Server and therefore, able to present a working prompt.
@@ -185,4 +187,5 @@ In the KSQL CLI prompt, enter the following command:
 PRINT 'raw-movies' FROM BEGINNING;
 ----
 
-You should see all the records that you loaded into the topic 'raw-movies' previously. Press 'Ctrl + C' to interrupt the print command and go back to the KSQL CLI prompt, and thereafter type 'exit' then ENTER to exit the prompt and finish the KSQL CLI session.
+You should see all the records that you loaded into the topic `raw-movies` previously.
+Press kbd:[Ctrl + C] to interrupt the print command and go back to the KSQL CLI prompt, and thereafter type `exit` then `ENTER` to exit the prompt and finish the KSQL CLI session.
