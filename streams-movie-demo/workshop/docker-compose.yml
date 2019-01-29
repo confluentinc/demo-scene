@@ -7,7 +7,11 @@ services:
     hostname: schema-registry
     container_name: schema-registry
     ports:
+<<<<<<< HEAD
       - '8081:8081'
+=======
+      - "8085:8085"
+>>>>>>> Cleanup docker compose
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
@@ -91,6 +95,7 @@ services:
       CONFLUENT_METRICS_TOPIC_REPLICATION: 3
       CONTROL_CENTER_STREAMS_NUM_STREAM_THREADS: 3
       CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_METRICS_TOPIC_MAX_MESSAGE_BYTES: 8388608
       CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
       PORT: 9021
 
