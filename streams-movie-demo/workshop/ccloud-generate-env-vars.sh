@@ -32,7 +32,14 @@ if [[ ! -f $CCLOUD_CONFIG ]]; then
   echo "'ccloud' is not initialized. Run 'ccloud init' and try again"
   exit 1
 fi
-PERM=$(stat -c "%a" $HOME/.ccloud/config)
+
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+        # ...
+        PERM=$(stat -c "%a" $HOME/.ccloud/config)
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+        # Mac OSX
+        PERM=$(stat -f "%A" $HOME/.ccloud/config)
+fi
 
 ### Glean BOOTSTRAP_SERVERS and SASL_JAAS_CONFIG (key and password) from the Confluent Cloud configuration file
 BOOTSTRAP_SERVERS=$( grep "^bootstrap.server" $CCLOUD_CONFIG | awk -F'=' '{print $2;}' )

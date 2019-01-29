@@ -17,3 +17,4 @@ ccloud-cube-demo/terraform/aws/terraform.tfstate
 ccloud-cube-demo/terraform/aws/terraform.tfstate.backup
 ccloud-cube-demo/terraform/aws/.terraform.tfstate.lock.info
 .idea
+delta_configs
