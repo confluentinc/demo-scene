@@ -50,3 +50,80 @@ docker-compose exec oracle bash -c 'sqlplus sys/$ORACLE_PWD@localhost:1521/ORCLC
 ----
 docker-compose exec mssql bash -c '/opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -U sa -P $SA_PASSWORD'
 ----
+
+
+== Example Connector Configuration
+
+* MySQL
++
+[source,bash]
+----
+curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+        "name": "jdbc_source_mysql_01",
+        "config": {
+                "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+                "connection.url": "jdbc:mysql://mysql:3306/demo",
+                "connection.user": "connect_user",
+                "connection.password": "asgard",
+                "topic.prefix": "mysql-01-",
+                "mode":"bulk",
+                "poll.interval.ms" : 3600000
+                }
+        }'
+----
+
+* Postgres
++
+[source,bash]
+----
+curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+        "name": "jdbc_source_postgres_01",
+        "config": {
+                "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+                  "connection.url": "jdbc:postgresql://postgres:5432/postgres",
+                "connection.user": "connect_user",
+                "connection.password": "asgard",
+                "topic.prefix": "postgres-01-",
+                "mode":"bulk",
+                "poll.interval.ms" : 3600000
+                }
+        }'
+----
+
+* Oracle
++
+[source,bash]
+----
+curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+                "name": "jdbc_source_oracle_01",
+                "config": {
+                        "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+                        "connection.url": "jdbc:oracle:thin:@oracle:1521/ORCLPDB1",
+                        "connection.user": "connect_user",
+                        "connection.password": "asgard",
+                        "topic.prefix": "oracle-01-",
+                        "table.whitelist" : "NUM_TEST",
+                        "mode":"bulk",
+                        "poll.interval.ms" : 3600000
+                        }
+                }'
+----
+
+* MS SQL Server
++
+[source,bash]
+----
+curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+                "name": "jdbc_source_mssql_01",
+                "config": {
+                        "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+                        "connection.url": "jdbc:sqlserver://mssql:1433;databaseName=demo",
+                        "connection.user": "connect_user",
+                        "connection.password": "Asgard123",
+                        "topic.prefix": "mssql-01-",
+                        "table.whitelist" : "demo..num_test",
+                        "mode":"bulk",
+                        "poll.interval.ms" : 3600000
+                        }
+                }'
+----
