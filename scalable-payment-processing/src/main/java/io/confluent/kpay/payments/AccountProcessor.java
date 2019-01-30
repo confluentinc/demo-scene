@@ -37,8 +37,9 @@ public class AccountProcessor {
         Materialized<String, AccountBalance, KeyValueStore<Bytes, byte[]>> accountStore = account.withKeySerde(new StringSerde()).withValueSerde(new AccountBalance.Serde());
 
 
-
-        // debit & credit processing topology
+        /**
+         * Debit & credit processing
+         */
         accountBalanceKTable = inflight.groupByKey()
                 .aggregate(
                         AccountBalance::new,
@@ -49,7 +50,9 @@ public class AccountProcessor {
         Predicate<String, Payment> isCreditRecord =  (key, value) -> value.getState() == Payment.State.credit;
         Predicate<String, Payment> isCompleteRecord =  (key, value) -> value.getState() == Payment.State.complete;
 
-        // handle payment state
+        /**
+         * Data flow and state processing
+         */
         KStream<String, Payment>[] branch = inflight
                 .map((KeyValueMapper<String, Payment, KeyValue<String, Payment>>) (key, value) -> {
                     if (value.getState() == Payment.State.debit) {
@@ -67,8 +70,6 @@ public class AccountProcessor {
 
         branch[0].to(paymentsInflightTopic);
         branch[1].to(paymentsCompleteTopic);
-
-
 
         topology = builder.build();
     }

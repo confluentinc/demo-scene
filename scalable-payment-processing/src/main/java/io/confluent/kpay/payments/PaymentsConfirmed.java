@@ -34,12 +34,17 @@ public class PaymentsConfirmed {
         StreamsBuilder builder = new StreamsBuilder();
         KStream<String, Payment> complete = builder.stream(paymentsCompleteTopic);
 
-        // emit the payments as Confirmed once they have been processed
+        /**
+         * Data flow; emit the payments as Confirmed once they have been processed
+         */
         complete.transform(new CompleteTransformer()).to(paymentsConfirmedTopic);
 
         Materialized<String, ConfirmedStats, WindowStore<Bytes, byte[]>> completeStore = Materialized.as("complete");
         Materialized<String, ConfirmedStats, WindowStore<Bytes, byte[]>> completeWindowStore = completeStore.withKeySerde(new StringSerde()).withValueSerde(new ConfirmedStats.Serde());
 
+        /**
+         * Confirmation processing
+         */
         paymentStatsKTable = complete
                 .groupBy((key, value) -> "all-payments") // will force a repartition-topic
                 .windowedBy(TimeWindows.of(ONE_DAY))

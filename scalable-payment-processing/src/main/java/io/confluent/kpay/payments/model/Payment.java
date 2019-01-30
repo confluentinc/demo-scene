@@ -142,7 +142,7 @@ public class Payment {
                 @Override
                 public KeyValue<String, Payment> transform(String key, Payment payment) {
 
-                    log.info("transform 'incoming' to 'debit': {}", payment);
+                    log.debug("transform 'incoming' to 'debit': {}", payment);
 
                     if (payment.getState() == State.incoming) {
                         payment.setState(State.debit);

@@ -182,12 +182,6 @@ public class PaymentsInflightTest {
     Assert.assertNotNull(inflightRecord);
 
     System.out.println("Inflight Records:" + inflightRecord.value());
-
-
-    Map<String, StateStore> allStateStores = testDriver.getAllStateStores();
-    for (Map.Entry<String, StateStore> stringStateStoreEntry : allStateStores.entrySet()) {
-      System.out.println(stringStateStoreEntry.getKey() + ":" + stringStateStoreEntry.getValue());
-    }
   }
 
   private Properties getProperties(String broker) {

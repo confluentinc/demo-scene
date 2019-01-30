@@ -5,6 +5,7 @@ import io.confluent.kpay.payments.model.PaymentStats;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.*;
@@ -37,11 +38,12 @@ public class PaymentsInFlight {
         KStream<String, Payment> inflight = builder.stream(Arrays.asList(paymentsIncomingTopic, paymentsCompleteTopic));
 
         // emit the  payments as Debits on the 'inflight' stream
-        inflight.transform(new Payment.InflightTransformer()).to(paymentsInflightTopic);
-
         Materialized<String, PaymentStats, WindowStore<Bytes, byte[]>> inflightFirst = Materialized.as("inflight");
         Materialized<String, PaymentStats, WindowStore<Bytes, byte[]>> inflightWindowStore = inflightFirst.withKeySerde(new StringSerde()).withValueSerde(new PaymentStats.Serde());
 
+        /**
+         * Inflight processing
+         */
         paymentStatsKTable = inflight
                 .groupBy((key, value) -> "all-payments") // will force a repartition-topic :(
                 .windowedBy(TimeWindows.of(ONE_DAY))
@@ -51,6 +53,16 @@ public class PaymentsInFlight {
                         inflightWindowStore
                 );
 
+        /**
+         * Data flow processing; flip incoming --> debit and filter complete events
+         */
+        inflight.map((KeyValueMapper<String, Payment, KeyValue<String, Payment>>) (key, value) -> {
+            if (value.getState() == Payment.State.incoming) {
+                value.setState(Payment.State.debit);
+            }
+            return new KeyValue<>(key, value);
+        }).filter((key, value) -> value.getState() == Payment.State.debit).to(paymentsInflightTopic);
+        
         topology = builder.build();
     }
     public Topology getTopology() {

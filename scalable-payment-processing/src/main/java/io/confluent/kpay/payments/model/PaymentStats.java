@@ -22,14 +22,9 @@ public class PaymentStats {
     }
 
     public PaymentStats update(Payment value) {
-                log.info(" InflightStats. update, processing:{} current:{} state:{}", value, this.amount, value.getState());
+        log.info(" InflightStats. update, processing:{} current:{} state:{}", value, this.amount, value.getState());
 
-        /**
-         * Note: the transformer will intercept the message and convert it to from 'incoming' -> 'debit' OR 'complete'
-         * The 'debit
-         * We need to process the debit
-         */
-        if (value.getState() == Payment.State.debit) {
+        if (value.getState() == Payment.State.incoming) {
             // accumulate on 'incoming' payment
             this.amount += value.amount;
             this.count++;
