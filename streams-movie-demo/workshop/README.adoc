@@ -95,12 +95,20 @@ $ cat ../data/ratings.dat | ccloud produce -t raw-ratings
 
 [source,bash]
 ----
-$ ccloud topic create movies --partitions 16 --replication-factor 3
-$ ccloud topic create rating-sums --partitions 16 --replication-factor 3
-$ ccloud topic create rating-counts --partitions 16 --replication-factor 3
-$ ccloud topic create average-ratings --partitions 16 --replication-factor 3
-$ ccloud topic create rated-movies --partitions 16 --replication-factor 3
+$ sh create-demo-topics.sh
 ----
+
+You should see the following output:
+
+[source,bash]
+----
+Topic "movies" created.
+Topic "rating-sums" created.
+Topic "rating-counts" created.
+Topic "average-ratings" created.
+Topic "rated-movies" created.
+----
+
 
 == Bring up Services from Confluent Platform
 
