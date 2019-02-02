@@ -17,7 +17,7 @@ To be successful in executing all exercises, you need to have following installe
 
 * Docker CE Version 18.09.1
 +
-NOTE: It's OK to use Windows but the trainers are not Windows users and may not be able to help with Windows related issues
+NOTE: It is OK to use Windows, but the trainers are not Windows users and may not be able to help with Windows related issues.
 * Git
 * JDK (min JDK 8)
 ** Recommended way
@@ -31,27 +31,7 @@ NOTE: It's OK to use Windows but the trainers are not Windows users and may not 
 * https://confluent.cloud[An initialized Confluent Cloud Cluster used for Development Only]
 ** We will perform this exercise in the class
 
-== Setup
-
-NOTE: Use this in a _non-production_ Confluent Cloud instance for development purposes only.
-
-On the host from which you are running Docker, ensure that you have correctly initialized Confluent Cloud CLI and have a valid configuration file at `$HOME/.ccloud/config`.
-
-=== Step 1: Generate a file of ENV variables used by Docker to set the bootstrap servers and security configuration
-
-[source,bash]
-----
-$ ./ccloud-generate-env-vars.sh
-----
-
-=== Step 2: Source that file of ENV variables
-
-[source,bash]
-----
-$ source ./delta_configs/env.delta
-----
-
-== Creating Topics and validate that data flows
+== Creating Topics and Validating Data Flowing
 
 === Creating Raw Data Topics
 
@@ -61,7 +41,7 @@ $ ccloud topic create raw-movies --partitions 16 --replication-factor 3
 $ ccloud topic create raw-ratings --partitions 16 --replication-factor 3
 ----
 
-=== Producing and Consuming Data using CCloud CLI
+=== Producing and Consuming Data using Confluent Cloud CLI
 
 Open a terminal to consume records from the `raw-movies` topic using the following command:
 
@@ -91,7 +71,7 @@ Open another terminal to produce records to the `raw-ratings` topic using the fo
 $ cat ../data/ratings.dat | ccloud produce -t raw-ratings
 ----
 
-=== Creating Demo Topics
+=== Creating Workshop Related Topics
 
 [source,bash]
 ----
@@ -107,6 +87,26 @@ Topic "rating-sums" created.
 Topic "rating-counts" created.
 Topic "average-ratings" created.
 Topic "rated-movies" created.
+----
+
+== Connecting Docker with Confluent Cloud Cluster
+
+NOTE: Use this in a _non-production_ Confluent Cloud instance for development purposes only.
+
+On the host from which you are running Docker, ensure that you have correctly initialized Confluent Cloud CLI and have a valid configuration file at `$HOME/.ccloud/config`. More information https://docs.confluent.io/current/cloud/cli/install.html[here].
+
+=== Step 1: Generate a file that exports environment variables used by Docker to set up the bootstrap servers and authentication details.
+
+[source,bash]
+----
+$ ./ccloud-generate-env-vars.sh
+----
+
+=== Step 2: Source the generated file to make the exports available in the current path.
+
+[source,bash]
+----
+$ source ./delta_configs/env.delta
 ----
 
 
