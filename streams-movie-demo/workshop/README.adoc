@@ -57,8 +57,8 @@ $ source ./delta_configs/env.delta
 
 [source,bash]
 ----
-$ ccloud topic create raw-movies --partitions 1 --replication-factor 3
-$ ccloud topic create raw-ratings --partitions 1 --replication-factor 3
+$ ccloud topic create raw-movies --partitions 16 --replication-factor 3
+$ ccloud topic create raw-ratings --partitions 16 --replication-factor 3
 ----
 
 === Producing and Consuming Data using CCloud CLI
@@ -95,11 +95,11 @@ $ cat ../data/ratings.dat | ccloud produce -t raw-ratings
 
 [source,bash]
 ----
-$ ccloud topic create movies --partitions 1 --replication-factor 3
-$ ccloud topic create rating-sums --partitions 1 --replication-factor 3
-$ ccloud topic create rating-counts --partitions 1 --replication-factor 3
-$ ccloud topic create average-ratings --partitions 1 --replication-factor 3
-$ ccloud topic create rated-movies --partitions 1 --replication-factor 3
+$ ccloud topic create movies --partitions 16 --replication-factor 3
+$ ccloud topic create rating-sums --partitions 16 --replication-factor 3
+$ ccloud topic create rating-counts --partitions 16 --replication-factor 3
+$ ccloud topic create average-ratings --partitions 16 --replication-factor 3
+$ ccloud topic create rated-movies --partitions 16 --replication-factor 3
 ----
 
 == Bring up Services from Confluent Platform
