@@ -152,7 +152,7 @@ $ docker-compose up -d ksql-cli
 $ docker-compose up -d control-center
 ----
 
-= Validate If KSQL Server And CLI Is Working Properly
+== Validate If KSQL Server And CLI Is Working Properly
 
 Before moving forward with this workshop you need to validate if KSQL is working as expected.
 Thus, bring up the KSQL CLI using the command below:
