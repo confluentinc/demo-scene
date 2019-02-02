@@ -15,7 +15,6 @@ import org.junit.Test;
 import java.time.LocalDateTime;
 import java.util.Properties;
 
-import io.confluent.demo.fixture.MoviesAndRatingsData;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +32,7 @@ public class MoviesTopologyTest {
   @Before
   public void setUp() {
     final Properties streamsConfig = StreamsDemo.getStreamsConfig(DUMMY_KAFKA_CONFLUENT_CLOUD_9092,
-                                                                  DUMMY_SR_CONFLUENT_CLOUD_8080);
+                                                                  DUMMY_SR_CONFLUENT_CLOUD_8080, "");
 
     // workaround https://stackoverflow.com/a/50933452/27563
     streamsConfig.setProperty(StreamsConfig.STATE_DIR_CONFIG, "/tmp/kafka-streams/" + LocalDateTime.now().toString());

@@ -98,7 +98,7 @@ $ cat ../data/ratings.dat | ccloud produce -t raw-ratings
 $ ccloud topic create movies --partitions 1 --replication-factor 3
 $ ccloud topic create rating-sums --partitions 1 --replication-factor 3
 $ ccloud topic create rating-counts --partitions 1 --replication-factor 3
-$ ccloud topic create rating-averages --partitions 1 --replication-factor 3
+$ ccloud topic create average-ratings --partitions 1 --replication-factor 3
 $ ccloud topic create rated-movies --partitions 1 --replication-factor 3
 ----
 

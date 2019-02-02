@@ -24,14 +24,15 @@ import org.apache.kafka.streams.state.KeyValueStore;
 import java.util.Map;
 import java.util.Properties;
 
+import io.confluent.demo.util.CountAndSum;
 import io.confluent.demo.util.CountAndSumDeserializer;
 import io.confluent.demo.util.CountAndSumSerde;
-import io.confluent.demo.util.CountAndSum;
 import io.confluent.demo.util.CountAndSumSerializer;
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
 import static java.util.Collections.singletonMap;
+import static org.apache.kafka.streams.StreamsConfig.*;
 import static org.apache.kafka.streams.StreamsConfig.APPLICATION_ID_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.BOOTSTRAP_SERVERS_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG;
@@ -51,7 +52,7 @@ public class StreamsDemo {
 
   public static void main(String args[]) {
 
-    Properties config = getStreamsConfig(KAFKA_BOOTSTRAP_SERVER, SCHEMA_REGISTRY_URL);
+    Properties config = getStreamsConfig(KAFKA_BOOTSTRAP_SERVER, SCHEMA_REGISTRY_URL, args[0]);
 
     final Map<String, String> serdeConfig = getSerdeConfig(SCHEMA_REGISTRY_URL);
 
@@ -199,15 +200,23 @@ public class StreamsDemo {
   }
 
   public static Properties getStreamsConfig(String kafkaBootStrapServer,
-                                            String schemaRegistryUrl) {
-    Properties config = new Properties();
-    config.put(StreamsConfig.PRODUCER_PREFIX + ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,
+                                            String schemaRegistryUrl, String configPath) {
+    final Properties config;
+    if (configPath != null && !configPath.isEmpty()) {
+      config = ConfigLoader.loadConfig(configPath);
+    } else {
+      config = new Properties();
+      config.put(BOOTSTRAP_SERVERS_CONFIG, kafkaBootStrapServer);
+    }
+
+    config.put(REPLICATION_FACTOR_CONFIG, 3);
+
+    config.put(PRODUCER_PREFIX + ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,
                "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor");
 
-    config.put(StreamsConfig.CONSUMER_PREFIX + ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
+    config.put(CONSUMER_PREFIX + ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
                "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor");
     config.put(APPLICATION_ID_CONFIG, "kafka-films");
-    config.put(BOOTSTRAP_SERVERS_CONFIG, kafkaBootStrapServer);
     config.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
     config.put(DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.Long().getClass().getName());
     config.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.Double().getClass().getName());
@@ -219,6 +228,14 @@ public class StreamsDemo {
     config.put(CACHE_MAX_BYTES_BUFFERING_CONFIG, 10 * 1024 * 1024L);
     // Set commit interval to 1 second.
     config.put(COMMIT_INTERVAL_MS_CONFIG, 1000);
+    config.put(topicPrefix("segment.ms"), 15000000);
+
+    // from https://docs.confluent.io/current/cloud/connect/streams-cloud-config.html
+    // Recommended performance/resilience settings
+    config.put(producerPrefix(ProducerConfig.RETRIES_CONFIG), 2147483647);
+    config.put("producer.confluent.batch.expiry.ms", 9223372036854775807L);
+    config.put(producerPrefix(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG), 300000);
+    config.put(producerPrefix(ProducerConfig.MAX_BLOCK_MS_CONFIG), 9223372036854775807L);
     return config;
   }
 

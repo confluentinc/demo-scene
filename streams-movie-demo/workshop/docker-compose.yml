@@ -7,11 +7,7 @@ services:
     hostname: schema-registry
     container_name: schema-registry
     ports:
-<<<<<<< HEAD
-      - '8081:8081'
-=======
-      - "8085:8085"
->>>>>>> Cleanup docker compose
+      - "8081:8081"
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081

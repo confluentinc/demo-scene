@@ -117,6 +117,13 @@ project(':streams') {
     testCompile 'org.projectlombok:lombok:1.16.20'
   }
 
+  task runApp(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = mainClass
+    def configPath = project.getProperty('configPath')
+    args = [configPath]
+  }
+
 }
 
 project(':spring-streams') {
