@@ -41,6 +41,15 @@ $ ccloud topic create raw-movies --partitions 16 --replication-factor 3
 $ ccloud topic create raw-ratings --partitions 16 --replication-factor 3
 ----
 
+Check if the topics were created properly by using the following command:
+
+[source,bash]
+----
+$ ccloud topic list
+----
+
+You should see the two topics being listed in the output.
+
 === Producing and Consuming Data using Confluent Cloud CLI
 
 Open a terminal to consume records from the `raw-movies` topic using the following command:
