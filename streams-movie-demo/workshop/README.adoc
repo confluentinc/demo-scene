@@ -80,6 +80,8 @@ Open another terminal to produce records to the `raw-ratings` topic using the fo
 $ cat ../data/ratings.dat | ccloud produce -t raw-ratings
 ----
 
+Press kbd:[Ctrl + C] to interrupt the consume commands issue in this section.
+
 === Creating Workshop Related Topics
 
 [source,bash]
@@ -161,7 +163,7 @@ $ docker-compose up -d ksql-cli
 $ docker-compose up -d control-center
 ----
 
-If you need to troubleshoot what is going on with a particular service, you can use the `docker-compose logs -f <SERVICE>` command. For instance, the example below shows how to access the logs from Control Center:
+If you need to troubleshoot what is going on with a particular service, you can use the command `docker-compose logs -f <SERVICE>`. For instance, the example below shows how to access the logs from Control Center:
 
 [source,bash]
 ----
