@@ -366,3 +366,18 @@ Now that you have a stream with each of its records partitioned by the `movie_id
 CREATE TABLE MOVIES_REF (movie_id BIGINT, title VARCHAR, release_year INT, country VARCHAR, rating DOUBLE, cinematographer VARCHAR, genres ARRAY<VARCHAR>, directors ARRAY<VARCHAR>, composers ARRAY<varchar>, screenwriters ARRAY<VARCHAR>, production_companies ARRAY<VARCHAR>) WITH (VALUE_FORMAT='JSON', KAFKA_TOPIC='MOVIES_REKEYED', KEY='movie_id');
 ----
 
+Once the table is created, it can be queried as many times as you want. Execute the following query over the newly created table:
+
+[source,bash]
+----
+SELECT * FROM MOVIES_REF;
+----
+
+Let this query execute for now and don't interrupt it by pressing kbd:[Ctrl + C]. Open a new terminal and execute the following:
+
+[source,bash]
+----
+cat ../data/movies-json.js | ccloud produce -t movies
+----
+
+If you look to the KSQL query being executed, you should see tons of records being shown. Not only this proves that you are in the right track with this workshop but it also proves how KSQL is awesome. Think for a second what just happened:
