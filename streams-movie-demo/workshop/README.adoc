@@ -78,15 +78,15 @@ Follow the instructions presented thoroughly. This is crucial for the next secti
 
 [source,bash]
 ----
-$ ccloud topic create raw-movies --partitions 16 --replication-factor 3
-$ ccloud topic create raw-ratings --partitions 16 --replication-factor 3
+ccloud topic create raw-movies --partitions 16 --replication-factor 3
+ccloud topic create raw-ratings --partitions 16 --replication-factor 3
 ----
 
 Check if the topics were created properly by using the following command:
 
 [source,bash]
 ----
-$ ccloud topic list
+ccloud topic list
 ----
 
 You should see the two topics being listed in the output.
@@ -97,28 +97,28 @@ Open a terminal to consume records from the `raw-movies` topic using the followi
 
 [source,bash]
 ----
-$ ccloud consume -t raw-movies
+ccloud consume -t raw-movies
 ----
 
 Open another terminal to produce records to the `raw-movies` topic using the following command:
 
 [source,bash]
 ----
-$ cat ../data/movies.dat | ccloud produce -t raw-movies
+cat ../data/movies.dat | ccloud produce -t raw-movies
 ----
 
 Open another terminal to consume records from the `raw-ratings` topic using the following command:
 
 [source,bash]
 ----
-$ ccloud consume -t raw-ratings
+ccloud consume -t raw-ratings
 ----
 
 Open another terminal to produce records to the `raw-ratings` topic using the following command:
 
 [source,bash]
 ----
-$ cat ../data/ratings.dat | ccloud produce -t raw-ratings
+cat ../data/ratings.dat | ccloud produce -t raw-ratings
 ----
 
 Press kbd:[Ctrl + C] to interrupt the consume commands issue in this section.
@@ -127,7 +127,7 @@ Press kbd:[Ctrl + C] to interrupt the consume commands issue in this section.
 
 [source,bash]
 ----
-$ sh create-demo-topics.sh
+sh create-demo-topics.sh
 ----
 
 You should see the following output:
@@ -151,14 +151,14 @@ On the host from which you are running Docker, ensure that you have correctly in
 
 [source,bash]
 ----
-$ sh ccloud-generate-env-vars.sh
+sh ccloud-generate-env-vars.sh
 ----
 
 === Step 2: Source the generated file to make the exports available in the current path.
 
 [source,bash]
 ----
-$ source ./delta_configs/env.delta
+source ./delta_configs/env.delta
 ----
 
 
@@ -171,7 +171,7 @@ You may bring up all services in the Docker Compose file at once...
 
 [source,bash]
 ----
-$ docker-compose up -d
+docker-compose up -d
 ----
 
 === ...or individually...
@@ -180,28 +180,28 @@ $ docker-compose up -d
 
 [source,bash]
 ----
-$ docker-compose up -d schema-registry
+docker-compose up -d schema-registry
 ----
 
 ==== KSQL Server
 
 [source,bash]
 ----
-$ docker-compose up -d ksql-server
+docker-compose up -d ksql-server
 ----
 
 ==== KSQL CLI
 
 [source,bash]
 ----
-$ docker-compose up -d ksql-cli
+docker-compose up -d ksql-cli
 ----
 
 ==== Confluent Control Center
 
 [source,bash]
 ----
-$ docker-compose up -d control-center
+docker-compose up -d control-center
 ----
 
 Control Center may take from one to five minutes until the service finish start up, depending on your hardware configuration. To check if things are working properly, open the following URL in a browser: http://localhost:9021[http://localhost:9021]. If the Control Center UI pop's up, click on the `Topics` menu. You should be able to see the topics created previously.
@@ -212,7 +212,7 @@ If you need to troubleshoot what is going on with a particular service, you can 
 
 [source,bash]
 ----
-$ docker-compose logs -f control-center
+docker-compose logs -f control-center
 ----
 
 == Kafka Streams: Streams API for Apache Kafka
@@ -282,4 +282,4 @@ To test things out, execute the following command:
 PRINT 'movies' FROM BEGINNING;
 ----
 
-You should see all the records that you loaded into the topic `movies` previously. Press kbd:[Ctrl + C] to interrupt the print command and go back to the KSQL CLI prompt, and thereafter type `exit` then `ENTER` to exit the prompt and finish the KSQL CLI session.
+You should see all the records that you loaded into the topic `movies` previously. Press kbd:[Ctrl + C] to interrupt the print command and go back to the KSQL CLI prompt.
