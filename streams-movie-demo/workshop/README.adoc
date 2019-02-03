@@ -273,6 +273,6 @@ image:images/kafka-streams-high-level.png[Kafka Streams]
 
 Confluent KSQL is the streaming SQL engine that enables real-time data processing against Apache Kafka®. It provides an easy-to-use, yet powerful interactive SQL interface for stream processing on Kafka, without the need to write code in a programming language such as Java or Python. KSQL is scalable, elastic, fault-tolerant, and it supports a wide range of streaming operations, including data filtering, transformations, aggregations, joins, windowing, and sessionization.
 
-image:images/ksql-intro.jpg[KSQL]
+image:images/ksql-architecture.png[KSQL]
 
 In this part of the workshop, you are going to enrich the implementation you have made thus far with KSQL, which is going to provide similar stream processing capabilities found previously using Kafka Streams.
