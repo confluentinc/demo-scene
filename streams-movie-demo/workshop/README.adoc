@@ -397,3 +397,7 @@ If you look to the KSQL query being executed, you should see tons of records bei
 ----
 
 Not only this proves that you are in the right track with this workshop but it also proves how KSQL is awesome. Think for a second what just happened:
+
+image:images/etl-using-ksql.png[KSQL ETL]
+
+You just built in a matter of minutes a fair complicated ETL pipeline in which data is being transferred from a input topic to a series of pipes that are changing the nature of the data (re-keying in this case) and finally creating a table where data is always up-to-date with whatever is written to the input topic.
