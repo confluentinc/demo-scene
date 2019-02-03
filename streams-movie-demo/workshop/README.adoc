@@ -357,9 +357,9 @@ The result of this command is the creation of a new stream. This new stream will
 SELECT * FROM MOVIES_REKEYED;
 ----
 
-You should see the record that you previously loaded into the `movies` topic, which proves that magic of KSQL which is keep your ETL pipeline live, with all the data copying between the pipes managed automatically.
+You should see the record that you previously loaded into the `movies` topic, which proves the magic of KSQL which is keeping your ETL pipeline live, with all the data copying between the pipes managed automatically. Now, you may notice that the query you just execute never finishes. For now, you can safely press kbd:[Ctrl + C] to interrupt the query command and go back to the KSQL CLI prompt. But it is important to understand that queries in KSQL are executed forever. The reason being is because streams are set of records that are continuously written and therefore, the result of a streams is always updated. Hence why a query in KSQL never finishes.
 
-Now that you have a stream with each of its records partitioned by the `movie_id` column, we can finally create our table. Execute the following command:
+Now that you have a stream with each of its records partitioned by the `movie_id` field, we can finally create our table. Execute the following command:
 
 [source,bash]
 ----
