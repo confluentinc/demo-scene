@@ -31,6 +31,40 @@ NOTE: It is OK to use Windows, but the trainers are not Windows users and may no
 * https://confluent.cloud[An initialized Confluent Cloud Cluster used for Development Only]
 ** We will perform this exercise in the class
 
+== Creating a Cluster in Confluent Cloud
+
+In this section, you are going to create your own Apache Kafka cluster on Confluent Cloud. This cluster will be used troughout the entire workshop -- therefore make sure to follow the steps shown here.
+
+=== Step 1: Log in to Confluent Cloud
+
+Open the following URL in your browser: https://confluent.cloud/login[https://confluent.cloud/login]
+
+Enter with the following credentials:
+
+[source,bash]
+----
+Username: viktor+jfokus@confluent.io
+Password: *************
+----
+
+=== Step 2: Create your Cluster
+
+From the main UI, click on the `Add Cluster` button.
+
+image:images/creating-cluster-1.png[Creating Cluster]
+
+Enter with a value for the `Cluster name` field. To be able to identify your own cluster among the others, use the following notation for the name: firstName + '-' + lastName.
+
+Make sure to select `Google Cloud Platform` as your Cloud provider. Though any cloud provider would work, we are using GCP in this workshop because it is cheaper. Finally, make sure to select `us-central-1` [EU West (London)] as region, since it is the closest location to Stockholm/Sweden. The image below shows an example of how your cluster should look like.
+
+image:images/creating-cluster-2.png[Creating Cluster]
+
+When you finish done the changes, click in the `Continue` button. The UI will ask for credit card details. Ask for some of the instructors to enter a valid credit card.
+
+image:images/creating-cluster-3.png[Creating Cluster]
+
+Finally, click on the `Save and launch cluster` button.
+
 == Creating Topics and Validating Data Flowing
 
 === Creating Raw Data Topics
