@@ -135,6 +135,7 @@ You should see the following output:
 [source,bash]
 ----
 Topic "movies" created.
+Topic "ratings" created.
 Topic "rating-sums" created.
 Topic "rating-counts" created.
 Topic "average-ratings" created.
@@ -283,3 +284,17 @@ PRINT 'movies' FROM BEGINNING;
 ----
 
 You should see all the records that you loaded into the topic `movies` previously. Press kbd:[Ctrl + C] to interrupt the print command and go back to the KSQL CLI prompt.
+
+Using the KSQL CLI you can also read and write properties. Properties are server and/or client attributes that defines the basic behavior of queries. For instance, we are going to need to read the topics always from the beginning, so we can read old records and not only the newest ones. In order to do this, execute the following command:
+
+[source,bash]
+----
+SET 'auto.offset.reset' = 'earliest';
+----
+
+To show the value of properties, you can use the `SHOW PROPERTIES` command:
+
+[source,bash]
+----
+SHOW PROPERTIES;
+----
