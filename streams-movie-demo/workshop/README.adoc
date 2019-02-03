@@ -380,4 +380,20 @@ Let this query execute for now and don't interrupt it by pressing kbd:[Ctrl + C]
 cat ../data/movies-json.js | ccloud produce -t movies
 ----
 
-If you look to the KSQL query being executed, you should see tons of records being shown. Not only this proves that you are in the right track with this workshop but it also proves how KSQL is awesome. Think for a second what just happened:
+If you look to the KSQL query being executed, you should see tons of records being shown.
+
+[source,bash]
+----
+1549232500202 | 1 | 1 | Once Upon a Time in the West | 1968 | Italy | 8.199999809265137 | Tonino Delli Colli | [Western] | [Sergio Leone] | [Ennio Morricone] | [Sergio Leone, Sergio Donati, Dario Argento, Bernardo Bertolucci] | [Paramount Pictures]
+1549236467679 | 11 | 11 | The Ugly Truth | 2009 | United States | 5.699999809265137 | Russell Carpenter | [Romance, Comedy] | [Robert Luketic] | [Aaron Zigman] | [Nicole Eastman, Karen McCullah Lutz, Kirsten Smith] | [Sony Pictures, Lakeshore Entertainment]
+1549236467679 | 12 | 12 | Warlock | 1959 | United States | 7.0 | Joseph MacDonald | [Western] | [Edward Dmytryk] | [Leigh Harline] | [Robert Alan Aurthur] | [20th Century Fox]
+1549236467680 | 27 | 27 | Spanish Movie | 2009 | Spain | 3.799999952316284 | Óscar Faura | [Comedy] | [Javier Ruiz Caldera] | [Fernando Velázquez] | [Paco Cabezas] | [Telecinco Cinema, Think Studio]
+1549236467680 | 28 | 28 | The Little Mermaid | 1989 | United States | 6.699999809265137 | Animation | [Animation, Fantasy, Musical, Kids] | [John Musker, Ron Clements] | [Alan Menken] | [John Musker, Ron Clements] | [Walt Disney Pictures]
+1549236467681 | 43 | 43 | Jurassic Park | 1993 | United States | 7.0 | Dean Cundey | [Sci-Fi, Adventure] | [Steven Spielberg] | [John Williams] | [Michael Crichton, David Koepp] | [Universal Pictures, Amblin Entertainment]
+1549236467682 | 59 | 59 | Casablanca | 1942 | United States | 8.399999618530273 | Arthur Edeson | [Drama, Romance] | [Michael Curtiz] | [Max Steiner] | [Julius J. Epstein, Philip G. Epstein, Howard Koch] | [Warner Bros. Pictures; Producer: Hal B. Wallis]
+1549236467683 | 75 | 75 | The Italian Job | 2003 | United States | 6.5 | Wally Pfister | [Action] | [F. Gary Gray] | [John Powell] | [Wayne Powers, Donna Powers] | [Paramount Pictures]
+1549236467681 | 44 | 44 | 310 to Yuma (Three Ten to Yuma) | 1957 | United States | 7.5 | Charles Lawton Jr. | [Western] | [Delmer Daves] | [George Duning] | [Halsted Welles] | [Columbia Pictures]
+1549236467684 | 91 | 91 | Iron Man | 2008 | United States | 6.5 | Matthew Libatique | [Fantasy, Action, Adventure, Sci-Fi] | [Jon Favreau] | [Ramin Djawadi] | [Arthur Marcum, Matt Holloway, Mark Fergus, Hawk Ostby] | [Paramount Pictures, Marvel Enterprises, Goldman & Associates]
+----
+
+Not only this proves that you are in the right track with this workshop but it also proves how KSQL is awesome. Think for a second what just happened:
