@@ -27,8 +27,6 @@ NOTE: It is OK to use Windows, but the trainers are not Windows users and may no
 * https://www.jetbrains.com/idea/download/[IntelliJ IDEA Community Edition]
 * https://docs.docker.com/install/[Docker CE]
 * Docker Compose Version 1.20.0 | with Docker Compose file format 2.1
-* https://docs.confluent.io/current/cloud-quickstart.html#step-2-install-ccloud-cli[Confluent Cloud CLI]
-* https://confluent.cloud[An initialized Confluent Cloud Cluster used for Development Only]
 
 == Creating a Cluster in Confluent Cloud
 
@@ -76,7 +74,7 @@ Follow the instructions presented thoroughly. This is crucial for the next secti
 
 == Creating Topics and Validating Data Flowing
 
-=== Creating Raw Data Topics
+=== Step 1: Creating Raw Data Topics
 
 [source,bash]
 ----
@@ -93,7 +91,7 @@ $ ccloud topic list
 
 You should see the two topics being listed in the output.
 
-=== Producing and Consuming Data using Confluent Cloud CLI
+=== Step 2: Producing and Consuming Data using Confluent Cloud CLI
 
 Open a terminal to consume records from the `raw-movies` topic using the following command:
 
@@ -125,7 +123,7 @@ $ cat ../data/ratings.dat | ccloud produce -t raw-ratings
 
 Press kbd:[Ctrl + C] to interrupt the consume commands issue in this section.
 
-=== Creating Workshop Related Topics
+=== Step 3: Creating Workshop Related Topics
 
 [source,bash]
 ----
