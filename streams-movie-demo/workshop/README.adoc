@@ -298,3 +298,71 @@ To show the value of properties, you can use the `SHOW PROPERTIES` command:
 ----
 SHOW PROPERTIES;
 ----
+
+=== Step 3: Creating a Movies Table
+
+In this step, you are going to create your first table. Keep always in mind though that tables are nothing but snapshots of a stream for the last state of a given key. That means that the building block that actually stores data are streams -- but we can capture a subset of that stream in a given time and materialize it as a table. Sounds complicated right? It will be less complicated when you start executing the instructions below.
+
+First, you need to create a stream around the existing topic. Create the stream using the following command:
+
+[source,bash]
+----
+CREATE STREAM MOVIES_SRC (movie_id BIGINT, title VARCHAR, release_year INT, country VARCHAR, rating DOUBLE, cinematographer VARCHAR, genres ARRAY<VARCHAR>, directors ARRAY<VARCHAR>, composers ARRAY<varchar>, screenwriters ARRAY<VARCHAR>, production_companies ARRAY<VARCHAR>) WITH (VALUE_FORMAT='JSON', KAFKA_TOPIC='movies');
+----
+
+There you have it. You just created your first stream. Streams are entities that are kept by KSQL and contain metadata that defines it's caracteristics. In order to check the stream metadata, use the following command:
+
+[source,bash]
+----
+DESCRIBE MOVIES_SRC;
+----
+
+You should see the following output:
+
+[source,bash]
+----
+ksql> DESCRIBE MOVIES_SRC;
+
+Name                 : MOVIES_SRC
+ Field                | Type                      
+--------------------------------------------------
+ ROWTIME              | BIGINT           (system) 
+ ROWKEY               | VARCHAR(STRING)  (system) 
+ MOVIE_ID             | BIGINT                    
+ TITLE                | VARCHAR(STRING)           
+ RELEASE_YEAR         | INTEGER                   
+ COUNTRY              | VARCHAR(STRING)           
+ RATING               | DOUBLE                    
+ CINEMATOGRAPHER      | VARCHAR(STRING)           
+ GENRES               | ARRAY<VARCHAR(STRING)>    
+ DIRECTORS            | ARRAY<VARCHAR(STRING)>    
+ COMPOSERS            | ARRAY<VARCHAR(STRING)>    
+ SCREENWRITERS        | ARRAY<VARCHAR(STRING)>    
+ PRODUCTION_COMPANIES | ARRAY<VARCHAR(STRING)>    
+--------------------------------------------------
+For runtime statistics and query details run: DESCRIBE EXTENDED <Stream,Table>;
+----
+
+Next, we need to make sure that each record from this stream is identifiable (or partition by, as we prefer) using a field that is unique. Think in this as if it was a primary key for a SQL database if that makes you feel more confortable. In order to do this, we need to rekey this stream using the following command:
+
+[source,bash]
+----
+CREATE STREAM MOVIES_REKEYED WITH (PARTITIONS=1) AS SELECT * FROM movies_src PARTITION BY movie_id;
+----
+
+The result of this command is the creation of a new stream. This new stream will contain exactly the same records that the previous stream contained, as well as any new record that arrives on it since KSQL ensures that derived streams are kept in-sync all the time. And the best of all... you don't need to write any additional code for that to happen. If you want to play with this, execute the following query:
+
+[source,bash]
+----
+SELECT * FROM MOVIES_REKEYED;
+----
+
+You should see the record that you previously loaded into the `movies` topic, which proves that magic of KSQL which is keep your ETL pipeline live, with all the data copying between the pipes managed automatically.
+
+Now that you have a stream with each of its records partitioned by the `movie_id` column, we can finally create our table. Execute the following command:
+
+[source,bash]
+----
+CREATE TABLE MOVIES_REF (movie_id BIGINT, title VARCHAR, release_year INT, country VARCHAR, rating DOUBLE, cinematographer VARCHAR, genres ARRAY<VARCHAR>, directors ARRAY<VARCHAR>, composers ARRAY<varchar>, screenwriters ARRAY<VARCHAR>, production_companies ARRAY<VARCHAR>) WITH (VALUE_FORMAT='JSON', KAFKA_TOPIC='MOVIES_REKEYED', KEY='movie_id');
+----
+
