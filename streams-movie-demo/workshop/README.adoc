@@ -110,7 +110,7 @@ On the host from which you are running Docker, ensure that you have correctly in
 
 [source,bash]
 ----
-$ ./ccloud-generate-env-vars.sh
+$ sh ccloud-generate-env-vars.sh
 ----
 
 === Step 2: Source the generated file to make the exports available in the current path.
@@ -163,6 +163,10 @@ $ docker-compose up -d ksql-cli
 $ docker-compose up -d control-center
 ----
 
+Control Center may take from one to five minutes until the service finish start up, depending on your hardware configuration. To check if things are working properly, open the following URL in a browser: http://localhost:9021[http://localhost:9021]. If the Control Center UI pop's up, click on the `Topics` menu. You should be able to see the topics created previously.
+
+image:images/c3-showing-topics.png[C3 Showing Topics]
+
 If you need to troubleshoot what is going on with a particular service, you can use the command `docker-compose logs -f <SERVICE>`. For instance, the example below shows how to access the logs from Control Center:
 
 [source,bash]
@@ -170,7 +174,7 @@ If you need to troubleshoot what is going on with a particular service, you can 
 $ docker-compose logs -f control-center
 ----
 
-== Validate If KSQL Server And CLI Is Working Properly
+== Validate If KSQL Server Is Working Properly
 
 Before moving forward with this workshop you need to validate if KSQL is working as expected.
 Thus, bring up the KSQL CLI using the command below:
