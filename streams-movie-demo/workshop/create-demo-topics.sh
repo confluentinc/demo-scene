@@ -15,6 +15,7 @@
 # limitations under the License.
 
 ccloud topic create movies --partitions 16 --replication-factor 3
+ccloud topic create ratings --partitions 16 --replication-factor 3
 ccloud topic create rating-sums --partitions 16 --replication-factor 3
 ccloud topic create rating-counts --partitions 16 --replication-factor 3
 ccloud topic create average-ratings --partitions 16 --replication-factor 3

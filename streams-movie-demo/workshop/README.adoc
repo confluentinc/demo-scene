@@ -215,14 +215,39 @@ If you need to troubleshoot what is going on with a particular service, you can 
 $ docker-compose logs -f control-center
 ----
 
-== Validate If KSQL Server Is Working Properly
+== Kafka Streams: Streams API for Apache Kafka
 
-Before moving forward with this workshop you need to validate if KSQL is working as expected.
-Thus, bring up the KSQL CLI using the command below:
+The Streams API of Apache Kafka, available through a Java library, can be used to build highly scalable, elastic, fault-tolerant, distributed applications and microservices. First and foremost, the Kafka Streams API allows you to create real-time applications that power your core business. It is the easiest yet the most powerful technology to process data stored in Kafka. It builds upon important concepts for stream processing such as efficient management of application state, fast and efficient aggregations and joins, properly distinguishing between event-time and processing-time, and seamless handling of late-arriving and out-of-order data.
+
+image:images/kafka-streams-high-level.png[Kafka Streams]
+
+=== TODO: Viktor's Part Comes Here...
+
+== KSQL: Streaming SQL for Apache Kafka
+
+Confluent KSQL is the streaming SQL engine that enables real-time data processing against Apache Kafka®. It provides an easy-to-use, yet powerful interactive SQL interface for stream processing on Kafka, without the need to write code in a programming language such as Java or Python. KSQL is scalable, elastic, fault-tolerant, and it supports a wide range of streaming operations, including data filtering, transformations, aggregations, joins, windowing, and sessionization.
+
+image:images/ksql-architecture.png[KSQL]
+
+In this part of the workshop, you are going to enrich the implementation you have made thus far with KSQL, which is going to provide similar stream processing capabilities found previously using Kafka Streams.
+
+=== Step 1: Seed the Underlying Topics with Data
+
+In this step, you are going to seed the topics `movies` and `ratings` with at least one record. This is necessary because once we start creating streams and tables around those topics, KSQL knows how to parse the data.
 
 [source,bash]
 ----
-$ docker run --network workshop_default --rm --interactive --tty confluentinc/cp-ksql-cli:5.1.0 http://ksql-server:8088
+head -n1 ../data/ratings-json.js | ccloud produce -t ratings
+head -n1 ../data/movies-json.js  | ccloud produce -t movies
+----
+
+=== Step 2: Create a new KSQL CLI session
+
+In this step, you are going to create a session using KSQL CLI. KSQL CLI is a command-line interface that allows you to send KSQL sentences to the KSQL Server, whereas these senteces are to create things on the server or simply to execute ad-hoc queries interactively.
+
+[source,bash]
+----
+docker run --network workshop_default --rm --interactive --tty confluentinc/cp-ksql-cli:5.1.0 http://ksql-server:8088
 ----
 
 You should be presented with a prompt as shown below:
@@ -250,29 +275,11 @@ Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
 ksql>
 ----
 
-This means that the KSQL CLI was able to connect the KSQL Server and therefore, able to present a working prompt.
-In the KSQL CLI prompt, enter the following command:
+To test things out, execute the following command:
 
 [source,bash]
 ----
-PRINT 'raw-movies' FROM BEGINNING;
+PRINT 'movies' FROM BEGINNING;
 ----
 
-You should see all the records that you loaded into the topic `raw-movies` previously.
-Press kbd:[Ctrl + C] to interrupt the print command and go back to the KSQL CLI prompt, and thereafter type `exit` then `ENTER` to exit the prompt and finish the KSQL CLI session.
-
-== Kafka Streams: Streams API for Apache Kafka
-
-The Streams API of Apache Kafka, available through a Java library, can be used to build highly scalable, elastic, fault-tolerant, distributed applications and microservices. First and foremost, the Kafka Streams API allows you to create real-time applications that power your core business. It is the easiest yet the most powerful technology to process data stored in Kafka. It builds upon important concepts for stream processing such as efficient management of application state, fast and efficient aggregations and joins, properly distinguishing between event-time and processing-time, and seamless handling of late-arriving and out-of-order data.
-
-image:images/kafka-streams-high-level.png[Kafka Streams]
-
-=== TODO: Viktor's Part Comes Here...
-
-== KSQL: Streaming SQL for Apache Kafka
-
-Confluent KSQL is the streaming SQL engine that enables real-time data processing against Apache Kafka®. It provides an easy-to-use, yet powerful interactive SQL interface for stream processing on Kafka, without the need to write code in a programming language such as Java or Python. KSQL is scalable, elastic, fault-tolerant, and it supports a wide range of streaming operations, including data filtering, transformations, aggregations, joins, windowing, and sessionization.
-
-image:images/ksql-architecture.png[KSQL]
-
-In this part of the workshop, you are going to enrich the implementation you have made thus far with KSQL, which is going to provide similar stream processing capabilities found previously using Kafka Streams.
+You should see all the records that you loaded into the topic `movies` previously. Press kbd:[Ctrl + C] to interrupt the print command and go back to the KSQL CLI prompt, and thereafter type `exit` then `ENTER` to exit the prompt and finish the KSQL CLI session.
