@@ -29,7 +29,6 @@ NOTE: It is OK to use Windows, but the trainers are not Windows users and may no
 * Docker Compose Version 1.20.0 | with Docker Compose file format 2.1
 * https://docs.confluent.io/current/cloud-quickstart.html#step-2-install-ccloud-cli[Confluent Cloud CLI]
 * https://confluent.cloud[An initialized Confluent Cloud Cluster used for Development Only]
-** We will perform this exercise in the class
 
 == Creating a Cluster in Confluent Cloud
 
@@ -46,6 +45,8 @@ Enter with the following credentials:
 Username: viktor+jfokus@confluent.io
 Password: *************
 ----
+
+The instructors will provide the password for this account.
 
 === Step 2: Create your Cluster
 
@@ -64,6 +65,14 @@ When you finish done the changes, click in the `Continue` button. The UI will as
 image:images/creating-cluster-3.png[Creating Cluster]
 
 Finally, click on the `Save and launch cluster` button.
+
+=== Step 3: Configure the Confluent Cloud CLI
+
+From the main UI, click on your cluster. Then, click on the `Data In/Out` menu and subsequentially on the `CLI` sub-menu. You will be presented with the following instructions:
+
+image:images/configure-ccloud-cli-1.png[Configuring Confluent Cloud CLI]
+
+Follow the instructions presented thoroughly. This is crucial for the next sections of the workshop to work. If you feel that you need help, please don't hesitate to call any of the instructors.
 
 == Creating Topics and Validating Data Flowing
 
