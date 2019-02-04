@@ -62,7 +62,7 @@ project(':loader') {
     tasks.create(name: "streamWith${generatorName}", type: JavaExec) {
       main = generatorName
       classpath = sourceSets.main.runtimeClasspath
-      args = [env['KAFKA_BOOTSTRAP_SERVERS'] ?: 'localhost:9092']
+      args = [project.getProperty('configPath')]
     }
   }
 

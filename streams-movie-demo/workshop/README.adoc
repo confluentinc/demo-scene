@@ -28,6 +28,35 @@ NOTE: It is OK to use Windows, but the trainers are not Windows users and may no
 * https://docs.docker.com/install/[Docker CE]
 * Docker Compose Version 1.20.0 | with Docker Compose file format 2.1
 
+== Getting the code
+
+NOTE: If you will follow steps below you should checkout only directory that has source code relevant to this post.
+
+* Get example from GitHub
++
+
+[source,bash]
+----
+mkdir ~/temp/demo-scene
+cd ~/temp/demo-scene
+git init .
+git remote add origin -f https://github.com/confluentinc/demo-scene/
+git config core.sparsecheckout true
+echo "streams-movie-demo/*" >> .git/info/sparse-checkout
+git pull --depth=2 origin master
+cd streams-movie-demo
+ls -lh
+----
+// http://scriptedonachip.com/git-sparse-checkout
++
+
+and you should see something like this
++
+
+[role="text-center"]
+.The output of `ls -lh streams-movie-demo`
+image::images/ls-lh-streams-movie-demo.png[width=75%]
+
 == Creating a Cluster in Confluent Cloud
 
 In this section, you are going to create your own Apache Kafka cluster on Confluent Cloud.
@@ -173,7 +202,6 @@ sh ccloud-generate-env-vars.sh
 source ./delta_configs/env.delta
 ----
 
-
 == Bring up Services from Confluent Platform
 
 Make sure you completed the steps in the Setup section above before proceeding.
@@ -217,13 +245,15 @@ docker-compose up -d control-center
 ----
 
 Control Center may take from one to five minutes until the service finish start up, depending on your hardware configuration.
-To check if things are working properly, open the following URL in a browser: http://localhost:9021[http://localhost:9021]. If the Control Center UI pop's up, click on the `Topics` menu.
+To check if things are working properly, open the following URL in a browser: http://localhost:9021.
+If the Control Center UI pop's up, click on the `Topics` menu.
 You should be able to see the topics created previously.
 
 image:images/c3-showing-topics.png[C3 Showing Topics]
 
-If you need to troubleshoot what is going on with a particular service, you can use the command `docker-compose logs -f <SERVICE>`. For instance, the example below shows how to access the logs from Control Center:
+If you need to troubleshoot what is going on with a particular service, you can use the command `docker-compose logs -f <SERVICE>`.
 
+.The example below shows how to access the logs from Control Center
 [source,bash]
 ----
 docker-compose logs -f control-center
@@ -238,7 +268,28 @@ It builds upon important concepts for stream processing such as efficient manage
 
 image:images/kafka-streams-high-level.png[Kafka Streams]
 
-=== TODO: Viktor's Part Comes Here...
+=== Run Streaming Movie Demo
+
+* Start Kafka Streams application
++
+
+[source,shell]
+----
+./gradlew streams:runApp -PconfigPath=$HOME/.ccloud/config
+----
+
+=== Generate test load
+
+* Start raw rating generator
++
+
+[source,bash]
+----
+./gradlew loader:streamWithRawRatingStreamer -PconfigPath=$HOME/.ccloud/config
+----
++
+
+NOTE: I recommend to run the raw rating generator in a separate terminal window so you can interrupt it with kbd:[Ctrl+C]
 
 == KSQL: Streaming SQL for Apache Kafka
 
@@ -334,7 +385,11 @@ Create the stream using the following command:
 
 [source,bash]
 ----
-CREATE STREAM MOVIES_SRC (movie_id BIGINT, title VARCHAR, release_year INT, country VARCHAR, rating DOUBLE, cinematographer VARCHAR, genres ARRAY<VARCHAR>, directors ARRAY<VARCHAR>, composers ARRAY<varchar>, screenwriters ARRAY<VARCHAR>, production_companies ARRAY<VARCHAR>) WITH (VALUE_FORMAT='JSON', KAFKA_TOPIC='movies');
+CREATE STREAM MOVIES_SRC \
+ (movie_id BIGINT, title VARCHAR, release_year INT, country VARCHAR, rating DOUBLE, \
+  cinematographer VARCHAR, genres ARRAY<VARCHAR>, directors ARRAY<VARCHAR>, composers ARRAY<varchar>, \
+   screenwriters ARRAY<VARCHAR>, production_companies ARRAY<VARCHAR>)\
+ WITH (VALUE_FORMAT='JSON', KAFKA_TOPIC='movies');
 ----
 
 There you have it.
@@ -354,21 +409,21 @@ You should see the following output:
 ksql> DESCRIBE MOVIES_SRC;
 
 Name                 : MOVIES_SRC
- Field                | Type                      
+ Field                | Type
 --------------------------------------------------
- ROWTIME              | BIGINT           (system) 
- ROWKEY               | VARCHAR(STRING)  (system) 
- MOVIE_ID             | BIGINT                    
- TITLE                | VARCHAR(STRING)           
- RELEASE_YEAR         | INTEGER                   
- COUNTRY              | VARCHAR(STRING)           
- RATING               | DOUBLE                    
- CINEMATOGRAPHER      | VARCHAR(STRING)           
- GENRES               | ARRAY<VARCHAR(STRING)>    
- DIRECTORS            | ARRAY<VARCHAR(STRING)>    
- COMPOSERS            | ARRAY<VARCHAR(STRING)>    
- SCREENWRITERS        | ARRAY<VARCHAR(STRING)>    
- PRODUCTION_COMPANIES | ARRAY<VARCHAR(STRING)>    
+ ROWTIME              | BIGINT           (system)
+ ROWKEY               | VARCHAR(STRING)  (system)
+ MOVIE_ID             | BIGINT
+ TITLE                | VARCHAR(STRING)
+ RELEASE_YEAR         | INTEGER
+ COUNTRY              | VARCHAR(STRING)
+ RATING               | DOUBLE
+ CINEMATOGRAPHER      | VARCHAR(STRING)
+ GENRES               | ARRAY<VARCHAR(STRING)>
+ DIRECTORS            | ARRAY<VARCHAR(STRING)>
+ COMPOSERS            | ARRAY<VARCHAR(STRING)>
+ SCREENWRITERS        | ARRAY<VARCHAR(STRING)>
+ PRODUCTION_COMPANIES | ARRAY<VARCHAR(STRING)>
 --------------------------------------------------
 For runtime statistics and query details run: DESCRIBE EXTENDED <Stream,Table>;
 ----
@@ -379,7 +434,9 @@ In order to do this, we need to rekey this stream using the following command:
 
 [source,bash]
 ----
-CREATE STREAM MOVIES_REKEYED WITH (PARTITIONS=1) AS SELECT * FROM movies_src PARTITION BY movie_id;
+CREATE STREAM MOVIES_REKEYED \
+ WITH (PARTITIONS=1) \
+ AS SELECT * FROM movies_src PARTITION BY movie_id;
 ----
 
 The result of this command is the creation of a new stream.

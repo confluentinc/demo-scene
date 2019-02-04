@@ -211,11 +211,11 @@ public class StreamsDemo {
 
     config.put(REPLICATION_FACTOR_CONFIG, 3);
 
-    config.put(PRODUCER_PREFIX + ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,
+    /*config.put(PRODUCER_PREFIX + ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,
                "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor");
 
     config.put(CONSUMER_PREFIX + ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
-               "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor");
+               "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor");*/
     config.put(APPLICATION_ID_CONFIG, "kafka-films");
     config.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
     config.put(DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.Long().getClass().getName());
