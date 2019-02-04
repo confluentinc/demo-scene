@@ -30,7 +30,8 @@ NOTE: It is OK to use Windows, but the trainers are not Windows users and may no
 
 == Creating a Cluster in Confluent Cloud
 
-In this section, you are going to create your own Apache Kafka cluster on Confluent Cloud. This cluster will be used troughout the entire workshop -- therefore make sure to follow the steps shown here.
+In this section, you are going to create your own Apache Kafka cluster on Confluent Cloud.
+This cluster will be used troughout the entire workshop -- therefore make sure to follow the steps shown here.
 
 === Step 1: Log in to Confluent Cloud
 
@@ -52,13 +53,19 @@ From the main UI, click on the `Add Cluster` button.
 
 image:images/creating-cluster-1.png[Creating Cluster]
 
-Enter with a value for the `Cluster name` field. To be able to identify your own cluster among the others, use the following notation for the name: firstName + '-' + lastName.
+Enter with a value for the `Cluster name` field.
+To be able to identify your own cluster among the others, use the following notation for the name: firstName + '-' + lastName.
 
-Make sure to select `Google Cloud Platform` as your Cloud provider. Though any cloud provider would work, we are using GCP in this workshop because it is cheaper. Finally, make sure to select `us-central-1` [EU West (London)] as region, since it is the closest location to Stockholm/Sweden. The image below shows an example of how your cluster should look like.
+Make sure to select `Google Cloud Platform` as your Cloud provider.
+Though any cloud provider would work, we are using GCP in this workshop because it is cheaper.
+Finally, make sure to select `us-central-1` [EU West (London)] as region, since it is the closest location to Stockholm/Sweden.
+The image below shows an example of how your cluster should look like.
 
 image:images/creating-cluster-2.png[Creating Cluster]
 
-When you finish done the changes, click in the `Continue` button. The UI will ask for credit card details. Ask for some of the instructors to enter a valid credit card.
+When you finish done the changes, click in the `Continue` button.
+The UI will ask for credit card details.
+Ask for some of the instructors to enter a valid credit card.
 
 image:images/creating-cluster-3.png[Creating Cluster]
 
@@ -66,11 +73,15 @@ Finally, click on the `Save and launch cluster` button.
 
 === Step 3: Configure the Confluent Cloud CLI
 
-From the main UI, click on your cluster. Then, click on the `Data In/Out` menu and subsequentially on the `CLI` sub-menu. You will be presented with the following instructions:
+From the main UI, click on your cluster.
+Then, click on the `Data In/Out` menu and subsequentially on the `CLI` sub-menu.
+You will be presented with the following instructions:
 
 image:images/configure-ccloud-cli-1.png[Configuring Confluent Cloud CLI]
 
-Follow the instructions presented thoroughly. This is crucial for the next sections of the workshop to work. If you feel that you need help, please don't hesitate to call any of the instructors.
+Follow the instructions presented thoroughly.
+This is crucial for the next sections of the workshop to work.
+If you feel that you need help, please don't hesitate to call any of the instructors.
 
 == Creating Topics and Validating Data Flowing
 
@@ -205,7 +216,9 @@ docker-compose up -d ksql-cli
 docker-compose up -d control-center
 ----
 
-Control Center may take from one to five minutes until the service finish start up, depending on your hardware configuration. To check if things are working properly, open the following URL in a browser: http://localhost:9021[http://localhost:9021]. If the Control Center UI pop's up, click on the `Topics` menu. You should be able to see the topics created previously.
+Control Center may take from one to five minutes until the service finish start up, depending on your hardware configuration.
+To check if things are working properly, open the following URL in a browser: http://localhost:9021[http://localhost:9021]. If the Control Center UI pop's up, click on the `Topics` menu.
+You should be able to see the topics created previously.
 
 image:images/c3-showing-topics.png[C3 Showing Topics]
 
@@ -218,7 +231,10 @@ docker-compose logs -f control-center
 
 == Kafka Streams: Streams API for Apache Kafka
 
-The Streams API of Apache Kafka, available through a Java library, can be used to build highly scalable, elastic, fault-tolerant, distributed applications and microservices. First and foremost, the Kafka Streams API allows you to create real-time applications that power your core business. It is the easiest yet the most powerful technology to process data stored in Kafka. It builds upon important concepts for stream processing such as efficient management of application state, fast and efficient aggregations and joins, properly distinguishing between event-time and processing-time, and seamless handling of late-arriving and out-of-order data.
+The Streams API of Apache Kafka, available through a Java library, can be used to build highly scalable, elastic, fault-tolerant, distributed applications and microservices.
+First and foremost, the Kafka Streams API allows you to create real-time applications that power your core business.
+It is the easiest yet the most powerful technology to process data stored in Kafka.
+It builds upon important concepts for stream processing such as efficient management of application state, fast and efficient aggregations and joins, properly distinguishing between event-time and processing-time, and seamless handling of late-arriving and out-of-order data.
 
 image:images/kafka-streams-high-level.png[Kafka Streams]
 
@@ -226,7 +242,8 @@ image:images/kafka-streams-high-level.png[Kafka Streams]
 
 == KSQL: Streaming SQL for Apache Kafka
 
-Confluent KSQL is the streaming SQL engine that enables real-time data processing against Apache Kafka®. It provides an easy-to-use, yet powerful interactive SQL interface for stream processing on Kafka, without the need to write code in a programming language such as Java or Python. KSQL is scalable, elastic, fault-tolerant, and it supports a wide range of streaming operations, including data filtering, transformations, aggregations, joins, windowing, and sessionization.
+Confluent KSQL is the streaming SQL engine that enables real-time data processing against Apache Kafka®. It provides an easy-to-use, yet powerful interactive SQL interface for stream processing on Kafka, without the need to write code in a programming language such as Java or Python.
+KSQL is scalable, elastic, fault-tolerant, and it supports a wide range of streaming operations, including data filtering, transformations, aggregations, joins, windowing, and sessionization.
 
 image:images/ksql-architecture.png[KSQL]
 
@@ -234,7 +251,8 @@ In this part of the workshop, you are going to enrich the implementation you hav
 
 === Step 1: Seed the Underlying Topics with Data
 
-In this step, you are going to seed the topics `movies` and `ratings` with at least one record. This is necessary because once we start creating streams and tables around those topics, KSQL knows how to parse the data.
+In this step, you are going to seed the topics `movies` and `ratings` with at least one record.
+This is necessary because once we start creating streams and tables around those topics, KSQL knows how to parse the data.
 
 [source,bash]
 ----
@@ -244,7 +262,8 @@ head -n1 ../data/movies-json.js  | ccloud produce -t movies
 
 === Step 2: Create a new KSQL CLI session
 
-In this step, you are going to create a session using KSQL CLI. KSQL CLI is a command-line interface that allows you to send KSQL sentences to the KSQL Server, whereas these senteces are to create things on the server or simply to execute ad-hoc queries interactively.
+In this step, you are going to create a session using KSQL CLI.
+KSQL CLI is a command-line interface that allows you to send KSQL sentences to the KSQL Server, whereas these senteces are to create things on the server or simply to execute ad-hoc queries interactively.
 
 [source,bash]
 ----
@@ -283,9 +302,13 @@ To test things out, execute the following command:
 PRINT 'movies' FROM BEGINNING;
 ----
 
-You should see all the records that you loaded into the topic `movies` previously. Press kbd:[Ctrl + C] to interrupt the print command and go back to the KSQL CLI prompt.
+You should see all the records that you loaded into the topic `movies` previously.
+Press kbd:[Ctrl + C] to interrupt the print command and go back to the KSQL CLI prompt.
 
-Using the KSQL CLI you can also read and write properties. Properties are server and/or client attributes that defines the basic behavior of queries. For instance, we are going to need to read the topics always from the beginning, so we can read old records and not only the newest ones. In order to do this, execute the following command:
+Using the KSQL CLI you can also read and write properties.
+Properties are server and/or client attributes that defines the basic behavior of queries.
+For instance, we are going to need to read the topics always from the beginning, so we can read old records and not only the newest ones.
+In order to do this, execute the following command:
 
 [source,bash]
 ----
@@ -301,16 +324,23 @@ SHOW PROPERTIES;
 
 === Step 3: Creating a Movies Table
 
-In this step, you are going to create your first table. Keep always in mind though that tables are nothing but snapshots of a stream for the last state of a given key. That means that the building block that actually stores data are streams -- but we can capture a subset of that stream in a given time and materialize it as a table. Sounds complicated right? It will be less complicated when you start executing the instructions below.
+In this step, you are going to create your first table.
+Keep always in mind though that tables are nothing but snapshots of a stream for the last state of a given key.
+That means that the building block that actually stores data are streams -- but we can capture a subset of that stream in a given time and materialize it as a table.
+Sounds complicated right? It will be less complicated when you start executing the instructions below.
 
-First, you need to create a stream around the existing topic. Create the stream using the following command:
+First, you need to create a stream around the existing topic.
+Create the stream using the following command:
 
 [source,bash]
 ----
 CREATE STREAM MOVIES_SRC (movie_id BIGINT, title VARCHAR, release_year INT, country VARCHAR, rating DOUBLE, cinematographer VARCHAR, genres ARRAY<VARCHAR>, directors ARRAY<VARCHAR>, composers ARRAY<varchar>, screenwriters ARRAY<VARCHAR>, production_companies ARRAY<VARCHAR>) WITH (VALUE_FORMAT='JSON', KAFKA_TOPIC='movies');
 ----
 
-There you have it. You just created your first stream. Streams are entities that are kept by KSQL and contain metadata that defines it's caracteristics. In order to check the stream metadata, use the following command:
+There you have it.
+You just created your first stream.
+Streams are entities that are kept by KSQL and contain metadata that defines it's caracteristics.
+In order to check the stream metadata, use the following command:
 
 [source,bash]
 ----
@@ -343,30 +373,42 @@ Name                 : MOVIES_SRC
 For runtime statistics and query details run: DESCRIBE EXTENDED <Stream,Table>;
 ----
 
-Next, we need to make sure that each record from this stream is identifiable (or partition by, as we prefer) using a field that is unique. Think in this as if it was a primary key for a SQL database if that makes you feel more confortable. In order to do this, we need to rekey this stream using the following command:
+Next, we need to make sure that each record from this stream is identifiable (or partition by, as we prefer) using a field that is unique.
+Think in this as if it was a primary key for a SQL database if that makes you feel more confortable.
+In order to do this, we need to rekey this stream using the following command:
 
 [source,bash]
 ----
 CREATE STREAM MOVIES_REKEYED WITH (PARTITIONS=1) AS SELECT * FROM movies_src PARTITION BY movie_id;
 ----
 
-The result of this command is the creation of a new stream. This new stream will contain exactly the same records that the previous stream contained, as well as any new record that arrives on it since KSQL ensures that derived streams are kept in-sync all the time. And the best of all... you don't need to write any additional code for that to happen. If you want to play with this, execute the following query:
+The result of this command is the creation of a new stream.
+This new stream will contain exactly the same records that the previous stream contained, as well as any new record that arrives on it since KSQL ensures that derived streams are kept in-sync all the time.
+And the best of all... you don't need to write any additional code for that to happen.
+If you want to play with this, execute the following query:
 
 [source,bash]
 ----
 SELECT * FROM MOVIES_REKEYED;
 ----
 
-You should see the record that you previously loaded into the `movies` topic, which proves the magic of KSQL which is keeping your ETL pipeline live, with all the data copying between the pipes managed automatically. Now, you may notice that the query you just execute never finishes. For now, you can safely press kbd:[Ctrl + C] to interrupt the query command and go back to the KSQL CLI prompt. But it is important to understand that queries in KSQL are executed forever. The reason being is because streams are set of records that are continuously written and therefore, the result of a streams is always updated. Hence why a query in KSQL never finishes.
+You should see the record that you previously loaded into the `movies` topic, which proves the magic of KSQL which is keeping your ETL pipeline live, with all the data copying between the pipes managed automatically.
+Now, you may notice that the query you just execute never finishes.
+For now, you can safely press kbd:[Ctrl + C] to interrupt the query command and go back to the KSQL CLI prompt.
+But it is important to understand that queries in KSQL are executed forever.
+The reason being is because streams are set of records that are continuously written and therefore, the result of a streams is always updated.
+Hence why a query in KSQL never finishes.
 
-Now that you have a stream with each of its records partitioned by the `movie_id` field, we can finally create our table. Execute the following command:
+Now that you have a stream with each of its records partitioned by the `movie_id` field, we can finally create our table.
+Execute the following command:
 
 [source,bash]
 ----
 CREATE TABLE MOVIES_REF (movie_id BIGINT, title VARCHAR, release_year INT, country VARCHAR, rating DOUBLE, cinematographer VARCHAR, genres ARRAY<VARCHAR>, directors ARRAY<VARCHAR>, composers ARRAY<varchar>, screenwriters ARRAY<VARCHAR>, production_companies ARRAY<VARCHAR>) WITH (VALUE_FORMAT='JSON', KAFKA_TOPIC='MOVIES_REKEYED', KEY='movie_id');
 ----
 
-Once the table is created, it can be queried as many times as you want. Execute the following query over the newly created table:
+Once the table is created, it can be queried as many times as you want.
+Execute the following query over the newly created table:
 
 [source,bash]
 ----
@@ -390,13 +432,15 @@ If you look to the KSQL query being executed, you should see tons of records bei
 1549236467680 | 27 | 27 | Spanish Movie | 2009 | Spain | 3.799999952316284 | Óscar Faura | [Comedy] | [Javier Ruiz Caldera] | [Fernando Velázquez] | [Paco Cabezas] | [Telecinco Cinema, Think Studio]
 1549236467680 | 28 | 28 | The Little Mermaid | 1989 | United States | 6.699999809265137 | Animation | [Animation, Fantasy, Musical, Kids] | [John Musker, Ron Clements] | [Alan Menken] | [John Musker, Ron Clements] | [Walt Disney Pictures]
 1549236467681 | 43 | 43 | Jurassic Park | 1993 | United States | 7.0 | Dean Cundey | [Sci-Fi, Adventure] | [Steven Spielberg] | [John Williams] | [Michael Crichton, David Koepp] | [Universal Pictures, Amblin Entertainment]
-1549236467682 | 59 | 59 | Casablanca | 1942 | United States | 8.399999618530273 | Arthur Edeson | [Drama, Romance] | [Michael Curtiz] | [Max Steiner] | [Julius J. Epstein, Philip G. Epstein, Howard Koch] | [Warner Bros. Pictures; Producer: Hal B. Wallis]
+1549236467682 | 59 | 59 | Casablanca | 1942 | United States | 8.399999618530273 | Arthur Edeson | [Drama, Romance] | [Michael Curtiz] | [Max Steiner] | [Julius J. Epstein, Philip G. Epstein, Howard Koch] | [Warner Bros.
+Pictures; Producer: Hal B. Wallis]
 1549236467683 | 75 | 75 | The Italian Job | 2003 | United States | 6.5 | Wally Pfister | [Action] | [F. Gary Gray] | [John Powell] | [Wayne Powers, Donna Powers] | [Paramount Pictures]
 1549236467681 | 44 | 44 | 310 to Yuma (Three Ten to Yuma) | 1957 | United States | 7.5 | Charles Lawton Jr. | [Western] | [Delmer Daves] | [George Duning] | [Halsted Welles] | [Columbia Pictures]
 1549236467684 | 91 | 91 | Iron Man | 2008 | United States | 6.5 | Matthew Libatique | [Fantasy, Action, Adventure, Sci-Fi] | [Jon Favreau] | [Ramin Djawadi] | [Arthur Marcum, Matt Holloway, Mark Fergus, Hawk Ostby] | [Paramount Pictures, Marvel Enterprises, Goldman & Associates]
 ----
 
-Not only this proves that you are in the right track with this workshop but it also proves how KSQL is awesome. Think for a second what just happened:
+Not only this proves that you are in the right track with this workshop but it also proves how KSQL is awesome.
+Think for a second what just happened:
 
 image:images/etl-using-ksql.png[KSQL ETL]
 
