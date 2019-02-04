@@ -21,7 +21,6 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Properties;
 
-import io.confluent.demo.fixture.MoviesAndRatingsData;
 import lombok.extern.slf4j.Slf4j;
 
 import static io.confluent.demo.StreamsDemo.AVERAGE_RATINGS_TOPIC_NAME;
@@ -40,7 +39,7 @@ public class RatingTopologiesTest {
 
   @Before
   public void setUp() throws Exception {
-    final Properties streamsConfig = getStreamsConfig("dummy:1234", "");
+    final Properties streamsConfig = getStreamsConfig("dummy:1234", "", "");
     StreamsBuilder builder = new StreamsBuilder();
     final KStream<Long, String> rawRatingsStream = getRawRatingsStream(builder);
     final KTable<Long, Double> ratingAverageTable = getRatingAverageTable(rawRatingsStream);

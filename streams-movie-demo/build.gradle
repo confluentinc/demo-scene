@@ -62,7 +62,7 @@ project(':loader') {
     tasks.create(name: "streamWith${generatorName}", type: JavaExec) {
       main = generatorName
       classpath = sourceSets.main.runtimeClasspath
-      args = [env['KAFKA_BOOTSTRAP_SERVERS'] ?: 'localhost:9092']
+      args = [project.getProperty('configPath')]
     }
   }
 
@@ -115,6 +115,13 @@ project(':streams') {
     testCompile 'junit:junit:4.12'
     testCompile 'org.apache.kafka:kafka-streams-test-utils:2.0.0'
     testCompile 'org.projectlombok:lombok:1.16.20'
+  }
+
+  task runApp(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = mainClass
+    def configPath = project.getProperty('configPath')
+    args = [configPath]
   }
 
 }

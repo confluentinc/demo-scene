@@ -51,7 +51,8 @@ public class StreamsDemoE2ETest {
   @Before
   public void setUp() {
 
-    final Properties config = getStreamsConfig(DUMMY_KAFKA_CONFLUENT_CLOUD_9092, DUMMY_SR_CONFLUENT_CLOUD_8080);
+    final Properties config = getStreamsConfig(DUMMY_KAFKA_CONFLUENT_CLOUD_9092, DUMMY_SR_CONFLUENT_CLOUD_8080,
+                                               "");
     // workaround https://stackoverflow.com/a/50933452/27563
     config.setProperty(StreamsConfig.STATE_DIR_CONFIG, "/tmp/kafka-streams/" + LocalDateTime.now().toString());
 
