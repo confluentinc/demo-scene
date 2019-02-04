@@ -28,6 +28,36 @@ NOTE: It is OK to use Windows, but the trainers are not Windows users and may no
 * https://docs.docker.com/install/[Docker CE]
 * Docker Compose Version 1.20.0 | with Docker Compose file format 2.1
 
+== Outline
+
+. *Lesson 0:* Introduction to Kafka, topics and events
+ ** Event Streaming platform and why do we need it?
+ ** Key concepts of Apache Kafka
+ ** Overview of our Architecture
+. *Lab 0:*
+ ** Create a cluster in Confluent Cloud
+ ** Install the Confluent Cloud CLI
+ ** Create topic, produce and consume events from Cloud CLI
+. *Lesson 1:* Introduction to Kafka Streams
+ ** Producer and Consumer APIs
+ ** Introduction to Kafka Streams
+ ** Stream-table duality
+. *Lab 1:*
+ ** Code review: Streaming Moview ratings
+ ** run app
+ ** run data generator
+. *Lesson 2:* More Kafka Streams
+ ** Introduction to Kafka Streams
+ ** Introducing local materialized views
+ ** Stream-table duality
+ ** Code review of web-service
+. *Lesson 3* KSQL
+ ** concepts
+ **
+. *Lab 3* Moview Ratings with KSQL
+  ** hands on KSQL CLI
+. *It's a wrap!*
+
 == Getting the code
 
 NOTE: If you will follow steps below you should checkout only directory that has source code relevant to this post.
@@ -55,7 +85,7 @@ and you should see something like this
 
 [role="text-center"]
 .The output of `ls -lh streams-movie-demo`
-image::images/ls-lh-streams-movie-demo.png[width=75%]
+image::images/ls-lh-streams-movie-demo.png[width=50%]
 
 == Creating a Cluster in Confluent Cloud
 
@@ -64,7 +94,7 @@ This cluster will be used troughout the entire workshop -- therefore make sure t
 
 === Step 1: Log in to Confluent Cloud
 
-Open the following URL in your browser: https://confluent.cloud/login[https://confluent.cloud/login]
+Open the following URL in your browser: https://confluent.cloud/login
 
 Enter with the following credentials:
 
@@ -90,13 +120,15 @@ Though any cloud provider would work, we are using GCP in this workshop because 
 Finally, make sure to select `us-central-1` [EU West (London)] as region, since it is the closest location to Stockholm/Sweden.
 The image below shows an example of how your cluster should look like.
 
-image:images/creating-cluster-2.png[Creating Cluster]
+.New cluster properties
+image::images/creating-cluster-2.png[width=75%]
 
 When you finish done the changes, click in the `Continue` button.
 The UI will ask for credit card details.
 Ask for some of the instructors to enter a valid credit card.
 
-image:images/creating-cluster-3.png[Creating Cluster]
+.Confirm config and create cluster
+image::images/creating-cluster-3.png[]
 
 Finally, click on the `Save and launch cluster` button.
 
@@ -106,7 +138,8 @@ From the main UI, click on your cluster.
 Then, click on the `Data In/Out` menu and subsequentially on the `CLI` sub-menu.
 You will be presented with the following instructions:
 
-image:images/configure-ccloud-cli-1.png[Configuring Confluent Cloud CLI]
+.Configuring Confluent Cloud CLI
+image::images/configure-ccloud-cli-1.png[]
 
 Follow the instructions presented thoroughly.
 This is crucial for the next sections of the workshop to work.
@@ -249,7 +282,8 @@ To check if things are working properly, open the following URL in a browser: ht
 If the Control Center UI pop's up, click on the `Topics` menu.
 You should be able to see the topics created previously.
 
-image:images/c3-showing-topics.png[C3 Showing Topics]
+.Control Center is Showing Topics
+image::images/c3-showing-topics.png[]
 
 If you need to troubleshoot what is going on with a particular service, you can use the command `docker-compose logs -f <SERVICE>`.
 
@@ -266,7 +300,8 @@ First and foremost, the Kafka Streams API allows you to create real-time applica
 It is the easiest yet the most powerful technology to process data stored in Kafka.
 It builds upon important concepts for stream processing such as efficient management of application state, fast and efficient aggregations and joins, properly distinguishing between event-time and processing-time, and seamless handling of late-arriving and out-of-order data.
 
-image:images/kafka-streams-high-level.png[Kafka Streams]
+.Kafka Streams in a nutshell
+image::images/kafka-streams-high-level.png[]
 
 === Run Streaming Movie Demo
 
@@ -296,7 +331,8 @@ NOTE: I recommend to run the raw rating generator in a separate terminal window 
 Confluent KSQL is the streaming SQL engine that enables real-time data processing against Apache Kafka®. It provides an easy-to-use, yet powerful interactive SQL interface for stream processing on Kafka, without the need to write code in a programming language such as Java or Python.
 KSQL is scalable, elastic, fault-tolerant, and it supports a wide range of streaming operations, including data filtering, transformations, aggregations, joins, windowing, and sessionization.
 
-image:images/ksql-architecture.png[KSQL]
+.KSQL Architecture
+image::images/ksql-architecture.png[KSQL,width=75%]
 
 In this part of the workshop, you are going to enrich the implementation you have made thus far with KSQL, which is going to provide similar stream processing capabilities found previously using Kafka Streams.
 
@@ -499,6 +535,7 @@ Pictures; Producer: Hal B. Wallis]
 Not only this proves that you are in the right track with this workshop but it also proves how KSQL is awesome.
 Think for a second what just happened:
 
-image:images/etl-using-ksql.png[KSQL ETL]
+.Visualizing KSQL ETL
+image::images/etl-using-ksql.png[KSQL ETL,width=75%]
 
 You just built in a matter of minutes a fairly complicated ETL pipeline in which data is being transferred from a input topic to a series of pipes that are changing the nature of the data (re-keying in this case) and finally creating a table where data is always up-to-date with whatever is written to the input topic.
