@@ -1,4 +1,4 @@
-package io.confluent.kpay.payments;
+package io.confluent.kpay.metrics;
 
 import io.confluent.kpay.payments.model.ConfirmedStats;
 import io.confluent.kpay.payments.model.Payment;
@@ -18,17 +18,20 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
-public class PaymentsConfirmed {
+/**
+ * Track payments by 1) error type (top 5 errors) 2) peak error rate 3) errors today
+ */
+public class DLQMetrics {
     long ONE_DAY = 24 * 60 * 60 * 1000L;
 
-    private static final Logger log = LoggerFactory.getLogger(PaymentsConfirmed.class);
-    private final KTable<Windowed<String>, ConfirmedStats> statsKTable;
+    private static final Logger log = LoggerFactory.getLogger(DLQMetrics.class);
+    private final KTable<Windowed<String>, ConfirmedStats> paymentStatsKTable;
     private final Topology topology;
     private Properties streamsConfig;
     private KafkaStreams streams;
 
 
-    public PaymentsConfirmed(String paymentsCompleteTopic, String paymentsConfirmedTopic, Properties streamsConfig){
+    public DLQMetrics(String paymentsCompleteTopic, String paymentsConfirmedTopic, Properties streamsConfig){
         this.streamsConfig = streamsConfig;
 
         StreamsBuilder builder = new StreamsBuilder();
@@ -45,7 +48,7 @@ public class PaymentsConfirmed {
         /**
          * Confirmation processing
          */
-        statsKTable = complete
+        paymentStatsKTable = complete
                 .groupBy((key, value) -> "all-payments") // will force a repartition-topic
                 .windowedBy(TimeWindows.of(ONE_DAY))
                 .aggregate(
@@ -73,7 +76,7 @@ public class PaymentsConfirmed {
     }
 
     public ReadOnlyWindowStore<String, ConfirmedStats> getStore() {
-        return streams.store(statsKTable.queryableStoreName(), QueryableStoreTypes.windowStore());
+        return streams.store(paymentStatsKTable.queryableStoreName(), QueryableStoreTypes.windowStore());
     }
 
     /**
@@ -81,8 +84,8 @@ public class PaymentsConfirmed {
      */
     static public class CompleteTransformer implements TransformerSupplier<String, Payment, KeyValue<String, Payment>> {
         @Override
-        public org.apache.kafka.streams.kstream.Transformer<String, Payment, KeyValue<String, Payment>> get() {
-            return new org.apache.kafka.streams.kstream.Transformer<String, Payment, KeyValue<String, Payment>>() {
+        public Transformer<String, Payment, KeyValue<String, Payment>> get() {
+            return new Transformer<String, Payment, KeyValue<String, Payment>>() {
                 private ProcessorContext context;
 
                 @Override

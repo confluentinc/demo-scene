@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.confluent.kpay.payments;
+package io.confluent.kpay.metrics;
 
+import io.confluent.kpay.metrics.model.ThroughputStats;
 import io.confluent.kpay.payments.model.Payment;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
@@ -32,7 +31,7 @@ import org.junit.Test;
 
 import java.util.Properties;
 
-public class AccountProcessorTest {
+public class PaymentThroughputTest {
 
 
   private TopologyTestDriver testDriver;
@@ -51,13 +50,12 @@ public class AccountProcessorTest {
 
 
   @Test
-  public void processCreditAndEmitComplete() throws Exception {
+  public void shouldCountSinglePayment() throws Exception {
 
 
-    String inflight = "payments.inflight";
     String complete = "payments.complete";
 
-    AccountProcessor processor = new AccountProcessor(inflight, complete, getProperties("localhost:9091"));
+    PaymentsThroughput processor = new PaymentsThroughput(complete, getProperties("localhost:9091"));
     processor.start();
 
     Topology topology = processor.getTopology();
@@ -68,27 +66,21 @@ public class AccountProcessorTest {
 
     // setup
     ConsumerRecordFactory<String, Payment> factory = new ConsumerRecordFactory<>(
-            inflight,
+            complete,
             new StringSerializer(),
             new Payment.Serde().serializer()
     );
 
     // test
     Payment payment = new Payment("txnId", "id","from","to", 123.0, Payment.State.debit);
-    testDriver.pipeInput(factory.create(inflight, "key", payment));
+    payment.setState(Payment.State.debit);
+    testDriver.pipeInput(factory.create(complete, "key", payment));
     testDriver.close();
 
-
     // verify
-    ProducerRecord<String, Payment> completeRecord =  testDriver.readOutput(
-            complete,
-            new StringDeserializer(),
-            new Payment.Serde().deserializer()
-    );
-    // a credit payment should emit a complete event
-    System.out.println("Complete Records:" + completeRecord.value());
+    ThroughputStats stats = processor.getStats();
 
-    Assert.assertEquals(Payment.State.complete, completeRecord.value().getState());
+    Assert.assertEquals(1, stats.getTotalPayments());
 
   }
 

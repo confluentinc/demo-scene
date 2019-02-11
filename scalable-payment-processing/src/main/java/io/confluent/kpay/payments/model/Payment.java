@@ -25,6 +25,7 @@ public class Payment {
     String to;
     double amount;
     int state;
+    long processStartTime;
 
     public Payment(){};
     public Payment(String txnId, String id, String from, String to, double amount, State state){
@@ -47,10 +48,6 @@ public class Payment {
     public String getId() {
         return id;
     }
-
-//    public void setId(String id) {
-//        this.id = id;
-//    }
 
     public String getFrom() {
         return from;
@@ -90,10 +87,14 @@ public class Payment {
         if (state == State.credit) {
             id = to;
         } else if (state == State.debit) {
+            this.processStartTime = System.currentTimeMillis();
             id = from;
         } else {
             id = txnId;
         }
+    }
+    public long getElapsedMillis(){
+        return System.currentTimeMillis() - this.processStartTime;
     }
 
     @Override
