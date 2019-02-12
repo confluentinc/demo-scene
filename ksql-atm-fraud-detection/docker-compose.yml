@@ -2,13 +2,15 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.1.0
+    image: confluentinc/cp-zookeeper:5.1.1
+    container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.1.0
+    image: confluentinc/cp-enterprise-kafka:5.1.1
+    container_name: kafka
     depends_on:
       - zookeeper
     ports:
@@ -36,18 +38,20 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092
       CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
+#      CONFLUENT_METRICS_REPORTER_TOPIC_CREATE: "false"
       CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
       CONFLUENT_METRICS_ENABLE: 'true'
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.1.0
+    image: confluentinc/cp-schema-registry:5.1.1
+    container_name: schema-registry
     depends_on:
       - zookeeper
       - kafka
@@ -56,7 +60,8 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.1.0
+    image: confluentinc/cp-ksql-server:5.1.1
+    container_name: ksql-server
     ports:
       - 8088:8088
     depends_on:
@@ -70,16 +75,21 @@ services:
       KSQL_KSQL_COMMIT_INTERVAL_MS: 2000
       KSQL_KSQL_CACHE_MAX_BYTES_BUFFERING: 10000000
       KSQL_KSQL_STREAMS_AUTO_OFFSET_RESET: earliest
+      # Producer Confluent Monitoring Interceptors for Control Center streams monitoring
+      KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
 
   ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.1.0
+    image: confluentinc/cp-ksql-cli:5.1.1
+    container_name: ksql-cli
     depends_on:
       - ksql-server
     entrypoint: /bin/sh
     tty: true
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect:5.1.0
+    image: confluentinc/cp-kafka-connect:5.1.1
+    container_name: kafka-connect
     depends_on:
       - zookeeper
       - kafka
@@ -107,6 +117,10 @@ services:
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_PLUGIN_PATH: '/usr/share/java,/etc/kafka-connect/jars,/connectors'
+      # Interceptor config
+      CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.1.1.jar
     volumes:
       - $PWD/scripts:/scripts
     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
@@ -125,8 +139,45 @@ services:
         /scripts/create-es-sink.sh 
         sleep infinity
 
+  # control-center:
+  #   image: confluentinc/cp-enterprise-control-center:5.1.1
+  #   container_name: control-center
+  #   depends_on:
+  #     - zookeeper
+  #     - kafka
+  #     - schema-registry
+  #     - kafka-connect
+  #     - ksql-server
+  #   ports:
+  #     - "9021:9021"
+  #   environment:
+  #     CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
+  #     CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+  #     CONTROL_CENTER_CONNECT_CLUSTER: 'kafka-connect:8083'
+  #     CONTROL_CENTER_KSQL_URL: "http://ksql-server:8088"
+  #     # The advertised URL needs to be the URL on which the browser
+  #     #  can access the KSQL server (e.g. http://localhost:8088/info)
+  #     CONTROL_CENTER_KSQL_ADVERTISED_URL: "http://localhost:8088"
+  #     CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+  #     CONTROL_CENTER_REPLICATION_FACTOR: 1
+  #     CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+  #     CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+  #     CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+  #     PORT: 9021
+  #   command:
+  #     - bash
+  #     - -c 
+  #     - |
+  #       echo "Waiting two minutes for Kafka brokers to start and 
+  #              necessary topics to be available"
+  #       sleep 120  
+  #       /etc/confluent/docker/run
+  #   volumes: 
+  #     - monitoring-interceptors-share:/usr/share/java/monitoring-interceptors/
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.5.1
+    container_name: elasticsearch
     ports:
       - 9200:9200
     environment:
@@ -150,6 +201,7 @@ services:
 
   kibana:
     image: docker.elastic.co/kibana/kibana:6.5.1
+    container_name: kibana
     depends_on:
       - elasticsearch
     ports:
@@ -179,8 +231,10 @@ services:
         sleep infinity
     volumes:
      - $PWD/scripts:/scripts
+
   mysql:
     image: debezium/example-mysql:0.8
+    container_name: mysql
     environment:
      - MYSQL_ROOT_PASSWORD=debezium
      - MYSQL_USER=mysqluser
@@ -190,6 +244,7 @@ services:
 
   connect-debezium:
     image: debezium/connect:0.8
+    container_name: debezium
     depends_on:
      - kafka
      - mysql
@@ -227,15 +282,25 @@ services:
 
   gess:
     image: rmoff/gess
+    container_name: gess
     environment:
      - TARGET_HOST=send-gess-to-kafka
 
   send-gess-to-kafka:
-    image: confluentinc/cp-enterprise-kafka:5.1.0
+    image: confluentinc/cp-enterprise-kafka:5.1.1
+    container_name: send-gess-to-kafka
+    environment: 
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.1.0.jar
     command: 
       - bash 
       - -c 
       - |
+        echo "interceptor.classes=io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor" > /tmp/producer.config
+        echo "confluent.monitoring.interceptor.bootstrap.servers=kafka:29092" >> /tmp/producer.config
         nc -v -u -l -p 6900 | \
-        kafka-console-producer --broker-list kafka:29092 --topic atm_txns_gess
+        kafka-console-producer --broker-list kafka:29092 --topic atm_txns_gess --producer.config /tmp/producer.config
+    volumes: 
+      - monitoring-interceptors-share:/usr/share/java/monitoring-interceptors/
 
+volumes: 
+  monitoring-interceptors-share: {}
