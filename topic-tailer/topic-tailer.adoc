@@ -59,7 +59,7 @@ Kafka -> Node.js(https://github.com/waldophotos/kafka-avro[kafka-avro]) -> Webso
 
 Topic Tailer communicates with the Rest Proxy to determine the list of available topics, if the Rest Proxy is not available it will fall back to the Schema Registry. Each time TAB is pressed, topic data is refreshed via a new call to the Rest Proxy/Schema Registry.
 
-=== Which Deserializes does Topic Tailer Support?
+=== Which deserializers does Topic Tailer support?
 
 Avro and Json, everthing else gets converted to a string.
 
@@ -73,15 +73,15 @@ No
 
 === What happens to Messages when Topic Tailer is Paused?
 
-They get thrown away, when Topic Tailer is resumed it will start from the latest offset again.
+They get thrown away, when Topic Tailer is resumed it will restart consumption from the latest offset.
 
 === Can I Run Multiple Browser Sessions?
 
-Yes, Topic Tailer creates at most 1 consumer thread per tailed topic. Messages received from a single consumer thread are broadcast to the multiple browser session via websockets.
+Yes, Topic Tailer creates at most 1 consumer thread per tailed topic. Messages received from a single consumer thread are broadcast to multiple browser sessions via websockets.
 
 === Can Topic Tailer handle 1 million messages per second?
 
-No, it was designed for relatively low throughput demos and testing—However, if you want to warm up your laptop, free to try!
+No, it was designed for relatively low throughput demos and testing—However, if you want to warm up your laptop, feel free to try!
 
 
 
