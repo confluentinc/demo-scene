@@ -15,6 +15,7 @@
  **/
 package io.confluent.kpay.payments;
 
+import io.confluent.kpay.control.ObjectWaitControllable;
 import io.confluent.kpay.payments.model.Payment;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -58,7 +59,7 @@ public class PaymentsInflightTest {
     String inflight = "payments.inflight";
     String complete = "payments.complete";
 
-    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(incoming, inflight, complete, getProperties("localhost:9091"));
+    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(incoming, inflight, complete, getProperties("localhost:9091"), new ObjectWaitControllable());
     paymentsInFlight.start();
 
     Topology topology = paymentsInFlight.getTopology();
@@ -105,7 +106,7 @@ public class PaymentsInflightTest {
     String inflight = "payments.inflight";
     String complete = "payments.complete";
 
-    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(incoming, inflight, complete, getProperties("localhost:9091"));
+    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(incoming, inflight, complete, getProperties("localhost:9091"), new ObjectWaitControllable());
     paymentsInFlight.start();
 
     Topology topology = paymentsInFlight.getTopology();
@@ -150,7 +151,7 @@ public class PaymentsInflightTest {
     String inflight = "payments.inflight";
     String complete = "payments.complete";
 
-    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(incoming, inflight, complete, getProperties("localhost:9091"));
+    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(incoming, inflight, complete, getProperties("localhost:9091"), new ObjectWaitControllable());
     paymentsInFlight.start();
 
     Topology topology = paymentsInFlight.getTopology();

@@ -1,5 +1,6 @@
 package io.confluent.kpay.payments;
 
+import io.confluent.kpay.control.Controllable;
 import io.confluent.kpay.payments.model.Payment;
 import io.confluent.kpay.payments.model.PaymentStats;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
@@ -30,7 +31,7 @@ public class PaymentsInFlight {
     private KafkaStreams streams;
 
 
-    public PaymentsInFlight(String paymentsIncomingTopic, String paymentsInflightTopic, String paymentsCompleteTopic, Properties streamsConfig){
+    public PaymentsInFlight(String paymentsIncomingTopic, String paymentsInflightTopic, String paymentsCompleteTopic, Properties streamsConfig, Controllable controllable){
         this.streamsConfig = streamsConfig;
 
         StreamsBuilder builder = new StreamsBuilder();
@@ -45,6 +46,7 @@ public class PaymentsInFlight {
          * Inflight processing
          */
         paymentStatsKTable = inflight
+                .filter((key, value) -> controllable.pauseMaybe())
                 .groupBy((key, value) -> "all-payments") // will force a repartition-topic :(
                 .windowedBy(TimeWindows.of(ONE_DAY))
                 .aggregate(

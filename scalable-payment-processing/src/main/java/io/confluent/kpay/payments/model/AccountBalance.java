@@ -19,7 +19,7 @@ import java.util.Map;
 /**
  * TODO: need validation mechanism to ensure accounts were created correctly = i.e. prevent adhoc account creation
  *
- * TODO: check there is enough money in the account
+ * TODO: pauseMaybe there is enough money in the account
  */
 public class AccountBalance {
 

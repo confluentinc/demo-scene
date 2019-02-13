@@ -15,6 +15,7 @@
  **/
 package io.confluent.kpay.payments;
 
+import io.confluent.kpay.control.ObjectWaitControllable;
 import io.confluent.kpay.payments.model.AccountBalance;
 import io.confluent.kpay.payments.model.ConfirmedStats;
 import io.confluent.kpay.payments.model.Payment;
@@ -73,7 +74,7 @@ public class PaymentsIntegrationTest {
   @Test
   public void serviceSinglePayment() throws Exception {
 
-    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers));
+    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers), new ObjectWaitControllable());
     paymentsInFlight.start();
 
     AccountProcessor accountProcessor = new AccountProcessor(paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers));
@@ -127,7 +128,7 @@ public class PaymentsIntegrationTest {
   @Test
   public void serviceMultiplePayments() throws Exception {
 
-    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers));
+    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers), new ObjectWaitControllable());
     paymentsInFlight.start();
 
     AccountProcessor accountProcessor = new AccountProcessor(paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers));

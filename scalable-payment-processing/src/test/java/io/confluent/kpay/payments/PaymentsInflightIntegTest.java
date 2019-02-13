@@ -15,6 +15,7 @@
  **/
 package io.confluent.kpay.payments;
 
+import io.confluent.kpay.control.ObjectWaitControllable;
 import io.confluent.kpay.utils.IntegrationTestHarness;
 import io.confluent.kpay.payments.model.Payment;
 import io.confluent.kpay.payments.model.PaymentStats;
@@ -66,7 +67,7 @@ public class PaymentsInflightIntegTest {
 
   @Test
   public void serviceSinglePayment() throws Exception {
-    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers));
+    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers), new ObjectWaitControllable());
     paymentsInFlight.start();
 
 
@@ -91,7 +92,7 @@ public class PaymentsInflightIntegTest {
   @Test
   public void serviceMultiplePayments() throws Exception {
 
-    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers));
+    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers), new ObjectWaitControllable());
     paymentsInFlight.start();
 
     Map<String, Payment> records = new HashMap<>();//
