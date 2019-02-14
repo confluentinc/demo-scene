@@ -139,41 +139,41 @@ services:
         /scripts/create-es-sink.sh 
         sleep infinity
 
-  # control-center:
-  #   image: confluentinc/cp-enterprise-control-center:5.1.1
-  #   container_name: control-center
-  #   depends_on:
-  #     - zookeeper
-  #     - kafka
-  #     - schema-registry
-  #     - kafka-connect
-  #     - ksql-server
-  #   ports:
-  #     - "9021:9021"
-  #   environment:
-  #     CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
-  #     CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-  #     CONTROL_CENTER_CONNECT_CLUSTER: 'kafka-connect:8083'
-  #     CONTROL_CENTER_KSQL_URL: "http://ksql-server:8088"
-  #     # The advertised URL needs to be the URL on which the browser
-  #     #  can access the KSQL server (e.g. http://localhost:8088/info)
-  #     CONTROL_CENTER_KSQL_ADVERTISED_URL: "http://localhost:8088"
-  #     CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-  #     CONTROL_CENTER_REPLICATION_FACTOR: 1
-  #     CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
-  #     CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
-  #     CONFLUENT_METRICS_TOPIC_REPLICATION: 1
-  #     PORT: 9021
-  #   command:
-  #     - bash
-  #     - -c 
-  #     - |
-  #       echo "Waiting two minutes for Kafka brokers to start and 
-  #              necessary topics to be available"
-  #       sleep 120  
-  #       /etc/confluent/docker/run
-  #   volumes: 
-  #     - monitoring-interceptors-share:/usr/share/java/monitoring-interceptors/
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:5.1.1
+    container_name: control-center
+    depends_on:
+      - zookeeper
+      - kafka
+      - schema-registry
+      - kafka-connect
+      - ksql-server
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
+      CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      CONTROL_CENTER_CONNECT_CLUSTER: 'kafka-connect:8083'
+      CONTROL_CENTER_KSQL_URL: "http://ksql-server:8088"
+      # The advertised URL needs to be the URL on which the browser
+      #  can access the KSQL server (e.g. http://localhost:8088/info)
+      CONTROL_CENTER_KSQL_ADVERTISED_URL: "http://localhost:8088"
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      PORT: 9021
+    command:
+      - bash
+      - -c 
+      - |
+        echo "Waiting two minutes for Kafka brokers to start and 
+               necessary topics to be available"
+        sleep 120  
+        /etc/confluent/docker/run
+    volumes: 
+      - monitoring-interceptors-share:/usr/share/java/monitoring-interceptors/
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.5.1
