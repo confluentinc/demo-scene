@@ -14,17 +14,19 @@ import java.util.Properties;
 /**
  * Starts and stops a Controllable instance
  */
-public class LocalWaitController {
+public class StartStopController {
 
-    private static final Logger log = LoggerFactory.getLogger(LocalWaitController.class);
+    private static final Logger log = LoggerFactory.getLogger(StartStopController.class);
 
     private final Topology topology;
     private Properties streamsConfig;
+    private Controllable controllable;
     private KafkaStreams streams;
     boolean isProcessing = true;
 
-    public LocalWaitController(String controllerTopic, Properties streamsConfig, Controllable controllable){
+    public StartStopController(String controllerTopic, Properties streamsConfig, Controllable controllable){
         this.streamsConfig = streamsConfig;
+        this.controllable = controllable;
 
 
         /**
@@ -34,18 +36,26 @@ public class LocalWaitController {
         KStream<String, Status> stream = builder.stream(controllerTopic);
         stream.foreach((key, value) -> {
             if (value.getCode() == Status.Code.PAUSE) {
-                log.info("Pause:" + controllable);
-                controllable.pauseProcessing();
-                isProcessing = false;
+                pause();
 
             } else if (value.getCode() == Status.Code.START) {
-                log.info("Resume:" + controllable);
-                controllable.startProcessing();
-                isProcessing = true;
+                resume();
             }
         });
 
         topology = builder.build();
+    }
+
+    public void resume() {
+        log.info("Resume:" + controllable);
+        controllable.startProcessing();
+        isProcessing = true;
+    }
+
+    public void pause() {
+        log.info("Pause:" + controllable);
+        controllable.pauseProcessing();
+        isProcessing = false;
     }
 
 
@@ -66,5 +76,9 @@ public class LocalWaitController {
 
     public Topology getTopology() {
         return topology;
+    }
+
+    public String status() {
+        return Boolean.toString(isProcessing);
     }
 }

@@ -4,7 +4,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class ObjectWaitControllable implements Controllable {
+public class PauseControllable implements Controllable {
 
 
     long waitingSince;

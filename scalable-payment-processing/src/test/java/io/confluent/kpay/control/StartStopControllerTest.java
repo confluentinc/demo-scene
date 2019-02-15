@@ -16,11 +16,11 @@ import java.util.concurrent.*;
 
 import static org.junit.Assert.*;
 
-public class LocalWaitControllableTest {
+public class StartStopControllerTest {
 
     @Test
-    public void shouldWaitAndNotify() throws InterruptedException, ExecutionException, TimeoutException {
-        ObjectWaitControllable controllable = new ObjectWaitControllable();
+    public void waitControlableShouldWaitAndNotify() throws InterruptedException, ExecutionException, TimeoutException {
+        PauseControllable controllable = new PauseControllable();
 
         controllable.pauseProcessing();
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -49,10 +49,10 @@ public class LocalWaitControllableTest {
     public void shouldPauseResumePauseProcessing() throws InterruptedException {
 
         String topic = "meh";
-        ObjectWaitControllable controllable = new ObjectWaitControllable();
+        PauseControllable controllable = new PauseControllable();
 
         Properties properties = getProperties("localhost:9091");
-        LocalWaitController controller = new LocalWaitController(topic, properties, controllable);
+        StartStopController controller = new StartStopController(topic, properties, controllable);
         controller.start();
         Topology topology = controller.getTopology();
 

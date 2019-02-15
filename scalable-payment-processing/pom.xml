@@ -307,7 +307,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>io.confluent.kgrafa.RestServerMain</mainClass>
+                            <mainClass>io.confluent.kpay.RestEndpointMain</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
