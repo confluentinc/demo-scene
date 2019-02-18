@@ -11,10 +11,12 @@ import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyWindowStore;
+import org.apache.kafka.streams.state.StreamsMetadata;
 import org.apache.kafka.streams.state.WindowStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.Properties;
 
 /**
@@ -98,5 +100,9 @@ public class PaymentsThroughput {
      */
     public ThroughputStats getStats() {
         return stats.merge(lastStats);
+    }
+
+    public Collection<StreamsMetadata> allMetaData() {
+        return streams.allMetadata();
     }
 }

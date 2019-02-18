@@ -15,9 +15,15 @@
  **/
 package io.confluent.kpay;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.UnknownHostException;
 import java.util.Properties;
 
 public class KPayInstance {
+
+    private static final Logger log = LoggerFactory.getLogger(KPayInstance.class);
 
     private final KPay kpay;
 
@@ -47,6 +53,13 @@ public class KPayInstance {
             KPayAllInOneImpl kPay = new KPayAllInOneImpl(propertes.getProperty("bootstrap.servers", "localhost:9092"));
 
             kPay.initializeEnvironment();
+
+            try {
+                kPay.start();
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+                log.error("Cannot start due to network config", e);
+            }
 
             singleton = new KPayInstance(kPay);
             return singleton;

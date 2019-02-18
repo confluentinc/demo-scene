@@ -12,10 +12,12 @@ import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyWindowStore;
+import org.apache.kafka.streams.state.StreamsMetadata;
 import org.apache.kafka.streams.state.WindowStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.Properties;
 
 public class PaymentsConfirmed {
@@ -71,6 +73,11 @@ public class PaymentsConfirmed {
         streams.close();
         streams.cleanUp();
     }
+
+    public Collection<StreamsMetadata> allMetaData() {
+        return streams.allMetadata();
+    }
+
 
     public ReadOnlyWindowStore<String, ConfirmedStats> getStore() {
         return streams.store(statsKTable.queryableStoreName(), QueryableStoreTypes.windowStore());

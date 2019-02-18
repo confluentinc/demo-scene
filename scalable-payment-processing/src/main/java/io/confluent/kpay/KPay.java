@@ -17,15 +17,35 @@ package io.confluent.kpay;
 
 interface KPay {
 
+    /**
+     * Control plane
+     * @return
+     */
     String status();
 
     String pause();
 
     String resume();
 
+    String shutdown();
+
+    /**
+     * Data simulation
+     */
     void generatePayments();
 
     void stopPayments();
 
+    /**
+     * Trust plane: instumentation and dql's
+     * @return
+     */
     String viewMetrics();
+
+    /**
+     * Business plane
+     * @return
+     */
+    String listAccounts();
+    String showAccountDetails(String accountName);
 }

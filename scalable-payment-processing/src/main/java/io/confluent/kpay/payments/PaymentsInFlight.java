@@ -12,11 +12,13 @@ import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyWindowStore;
+import org.apache.kafka.streams.state.StreamsMetadata;
 import org.apache.kafka.streams.state.WindowStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Properties;
 
 public class PaymentsInFlight {
@@ -86,4 +88,8 @@ public class PaymentsInFlight {
     public ReadOnlyWindowStore<String, PaymentStats> getStore() {
         return streams.store(paymentStatsKTable.queryableStoreName(), QueryableStoreTypes.windowStore());
     }
+    public Collection<StreamsMetadata> allMetaData() {
+        return streams.allMetadata();
+    }
+
 }

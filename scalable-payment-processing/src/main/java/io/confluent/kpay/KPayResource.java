@@ -51,15 +51,11 @@ public class KPayResource {
         return "KPay Service";
     }
 
+    /**
+     * Data generation functions
+     * @return
+     */
     @GET
-    @Produces("application/json")
-    @Path("/status")
-    public String status() {
-        return "{ running}";
-    };
-
-
-    @POST
     @Path("/generatePayments")
     @Operation(summary = "start processing some payments",
             tags = {"query"},
@@ -87,15 +83,78 @@ public class KPayResource {
     }
 
 
-    @POST
+    /**
+     * Trust plane: Instrumentation and observability, DLQ information
+     * @return
+     */
+    @GET
     @Path("/viewMetrics")
-    @Operation(summary = "used by panels to get data",
-            tags = {"query"},
+    @Operation(summary = "view instrumentation metrics",
+            tags = {"trust"},
             responses = {
                     @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),
                     @ApiResponse(responseCode = "405", description = "Invalid input")
             })
-    public String viewMetrics(@Parameter(description = "query sent from the dashboard", required = true) String query) {
+    public String viewMetrics() {
         return instance.getInstance().viewMetrics();
     }
+
+//    @GET
+//    @Path("/dlqMetrics")
+//    public String dlqMetrics() {
+//        return instance.getInstance().viewMetrics();
+//    }
+
+
+    /**
+     * Control plane
+     * @return
+     * - pause, resume, status, scale[up,down]
+     */
+    @POST
+    @Path("/pause")
+    @Operation(summary = "pause processing",
+            tags = {"control"},
+            responses = {
+                    @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "405", description = "Invalid input")
+            })
+    public String pause() {
+        return String.format("{ status: \"%s\", message: \"control pausing\", metrics: \"some metrics maybe?\" }", instance.getInstance().pause());
+    }
+    @POST
+    @Path("/resume")
+    @Operation(summary = "resume processing",
+            tags = {"control"},
+            responses = {
+                    @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "405", description = "Invalid input")
+            })
+    public String resume() {
+        return String.format("{ status: \"%s\", message: \"control resuming\", metrics: \"some metrics maybe?\" }", instance.getInstance().resume());
+    }
+
+    @GET
+    @Produces("application/json")
+    @Path("/status")
+    public String status() {
+        return String.format("{ status: \"%s\", message: \"processing status\", metrics: \"some metrics maybe?\" }", instance.getInstance().status());
+    };
+
+
+
+    /**
+     * Domain model
+     * @return
+     * - list accounts, show balance etc, show accounts over 'n', most active accounts
+     */
+
+    @GET
+    @Produces("application/json")
+    @Path("/listAccounts")
+    public String listAccounts() {
+        return String.format("{ status: \"%s\", message: \"processing status\", metrics: \"some metrics maybe?\" }", instance.getInstance().listAccounts());
+    };
+
+
 }

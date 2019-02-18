@@ -41,8 +41,6 @@ import java.util.Properties;
 
 public class PaymentsIntegrationTest {
 
-
-  private TopologyTestDriver testDriver;
   private IntegrationTestHarness testHarness;
   private String bootstrapServers;
 
@@ -72,6 +70,12 @@ public class PaymentsIntegrationTest {
   }
 
   @Test
+  public void serviceSinglePaymentExposedViaRestEndpoint() throws Exception {
+    serviceSinglePayment();
+    // test account processor microservice works!
+
+  }
+  @Test
   public void serviceSinglePayment() throws Exception {
 
     PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers), new PauseControllable());
@@ -82,6 +86,19 @@ public class PaymentsIntegrationTest {
 
     PaymentsConfirmed paymentsConfirmed = new PaymentsConfirmed(paymentsCompleteTopic, paymentsConfirmedTopic, getProperties(bootstrapServers));
     paymentsConfirmed.start();
+
+
+    Thread.sleep(100);
+
+    System.out.println(">>>> BEFORE 11111111111");
+    KeyValueIterator<String, AccountBalance> all1 = accountProcessor.getStore().all();
+    while (all1.hasNext()) {
+      System.out.println("BEFORE:" + all1.next().value);
+    }
+
+
+
+    System.out.println("BEFOREEEEE 222222222:" + accountProcessor.allMetaData());
 
 
     Map<String, Payment> records = Collections.singletonMap("record1", new Payment("tnxId", "record1", "neil", "john", 10, Payment.State.incoming));
@@ -108,9 +125,9 @@ public class PaymentsIntegrationTest {
     System.out.println("Test Inflight:" + value);
 
 
-    KeyValueIterator<String, AccountBalance> all1 = accountProcessor.getStore().all();
-    while (all1.hasNext()) {
-      System.out.println("Test:" + all1.next().value);
+    KeyValueIterator<String, AccountBalance> all11 = accountProcessor.getStore().all();
+    while (all11.hasNext()) {
+      System.out.println("Test:" + all11.next().value);
     }
 
 
@@ -123,6 +140,8 @@ public class PaymentsIntegrationTest {
       System.out.println("Test Confirmed Processor:" + value1);
       Assert.assertEquals("Confirmed Processor", 10, value1.getAmount(), 0);
     }
+
+    System.out.println("Meta:" + accountProcessor.allMetaData());
   }
 
   @Test
@@ -182,6 +201,7 @@ public class PaymentsIntegrationTest {
   private Properties getProperties(String broker) {
     Properties props = new Properties();
     props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TEST-APP-ID-" + instanceId++);
+    props.put(StreamsConfig.APPLICATION_SERVER_CONFIG, "someHost:999");
     props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
     props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
     props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Payment.Serde.class.getName());

@@ -10,8 +10,10 @@ import io.confluent.kpay.payments.AccountProcessor;
 import io.confluent.kpay.payments.PaymentsConfirmed;
 import io.confluent.kpay.payments.PaymentsInFlight;
 import io.confluent.kpay.payments.model.Payment;
+import io.confluent.kpay.util.HostStoreInfo;
 import io.confluent.kpay.util.KafkaTopicClient;
 import io.confluent.kpay.util.KafkaTopicClientImpl;
+import io.confluent.kpay.util.MetadataService;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -20,12 +22,13 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.state.StreamsMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.*;
 import java.util.concurrent.*;
 
 public class KPayAllInOneImpl implements KPay {
@@ -54,6 +57,7 @@ public class KPayAllInOneImpl implements KPay {
     private StartStopController controllerStartStop;
     private ScheduledFuture future;
     private PaymentRunnable paymentCommand;
+    private String thisIpAddress;
 
     public KPayAllInOneImpl(String bootstrapServers) {
 
@@ -63,7 +67,7 @@ public class KPayAllInOneImpl implements KPay {
     /**
      * Fire up all of the stream processors
      */
-    public void start() {
+    public void start() throws UnknownHostException {
 
         Controllable pauseController = new PauseControllable();
 
@@ -72,6 +76,13 @@ public class KPayAllInOneImpl implements KPay {
         startController(pauseController);
 
         startInstrumentation();
+
+        log.info("MetaStores:" + getMetaStores());
+    }
+
+    public String getMetaStores() {
+        Collection<StreamsMetadata> streamsMetadata = paymentAccountProcessor.allMetaData();
+        return streamsMetadata.toString();
     }
 
     private void startController(Controllable pauseController) {
@@ -79,19 +90,21 @@ public class KPayAllInOneImpl implements KPay {
         controllerStartStop.start();
     }
 
-    private void startInstrumentation() {
-        instrumentationThroughput = new PaymentsThroughput(paymentsCompleteTopic, getPaymentsProperties(bootstrapServers));
+    private int instrumentionPortOffset = 21000;
+    private void startInstrumentation() throws UnknownHostException {
+        instrumentationThroughput = new PaymentsThroughput(paymentsCompleteTopic, getPaymentsProperties(bootstrapServers, instrumentionPortOffset++));
         instrumentationThroughput.start();
     }
 
-    private void startPaymentPipeline(Controllable pauseController) {
-        paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getPaymentsProperties(bootstrapServers), pauseController);
+    private int paymentsPortOffset = 20000;
+    private void startPaymentPipeline(Controllable pauseController) throws UnknownHostException {
+        paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getPaymentsProperties(bootstrapServers, paymentsPortOffset++), pauseController);
         paymentsInFlight.start();
 
-        paymentAccountProcessor = new AccountProcessor(paymentsInflightTopic, paymentsCompleteTopic, getPaymentsProperties(bootstrapServers));
+        paymentAccountProcessor = new AccountProcessor(paymentsInflightTopic, paymentsCompleteTopic, getPaymentsProperties(bootstrapServers, paymentsPortOffset++));
         paymentAccountProcessor.start();
 
-        paymentsConfirmed = new PaymentsConfirmed(paymentsCompleteTopic, paymentsConfirmedTopic, getPaymentsProperties(bootstrapServers));
+        paymentsConfirmed = new PaymentsConfirmed(paymentsCompleteTopic, paymentsConfirmedTopic, getPaymentsProperties(bootstrapServers, paymentsPortOffset++));
         paymentsConfirmed.start();
     }
 
@@ -108,6 +121,17 @@ public class KPayAllInOneImpl implements KPay {
     public String resume() {
         controllerStartStop.resume();
         return controllerStartStop.status();
+    }
+
+    @Override
+    public String shutdown() {
+        controllerStartStop.pause();
+        paymentsInFlight.stop();
+        paymentsConfirmed.stop();
+        paymentAccountProcessor.stop();
+        instrumentationThroughput.stop();
+
+        return "shutdown processors complete";
     }
 
 
@@ -127,11 +151,15 @@ public class KPayAllInOneImpl implements KPay {
             @Override
             public void run() {
 
-                Payment payment = new Payment("paymemt-" + System.currentTimeMillis(), System.currentTimeMillis() + "", from[position % from.length], to[position % from.length], Math.random() * 100, Payment.State.incoming);
-                log.info("Send:" + payment);
-                producer.send(buildRecord(paymentsIncomingTopic, System.currentTimeMillis(), payment.getId(), payment));
-                position++;
-                producer.flush();
+                try {
+                    Payment payment = new Payment("paymemt-" + System.currentTimeMillis(), System.currentTimeMillis() + "", from[position % from.length], to[position % from.length], Math.random() * 100, Payment.State.incoming);
+                    log.info("Send:" + payment);
+                    producer.send(buildRecord(paymentsIncomingTopic, System.currentTimeMillis(), payment.getId(), payment));
+                    position++;
+                    producer.flush();
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
             }
             public void stop() {
                 log.info("Stopping payment generation");
@@ -139,8 +167,7 @@ public class KPayAllInOneImpl implements KPay {
             }
 
         };
-        future = scheduledExecutor.scheduleAtFixedRate(paymentCommand, 10, 2, TimeUnit.SECONDS);
-        producer.close();
+        future = scheduledExecutor.scheduleAtFixedRate(paymentCommand, 2, 10, TimeUnit.SECONDS);
     }
 
 
@@ -161,8 +188,33 @@ public class KPayAllInOneImpl implements KPay {
         return instrumentationThroughput.getStats().toString();
     }
 
-    private Properties getPaymentsProperties(String broker) {
-        return getProperties(broker, Serdes.String().getClass().getName(), Payment.Serde.class.getName());
+
+    @Override
+    public String listAccounts() {
+        // run an IQ on each account processor
+        //paymentAccountProcessor
+
+        Collection<StreamsMetadata> streamsMetadata = paymentAccountProcessor.allMetaData();
+        System.out.println("----------------\n\n\n=========" + streamsMetadata);
+        MetadataService metadataService = new MetadataService(paymentAccountProcessor.streams());
+        List<HostStoreInfo> hostStoreInfos = metadataService.streamsMetadata();
+
+//        ReadOnlyMapResource
+
+        return "stuff";
+    }
+
+    @Override
+    public String showAccountDetails(String accountName) {
+        return null;
+    }
+
+    private Properties getPaymentsProperties(String broker, int portOffset) throws UnknownHostException {
+        Properties properties = getProperties(broker, Serdes.String().getClass().getName(), Payment.Serde.class.getName());
+        // payment processors start from 20000
+        properties.put(StreamsConfig.APPLICATION_SERVER_CONFIG, getIpAddress() + ":" + portOffset);
+        System.out.println(" APP PORT:" + properties.get(StreamsConfig.APPLICATION_SERVER_CONFIG));
+        return properties;
     }
 
     private Properties getControlProperties(String broker) {
@@ -210,6 +262,15 @@ public class KPayAllInOneImpl implements KPay {
         producerConfig.put(ProducerConfig.RETRIES_CONFIG, 0);
         return producerConfig;
     }
+
+    private String getIpAddress() throws UnknownHostException {
+        if (thisIpAddress == null) {
+            InetAddress thisIp = InetAddress.getLocalHost();
+            thisIpAddress = thisIp.getHostAddress().toString();
+        }
+        return thisIpAddress;
+    }
+
 
     private interface PaymentRunnable extends Runnable {
         void stop();

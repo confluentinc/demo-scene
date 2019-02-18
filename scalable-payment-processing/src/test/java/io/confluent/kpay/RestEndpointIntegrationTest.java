@@ -5,6 +5,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.core.MediaType;
+
 public class RestEndpointIntegrationTest {
 
     private IntegrationTestHarness testHarness;
@@ -35,11 +39,18 @@ public class RestEndpointIntegrationTest {
     @Test
     public void runServerForAbit() throws Exception {
 
-//        generateRandomData();
-
-//        reportJmx();
+        generatePaymentData();
 
         Thread.sleep(5 * 60 * 60 * 1000);
+    }
+
+    private void generatePaymentData() {
+        Client client = ClientBuilder.newClient();
+        String response = client.target("http://localhost:8080").path("/kpay/generatePayments")
+                .request(MediaType.APPLICATION_JSON)
+                .get(String.class);
+
+        System.out.println("TEST DATA:" + response);
     }
 
 }

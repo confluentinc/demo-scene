@@ -2,19 +2,21 @@ package io.confluent.kpay.payments;
 
 import io.confluent.kpay.payments.model.AccountBalance;
 import io.confluent.kpay.payments.model.Payment;
+import io.confluent.kpay.util.MicroRestService;
+import io.confluent.kpay.util.ReadonlyMapResourceEndpoint;
+import io.confluent.kpay.util.StoreProvider;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.common.utils.Bytes;
-import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.KeyValue;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.Topology;
+import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
+import org.apache.kafka.streams.state.StreamsMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.Properties;
 
 public class AccountProcessor {
@@ -25,6 +27,7 @@ public class AccountProcessor {
 
     private Properties streamsConfig;
     private KafkaStreams streams;
+    private MicroRestService microRestService;
 
 
     public AccountProcessor(String paymentsInflightTopic, String paymentsCompleteTopic, Properties streamsConfig){
@@ -82,6 +85,24 @@ public class AccountProcessor {
         streams.start();
 
         log.info(topology.describe().toString());
+
+        startMicroRestService();
+    }
+
+    private void startMicroRestService() {
+        String property = streamsConfig.getProperty(StreamsConfig.APPLICATION_SERVER_CONFIG);
+
+        log.info("Starting RestEndpoint:" + property);
+        String[] hostAndPort = property.split(":");
+
+        AccountProcessorRest accountProcessorRest = new AccountProcessorRest(new StoreProvider<>(streams, accountBalanceKTable));
+        microRestService = new MicroRestService();
+        try {
+            microRestService.start(accountProcessorRest, hostAndPort[0], Integer.parseInt(hostAndPort[1]));
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("Failed to start Rest Service", e);
+        }
     }
 
     public void stop() {
@@ -92,4 +113,18 @@ public class AccountProcessor {
     public ReadOnlyKeyValueStore<String, AccountBalance> getStore() {
         return streams.store(accountBalanceKTable.queryableStoreName(), QueryableStoreTypes.keyValueStore());
     }
+    public Collection<StreamsMetadata> allMetaData() {
+        return streams.allMetadata();
+    }
+
+    public KafkaStreams streams() {
+        return null;
+    }
+
+    public static class AccountProcessorRest extends ReadonlyMapResourceEndpoint<String, AccountBalance> {
+        public AccountProcessorRest(StoreProvider<String, AccountBalance> store) {
+            super(store);
+        }
+    }
+
 }
