@@ -13,7 +13,7 @@ import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Set;
 
-@Path("map")
+@Path("ktable")
 public interface ReadOnlyMapResource<K,V> {
 
     int size();
@@ -25,7 +25,7 @@ public interface ReadOnlyMapResource<K,V> {
 
     @POST
     @Path("/get")
-    @Operation(summary = "singular map operation",
+    @Operation(summary = "singular get operation",
             tags = {"query"},
             responses = {
                     @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),
@@ -35,7 +35,7 @@ public interface ReadOnlyMapResource<K,V> {
 
     @POST
     @Path("/getQuery")
-    @Operation(summary = "query map operation",
+    @Operation(summary = "query get operation",
             tags = {"query"},
             responses = {
                     @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),

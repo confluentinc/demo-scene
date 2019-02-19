@@ -64,7 +64,7 @@ public class PaymentsInFlight {
             if (value.getState() == Payment.State.incoming) {
                 value.setState(Payment.State.debit);
             }
-            return new KeyValue<>(key, value);
+            return new KeyValue<>(value.getId(), value);
         }).filter((key, value) -> value.getState() == Payment.State.debit).to(paymentsInflightTopic);
         
         topology = builder.build();

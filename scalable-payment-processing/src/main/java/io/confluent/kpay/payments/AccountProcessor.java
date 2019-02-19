@@ -32,8 +32,8 @@ public class AccountProcessor {
 
     public AccountProcessor(String paymentsInflightTopic, String paymentsCompleteTopic, Properties streamsConfig){
 
-        // need consistent naming for global streamMetaDataDiscovery support
-        streamsConfig.put(StreamsConfig.APPLICATION_ID_CONFIG, AccountProcessor.class.getCanonicalName());
+        // Note:  need consistent naming for global streamMetaDataDiscovery support
+        // streamsConfig.put(StreamsConfig.APPLICATION_ID_CONFIG, AccountProcessor.class.getCanonicalName());
 
         this.streamsConfig = streamsConfig;
 
