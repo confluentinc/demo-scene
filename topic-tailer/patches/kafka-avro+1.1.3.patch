@@ -1,0 +1,228 @@
+patch-package
+--- a/node_modules/kafka-avro/lib/kafka-consumer.js
++++ b/node_modules/kafka-avro/lib/kafka-consumer.js
+@@ -2,19 +2,19 @@
+  * @fileOverview Wrapper for node-rdkafka Consumer Ctor, a mixin.
+  */
+ 
+-var Promise = require('bluebird');
+-var cip = require('cip');
+-var kafka = require('node-rdkafka');
++var Promise = require("bluebird");
++var cip = require("cip");
++var kafka = require("node-rdkafka");
+ 
+-var magicByte = require('./magic-byte');
+-var log = require('./log.lib').getChild(__filename);
++var magicByte = require("./magic-byte");
++var log = require("./log.lib").getChild(__filename);
+ 
+ /**
+  * Wrapper for node-rdkafka Consumer Ctor, a mixin.
+  *
+  * @constructor
+  */
+-var Consumer = module.exports = cip.extend();
++var Consumer = (module.exports = cip.extend());
+ 
+ /**
+  * The wrapper of the node-rdkafka package Consumer Ctor.
+@@ -24,23 +24,23 @@ var Consumer = module.exports = cip.extend();
+  * @see https://github.com/edenhill/librdkafka/blob/2213fb29f98a7a73f22da21ef85e0783f6fd67c4/CONFIGURATION.md
+  * @return {Promise(kafka.Consumer)} A Promise with the consumer.
+  */
+-Consumer.prototype.getConsumer = Promise.method(function (opts, topts) {
+-  if (!opts['metadata.broker.list']) {
+-    opts['metadata.broker.list'] = this.kafkaBrokerUrl;
++Consumer.prototype.getConsumer = Promise.method(function(opts, topts) {
++  if (!opts["metadata.broker.list"]) {
++    opts["metadata.broker.list"] = this.kafkaBrokerUrl;
+   }
+ 
+-  log.info('getConsumer() :: Starting Consumer with opts:', opts);
++  log.info("getConsumer() :: Starting Consumer with opts:", opts);
+ 
+   var consumer = new kafka.KafkaConsumer(opts, topts);
+ 
+   this._consumers.push(consumer);
+ 
+-  consumer.on('disconnect', function(arg) {
+-    log.warn('getConsumer() :: Consumer disconnected. Args:', arg);
++  consumer.on("disconnect", function(arg) {
++    log.warn("getConsumer() :: Consumer disconnected. Args:", arg);
+   });
+ 
+-  consumer.on('error', function(err) {
+-    log.error('getConsumer() :: Consumer Error event fired:', err);
++  consumer.on("error", function(err) {
++    log.error("getConsumer() :: Consumer Error event fired:", err);
+   });
+ 
+   // hack node-rdkafka
+@@ -60,23 +60,27 @@ Consumer.prototype.getConsumer = Promise.method(function (opts, topts) {
+  * @see https://blizzard.github.io/node-rdkafka/current/KafkaConsumerStream.html
+  * @return {Promise(kafka.ConsumerStream)} A Promise with the consumer stream.
+  */
+-Consumer.prototype.getConsumerStream = Promise.method(function (opts, topts, sopts) {
+-  if (!opts['metadata.broker.list']) {
+-    opts['metadata.broker.list'] = this.kafkaBrokerUrl;
++Consumer.prototype.getConsumerStream = Promise.method(function(
++  opts,
++  topts,
++  sopts
++) {
++  if (!opts["metadata.broker.list"]) {
++    opts["metadata.broker.list"] = this.kafkaBrokerUrl;
+   }
+ 
+-  log.info('getConsumerStream() :: Starting Consumer Stream with opts:', opts);
++  log.info("getConsumerStream() :: Starting Consumer Stream with opts:", opts);
+ 
+   var consumer = new kafka.KafkaConsumer.createReadStream(opts, topts, sopts);
+ 
+   this._consumersStream.push(consumer);
+ 
+-  consumer.on('disconnect', function(arg) {
+-    log.warn('getConsumerStream() :: Consumer disconnected. Args:', arg);
++  consumer.on("disconnect", function(arg) {
++    log.warn("getConsumerStream() :: Consumer disconnected. Args:", arg);
+   });
+ 
+-  consumer.on('error', function(err) {
+-    log.error('getConsumerStream() :: Consumer Error event fired:', err);
++  consumer.on("error", function(err) {
++    log.error("getConsumerStream() :: Consumer Error event fired:", err);
+   });
+ 
+   // hack node-rdkafka
+@@ -96,35 +100,43 @@ Consumer.prototype.getConsumerStream = Promise.method(function (opts, topts, sop
+  * @param {Function} cb Event callback.
+  * @private
+  */
+-Consumer.prototype._onWrapper = function (consumerInstance, eventName, cb) {
+-  if (eventName !== 'data') {
++Consumer.prototype._onWrapper = function(consumerInstance, eventName, cb) {
++  if (eventName !== "data") {
+     return consumerInstance.__kafkaAvro_on(eventName, cb);
+   }
+ 
+-  return consumerInstance.__kafkaAvro_on('data', function(message) {
+-    if (!this.sr.valueSchemas[message.topic]) {
+-      log.warn('_onWrapper() :: Warning, consumer did not find topic on SR:',
+-        message.topic);
+-
+-      message.parsed = JSON.parse(message.value.toString('utf-8'));
++  return consumerInstance.__kafkaAvro_on(
++    "data",
++    function(message) {
++      if (!this.sr.valueSchemas[message.topic]) {
++        log.warn(
++          "_onWrapper() :: Warning, consumer did not find topic on SR:",
++          message.topic
++        );
++
++        try {
++          message.parsed = JSON.parse(message.value.toString("utf-8"));
++        } catch (ex) {
++          message.parsed = { value: message.value.toString("utf-8") };
++        }
++        cb(message);
++        return;
++      }
++
++      var type = this.sr.valueSchemas[message.topic];
++      var decoded = this.deserialize(type, message);
++
++      if (!decoded) {
++        message.parsed = null;
++        message.schemaId = null;
++      } else {
++        message.parsed = decoded.value;
++        message.schemaId = decoded.schemaId;
++      }
+ 
+       cb(message);
+-      return;
+-    }
+-
+-    var type = this.sr.valueSchemas[message.topic];
+-    var decoded = this.deserialize(type, message);
+-
+-    if (!decoded) {
+-      message.parsed = null;
+-      message.schemaId = null;
+-    } else {
+-      message.parsed = decoded.value;
+-      message.schemaId = decoded.schemaId;
+-    }
+-
+-    cb(message);
+-  }.bind(this));
++    }.bind(this)
++  );
+ };
+ 
+ /**
+@@ -134,13 +146,18 @@ Consumer.prototype._onWrapper = function (consumerInstance, eventName, cb) {
+  * @param {Object} message The raw message.
+  * @return {Object} The deserialized object.
+  */
+-Consumer.prototype.deserialize = function (type, message) {
++Consumer.prototype.deserialize = function(type, message) {
+   try {
+     var parsed = magicByte.fromMessageBuffer(type, message.value, this.sr);
+-  } catch(ex) {
+-    log.warn(`deserialize() :: Error deserializing on topic ${ message.topic }`,
+-      'Raw value:', message.value, `Partition: ${ message.partition } Offset:`,
+-      `${ message.offset } Key: ${ message.key } Exception:`, ex);
++  } catch (ex) {
++    log.warn(
++      `deserialize() :: Error deserializing on topic ${message.topic}`,
++      "Raw value:",
++      message.value,
++      `Partition: ${message.partition} Offset:`,
++      `${message.offset} Key: ${message.key} Exception:`,
++      ex
++    );
+     return null;
+   }
+ 
+@@ -155,18 +172,24 @@ Consumer.prototype.deserialize = function (type, message) {
+  * @param {Function} callback Callback to call when done.
+  * @private
+  */
+-Consumer.prototype._transformAvro = function (data, encoding, callback) {
++Consumer.prototype._transformAvro = function(data, encoding, callback) {
+   const topicName = data.topic;
+ 
+   if (!this.sr.valueSchemas[topicName]) {
+-    log.warn('_transformAvro() :: Warning, consumer did not find topic on SR:',
+-      topicName);
++    log.warn(
++      "_transformAvro() :: Warning, consumer did not find topic on SR:",
++      topicName
++    );
+ 
+     try {
+-      data.parsed = JSON.parse(data.value.toString('utf-8'));
+-    } catch(ex) {
+-      log.warn('_transformAvro() :: Error parsing value:', data.value,
+-        'Error:', ex);
++      data.parsed = JSON.parse(data.value.toString("utf-8"));
++    } catch (ex) {
++      log.warn(
++        "_transformAvro() :: Error parsing value:",
++        data.value,
++        "Error:",
++        ex
++      );
+     }
+ 
+     callback(null, data);
+@@ -185,6 +208,5 @@ Consumer.prototype._transformAvro = function (data, encoding, callback) {
+     data.schemaId = decoded.schemaId;
+   }
+ 
+-
+   callback(null, data);
+ };
