@@ -5,6 +5,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
@@ -29,6 +30,8 @@ public class MicroRestService {
 
         final ResourceConfig rc = new ResourceConfig();
         rc.register(instance);
+        rc.register(JacksonFeature.class);
+
         log = LoggerFactory.getLogger(instance.getClass());
 
         final ServletContainer sc = new ServletContainer(rc);

@@ -31,6 +31,10 @@ public class AccountProcessor {
 
 
     public AccountProcessor(String paymentsInflightTopic, String paymentsCompleteTopic, Properties streamsConfig){
+
+        // need consistent naming for global streamMetaDataDiscovery support
+        streamsConfig.put(StreamsConfig.APPLICATION_ID_CONFIG, AccountProcessor.class.getCanonicalName());
+
         this.streamsConfig = streamsConfig;
 
         StreamsBuilder builder = new StreamsBuilder();
@@ -118,7 +122,7 @@ public class AccountProcessor {
     }
 
     public KafkaStreams streams() {
-        return null;
+        return streams;
     }
 
     public static class AccountProcessorRest extends ReadonlyMapResourceEndpoint<String, AccountBalance> {

@@ -1,6 +1,12 @@
 package io.confluent.kpay.util;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
@@ -16,13 +22,24 @@ public interface ReadOnlyMapResource<K,V> {
     @Produces(MediaType.APPLICATION_JSON)
     Set<K> keySet();
 
-    @GET()
+
+    @POST
     @Path("/get")
-    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "singular map operation",
+            tags = {"query"},
+            responses = {
+                    @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "405", description = "Invalid input")
+            })
     V get(K k);
 
-    @GET()
+    @POST
     @Path("/getQuery")
-    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "query map operation",
+            tags = {"query"},
+            responses = {
+                    @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "405", description = "Invalid input")
+            })
     List<Pair<K,V>> get(List<K> query);
 }
