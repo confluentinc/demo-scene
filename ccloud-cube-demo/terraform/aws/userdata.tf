@@ -158,6 +158,9 @@ data "template_file" "control_center_properties" {
     ksql_server_url = "${join(",", formatlist("http://%s:%s",
       aws_instance.ksql_server.*.private_ip, "8088"))}"
 
+    ksql_public_url = "${join(",", formatlist("http://%s:%s",
+      aws_alb.ksql_server.*.dns_name, "80"))}"
+
   }
 
 }
