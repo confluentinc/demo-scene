@@ -92,7 +92,7 @@ public class ControlStartStopTest {
 
     // test
     Payment payment = new Payment("txnId", "id","from","to", 123.0, Payment.State.debit);
-    payment.setState(Payment.State.debit);
+    payment.setStateAndId(Payment.State.debit);
 
 
     new Thread(() -> {

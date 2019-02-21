@@ -15,6 +15,7 @@
  **/
 package io.confluent.kpay.payments;
 
+import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import io.confluent.kpay.control.PauseControllable;
 import io.confluent.kpay.payments.model.AccountBalance;
 import io.confluent.kpay.payments.model.ConfirmedStats;
@@ -30,14 +31,16 @@ import org.apache.kafka.streams.TopologyTestDriver;
 import org.apache.kafka.streams.kstream.Windowed;
 import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.ReadOnlyWindowStore;
+import org.apache.kafka.streams.state.StreamsMetadata;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Properties;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.core.MediaType;
+import java.util.*;
 
 public class PaymentsIntegrationTest {
 
@@ -59,6 +62,8 @@ public class PaymentsIntegrationTest {
     bootstrapServers = testHarness.embeddedKafkaCluster.bootstrapServers();
     System.setProperty("bootstrap.servers", bootstrapServers);
 
+    System.out.println("KAFKA BROKER ADDRESSS:" + bootstrapServers);
+
     testHarness.createTopic(paymentsInflightTopic, 1, 1);
     testHarness.createTopic(paymentsIncomingTopic, 1, 1);
     testHarness.createTopic(paymentsCompleteTopic, 1, 1);
@@ -69,12 +74,6 @@ public class PaymentsIntegrationTest {
     testHarness.stop();
   }
 
-  @Test
-  public void serviceSinglePaymentExposedViaRestEndpoint() throws Exception {
-    serviceSinglePayment();
-    // test account processor microservice works!
-
-  }
   @Test
   public void serviceSinglePayment() throws Exception {
 
@@ -90,17 +89,6 @@ public class PaymentsIntegrationTest {
 
     Thread.sleep(100);
 
-    System.out.println(">>>> BEFORE 11111111111");
-    KeyValueIterator<String, AccountBalance> all1 = accountProcessor.getStore().all();
-    while (all1.hasNext()) {
-      System.out.println("BEFORE:" + all1.next().value);
-    }
-
-
-
-    System.out.println("BEFOREEEEE 222222222:" + accountProcessor.allMetaData());
-
-
     Map<String, Payment> records = Collections.singletonMap("record1", new Payment("tnxId", "record1", "neil", "john", 10, Payment.State.incoming));
     testHarness.produceData(paymentsIncomingTopic, records, new Payment.Serde().serializer(), System.currentTimeMillis());
 
@@ -115,6 +103,19 @@ public class PaymentsIntegrationTest {
 
     System.out.println("Test payment confirmed:"+ confirmed);
 
+    System.out.println("------ checking accounts -------");
+
+    // check we have 2 accounts created, neil & john
+    KeyValueIterator<String, AccountBalance> all1 = accountProcessor.getStore().all();
+    while (all1.hasNext()) {
+      System.out.println("Got Account:" + all1.next());
+    }
+    all1.close();
+
+    System.out.println("------ done checking accounts -------");
+
+
+
     // verify the postal state of each processor, i.e. inflight == 0; neil == -10; john == 10; confirmed == 10
 
     KeyValueIterator<Windowed<String>, PaymentStats> all = paymentsInFlight.getStore().all();
@@ -123,12 +124,6 @@ public class PaymentsIntegrationTest {
 
     // should be 0
     System.out.println("Test Inflight:" + value);
-
-
-    KeyValueIterator<String, AccountBalance> all11 = accountProcessor.getStore().all();
-    while (all11.hasNext()) {
-      System.out.println("Test:" + all11.next().value);
-    }
 
 
     /**
@@ -141,7 +136,8 @@ public class PaymentsIntegrationTest {
       Assert.assertEquals("Confirmed Processor", 10, value1.getAmount(), 0);
     }
 
-    System.out.println("Meta:" + accountProcessor.allMetaData());
+    System.out.println("META :" + accountProcessor.allMetaData());;
+
   }
 
   @Test
@@ -201,7 +197,7 @@ public class PaymentsIntegrationTest {
   private Properties getProperties(String broker) {
     Properties props = new Properties();
     props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TEST-APP-ID-" + instanceId++);
-    props.put(StreamsConfig.APPLICATION_SERVER_CONFIG, "someHost:999");
+    props.put(StreamsConfig.APPLICATION_SERVER_CONFIG, "localhost:11111");
     props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
     props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
     props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Payment.Serde.class.getName());

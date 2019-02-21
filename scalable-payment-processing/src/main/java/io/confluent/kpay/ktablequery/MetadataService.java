@@ -1,6 +1,7 @@
-package io.confluent.kpay.util;
+package io.confluent.kpay.ktablequery;
 
 import org.apache.kafka.common.serialization.Serializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.state.StreamsMetadata;
 

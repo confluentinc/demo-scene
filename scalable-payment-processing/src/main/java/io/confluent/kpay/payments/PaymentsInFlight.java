@@ -62,7 +62,7 @@ public class PaymentsInFlight {
          */
         inflight.map((KeyValueMapper<String, Payment, KeyValue<String, Payment>>) (key, value) -> {
             if (value.getState() == Payment.State.incoming) {
-                value.setState(Payment.State.debit);
+                value.setStateAndId(Payment.State.debit);
             }
             return new KeyValue<>(value.getId(), value);
         }).filter((key, value) -> value.getState() == Payment.State.debit).to(paymentsInflightTopic);

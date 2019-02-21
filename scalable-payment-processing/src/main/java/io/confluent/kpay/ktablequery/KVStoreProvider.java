@@ -1,17 +1,16 @@
-package io.confluent.kpay.util;
+package io.confluent.kpay.ktablequery;
 
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 
-public class StoreProvider<K, V> {
+public class KVStoreProvider<K, V> {
 
     private KafkaStreams streams;
     KTable<K, V> table;
 
-    public StoreProvider(KafkaStreams streams, KTable<K, V> table) {
-
+    public KVStoreProvider(KafkaStreams streams, KTable<K, V> table) {
         this.streams = streams;
         this.table = table;
     }

@@ -1,4 +1,4 @@
-package io.confluent.kpay.util;
+package io.confluent.kpay.ktablequery;
 
 import java.util.Objects;
 import java.util.Set;
@@ -75,5 +75,9 @@ public class HostStoreInfo {
     @Override
     public int hashCode() {
         return Objects.hash(host, port, storeNames);
+    }
+
+    public String getAddress() {
+        return String.format("http://%s:%d", getHost(), getPort());
     }
 }

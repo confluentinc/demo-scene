@@ -1,13 +1,15 @@
 package io.confluent.kpay.payments;
 
+import io.confluent.kpay.ktablequery.KTableResourceEndpoint;
+import io.confluent.kpay.ktablequery.KVStoreProvider;
 import io.confluent.kpay.payments.model.AccountBalance;
 import io.confluent.kpay.payments.model.Payment;
-import io.confluent.kpay.util.MicroRestService;
-import io.confluent.kpay.util.ReadonlyMapResourceEndpoint;
-import io.confluent.kpay.util.StoreProvider;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.common.utils.Bytes;
-import org.apache.kafka.streams.*;
+import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.KeyValue;
+import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
@@ -27,7 +29,7 @@ public class AccountProcessor {
 
     private Properties streamsConfig;
     private KafkaStreams streams;
-    private MicroRestService microRestService;
+    private KTableResourceEndpoint microRestService;
 
 
     public AccountProcessor(String paymentsInflightTopic, String paymentsCompleteTopic, Properties streamsConfig){
@@ -63,9 +65,9 @@ public class AccountProcessor {
         KStream<String, Payment>[] branch = inflight
                 .map((KeyValueMapper<String, Payment, KeyValue<String, Payment>>) (key, value) -> {
                     if (value.getState() == Payment.State.debit) {
-                        value.setState(Payment.State.credit);
+                        value.setStateAndId(Payment.State.credit);
                     } else if (value.getState() == Payment.State.credit) {
-                        value.setState(Payment.State.complete);
+                        value.setStateAndId(Payment.State.complete);
                     } else if (value.getState() == Payment.State.complete) {
                         log.error("Invalid payment:{}", value);
                         throw new RuntimeException("Invalid payment state:" + value);
@@ -90,28 +92,14 @@ public class AccountProcessor {
 
         log.info(topology.describe().toString());
 
-        startMicroRestService();
-    }
-
-    private void startMicroRestService() {
-        String property = streamsConfig.getProperty(StreamsConfig.APPLICATION_SERVER_CONFIG);
-
-        log.info("Starting RestEndpoint:" + property);
-        String[] hostAndPort = property.split(":");
-
-        AccountProcessorRest accountProcessorRest = new AccountProcessorRest(new StoreProvider<>(streams, accountBalanceKTable));
-        microRestService = new MicroRestService();
-        try {
-            microRestService.start(accountProcessorRest, hostAndPort[0], Integer.parseInt(hostAndPort[1]));
-        } catch (Exception e) {
-            e.printStackTrace();
-            log.error("Failed to start Rest Service", e);
-        }
+        microRestService = new KTableResourceEndpoint<>(new KVStoreProvider<>(streams, accountBalanceKTable));
+        microRestService.start(streamsConfig);
     }
 
     public void stop() {
         streams.close();
         streams.cleanUp();
+        microRestService.stop();
     }
 
     public ReadOnlyKeyValueStore<String, AccountBalance> getStore() {
@@ -123,12 +111,6 @@ public class AccountProcessor {
 
     public KafkaStreams streams() {
         return streams;
-    }
-
-    public static class AccountProcessorRest extends ReadonlyMapResourceEndpoint<String, AccountBalance> {
-        public AccountProcessorRest(StoreProvider<String, AccountBalance> store) {
-            super(store);
-        }
     }
 
 }

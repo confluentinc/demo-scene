@@ -66,17 +66,19 @@ public class PaymentsInflightIntegTest {
 
 
   @Test
+  public void restInterfaceWorks() throws Exception {
+
+
+
+  }
+
+  @Test
   public void serviceSinglePayment() throws Exception {
     PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers), new PauseControllable());
     paymentsInFlight.start();
 
-
-    System.err.println("produce to:" + paymentsIncomingTopic);
-
     Map<String, Payment> records = Collections.singletonMap("record1", new Payment("tnxId", "record1", "neil", "john", 10, Payment.State.incoming));
     testHarness.produceData(paymentsIncomingTopic, records, new Payment.Serde().serializer(), System.currentTimeMillis());
-//    testHarness.produceData(paymentsCompleteTopic, records, new Payment.Serde().serializer(), System.currentTimeMillis());
-
 
     // verify incoming events were generated
     Map<String, Payment> inflightPayment = testHarness.consumeData(paymentsInflightTopic, 1, new StringDeserializer(), new Payment.Serde().deserializer(), 1000);
@@ -86,6 +88,9 @@ public class PaymentsInflightIntegTest {
     KeyValueIterator<Windowed<String>, PaymentStats> all = paymentsInFlight.getStore().all();
     Object value = all.next().value;
     System.out.println(value);
+
+    paymentsInFlight.stop();
+
   }
 
 

@@ -19,13 +19,13 @@ public class Payment {
 
     public enum State {incoming, debit, credit, complete, confirmed};
 
-    String id;
-    String txnId;
-    String from;
-    String to;
-    double amount;
-    int state;
-    long processStartTime;
+    private String id;
+    private String txnId;
+    private String from;
+    private String to;
+    private double amount;
+    private int state;
+    private long processStartTime;
 
     public Payment(){};
     public Payment(String txnId, String id, String from, String to, double amount, State state){
@@ -47,6 +47,10 @@ public class Payment {
 
     public String getId() {
         return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getFrom() {
@@ -83,6 +87,9 @@ public class Payment {
      * @param state
      */
     public void setState(State state) {
+        this.state = state.ordinal();
+    }
+    public void setStateAndId(State state) {
         this.state = state.ordinal();
         if (state == State.credit) {
             id = to;
@@ -146,7 +153,7 @@ public class Payment {
                     log.debug("transform 'incoming' to 'debit': {}", payment);
 
                     if (payment.getState() == State.incoming) {
-                        payment.setState(State.debit);
+                        payment.setStateAndId(State.debit);
 
                         // we have to rekey to the debit account so the 'debit' request is sent to the right AccountProcessor<accountId>
                         return new KeyValue<>(payment.getId(), payment);

@@ -1,24 +1,31 @@
-package io.confluent.kpay.util;
+package io.confluent.kpay.ktablequery;
 
 import io.confluent.kpay.payments.model.Payment;
+import io.confluent.kpay.util.GenericClassUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
-import java.util.Arrays;
-import java.util.List;
 
 public class MicroRestServiceTest {
+
+    @Test
+    public void shouldWorkWithGeneric() throws Exception {
+
+        KTableRestClient<String, Payment> tableClient = new KTableRestClient<String, Payment>(null, null){};
+
+        Class[] genericType = GenericClassUtil.getGenericType(tableClient.getClass());
+        for (Class aClass : genericType) {
+            System.out.println("class:" + aClass.getCanonicalName());
+        }
+
+        Assert.assertEquals(String.class, genericType[0]);
+    }
 
     @Test
     public void shouldGetPayment() throws Exception {
@@ -26,7 +33,7 @@ public class MicroRestServiceTest {
         SimplePaymentImpl instance = new SimplePaymentImpl();
 
         MicroRestService service = new MicroRestService();
-        service.start(instance, "localhost", 19999);
+        service.start(instance, "localhost:19999");
 
         Client client = ClientBuilder.newClient();
         Payment result = client.target("http://localhost:19999").path("/state/get")
@@ -46,7 +53,7 @@ public class MicroRestServiceTest {
         }
 
         public Payment get() {
-            return new Payment("txn", "payment-id", "from", "to", 123, Payment.State.incoming);
+            return new Payment("txn-1", "payment-id", "from", "to", 123, Payment.State.incoming);
         }
     }
 

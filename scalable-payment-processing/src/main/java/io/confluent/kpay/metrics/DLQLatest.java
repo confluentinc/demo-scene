@@ -96,7 +96,7 @@ public class DLQLatest {
                 @Override
                 public KeyValue<String, Payment> transform(String key, Payment payment) {
                     if (payment.getState() == Payment.State.complete) {
-                        payment.setState(Payment.State.confirmed);
+                        payment.setStateAndId(Payment.State.confirmed);
                         return new KeyValue<>(key, payment);
                     } else {
                         // exception handler will report to DLQ

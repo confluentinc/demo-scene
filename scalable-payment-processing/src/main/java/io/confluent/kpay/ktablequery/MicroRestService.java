@@ -1,4 +1,4 @@
-package io.confluent.kpay.util;
+package io.confluent.kpay.ktablequery;
 
 
 import org.eclipse.jetty.server.Server;
@@ -18,10 +18,14 @@ public class MicroRestService {
 
     /**
      * Start an embedded Jetty Server on the given port
-     * @param port    port to run the Server on
+     * @param hostAndPortString
      * @throws Exception if jetty can't start
      */
-    public void start(Object instance, final String host, final int port) throws Exception {
+    public void start(Object instance, final String hostAndPortString) {
+        log.info("Starting RestEndpoint on:" + hostAndPortString + " Instance:" + instance);
+
+        String[] hostAndPort = hostAndPortString.split(":");
+
         final ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
 
@@ -39,17 +43,17 @@ public class MicroRestService {
         context.addServlet(holder, "/*");
 
         final ServerConnector connector = new ServerConnector(jettyServer);
-        connector.setHost(host);
-        connector.setPort(port);
+        connector.setHost(hostAndPort[0]);
+        connector.setPort(Integer.parseInt(hostAndPort[1]));
         jettyServer.addConnector(connector);
 
-        context.start();
-
         try {
+            context.start();
             jettyServer.start();
-        } catch (final java.net.SocketException exception) {
-            log.error("Unavailable: " + host + ":" + port);
-            throw new Exception(exception.toString());
+        } catch (final Exception exception) {
+            log.error("Unavailable: " + hostAndPortString + " Instance:" + instance);
+            exception.printStackTrace();
+            throw new RuntimeException("Failed to start Jetty", exception);
         }
     }
 
@@ -57,9 +61,14 @@ public class MicroRestService {
      * Stop the Jetty Server
      * @throws Exception if jetty can't stop
      */
-    public void stop() throws Exception {
+    public void stop()  {
         if (jettyServer != null) {
-            jettyServer.stop();
+            try {
+                jettyServer.stop();
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
+            }
         }
     }
 

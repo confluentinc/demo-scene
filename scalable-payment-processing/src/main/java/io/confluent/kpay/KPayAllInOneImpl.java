@@ -10,10 +10,10 @@ import io.confluent.kpay.payments.AccountProcessor;
 import io.confluent.kpay.payments.PaymentsConfirmed;
 import io.confluent.kpay.payments.PaymentsInFlight;
 import io.confluent.kpay.payments.model.Payment;
-import io.confluent.kpay.util.HostStoreInfo;
+import io.confluent.kpay.ktablequery.HostStoreInfo;
 import io.confluent.kpay.util.KafkaTopicClient;
 import io.confluent.kpay.util.KafkaTopicClientImpl;
-import io.confluent.kpay.util.MetadataService;
+import io.confluent.kpay.ktablequery.MetadataService;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -26,6 +26,7 @@ import org.apache.kafka.streams.state.StreamsMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.core.MediaType;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
@@ -199,7 +200,11 @@ public class KPayAllInOneImpl implements KPay {
         MetadataService metadataService = new MetadataService(paymentAccountProcessor.streams());
         List<HostStoreInfo> hostStoreInfos = metadataService.streamsMetadata();
 
-//        ReadOnlyMapResource
+//        Set<String> result = client.target("http://localhost:11111").path("/ktable/keys")
+//                .request(MediaType.APPLICATION_JSON)
+//                .get(Set.class);
+
+//        KTableResource
 
         return "stuff";
     }

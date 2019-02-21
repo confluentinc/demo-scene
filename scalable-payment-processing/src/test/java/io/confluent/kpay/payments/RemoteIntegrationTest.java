@@ -13,80 +13,69 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package io.confluent.kpay.metrics;
+package io.confluent.kpay.payments;
 
-import io.confluent.kpay.metrics.model.ThroughputStats;
+import io.confluent.kpay.control.PauseControllable;
+import io.confluent.kpay.payments.model.AccountBalance;
+import io.confluent.kpay.payments.model.ConfirmedStats;
 import io.confluent.kpay.payments.model.Payment;
+import io.confluent.kpay.payments.model.PaymentStats;
+import io.confluent.kpay.utils.IntegrationTestHarness;
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.StringSerializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.Topology;
-import org.apache.kafka.streams.TopologyTestDriver;
-import org.apache.kafka.streams.test.ConsumerRecordFactory;
+import org.apache.kafka.streams.kstream.Windowed;
+import org.apache.kafka.streams.state.KeyValueIterator;
+import org.apache.kafka.streams.state.ReadOnlyWindowStore;
+import org.apache.kafka.streams.state.StreamsMetadata;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Properties;
 
-public class PaymentThroughputTest {
+public class RemoteIntegrationTest {
 
 
-  private TopologyTestDriver testDriver;
+  private static String paymentsCompleteTopic = "payments." + Payment.State.complete;
+  private static String paymentsInflightTopic = "payments.inflight"; // debit and credit processing
+  private long instanceId = System.currentTimeMillis();
+
 
   @Before
   public void before() throws Exception {
-
 
   }
 
   @After
   public void after() {
-    //testHarness.stop();
   }
 
-
-
   @Test
-  public void shouldCountSinglePayment() throws Exception {
+  public void runAnotherServiceThingy() throws Exception {
 
 
-    String complete = "payments.complete";
+    AccountProcessor accountProcessor = new AccountProcessor(paymentsInflightTopic, paymentsCompleteTopic, getProperties("127.0.0.1:63602"));
+    accountProcessor.start();
 
-    PaymentsThroughput processor = new PaymentsThroughput(complete, getProperties("localhost:9091"));
-    processor.start();
 
-    Topology topology = processor.getTopology();
+    Thread.sleep(100);
 
-    Properties streamsConfig = getProperties("localhost:9091");
 
-    testDriver = new TopologyTestDriver(topology, streamsConfig);
-
-    // setup
-    ConsumerRecordFactory<String, Payment> factory = new ConsumerRecordFactory<>(
-            complete,
-            new StringSerializer(),
-            new Payment.Serde().serializer()
-    );
-
-    // test
-    Payment payment = new Payment("txnId", "id","from","to", 123.0, Payment.State.debit);
-    payment.setStateAndId(Payment.State.debit);
-    testDriver.pipeInput(factory.create(complete, "key", payment));
-    testDriver.close();
-
-    // verify
-    ThroughputStats stats = processor.getStats();
-
-    Assert.assertEquals(1, stats.getTotalPayments());
+    System.out.println("METAAAAAAAA :" + accountProcessor.allMetaData());;
 
   }
 
   private Properties getProperties(String broker) {
     Properties props = new Properties();
-    props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TEST-APP-ID");// + System.currentTimeMillis());
+    props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TEST-APP-ID-" + instanceId++);
+    props.put(StreamsConfig.APPLICATION_SERVER_CONFIG, "localhost:22222");
     props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
     props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
     props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Payment.Serde.class.getName());

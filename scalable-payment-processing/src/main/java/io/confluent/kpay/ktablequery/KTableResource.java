@@ -1,5 +1,6 @@
-package io.confluent.kpay.util;
+package io.confluent.kpay.ktablequery;
 
+import io.confluent.kpay.util.Pair;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -14,14 +15,17 @@ import java.util.List;
 import java.util.Set;
 
 @Path("ktable")
-public interface ReadOnlyMapResource<K,V> {
+public interface KTableResource<K,V> {
 
+    @GET()
+    @Path("/size")
+    @Produces(MediaType.APPLICATION_JSON)
     int size();
+
     @GET()
     @Path("/keys")
     @Produces(MediaType.APPLICATION_JSON)
     Set<K> keySet();
-
 
     @POST
     @Path("/get")
@@ -35,7 +39,7 @@ public interface ReadOnlyMapResource<K,V> {
 
     @POST
     @Path("/getQuery")
-    @Operation(summary = "query get operation",
+    @Operation(summary = "multi get operation",
             tags = {"query"},
             responses = {
                     @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),

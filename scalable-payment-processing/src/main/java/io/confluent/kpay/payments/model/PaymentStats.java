@@ -26,11 +26,11 @@ public class PaymentStats {
 
         if (value.getState() == Payment.State.incoming) {
             // accumulate on 'incoming' payment
-            this.amount += value.amount;
+            this.amount += value.getAmount();
             this.count++;
         } else if (value.getState() == Payment.State.complete) {
             // remove 'complete'd payments
-            this.amount -= value.amount;
+            this.amount -= value.getAmount();
             this.count--;
         }
 

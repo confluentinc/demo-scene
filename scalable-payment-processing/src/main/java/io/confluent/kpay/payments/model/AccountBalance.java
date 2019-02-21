@@ -39,14 +39,14 @@ public class AccountBalance {
 
     public AccountBalance handle(String key, Payment value) {
 
-        this.name = value.id;
+        this.name = value.getId();
 
         log.debug("handle: {} : {} ", "not-set", value);
 
         if (value.getState() == Payment.State.debit) {
-            this.amount -= value.amount;
+            this.amount -= value.getAmount();
         } else if (value.getState() == Payment.State.credit) {
-            this.amount += value.amount;
+            this.amount += value.getAmount();
         } else {
             // report to dead letter queue via exception handler
             throw new RuntimeException("Invalid payment received:" + value);
@@ -101,11 +101,11 @@ public class AccountBalance {
                     Payment payment = value.lastPayment;
                     if (payment.getState() == Payment.State.debit) {
                         // we have to rekey to the debit account so the 'debit' request is sent to the right AccountProcessor<accountId>
-                        payment.setState(Payment.State.credit);
+                        payment.setStateAndId(Payment.State.credit);
                         return new KeyValue<>(payment.getId(), payment);
                     } else  if (payment.getState() == Payment.State.credit) {
                         // already processed the credit emit to payment complete with
-                        payment.setState(Payment.State.complete);
+                        payment.setStateAndId(Payment.State.complete);
                         return new KeyValue<>(payment.getId(), payment);
                     } else {
                         // exception handler will report to DLQ
@@ -157,9 +157,9 @@ public class AccountBalance {
                     log.info(" serialize: {}", payment);
 
                     if (payment.getState() == Payment.State.debit) {
-                        payment.setState(Payment.State.credit);
+                        payment.setStateAndId(Payment.State.credit);
                     } else  if (payment.getState() == Payment.State.credit) {
-                        payment.setState(Payment.State.complete);
+                        payment.setStateAndId(Payment.State.complete);
                     }
                     // its been processed so now flip debit -> credit
                     return serializer.serialize(topic, payment);

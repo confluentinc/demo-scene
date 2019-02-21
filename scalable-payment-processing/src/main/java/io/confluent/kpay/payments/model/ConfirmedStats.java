@@ -26,7 +26,7 @@ public class ConfirmedStats {
         log.debug("handle:{}" + value);
     if (value.getState() == Payment.State.confirmed) {
         // remove 'complete'd payments
-        this.amount += value.amount;
+        this.amount += value.getAmount();
         this.count++;
     } else {
         // log error
