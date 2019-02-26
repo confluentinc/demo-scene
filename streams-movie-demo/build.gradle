@@ -125,7 +125,8 @@ project(':streams') {
 //  compile 'io.confluent:kafka-schema-registry-client:3.3.0'
     testCompile 'junit:junit:4.12'
     testCompile 'org.apache.kafka:kafka-streams-test-utils:2.1.0'
-    testCompile 'org.projectlombok:lombok:1.16.20'
+    testCompileOnly 'org.projectlombok:lombok:1.16.20'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.16.20'
   }
 
   task runApp(type: JavaExec) {
