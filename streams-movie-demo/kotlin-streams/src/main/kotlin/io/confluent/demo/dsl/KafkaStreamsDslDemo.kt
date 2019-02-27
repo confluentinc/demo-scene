@@ -1,4 +1,4 @@
-package io.confluent.demo.naive
+package io.confluent.demo.dsl
 
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.streams.KafkaStreams

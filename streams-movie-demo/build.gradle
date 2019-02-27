@@ -20,6 +20,7 @@ buildscript {
     classpath "gradle.plugin.com.google.cloud.tools:jib-gradle-plugin:${jibPluginVersion}"
 classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}"
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}"
+
     classpath "org.jetbrains.kotlin:kotlin-serialization:${kotlinVersion}"
   }
 }
@@ -212,7 +213,7 @@ project(':kotlin-streams') {
 
   dependencies {
     compile project(':streams')
-    compile("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    compile "org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.10.0"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    compile "org.jetbrains.kotlin:kotlin-reflect"
   }
 }
