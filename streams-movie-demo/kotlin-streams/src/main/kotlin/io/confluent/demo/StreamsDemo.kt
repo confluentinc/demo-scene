@@ -6,6 +6,8 @@ import io.confluent.demo.util.CountAndSumDeserializer
 import io.confluent.demo.util.CountAndSumSerializer
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
+import io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor
+import io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerConfig.MAX_BLOCK_MS_CONFIG
@@ -16,13 +18,18 @@ import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.KeyValue
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.StreamsConfig.*
-import org.apache.kafka.streams.kotlin.consumedWith
-import org.apache.kafka.streams.kstream.*
+import org.apache.kafka.streams.kotlin.KSerdes.consumedWith
+import org.apache.kafka.streams.kotlin.KSerdes.producedWith
+import org.apache.kafka.streams.kotlin.KSerdes.serdeFrom
+import org.apache.kafka.streams.kstream.KStream
+import org.apache.kafka.streams.kstream.KTable
+import org.apache.kafka.streams.kstream.Materialized
+import org.apache.kafka.streams.kstream.ValueMapper
 import org.apache.kafka.streams.state.KeyValueStore
 import java.util.*
-import java.util.Collections.singletonMap
 import kotlin.concurrent.thread
 
+//TODO make this configurable
 private const val SCHEMA_REGISTRY_URL = "http://localhost:8081"
 private const val KAFKA_BOOTSTRAP_SERVER = "localhost:9092"
 
@@ -31,19 +38,18 @@ private const val AVERAGE_RATINGS_TOPIC_NAME = "average-ratings"
 private const val RAW_MOVIES_TOPIC_NAME = "raw-movies"
 private const val RATED_MOVIES_TOPIC_NAME = "rated-movies"
 
-//TODO
 fun main(args: Array<String>) {
 
   var configPath = ""
   if (args.isNotEmpty()) configPath = args[0]
   val config = getStreamsConfig(KAFKA_BOOTSTRAP_SERVER, SCHEMA_REGISTRY_URL, configPath)
 
+  // TODO this is ugly 
   val serdeConfig = getSerdeConfig(SCHEMA_REGISTRY_URL)
 
-  val movieSerde = getMovieAvroSerde(serdeConfig)
-  val ratingSerde = getRatingAvroSerde(serdeConfig)
-  // TODO: use it as final result
-  val ratedMovieSerde = getRatedMovieAvroSerde(serdeConfig)
+  val movieSerde = serdeFrom<Movie>(serdeConfig)
+  val ratingSerde = serdeFrom<Rating>(serdeConfig)
+  val ratedMovieSerde = serdeFrom<RatedMovie>(serdeConfig)
 
   // Starting creating topology
   val builder = StreamsBuilder()
@@ -60,8 +66,8 @@ fun main(args: Array<String>) {
   // finish the topology
   val topology = builder.build()
   println(topology.describe().toString())
-  val streamsApp = KafkaStreams(topology, config)
 
+  val streamsApp = KafkaStreams(topology, config)
   Runtime.getRuntime().addShutdownHook(thread(start = false) { streamsApp.close() })
   streamsApp.start()
 }
@@ -74,7 +80,7 @@ private fun getMoviesTable(builder: StreamsBuilder,
   rawMovies
           .mapValues(ValueMapper<String, Movie> { Parser.parseMovie(it) })
           .map { _, movie -> KeyValue(movie.movieId, movie) }
-          .to("movies", Produced.with(Long(), movieSerde))
+          .to("movies", producedWith<Long, Movie>(movieSerde))
 
   // Movies table
   // TODO: replace with extension function
@@ -86,7 +92,6 @@ private fun getMoviesTable(builder: StreamsBuilder,
 
 private fun getRawMoviesStream(builder: StreamsBuilder): KStream<Long, String> {
   return builder.stream(RAW_MOVIES_TOPIC_NAME, consumedWith<Long, String>())
-
 }
 
 private fun getRawRatingsStream(builder: StreamsBuilder): KStream<Long, String> {
@@ -94,25 +99,7 @@ private fun getRawRatingsStream(builder: StreamsBuilder): KStream<Long, String> 
 }
 
 private fun getSerdeConfig(srUrl: String): Map<String, String> {
-  return singletonMap<String, String>(SCHEMA_REGISTRY_URL_CONFIG, srUrl)
-}
-
-private fun getRatingAvroSerde(serdeConfig: Map<String, String>): SpecificAvroSerde<Rating> {
-  val ratingSerde = SpecificAvroSerde<Rating>()
-  ratingSerde.configure(serdeConfig, false)
-  return ratingSerde
-}
-
-private fun getMovieAvroSerde(serdeConfig: Map<String, String>): SpecificAvroSerde<Movie> {
-  val movieSerde = SpecificAvroSerde<Movie>()
-  movieSerde.configure(serdeConfig, false)
-  return movieSerde
-}
-
-private fun getRatedMovieAvroSerde(serdeConfig: Map<String, String>): SpecificAvroSerde<RatedMovie> {
-  val ratedMovieSerde = SpecificAvroSerde<RatedMovie>()
-  ratedMovieSerde.configure(serdeConfig, false)
-  return ratedMovieSerde
+  return mapOf(SCHEMA_REGISTRY_URL_CONFIG to srUrl)
 }
 
 private fun getRatedMoviesTable(movies: KTable<Long, Movie>,
@@ -127,7 +114,8 @@ private fun getRatedMoviesTable(movies: KTable<Long, Movie>,
   }
   val ratedMovies = ratingAverage.join(movies, joiner)
 
-  ratedMovies.toStream().to(RATED_MOVIES_TOPIC_NAME, Produced.with(Long(), ratedMovieSerde))
+  //ratedMovies.toStream().to(RATED_MOVIES_TOPIC_NAME, Produced.with(Long(), ratedMovieSerde))
+  ratedMovies.toStream().to(RATED_MOVIES_TOPIC_NAME, producedWith<Long, RatedMovie>(ratedMovieSerde))
   return ratedMovies
 }
 
@@ -183,17 +171,16 @@ private fun getStreamsConfig(kafkaBootStrapServer: String,
     config = ConfigLoader.loadConfig(configPath)
   } else {
     config = Properties()
-    config[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaBootStrapServer
+    config.putAll(mapOf(
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to kafkaBootStrapServer
+    ))
   }
-
-  /*config.put(PRODUCER_PREFIX + ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,
-             "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor");
-
-  config.put(CONSUMER_PREFIX + ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
-             "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor");*/
 
   config.putAll(
           mapOf(
+                  // TODO: disable in cloud and investigate warnings 
+                  producerPrefix(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG) to MonitoringProducerInterceptor::class.qualifiedName,
+                  consumerPrefix(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG) to MonitoringConsumerInterceptor::class.qualifiedName,
                   // TODO: make configurable
                   REPLICATION_FACTOR_CONFIG to 1,
                   APPLICATION_ID_CONFIG to "kafka-films",
