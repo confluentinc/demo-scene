@@ -11,8 +11,7 @@ fun main() {
   val topology = createTopology {
     kstream<String, Long>(listOf("A", "B")) {
       groupByKey {
-        count {
-        }.toStream()
+        count {}.toStream()
       }
     }.to("group-by-counts",
             producedWith<String, Long>())

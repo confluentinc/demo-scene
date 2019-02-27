@@ -27,10 +27,7 @@ object KSerdes {
   inline fun <reified K, V> producedWith(serde: Serde<V>): Produced<K, V> = Produced.with(serdeFrom(K::class.java), serde)
 
   @KStreamsDsl
-  inline fun <reified T> serdeFrom(config: Map<String, String> = HashMap(), keySerde: Boolean = false): SpecificAvroSerde<T> where T : SpecificRecordBase {
-    val specificAvroSerde = SpecificAvroSerde<T>()
-    specificAvroSerde.configure(config, keySerde)
-    return specificAvroSerde
-  }
+  inline fun <reified T: SpecificRecordBase> serdeFrom(config: Map<String, String> = HashMap(), keySerde: Boolean = false): SpecificAvroSerde<T> =
+          SpecificAvroSerde<T>().also { it.configure(config,keySerde) }
 }
 
