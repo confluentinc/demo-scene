@@ -20,6 +20,7 @@ import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.component.LifeCycle;
+import org.eclipse.jetty.util.resource.Resource;
 import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
@@ -51,7 +52,7 @@ public class RestEndpointMain {
         destroy();
     }
 
-    public static void initialize() throws MalformedURLException {
+    public static void initialize() throws Exception {
         log.info("Initializing. \n Properties: \n\tkpay.rest.port = {}\n\tkpay.resources.folder = {}\n\tboostrap.servers = {}\n\t",
                 port, resourcesFolder, boostrapServers);
 
@@ -61,14 +62,14 @@ public class RestEndpointMain {
 
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
         context.setContextPath("/");
+        context.setBaseResource(Resource.newResource(resourcesFolder + "/ui"));
+        context.setWelcomeFiles(new String[]{"index.html"});
         server.setHandler(context);
 
-        // http://localhost:8080/metrics
-        ServletHolder apiServlet = context.addServlet(ServletContainer.class, "/*");
 
+        ServletHolder apiServlet = context.addServlet(ServletContainer.class, "/*");
         apiServlet.setInitParameter(ServerProperties.PROVIDER_CLASSNAMES, KPayResource.class.getCanonicalName());
         apiServlet.setInitParameter(ServerProperties.APPLICATION_NAME, KPayResource.class.getCanonicalName());
-
         apiServlet.setInitOrder(0);
         // configure swagger openapi path scanning
         apiServlet.setInitParameter(ServerProperties.PROVIDER_PACKAGES,
@@ -86,6 +87,13 @@ public class RestEndpointMain {
 
         swaggerHolder.setInitParameter("resourceBase", resourcesDir);
         context.addServlet(swaggerHolder, "/swagger/*");
+
+
+        ServletHolder uiHolder = new ServletHolder("uiResources", DefaultServlet.class);
+        uiHolder.setInitParameter("dirAllowed","true");
+        uiHolder.setInitParameter("pathInfoOnly","true");
+        uiHolder.setInitParameter("resourceBase", resourcesFolder + "/ui");
+        context.addServlet(uiHolder, "/ui/*");
 
 
         // Lastly, set the default servlet for root content (always needed, to satisfy servlet spec)
