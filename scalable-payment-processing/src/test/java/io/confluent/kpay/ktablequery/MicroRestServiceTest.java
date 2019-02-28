@@ -17,7 +17,7 @@ public class MicroRestServiceTest {
     @Test
     public void shouldWorkWithGeneric() throws Exception {
 
-        KTableRestClient<String, Payment> tableClient = new KTableRestClient<String, Payment>(null, null){};
+        KTableRestClient<String, Payment> tableClient = new KTableRestClient<String, Payment>(true,null, null){};
 
         Class[] genericType = GenericClassUtil.getGenericType(tableClient.getClass());
         for (Class aClass : genericType) {

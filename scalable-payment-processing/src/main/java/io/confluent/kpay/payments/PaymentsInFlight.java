@@ -1,6 +1,8 @@
 package io.confluent.kpay.payments;
 
 import io.confluent.kpay.control.Controllable;
+import io.confluent.kpay.ktablequery.WindowKTableResourceEndpoint;
+import io.confluent.kpay.ktablequery.WindowKVStoreProvider;
 import io.confluent.kpay.payments.model.Payment;
 import io.confluent.kpay.payments.model.PaymentStats;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
@@ -12,22 +14,22 @@ import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyWindowStore;
-import org.apache.kafka.streams.state.StreamsMetadata;
 import org.apache.kafka.streams.state.WindowStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Properties;
 
 public class PaymentsInFlight {
     private static final Logger log = LoggerFactory.getLogger(PaymentsInFlight.class);
+    public static final String STORE_NAME = "inflight";
 
     private static long ONE_DAY = 24 * 60 * 60 * 1000L;
 
-
     private final KTable<Windowed<String>, PaymentStats> paymentStatsKTable;
+    private WindowKTableResourceEndpoint<String, PaymentStats> microRestService;
+
     private final Topology topology;
     private Properties streamsConfig;
     private KafkaStreams streams;
@@ -41,7 +43,7 @@ public class PaymentsInFlight {
         KStream<String, Payment> inflight = builder.stream(Arrays.asList(paymentsIncomingTopic, paymentsCompleteTopic));
 
         // emit the  payments as Debits on the 'inflight' stream
-        Materialized<String, PaymentStats, WindowStore<Bytes, byte[]>> inflightFirst = Materialized.as("inflight");
+        Materialized<String, PaymentStats, WindowStore<Bytes, byte[]>> inflightFirst = Materialized.as(STORE_NAME);
         Materialized<String, PaymentStats, WindowStore<Bytes, byte[]>> inflightWindowStore = inflightFirst.withKeySerde(new StringSerde()).withValueSerde(new PaymentStats.Serde());
 
         /**
@@ -78,18 +80,26 @@ public class PaymentsInFlight {
         streams.start();
 
         log.info(topology.describe().toString());
+
+        microRestService = new WindowKTableResourceEndpoint<String, PaymentStats>(new WindowKVStoreProvider<>(streams, paymentStatsKTable)){};
+        microRestService.start(streamsConfig);
     }
 
     public void stop() {
         streams.close();
         streams.cleanUp();
+        microRestService.stop();
     }
 
     public ReadOnlyWindowStore<String, PaymentStats> getStore() {
         return streams.store(paymentStatsKTable.queryableStoreName(), QueryableStoreTypes.windowStore());
     }
-    public Collection<StreamsMetadata> allMetaData() {
-        return streams.allMetadata();
+
+    public KafkaStreams getStreams() {
+        return streams;
     }
 
+    public KafkaStreams streams() {
+        return streams;
+    }
 }

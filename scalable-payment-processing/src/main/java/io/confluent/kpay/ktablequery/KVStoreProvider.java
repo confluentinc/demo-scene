@@ -5,10 +5,10 @@ import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 
-public class KVStoreProvider<K, V> {
+public class KVStoreProvider<K, V> implements StoreProvider {
 
     private KafkaStreams streams;
-    KTable<K, V> table;
+    private KTable<K, V> table;
 
     public KVStoreProvider(KafkaStreams streams, KTable<K, V> table) {
         this.streams = streams;

@@ -5,17 +5,6 @@ import java.lang.reflect.Type;
 
 public class GenericClassUtil {
 
-    static public Class[] getGenericTypes(Class clazz) {
-        Type mySuperclass = clazz.getGenericSuperclass();
-        Type[] tType = ((ParameterizedType)mySuperclass).getActualTypeArguments();
-
-        try {
-            return new Class[] { Class.forName(tType[0].getTypeName()),  Class.forName(tType[1].getTypeName())  };
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Cannot get generics", e);
-        }
-    }
-
     static public Class[] getGenericType(Class clazz) {
         Type mySuperclass = clazz.getGenericSuperclass();
 

@@ -1,7 +1,9 @@
 package io.confluent.kpay.payments;
 
+import io.confluent.kpay.ktablequery.*;
 import io.confluent.kpay.payments.model.ConfirmedStats;
 import io.confluent.kpay.payments.model.Payment;
+import io.confluent.kpay.payments.model.PaymentStats;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
@@ -21,13 +23,17 @@ import java.util.Collection;
 import java.util.Properties;
 
 public class PaymentsConfirmed {
+    public static final String STORE_NAME = "confirmed";
     long ONE_DAY = 24 * 60 * 60 * 1000L;
 
     private static final Logger log = LoggerFactory.getLogger(PaymentsConfirmed.class);
     private final KTable<Windowed<String>, ConfirmedStats> statsKTable;
+    private WindowKTableResourceEndpoint<String, ConfirmedStats> microRestService;
+
     private final Topology topology;
     private Properties streamsConfig;
     private KafkaStreams streams;
+
 
 
     public PaymentsConfirmed(String paymentsCompleteTopic, String paymentsConfirmedTopic, Properties streamsConfig){
@@ -41,7 +47,7 @@ public class PaymentsConfirmed {
          */
         complete.transform(new CompleteTransformer()).to(paymentsConfirmedTopic);
 
-        Materialized<String, ConfirmedStats, WindowStore<Bytes, byte[]>> completeStore = Materialized.as("complete");
+        Materialized<String, ConfirmedStats, WindowStore<Bytes, byte[]>> completeStore = Materialized.as(STORE_NAME);
         Materialized<String, ConfirmedStats, WindowStore<Bytes, byte[]>> completeWindowStore = completeStore.withKeySerde(new StringSerde()).withValueSerde(new ConfirmedStats.Serde());
 
         /**
@@ -67,11 +73,15 @@ public class PaymentsConfirmed {
         streams.start();
 
         log.info(topology.describe().toString());
+
+        microRestService = new WindowKTableResourceEndpoint<String, ConfirmedStats>(new WindowKVStoreProvider<>(streams, statsKTable)){};
+        microRestService.start(streamsConfig);
     }
 
     public void stop() {
         streams.close();
         streams.cleanUp();
+        microRestService.stop();
     }
 
     public Collection<StreamsMetadata> allMetaData() {
@@ -81,6 +91,10 @@ public class PaymentsConfirmed {
 
     public ReadOnlyWindowStore<String, ConfirmedStats> getStore() {
         return streams.store(statsKTable.queryableStoreName(), QueryableStoreTypes.windowStore());
+    }
+
+    public KafkaStreams streams() {
+        return streams;
     }
 
     /**

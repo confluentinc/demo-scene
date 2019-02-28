@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Properties;
 
 public class AccountProcessor {
+    public static final String STORE_NAME = "account";
     private final KTable<String, AccountBalance> accountBalanceKTable;
     private final Topology topology;
 
@@ -42,7 +43,7 @@ public class AccountProcessor {
         StreamsBuilder builder = new StreamsBuilder();
         KStream<String, Payment> inflight = builder.stream(paymentsInflightTopic);
 
-        Materialized<String, AccountBalance, KeyValueStore<Bytes, byte[]>> account = Materialized.as("account");
+        Materialized<String, AccountBalance, KeyValueStore<Bytes, byte[]>> account = Materialized.as(STORE_NAME);
         Materialized<String, AccountBalance, KeyValueStore<Bytes, byte[]>> accountStore = account.withKeySerde(new StringSerde()).withValueSerde(new AccountBalance.Serde());
 
 
@@ -92,7 +93,7 @@ public class AccountProcessor {
 
         log.info(topology.describe().toString());
 
-        microRestService = new KTableResourceEndpoint<>(new KVStoreProvider<>(streams, accountBalanceKTable));
+        microRestService = new KTableResourceEndpoint<String, AccountBalance>(new KVStoreProvider<>(streams, accountBalanceKTable)){};
         microRestService.start(streamsConfig);
     }
 
@@ -112,5 +113,4 @@ public class AccountProcessor {
     public KafkaStreams streams() {
         return streams;
     }
-
 }

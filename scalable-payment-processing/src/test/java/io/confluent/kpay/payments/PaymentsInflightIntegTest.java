@@ -16,6 +16,7 @@
 package io.confluent.kpay.payments;
 
 import io.confluent.kpay.control.PauseControllable;
+import io.confluent.kpay.ktablequery.KTableRestClient;
 import io.confluent.kpay.utils.IntegrationTestHarness;
 import io.confluent.kpay.payments.model.Payment;
 import io.confluent.kpay.payments.model.PaymentStats;
@@ -36,7 +37,6 @@ import java.util.*;
 public class PaymentsInflightIntegTest {
 
 
-  private TopologyTestDriver testDriver;
   private IntegrationTestHarness testHarness;
   private String bootstrapServers;
 
@@ -64,13 +64,31 @@ public class PaymentsInflightIntegTest {
   }
 
 
-
   @Test
-  public void restInterfaceWorks() throws Exception {
+  public void restWindowClassTest() throws Exception {
+    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers), new PauseControllable());
+    paymentsInFlight.start();
+
+    Map<String, Payment> records = Collections.singletonMap("record1", new Payment("tnxId", "record1", "neil", "john", 10, Payment.State.incoming));
+    testHarness.produceData(paymentsIncomingTopic, records, new Payment.Serde().serializer(), System.currentTimeMillis());
+
+    // verify incoming events were generated
+    Map<String, Payment> inflightPayment = testHarness.consumeData(paymentsInflightTopic, 1, new StringDeserializer(), new Payment.Serde().deserializer(), 1000);
+
+    System.out.println("Inflight:"+ inflightPayment);
+
+    // try and use the rest endpoint
+
+    KTableRestClient<String, Payment> client = new KTableRestClient<String, Payment>(false, paymentsInFlight.getStreams(), "inflight") {};
+
+    int size = client.size();
+    System.out.println("Got size:" + size);
 
 
-
+    paymentsInFlight.stop();
   }
+
+
 
   @Test
   public void serviceSinglePayment() throws Exception {
@@ -90,7 +108,6 @@ public class PaymentsInflightIntegTest {
     System.out.println(value);
 
     paymentsInFlight.stop();
-
   }
 
 
@@ -123,6 +140,8 @@ public class PaymentsInflightIntegTest {
   private Properties getProperties(String broker) {
     Properties props = new Properties();
     props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TEST-APP-ID" + System.currentTimeMillis());
+    props.put(StreamsConfig.APPLICATION_SERVER_CONFIG, "localhost:2222");
+
     props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
     props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
     props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Payment.Serde.class.getName());

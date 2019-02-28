@@ -17,6 +17,7 @@ package io.confluent.kpay.payments;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import io.confluent.kpay.control.PauseControllable;
+import io.confluent.kpay.ktablequery.KTableRestClient;
 import io.confluent.kpay.payments.model.AccountBalance;
 import io.confluent.kpay.payments.model.ConfirmedStats;
 import io.confluent.kpay.payments.model.Payment;
@@ -77,13 +78,13 @@ public class PaymentsIntegrationTest {
   @Test
   public void serviceSinglePayment() throws Exception {
 
-    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers), new PauseControllable());
+    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers, 1111), new PauseControllable());
     paymentsInFlight.start();
 
-    AccountProcessor accountProcessor = new AccountProcessor(paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers));
+    AccountProcessor accountProcessor = new AccountProcessor(paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers, 2222));
     accountProcessor.start();
 
-    PaymentsConfirmed paymentsConfirmed = new PaymentsConfirmed(paymentsCompleteTopic, paymentsConfirmedTopic, getProperties(bootstrapServers));
+    PaymentsConfirmed paymentsConfirmed = new PaymentsConfirmed(paymentsCompleteTopic, paymentsConfirmedTopic, getProperties(bootstrapServers, 3333));
     paymentsConfirmed.start();
 
 
@@ -115,7 +116,6 @@ public class PaymentsIntegrationTest {
     System.out.println("------ done checking accounts -------");
 
 
-
     // verify the postal state of each processor, i.e. inflight == 0; neil == -10; john == 10; confirmed == 10
 
     KeyValueIterator<Windowed<String>, PaymentStats> all = paymentsInFlight.getStore().all();
@@ -136,20 +136,45 @@ public class PaymentsIntegrationTest {
       Assert.assertEquals("Confirmed Processor", 10, value1.getAmount(), 0);
     }
 
-    System.out.println("META :" + accountProcessor.allMetaData());;
+    Thread.sleep(100);
 
+    // Account REST test
+    KTableRestClient<String, AccountBalance> accountClient = new KTableRestClient<String, AccountBalance>(true, accountProcessor.streams(), AccountProcessor.STORE_NAME){};
+    System.out.println("AccountSize-1:" + accountClient.size());
+
+
+//    Rest
+    KTableRestClient<String, PaymentStats> inflightClient = new KTableRestClient<String, PaymentStats>(false, paymentsInFlight.streams(), PaymentsInFlight.STORE_NAME){};
+    int inflightSize = inflightClient.size();
+    System.out.println("InflightSize:" + inflightSize);
+    inflightClient.stop();
+
+    Thread.sleep(1000);
+
+
+    System.out.println("AccountSize-2:" + accountClient.size());
+    accountClient.stop();
+
+
+    KTableRestClient<String, PaymentStats> confirmedClient = new KTableRestClient<String, PaymentStats>(false, paymentsConfirmed.streams(), PaymentsConfirmed.STORE_NAME){};
+    int confirmedSize = confirmedClient.size();
+    System.out.println("ConfirmedSize:" + confirmedSize);
+    confirmedClient.stop();
+
+    stopProcessors(paymentsInFlight, accountProcessor, paymentsConfirmed);
   }
+
 
   @Test
   public void serviceMultiplePayments() throws Exception {
 
-    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers), new PauseControllable());
+    PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers, 1111), new PauseControllable());
     paymentsInFlight.start();
 
-    AccountProcessor accountProcessor = new AccountProcessor(paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers));
+    AccountProcessor accountProcessor = new AccountProcessor(paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers, 2222));
     accountProcessor.start();
 
-    PaymentsConfirmed paymentsConfirmed = new PaymentsConfirmed(paymentsCompleteTopic, paymentsConfirmedTopic, getProperties(bootstrapServers));
+    PaymentsConfirmed paymentsConfirmed = new PaymentsConfirmed(paymentsCompleteTopic, paymentsConfirmedTopic, getProperties(bootstrapServers, 3333));
     paymentsConfirmed.start();
 
 
@@ -190,14 +215,22 @@ public class PaymentsIntegrationTest {
     for (KeyValueIterator<Windowed<String>, ConfirmedStats> it = confirmedStore.all(); it.hasNext(); ) {
       System.out.println("Test Confirmed Processor:" + it.next().value);
     }
+
+    stopProcessors(paymentsInFlight, accountProcessor, paymentsConfirmed);
+
+  }
+
+  private void stopProcessors(PaymentsInFlight paymentsInFlight, AccountProcessor accountProcessor, PaymentsConfirmed paymentsConfirmed) {
+    accountProcessor.stop();
+    paymentsInFlight.stop();
+    paymentsConfirmed.stop();
   }
 
 
-
-  private Properties getProperties(String broker) {
+  private Properties getProperties(String broker, int port) {
     Properties props = new Properties();
     props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TEST-APP-ID-" + instanceId++);
-    props.put(StreamsConfig.APPLICATION_SERVER_CONFIG, "localhost:11111");
+    props.put(StreamsConfig.APPLICATION_SERVER_CONFIG, "localhost:" + port);
     props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
     props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
     props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Payment.Serde.class.getName());

@@ -15,6 +15,8 @@
  **/
 package io.confluent.kpay.payments;
 
+import io.confluent.kpay.ktablequery.KTableRestClient;
+import io.confluent.kpay.payments.model.AccountBalance;
 import io.confluent.kpay.payments.model.Payment;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -90,11 +92,22 @@ public class AccountProcessorTest {
 
     Assert.assertEquals(Payment.State.complete, completeRecord.value().getState());
 
+    // Account REST test
+    KTableRestClient<String, AccountBalance> accountClient = new KTableRestClient<String, AccountBalance>(true, processor.streams(), "account"){};
+    int accountSize = accountClient.size();
+    System.out.println("AccountSize:" + accountSize);
+    accountClient.stop();
+
+    processor.stop();
+
+
+
   }
 
   private Properties getProperties(String broker) {
     Properties props = new Properties();
-    props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TEST-APP-ID");// + System.currentTimeMillis());
+    props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TEST-APP-ID" + System.currentTimeMillis());
+    props.put(StreamsConfig.APPLICATION_SERVER_CONFIG, "localhost:1111");
     props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
     props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
     props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Payment.Serde.class.getName());

@@ -23,6 +23,7 @@ import java.util.Set;
  */
 public class KTableRestClient<K,V> extends AbstractKTableClient<K,V> implements KTableResource<K,V> {
 
+    private final String rootPath;
     Class keyClass;
     Class valueClass;
 
@@ -30,12 +31,13 @@ public class KTableRestClient<K,V> extends AbstractKTableClient<K,V> implements 
     private KafkaStreams streams;
     private String store;
 
-    public KTableRestClient(KafkaStreams streams, String store) {
+    public KTableRestClient(boolean isKTable, KafkaStreams streams, String store) {
+        this.rootPath = isKTable ? "ktable" : "windowktable";
         this.streams = streams;
         this.store = store;
         client.register(JacksonJsonProvider.class);
 
-        Class[] genericTypes = GenericClassUtil.getGenericTypes(this.getClass());
+        Class[] genericTypes = GenericClassUtil.getGenericType(this.getClass());
         keyClass = genericTypes[0];
         valueClass = genericTypes[1];
     }
@@ -43,11 +45,10 @@ public class KTableRestClient<K,V> extends AbstractKTableClient<K,V> implements 
     @Override
     public int size() {
         int result = 0;
-        MetadataService metadataService = new MetadataService(streams);
-        List<HostStoreInfo> hostStoreInfos = metadataService.streamsMetadataForStore(store);
+        List<HostStoreInfo> hostStoreInfos = getHostStoreInfos();
 
         for (HostStoreInfo hostStoreInfo : hostStoreInfos) {
-            result += client.target(hostStoreInfo.getAddress()).path("/ktable/size")
+            result += client.target(hostStoreInfo.getAddress()).path(String.format("/%s/size", rootPath))
                     .request(MediaType.APPLICATION_JSON)
                     .get(int.class);
         }
@@ -57,12 +58,11 @@ public class KTableRestClient<K,V> extends AbstractKTableClient<K,V> implements 
     @Override
     public Set<K> keySet() {
 
-        MetadataService metadataService = new MetadataService(streams);
-        List<HostStoreInfo> hostStoreInfos = metadataService.streamsMetadataForStore(store);
+        List<HostStoreInfo> hostStoreInfos = getHostStoreInfos();
 
         HashSet<K> result = new HashSet<>();
         for (HostStoreInfo hostStoreInfo : hostStoreInfos) {
-            result.addAll(client.target(hostStoreInfo.getAddress()).path("/ktable/keys")
+            result.addAll(client.target(hostStoreInfo.getAddress()).path(String.format("/%s/keys", rootPath))
                     .request(MediaType.APPLICATION_JSON)
                     .get(Set.class));
         }
@@ -71,10 +71,9 @@ public class KTableRestClient<K,V> extends AbstractKTableClient<K,V> implements 
 
     @Override
     public V get(K k) {
-        MetadataService metadataService = new MetadataService(streams);
-        HostStoreInfo hostStoreInfo = metadataService.streamsMetadataForStoreAndKey(store, (String) k, new StringSerializer());
+        HostStoreInfo hostStoreInfo = getHostStoreInfoForKey((String) k);
 
-        WebTarget tsTarget = client.target(hostStoreInfo.getAddress()).path("/ktable/get");
+        WebTarget tsTarget = client.target(hostStoreInfo.getAddress()).path(String.format("/%s/get", rootPath));
 
         V response =
                 (V) tsTarget.request(MediaType.APPLICATION_JSON_TYPE)
@@ -85,17 +84,32 @@ public class KTableRestClient<K,V> extends AbstractKTableClient<K,V> implements 
 
     @Override
     public List<Pair<K, V>> get(List<K> query) {
-        MetadataService metadataService = new MetadataService(streams);
-        List<HostStoreInfo> hostStoreInfos = metadataService.streamsMetadataForStore(store);
+        List<HostStoreInfo> hostStoreInfos = getHostStoreInfos();
 
         // sub optimal - sending all keys to each host
         List result = new ArrayList<Pair<K, V>>();
         for (HostStoreInfo hostStoreInfo : hostStoreInfos) {
-            result.addAll(client.target(hostStoreInfo.getAddress()).path("/ktable/getQuery")
+            result.addAll(client.target(hostStoreInfo.getAddress()).path(String.format("/%s/getQuery", rootPath))
                     .request(MediaType.APPLICATION_JSON)
                     .get(List.class));
         }
         return result;
+    }
 
+    /**
+     * Protected for testing purposes
+     * @return
+     */
+    protected List<HostStoreInfo> getHostStoreInfos() {
+        MetadataService metadataService = new MetadataService(streams);
+        return metadataService.streamsMetadataForStore(store);
+    }
+    protected HostStoreInfo getHostStoreInfoForKey(String k) {
+        MetadataService metadataService = new MetadataService(streams);
+        return metadataService.streamsMetadataForStoreAndKey(store, k, new StringSerializer());
+    }
+
+    public void stop() {
+        client.close();
     }
 }
