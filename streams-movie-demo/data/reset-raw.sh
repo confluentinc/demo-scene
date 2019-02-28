@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-confluent destroy
-confluent start schema-registry
+# confluent destroy
+# confluent start schema-registry
 cat movies.dat| kafka-console-producer --broker-list localhost:9092 --topic raw-movies
 cat ratings.dat | kafka-console-producer --broker-list localhost:9092 --topic raw-ratings
 # enable compaction for this topics
