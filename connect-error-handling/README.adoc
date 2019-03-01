@@ -1,0 +1,46 @@
+= Kafka Connect - Error Handling
+Robin Moffatt, <robin@confluent.io>
+v1.00, January 27, 2019
+
+== Overview
+
+This is an environment for testing Kafka Connect's error handling behaviour. It's vanilla Confluent Platform 5.1 plus: 
+
+* Three test data producers
+** `json-corrupt-producer` / `json-producer` - uses kafkacat to send JSON to `test_topic_json`
+** `avro-producer` - uses `kafka-avro-console-producer` to send JSON to `test_topic_avro`
+* jmxtrans / InfluxDB / Grafana - for extracting/storing/visualising JMX metrics from Kafka Connect
+* Elasticsearch for testing Sink behaviour
+
+== Launching the environment
+
+[source,bash]
+----
+docker-compose up -d
+----
+
+== Connector definitions
+
+Each connector's definition is available in the main text of the supporting article
+
+== Generating data
+
+Each producer is a separate Docker container that will run once. To run them again run 
+
+[source,bash]
+----
+docker-compose start json-producer
+docker-compose start json-corrupt-producer
+docker-compose start avro-producer
+----
+
+== Importing Grafana dashboard
+
+This command should create the InfluxDB data source in Grafana: 
+
+[source,bash]
+----
+curl --user admin:admin -X POST http://localhost:3000/api/datasources -H "Content-Type: application/json" -d '{"orgId":1,"name":"InfluxDB","type":"influxdb","typeLogoUrl":"","access":"proxy","url":"http://influxdb:8086","password":"","user":"","database":"influx","basicAuth":false,"basicAuthUser":"","basicAuthPassword":"","withCredentials":false,"isDefault":true,"jsonData":{"keepCookies":[]},"secureJsonFields":{},"version":2,"readOnly":false}'
+----
+
+Manually import the JSON dashboard definition: `config/grafana-dashboard_by_connector.json`
