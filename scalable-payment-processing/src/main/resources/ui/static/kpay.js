@@ -195,7 +195,7 @@ function createChart() {
                 cubicInterpolationMode: 'monotone'
             },
             {
-                label: 'Payment Total ',
+                label: 'Payment $ Total ',
                 data: [],
                 type: 'line',
                 pointRadius: 1,
@@ -207,7 +207,7 @@ function createChart() {
                 borderWidth: 2,
                 cubicInterpolationMode: 'monotone'
             },{
-                label: 'Max latency',
+                label: 'Max latency (ms)',
                 data: [],
                 type: 'line',
                 pointRadius: 1,
@@ -218,7 +218,7 @@ function createChart() {
                 borderWidth: 2,
                 cubicInterpolationMode: 'monotone'
             },{
-                label: 'Min latency',
+                label: 'Min latency (ms)',
                 data: [],
                 type: 'line',
                 pointRadius: 1,
