@@ -7,17 +7,19 @@ import io.confluent.kpay.util.WrapperSerde;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+
 public class PaymentStats {
     private static final Logger log = LoggerFactory.getLogger(PaymentStats.class);
 
     private int count;
-    private double amount;
+    private BigDecimal amount = new BigDecimal(0);
 
-    public double getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
 
@@ -26,11 +28,11 @@ public class PaymentStats {
 
         if (value.getState() == Payment.State.incoming) {
             // accumulate on 'incoming' payment
-            this.amount += value.getAmount();
+            this.amount = this.amount.add(value.getAmount());
             this.count++;
         } else if (value.getState() == Payment.State.complete) {
             // remove 'complete'd payments
-            this.amount -= value.getAmount();
+            this.amount = this.amount.subtract(value.getAmount());
             this.count--;
         }
 

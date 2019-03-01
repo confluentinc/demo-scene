@@ -32,6 +32,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.math.BigDecimal;
 import java.util.Properties;
 
 public class AccountProcessorTest {
@@ -76,7 +77,7 @@ public class AccountProcessorTest {
     );
 
     // test
-    Payment payment = new Payment("txnId", "id","from","to", 123.0, Payment.State.debit);
+    Payment payment = new Payment("txnId", "id","from","to", new BigDecimal(123.0), Payment.State.debit, System.currentTimeMillis());
     testDriver.pipeInput(factory.create(inflight, "key", payment));
     testDriver.close();
 

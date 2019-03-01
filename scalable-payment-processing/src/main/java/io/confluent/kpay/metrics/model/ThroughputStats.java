@@ -8,6 +8,8 @@ import io.confluent.kpay.util.WrapperSerde;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+
 /**
  * Tracks per second metrics
  * - totalPayments number of events per second
@@ -19,19 +21,30 @@ public class ThroughputStats {
 
     private int totalPayments;
     private int throughputPerWindow;
-    private double totalDollarAmount;
+    private BigDecimal totalDollarAmount = new BigDecimal(0);
     private long minLatency = Long.MAX_VALUE;
     private long maxLatency;
     private Payment largestPayment;
 
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    private long timestamp;
+
     public ThroughputStats update(Payment payment) {
         totalPayments++;
-        totalDollarAmount += payment.getAmount();
+        totalDollarAmount = totalDollarAmount.add(payment.getAmount());
         maxLatency = Math.max(maxLatency, payment.getElapsedMillis());
         minLatency = Math.min(minLatency, payment.getElapsedMillis());
-        if (largestPayment == null || payment.getAmount() > largestPayment.getAmount()) {
+        if (largestPayment == null || payment.getAmount().doubleValue() > largestPayment.getAmount().doubleValue()) {
             largestPayment = payment;
         }
+        timestamp = System.currentTimeMillis();
         return this;
     }
 
@@ -39,11 +52,49 @@ public class ThroughputStats {
         ThroughputStats result = new ThroughputStats();
         result.throughputPerWindow =  Math.max(this.throughputPerWindow, otherStats.throughputPerWindow);
         result.totalPayments += otherStats.totalPayments;
-        result.largestPayment = this.largestPayment != null && this.largestPayment.getAmount() > otherStats.largestPayment.getAmount() ? this.largestPayment : otherStats.largestPayment;
-        result.totalDollarAmount += otherStats.totalDollarAmount;
+        result.largestPayment = this.largestPayment != null && this.largestPayment.getAmount().doubleValue() > otherStats.largestPayment.getAmount().doubleValue() ? this.largestPayment : otherStats.largestPayment;
+        result.totalDollarAmount = result.totalDollarAmount.add(otherStats.totalDollarAmount);
         result.minLatency = Math.min(this.minLatency, otherStats.minLatency);
         result.maxLatency = Math.max(this.maxLatency, otherStats.maxLatency);
+        result.timestamp = System.currentTimeMillis();
         return result;
+    }
+
+
+    @Override
+    public String toString() {
+        return "ThroughputStats{" +
+                "totalPayments=" + totalPayments +
+                ", throughputPerWindow=" + throughputPerWindow +
+                ", totalDollarAmount=" + totalDollarAmount.doubleValue() +
+                ", minLatency=" + minLatency +
+                ", maxLatency=" + maxLatency +
+                ", largestPayment=" + largestPayment +
+                '}';
+    }
+
+    public void setTotalPayments(int totalPayments) {
+        this.totalPayments = totalPayments;
+    }
+
+    public void setThroughputPerWindow(int throughputPerWindow) {
+        this.throughputPerWindow = throughputPerWindow;
+    }
+
+    public void setTotalDollarAmount(BigDecimal totalDollarAmount) {
+        this.totalDollarAmount = totalDollarAmount;
+    }
+
+    public void setMinLatency(long minLatency) {
+        this.minLatency = minLatency;
+    }
+
+    public void setMaxLatency(long maxLatency) {
+        this.maxLatency = maxLatency;
+    }
+
+    public void setLargestPayment(Payment largestPayment) {
+        this.largestPayment = largestPayment;
     }
 
     public int getTotalPayments() {
@@ -54,7 +105,7 @@ public class ThroughputStats {
         return throughputPerWindow;
     }
 
-    public double getTotalDollarAmount() {
+    public BigDecimal getTotalDollarAmount() {
         return totalDollarAmount;
     }
 
@@ -68,18 +119,6 @@ public class ThroughputStats {
 
     public Payment getLargestPayment() {
         return largestPayment;
-    }
-
-    @Override
-    public String toString() {
-        return "ThroughputStats{" +
-                "totalPayments=" + totalPayments +
-                ", throughputPerWindow=" + throughputPerWindow +
-                ", totalDollarAmount=" + totalDollarAmount +
-                ", minLatency=" + minLatency +
-                ", maxLatency=" + maxLatency +
-                ", largestPayment=" + largestPayment +
-                '}';
     }
 
     static public final class Serde extends WrapperSerde<ThroughputStats> {

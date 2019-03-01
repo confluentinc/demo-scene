@@ -15,7 +15,6 @@
  **/
 package io.confluent.kpay.payments;
 
-import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import io.confluent.kpay.control.PauseControllable;
 import io.confluent.kpay.ktablequery.KTableRestClient;
 import io.confluent.kpay.payments.model.AccountBalance;
@@ -28,19 +27,15 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.TopologyTestDriver;
 import org.apache.kafka.streams.kstream.Windowed;
 import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.ReadOnlyWindowStore;
-import org.apache.kafka.streams.state.StreamsMetadata;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.MediaType;
+import java.math.BigDecimal;
 import java.util.*;
 
 public class PaymentsIntegrationTest {
@@ -90,7 +85,7 @@ public class PaymentsIntegrationTest {
 
     Thread.sleep(100);
 
-    Map<String, Payment> records = Collections.singletonMap("record1", new Payment("tnxId", "record1", "neil", "john", 10, Payment.State.incoming));
+    Map<String, Payment> records = Collections.singletonMap("record1", new Payment("tnxId", "record1", "neil", "john", new BigDecimal(10), Payment.State.incoming, System.currentTimeMillis()));
     testHarness.produceData(paymentsIncomingTopic, records, new Payment.Serde().serializer(), System.currentTimeMillis());
 
 
@@ -133,7 +128,7 @@ public class PaymentsIntegrationTest {
     for (KeyValueIterator<Windowed<String>, ConfirmedStats> it = confirmedStore.all(); it.hasNext(); ) {
       ConfirmedStats value1 = it.next().value;
       System.out.println("Test Confirmed Processor:" + value1);
-      Assert.assertEquals("Confirmed Processor", 10, value1.getAmount(), 0);
+      Assert.assertEquals("Confirmed Processor", 10, value1.getAmount().doubleValue(), 0);
     }
 
     Thread.sleep(100);
@@ -180,7 +175,7 @@ public class PaymentsIntegrationTest {
 
     Map<String, Payment> records = new HashedMap();
     for (int i = 0; i < 10; i++) {
-      records.put("record-" + i, new Payment("txn-" + i, "id-" +i, "frank-" + i, "neil", 100, Payment.State.incoming));
+      records.put("record-" + i, new Payment("txn-" + i, "id-" +i, "frank-" + i, "neil", new BigDecimal(100), Payment.State.incoming, System.currentTimeMillis()));
     }
     testHarness.produceData(paymentsIncomingTopic, records, new Payment.Serde().serializer(), System.currentTimeMillis());
 

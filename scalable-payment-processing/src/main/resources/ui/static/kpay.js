@@ -23,7 +23,7 @@ function displayServerVersion() {
     xhr.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             var serverVersionResponse = JSON.parse(this.responseText);
-            document.getElementById("copyright").innerHTML = "(c) Confluent Inc., KSQL server v" + serverVersionResponse.KsqlServerInfo.version
+            document.getElementById("copyright").innerHTML = "(c) Confluent Inc., KPay" + serverVersionResponse.KsqlServerInfo.version
         }
     };
     xhr.open("GET", "/info", true);
@@ -76,45 +76,18 @@ function isPrimitive(test) {
 
 function createTable() {
     var dataSet = []
-    taskTable = $('#taskTable').DataTable( {
+    accountTable = $('#accountTable').DataTable( {
         data: dataSet,
-        "columns" : [ { title: "Task-Id",
-                            "data" : "id"
-                        }, {title: "Group",
-                            "data" : "groupId"
+        "columns" : [ { title: "Username",
+                            "data" : "name"
+                        }, {title: "Amount",
+                            "data" : "amount"
                         }, {
-                            title: "Priority",
-                            "data" : "priority"
+                            title: "Last Amount",
+                            "data" : "lastAmount"
                         }, {
-                            title: "Tag",
-                            "data" : "tag"
-                        }, {
-                            title: "Source",
-                           "data" : "source"
-                        }, {
-                            title: "Status",
-                          "data" : "status"
-                        }, {
-                            title: "Submitted",
-                          "data" : "submitted"
-                        }, {
-                            title: "Allocated",
-                          "data" : "allocated"
-                        }, {
-                            title: "Running",
-                          "data" : "running"
-                        }, {
-                            title: "Completed",
-                          "data" : "completed"
-                        }, {
-                            title: "Duration",
-                          "data" : "duration"
-                        }, {
-                            title: "Worker",
-                          "data" : "workerEndpoint"
-                        }, {
-                            title: "Meta",
-                          "data" : "meta"
+                            title: "Last When?",
+                            "data" : "lastWhen"
                         }
                      ]
     } );
@@ -124,30 +97,32 @@ function createTable() {
     })
 }
 
+/**
+ * {
+    "amount": -186.68,
+    "lastPayment": {
+      "amount": 41.09,
+      "from": "mary",
+      "id": "mary",
+      "state": "debit",
+      "timestamp": 1551455838493,
+      "to": "adrian",
+      "txnId": "pay-1551455838493"
+    },
+    "name": "mary"
+  }
+ */
 function refreshTable() {
     $.get({
-          url:"/kwq/tasks",
+          url:"/kpay/listAccounts",
           success:function(data){
-                taskTable.clear();
+                accountTable.clear();
                 data.forEach(e => {
-                    e.duration = ""
-                    if (e.submitted_ts != 0) { e.submitted = moment(e.submitted_ts).format("HH:mm:ss") }
-                    else { e.submitted = "" }
-
-                    if (e.allocated_ts != 0) { e.allocated = moment(e.allocated_ts).format("HH:mm:ss") }
-                    else { e.allocated = "" }
-
-                    if (e.running_ts != 0) { e.running = moment(e.running_ts).format("HH:mm:ss") }
-                    else { e.running = ""}
-
-                    if (e.completed_ts != 0) {
-                        e.completed = moment(e.completed_ts).format("HH:mm:ss")
-                        e.duration = (e.completed_ts - e.running_ts) / 1000
-                        }
-                    else { e.completed = "" }
+                    e.lastAmount = e.lastPayment.amount;
+                    e.lastWhen = moment(e.lastPayment.timestamp);
                 })
-                taskTable.rows.add(data);
-                taskTable.draw();
+                accountTable.rows.add(data);
+                accountTable.draw();
             return false;
           }
     })
@@ -192,10 +167,26 @@ function createChart() {
           "completed": 0,
           "time": 0
         }
+         {
+  "largestPayment": {
+    "amount": 75.66,
+    "from": "larry",
+    "id": "pay-1551457231539",
+    "state": "complete",
+    "timestamp": 1551457231539,
+    "to": "allan",
+    "txnId": "pay-1551457231539"
+  },
+  "totalPayments": 3
+  "totalDollarAmount": 170.22,
+  "maxLatency": 471,
+  "minLatency": 338,
+  "throughputPerWindow": 0,
+}
         **/
             datasets: [{
-                label: 'Total',
-                data: data,
+                label: 'Payment Count',
+                data: [],
                 type: 'line',
                 pointRadius: 1,
                 fill: false,
@@ -204,8 +195,8 @@ function createChart() {
                 cubicInterpolationMode: 'monotone'
             },
             {
-                label: 'Submitted',
-                data: data,
+                label: 'Payment Total ',
+                data: [],
                 type: 'line',
                 pointRadius: 1,
                 fill: false,
@@ -216,8 +207,8 @@ function createChart() {
                 borderWidth: 2,
                 cubicInterpolationMode: 'monotone'
             },{
-                label: 'Allocated',
-                data: data,
+                label: 'Max latency',
+                data: [],
                 type: 'line',
                 pointRadius: 1,
                 fill: false,
@@ -227,8 +218,8 @@ function createChart() {
                 borderWidth: 2,
                 cubicInterpolationMode: 'monotone'
             },{
-                label: 'Running',
-                data: data,
+                label: 'Min latency',
+                data: [],
                 type: 'line',
                 pointRadius: 1,
                 fill: false,
@@ -236,29 +227,6 @@ function createChart() {
                 borderColor: window.chartColors.blue,
                 lineTension: 0,
                 borderWidth: 2
-            }, {
-                label: 'Error',
-                data: data,
-                type: 'line',
-                pointRadius: 3,
-                fill: false,
-                backgroundColor: window.chartColors.red,
-                borderColor: window.chartColors.red,
-                lineTension: 0,
-                borderWidth: 2,
-                cubicInterpolationMode: 'monotone'
-            },
-            {
-                label: 'Complete',
-                data: data,
-                type: 'line',
-                pointRadius: 2,
-                fill: false,
-                backgroundColor: window.chartColors.green,
-                borderColor: window.chartColors.green,
-                lineTension: 0,
-                borderWidth: 2,
-                cubicInterpolationMode: 'monotone'
             }]
         },
         options: {
@@ -270,7 +238,7 @@ function createChart() {
                 yAxes: [{
                     scaleLabel: {
                         display: true,
-                        labelString: 'Task status by Job'
+                        labelString: 'Payment statistics'
                     }
                 }]
             }
@@ -297,62 +265,39 @@ function addChartData(label, data) {
 
 
 /**
-{
-  "total": 0,
-  "submitted": 0,
-  "allocated": 0,
-  "running": 0,
-  "error": 0,
-  "completed": 0,
-  "time": 0
-}
+ "totalPayments": 3
+ "totalDollarAmount": 170.22,
+ "maxLatency": 471,
+ "minLatency": 338,
 **/
 function refreshChart() {
     $.get({
-          url:"/kwq/stats",
-          success:function(data){
-          chart.data.datasets[0].data = []
-          chart.data.datasets[1].data = []
-          chart.data.datasets[2].data = []
-          chart.data.datasets[3].data = []
-          chart.data.datasets[4].data = []
-          chart.data.datasets[5].data = []
-                data.forEach(e => {
-                    console.log(e)
-                    var total = new Object();
-                    total.y = e.total;
-                    total.t = e.time;
+        url: "/kpay/metrics/throughput",
+        success: function (e) {
+            console.log(e)
+            var totalPayments = new Object();
+            totalPayments.y = e.totalPayments;
+            totalPayments.t = e.timestamp;
 
-                    var submitted = new Object();
-                    submitted.y = e.submitted;
-                    submitted.t = e.time;
+            var totalDollarAmount = new Object();
+            totalDollarAmount.y = e.totalDollarAmount;
+            totalDollarAmount.t = e.timestamp;
 
-                    var allocated = new Object();
-                    allocated.y = e.allocated;
-                    allocated.t = e.time;
+            var maxLatency = new Object();
+            maxLatency.y = e.maxLatency;
+            maxLatency.t = e.timestamp;
 
-                    var running = new Object();
-                    running.y = e.running;
-                    running.t = e.time;
+            var minLatency = new Object();
+            minLatency.y = e.minLatency;
+            minLatency.t = e.timestamp;
 
-                    var error = new Object();
-                    error.y = e.error;
-                    error.t = e.time;
-
-                    var completed = new Object();
-                    completed.y = e.completed;
-                    completed.t = e.time;
-
-                    chart.data.datasets[0].data.push(total);
-                    chart.data.datasets[1].data.push(submitted);
-                    chart.data.datasets[2].data.push(allocated);
-                    chart.data.datasets[3].data.push(running);
-                    chart.data.datasets[4].data.push(error);
-                    chart.data.datasets[5].data.push(completed);
-                })
-                chart.update();
+            chart.data.datasets[0].data.push(totalPayments);
+            chart.data.datasets[1].data.push(totalDollarAmount);
+            chart.data.datasets[2].data.push(maxLatency);
+            chart.data.datasets[3].data.push(minLatency);
+            chart.update();
             return false;
-          }
+        }
     })
 }
 

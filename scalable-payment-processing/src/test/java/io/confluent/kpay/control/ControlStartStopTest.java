@@ -15,8 +15,6 @@
  **/
 package io.confluent.kpay.control;
 
-import io.confluent.kpay.metrics.PaymentsThroughput;
-import io.confluent.kpay.metrics.model.ThroughputStats;
 import io.confluent.kpay.payments.model.Payment;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serdes;
@@ -32,6 +30,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Properties;
 
@@ -91,7 +90,7 @@ public class ControlStartStopTest {
     // processor is already waiting
 
     // test
-    Payment payment = new Payment("txnId", "id","from","to", 123.0, Payment.State.debit);
+    Payment payment = new Payment("txnId", "id","from","to", new BigDecimal(123.0), Payment.State.debit, 0);
     payment.setStateAndId(Payment.State.debit);
 
 

@@ -9,13 +9,13 @@ import org.apache.kafka.streams.processor.ProcessorContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+
 
 /**
- * States: incoming, debit, credit, complete, confirmed
+ *
  */
 public class Payment {
-
-    static Logger log = LoggerFactory.getLogger(Payment.class);
 
     public enum State {incoming, debit, credit, complete, confirmed};
 
@@ -23,18 +23,30 @@ public class Payment {
     private String txnId;
     private String from;
     private String to;
-    private double amount;
+    private BigDecimal amount;
+
     private int state;
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    private long timestamp;
     private long processStartTime;
 
     public Payment(){};
-    public Payment(String txnId, String id, String from, String to, double amount, State state){
+    public Payment(String txnId, String id, String from, String to, BigDecimal amount, State state, long timestamp){
         this.txnId = txnId;
         this.id = id;
         this.from = from;
         this.to = to;
         this.amount = amount;
         this.state = state.ordinal();
+        this.timestamp = timestamp;
     }
 
     public String getTxnId() {
@@ -69,11 +81,11 @@ public class Payment {
         this.to = to;
     }
 
-    public double getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
 
@@ -111,7 +123,7 @@ public class Payment {
                 ", txnId='" + txnId + '\'' +
                 ", from='" + from + '\'' +
                 ", to='" + to + '\'' +
-                ", amount=" + amount +
+                ", amount=" + amount.doubleValue() +
                 ", state=" + getState() +
                 '}';
     }

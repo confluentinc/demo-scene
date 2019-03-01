@@ -5,15 +5,17 @@ import io.confluent.kpay.control.Controllable;
 import io.confluent.kpay.control.PauseControllable;
 import io.confluent.kpay.control.StartStopController;
 import io.confluent.kpay.control.model.Status;
+import io.confluent.kpay.ktablequery.KTableResourceEndpoint;
 import io.confluent.kpay.metrics.PaymentsThroughput;
+import io.confluent.kpay.metrics.model.ThroughputStats;
 import io.confluent.kpay.payments.AccountProcessor;
 import io.confluent.kpay.payments.PaymentsConfirmed;
 import io.confluent.kpay.payments.PaymentsInFlight;
+import io.confluent.kpay.payments.model.AccountBalance;
 import io.confluent.kpay.payments.model.Payment;
-import io.confluent.kpay.ktablequery.HostStoreInfo;
 import io.confluent.kpay.util.KafkaTopicClient;
 import io.confluent.kpay.util.KafkaTopicClientImpl;
-import io.confluent.kpay.ktablequery.MetadataService;
+import io.confluent.kpay.util.Pair;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -26,11 +28,14 @@ import org.apache.kafka.streams.state.StreamsMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.core.MediaType;
+import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
+
+import static java.util.Collections.*;
 
 public class KPayAllInOneImpl implements KPay {
     private static final Logger log = LoggerFactory.getLogger(KPayAllInOneImpl.class);
@@ -147,13 +152,13 @@ public class KPayAllInOneImpl implements KPay {
 
             int position;
             String[] from = new String[]{"larry", "joe", "mary", "bob"};
-            String[] to = new String[]{"allan", "alex", "andrian", "ally"};
+            String[] to = new String[]{"allan", "alex", "adrian", "ally"};
 
             @Override
             public void run() {
 
                 try {
-                    Payment payment = new Payment("paymemt-" + System.currentTimeMillis(), System.currentTimeMillis() + "", from[position % from.length], to[position % from.length], Math.random() * 100, Payment.State.incoming);
+                    Payment payment = new Payment("pay-" + System.currentTimeMillis(), System.currentTimeMillis() + "", from[position % from.length], to[position % from.length], new BigDecimal(Math.round((Math.random() * 100.0)*100.0)/100.0), Payment.State.incoming, System.currentTimeMillis() );
                     log.info("Send:" + payment);
                     producer.send(buildRecord(paymentsIncomingTopic, System.currentTimeMillis(), payment.getId(), payment));
                     position++;
@@ -185,28 +190,18 @@ public class KPayAllInOneImpl implements KPay {
     }
 
     @Override
-    public String viewMetrics() {
-        return instrumentationThroughput.getStats().toString();
+    public ThroughputStats viewMetrics() {
+        return instrumentationThroughput.getStats();
     }
 
 
     @Override
-    public String listAccounts() {
-        // run an IQ on each account processor
-        //paymentAccountProcessor
-
-        Collection<StreamsMetadata> streamsMetadata = paymentAccountProcessor.allMetaData();
-        System.out.println("----------------\n\n\n=========" + streamsMetadata);
-        MetadataService metadataService = new MetadataService(paymentAccountProcessor.streams());
-        List<HostStoreInfo> hostStoreInfos = metadataService.streamsMetadata();
-
-//        Set<String> result = client.target("http://localhost:11111").path("/ktable/keys")
-//                .request(MediaType.APPLICATION_JSON)
-//                .get(Set.class);
-
-//        KTableResource
-
-        return "stuff";
+    public List<AccountBalance> listAccounts() {
+        KTableResourceEndpoint<String, AccountBalance> microRestService = paymentAccountProcessor.getMicroRestService();
+        List<String> accountKeys = new ArrayList<>(microRestService.keySet());
+        sort(accountKeys);
+        List<Pair<String, AccountBalance>> pairs = microRestService.get(accountKeys);
+        return pairs.stream().map(p -> p.getV()).collect(Collectors.toList());
     }
 
     @Override

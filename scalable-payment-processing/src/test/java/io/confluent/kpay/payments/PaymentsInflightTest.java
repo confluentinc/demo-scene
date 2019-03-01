@@ -32,6 +32,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Properties;
 
@@ -76,7 +77,7 @@ public class PaymentsInflightTest {
     );
 
     // test
-    Payment payment = new Payment("txnId", "id","from","to", 123.0, Payment.State.complete);
+    Payment payment = new Payment("txnId", "id","from","to", new BigDecimal(123.0), Payment.State.complete, System.currentTimeMillis());
     testDriver.pipeInput(factory.create(complete, "key", payment));
     testDriver.close();
 
@@ -123,7 +124,7 @@ public class PaymentsInflightTest {
     );
 
     // test
-    Payment payment = new Payment("txnId", "id","from","to", 123.0, Payment.State.complete);
+    Payment payment = new Payment("txnId", "id","from","to", new BigDecimal(123.0), Payment.State.complete, System.currentTimeMillis());
     testDriver.pipeInput(factory.create(complete, "key", payment));
     testDriver.close();
 
@@ -168,7 +169,7 @@ public class PaymentsInflightTest {
     );
 
     // test
-    Payment payment = new Payment("txnId", "id","from","to", 123.0, Payment.State.incoming);
+    Payment payment = new Payment("txnId", "id","from","to", new BigDecimal(123.0), Payment.State.incoming, System.currentTimeMillis());
     testDriver.pipeInput(factory.create(incoming, "key", payment));
     testDriver.close();
 

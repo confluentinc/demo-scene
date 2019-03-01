@@ -14,6 +14,7 @@ import org.apache.kafka.streams.processor.ProcessorContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 /**
@@ -25,15 +26,28 @@ public class AccountBalance {
 
     static Logger log = LoggerFactory.getLogger(AccountBalance.class);
 
-    private String name;
-    private Payment lastPayment;
-    private double amount;
+    public String getName() {
+        return name;
+    }
 
-    public double getAmount() {
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    private String name;
+
+    public void setLastPayment(Payment lastPayment) {
+        this.lastPayment = lastPayment;
+    }
+
+    private Payment lastPayment;
+    private BigDecimal amount = new BigDecimal(0);
+
+    public BigDecimal getAmount() {
         return amount;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
 
@@ -44,14 +58,14 @@ public class AccountBalance {
         log.debug("handle: {} : {} ", "not-set", value);
 
         if (value.getState() == Payment.State.debit) {
-            this.amount -= value.getAmount();
+            this.amount = this.amount.subtract(value.getAmount());
         } else if (value.getState() == Payment.State.credit) {
-            this.amount += value.getAmount();
+            this.amount = this.amount.add(value.getAmount());
         } else {
             // report to dead letter queue via exception handler
             throw new RuntimeException("Invalid payment received:" + value);
         }
-        log.info("      id: {} amount: {}", this.name, this.amount);
+        log.info("      id: {} amount: {}", this.name, this.amount.doubleValue());
 
         this.lastPayment = value;
         return this;

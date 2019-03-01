@@ -24,14 +24,13 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.TopologyTestDriver;
-import org.apache.kafka.streams.processor.StateStore;
 import org.apache.kafka.streams.test.ConsumerRecordFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Map;
+import java.math.BigDecimal;
 import java.util.Properties;
 
 public class PaymentsConfirmedTest {
@@ -76,7 +75,7 @@ public class PaymentsConfirmedTest {
     );
 
     // test
-    Payment payment = new Payment("txnId", "id","from","to", 123.0, Payment.State.complete);
+    Payment payment = new Payment("txnId", "id","from","to", new BigDecimal(123.0), Payment.State.complete, System.currentTimeMillis());
     testDriver.pipeInput(factory.create(complete, "key", payment));
     testDriver.close();
 

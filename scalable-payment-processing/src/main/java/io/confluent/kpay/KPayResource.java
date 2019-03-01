@@ -15,6 +15,8 @@
  **/
 package io.confluent.kpay;
 
+import io.confluent.kpay.metrics.model.ThroughputStats;
+import io.confluent.kpay.payments.model.AccountBalance;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -25,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import java.util.List;
 
 /**
  *
@@ -58,7 +61,7 @@ public class KPayResource {
     @GET
     @Path("/generatePayments")
     @Operation(summary = "start processing some payments",
-            tags = {"query"},
+            tags = {"test"},
             responses = {
                     @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),
                     @ApiResponse(responseCode = "405", description = "Invalid input")
@@ -72,7 +75,7 @@ public class KPayResource {
     @POST
     @Path("/stopPayments")
     @Operation(summary = "stop processing some payments",
-            tags = {"query"},
+            tags = {"test"},
             responses = {
                     @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),
                     @ApiResponse(responseCode = "405", description = "Invalid input")
@@ -88,19 +91,19 @@ public class KPayResource {
      * @return
      */
     @GET
-    @Path("/viewMetrics")
-    @Operation(summary = "view instrumentation metrics",
-            tags = {"trust"},
+    @Path("/metrics/throughput")
+    @Operation(summary = "view throughput metrics",
+            tags = {"metrics"},
             responses = {
                     @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),
                     @ApiResponse(responseCode = "405", description = "Invalid input")
             })
-    public String viewMetrics() {
+    public ThroughputStats viewMetrics() {
         return instance.getInstance().viewMetrics();
     }
 
 //    @GET
-//    @Path("/dlqMetrics")
+//    @Path("/metrics/dlq")
 //    public String dlqMetrics() {
 //        return instance.getInstance().viewMetrics();
 //    }
@@ -152,8 +155,14 @@ public class KPayResource {
     @GET
     @Produces("application/json")
     @Path("/listAccounts")
-    public String listAccounts() {
-        return String.format("{ status: \"%s\", message: \"processing status\", metrics: \"some metrics maybe?\" }", instance.getInstance().listAccounts());
+    @Operation(summary = "full set of accounts",
+            tags = {"data"},
+            responses = {
+                    @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "405", description = "Invalid input")
+            })
+    public List<AccountBalance> listAccounts() {
+        return instance.getInstance().listAccounts();
     };
 
 

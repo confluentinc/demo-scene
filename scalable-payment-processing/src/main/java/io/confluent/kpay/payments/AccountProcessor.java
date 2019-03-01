@@ -30,7 +30,7 @@ public class AccountProcessor {
 
     private Properties streamsConfig;
     private KafkaStreams streams;
-    private KTableResourceEndpoint microRestService;
+    private KTableResourceEndpoint<String, AccountBalance> microRestService;
 
 
     public AccountProcessor(String paymentsInflightTopic, String paymentsCompleteTopic, Properties streamsConfig){
@@ -112,5 +112,9 @@ public class AccountProcessor {
 
     public KafkaStreams streams() {
         return streams;
+    }
+
+    public KTableResourceEndpoint<String, AccountBalance> getMicroRestService() {
+        return microRestService;
     }
 }

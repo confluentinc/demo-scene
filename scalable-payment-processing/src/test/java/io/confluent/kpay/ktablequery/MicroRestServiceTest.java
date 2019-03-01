@@ -11,6 +11,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.MediaType;
+import java.math.BigDecimal;
 
 public class MicroRestServiceTest {
 
@@ -53,7 +54,7 @@ public class MicroRestServiceTest {
         }
 
         public Payment get() {
-            return new Payment("txn-1", "payment-id", "from", "to", 123, Payment.State.incoming);
+            return new Payment("txn-1", "payment-id", "from", "to", new BigDecimal(123), Payment.State.incoming, System.currentTimeMillis() );
         }
     }
 

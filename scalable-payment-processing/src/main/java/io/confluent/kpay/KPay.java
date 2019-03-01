@@ -15,6 +15,11 @@
  **/
 package io.confluent.kpay;
 
+import io.confluent.kpay.metrics.model.ThroughputStats;
+import io.confluent.kpay.payments.model.AccountBalance;
+
+import java.util.List;
+
 interface KPay {
 
     /**
@@ -40,12 +45,12 @@ interface KPay {
      * Trust plane: instumentation and dql's
      * @return
      */
-    String viewMetrics();
+    ThroughputStats viewMetrics();
 
     /**
      * Business plane
      * @return
      */
-    String listAccounts();
+    List<AccountBalance> listAccounts();
     String showAccountDetails(String accountName);
 }

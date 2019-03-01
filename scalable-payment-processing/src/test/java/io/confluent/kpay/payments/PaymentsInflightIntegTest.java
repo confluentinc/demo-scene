@@ -24,7 +24,6 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.TopologyTestDriver;
 import org.apache.kafka.streams.kstream.Windowed;
 import org.apache.kafka.streams.state.KeyValueIterator;
 import org.junit.After;
@@ -32,6 +31,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 public class PaymentsInflightIntegTest {
@@ -69,7 +69,7 @@ public class PaymentsInflightIntegTest {
     PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers), new PauseControllable());
     paymentsInFlight.start();
 
-    Map<String, Payment> records = Collections.singletonMap("record1", new Payment("tnxId", "record1", "neil", "john", 10, Payment.State.incoming));
+    Map<String, Payment> records = Collections.singletonMap("record1", new Payment("tnxId", "record1", "neil", "john", new BigDecimal(10), Payment.State.incoming, System.currentTimeMillis()));
     testHarness.produceData(paymentsIncomingTopic, records, new Payment.Serde().serializer(), System.currentTimeMillis());
 
     // verify incoming events were generated
@@ -95,7 +95,7 @@ public class PaymentsInflightIntegTest {
     PaymentsInFlight paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getProperties(bootstrapServers), new PauseControllable());
     paymentsInFlight.start();
 
-    Map<String, Payment> records = Collections.singletonMap("record1", new Payment("tnxId", "record1", "neil", "john", 10, Payment.State.incoming));
+    Map<String, Payment> records = Collections.singletonMap("record1", new Payment("tnxId", "record1", "neil", "john", new BigDecimal(10), Payment.State.incoming, System.currentTimeMillis()));
     testHarness.produceData(paymentsIncomingTopic, records, new Payment.Serde().serializer(), System.currentTimeMillis());
 
     // verify incoming events were generated
@@ -118,9 +118,9 @@ public class PaymentsInflightIntegTest {
     paymentsInFlight.start();
 
     Map<String, Payment> records = new HashMap<>();//
-    records.put("1", new Payment("id", "1", "neil", "john", 10, Payment.State.incoming));
-    records.put("2", new Payment("id", "1", "neil", "john", 100, Payment.State.incoming));
-    records.put("3", new Payment("id", "1", "neil", "john", 1000, Payment.State.incoming));
+    records.put("1", new Payment("id", "1", "neil", "john", new BigDecimal(10), Payment.State.incoming, System.currentTimeMillis()));
+    records.put("2", new Payment("id", "1", "neil", "john", new BigDecimal(100), Payment.State.incoming, System.currentTimeMillis()));
+    records.put("3", new Payment("id", "1", "neil", "john", new BigDecimal(1000), Payment.State.incoming, System.currentTimeMillis()));
 
     testHarness.produceData(paymentsIncomingTopic, records, new Payment.Serde().serializer(), System.currentTimeMillis());
 
