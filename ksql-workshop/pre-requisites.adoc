@@ -42,7 +42,7 @@ Should return a value greater than 8GB - if not, the Kafka stack will probably n
 +
 [source,bash]
 ----
-git clone https://github.com/confluentinc/examples.git
+git clone https://github.com/confluentinc/demo-scene.git
 ----
 
 0. Did you check that Docker has at least 8GB of memory available?

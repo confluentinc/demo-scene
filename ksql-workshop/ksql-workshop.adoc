@@ -46,7 +46,7 @@ Change the working directory:
 
 [source,bash]
 ----
-cd examples/ksql-workshop
+cd demo-scene/ksql-workshop
 ----
 
 Start Confluent Platform: 
@@ -62,7 +62,7 @@ Once you see output then it means Kafka is running and you can proceed
 [source,bash]
 ----
 $ docker-compose logs -f kafka|grep "INFO Kafka version"
-kafka_1             | [2018-09-03 14:08:09,790] INFO Kafka version : 2.0.0-cp1 (org.apache.kafka.common.utils.AppInfoParser)
+kafka_1             | [2019-03-04 16:04:53,441] INFO Kafka version : 2.1.0-cp1 (org.apache.kafka.common.utils.AppInfoParser)
 ----
 
 Press Ctrl-C twice to exit the `docker-compose logs` command
@@ -152,7 +152,8 @@ If you are interested you can inspect the script file (`scripts/create-mysql-sou
 1. The connector called `mysql-source-demo-customers` flattens the before/after record state data, along with the nested metadata, into a single flat structure. This is what we use during the rest of the workshop. 
 + 
 The flattening is done using a *Single Message Transform* from Debezium, called `io.debezium.transforms.UnwrapFromEnvelope`. 
-+ The connector also uses two Single Message Transforms to illustrate how metadata can be added to ingested data. The `InsertField` transformation adds the topic name into a field called `messagetopic`, and some fixed text into the `messagesource` field. 
++ 
+The connector also uses two Single Message Transforms to illustrate how metadata can be added to ingested data. The `InsertField` transformation adds the topic name into a field called `messagetopic`, and some fixed text into the `messagesource` field. 
 
 2. The connector `mysql-source-demo-customers-raw` retains the nested structure of the before/after record data.
 +
@@ -171,7 +172,7 @@ Now in a separate terminal window run the following, to stream the contents of t
 
 [source,bash]
 ----
-# Make sure you run this from the `examples/ksql-workshop` folder
+# Make sure you run this from the `demo-scene/ksql-workshop` folder
 docker-compose exec -T kafka \
       kafka-console-consumer \
       --bootstrap-server kafka:29092 \
@@ -1078,7 +1079,7 @@ es_sink_ratings_agg_by_status_1min  |  RUNNING  |  RUNNING
 es_sink_unhappy_platinum_customers  |  RUNNING  |  RUNNING
 ----
 
-Use the Kibana interface (http://localhost:5601) to check that docs are arriving in Elasticsearch:
+Use the http://localhost:5601/app/kibana#/management/elasticsearch/index_management/home?_g=()[Kibana interface] to check that docs are arriving in Elasticsearch:
 
 image::images/kibana_01.png[]
 
