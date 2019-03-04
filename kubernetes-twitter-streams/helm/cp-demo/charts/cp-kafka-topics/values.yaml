@@ -1,0 +1,21 @@
+replicaCount: 1
+
+enabled: false
+
+createTopics: true
+
+## Image Info
+## ref: https://hub.docker.com/r/confluentinc/cp-kafka/
+image:
+  repository: confluentinc/cp-kafka 
+  tag: 5.1.2
+
+## Specify a imagePullPolicy
+## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+imagePullPolicy: IfNotPresent
+
+apikey:
+  username: test
+  password: test123
+  
+zookeeperConnect: zookeeper:2181/kafka-dsg

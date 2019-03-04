@@ -26,16 +26,166 @@ For now, it's a scratch pad of bringing tweeting demo to Kubernetes
 
 toc::[]
 
-== Prerequisite
+== Prerequisites
 
-Provision Confluent Platform
+=== Provision Kubernetes cluster
+
+NOTE: assuming that cluster is deployed to `us-east4-a` zone with name `viktor-cp-operator-demo-cluster` and `cloud-private-dev` project
 
 ----
+gcloud container --project "cloud-private-dev"\
+    clusters create "viktor-cp-operator-demo-cluster"\
+    --zone "us-east4-a" --username "admin" --cluster-version "1.11.7-gke.4"\
+    --machine-type "n1-highmem-4" --image-type "COS" --disk-type "pd-standard" --disk-size "100"\
+    --num-nodes "6" --enable-cloud-logging --enable-cloud-monitoring --no-enable-ip-alias\
+    --network "projects/cloud-private-dev/global/networks/default"\
+    --subnetwork "projects/cloud-private-dev/regions/us-east4/subnetworks/default"\
+    --addons HorizontalPodAutoscaling,HttpLoadBalancing
+----
+
+* (Optional) increase / decrease node pool
+----
+gcloud container clusters resize viktor-cp-operator-demo-cluster --size=8 --zone us-east4-a   #<1>
+gcloud container clusters resize viktor-cp-operator-demo-cluster --size=0 --zone us-east4-a   #<2>
+----
+<1> increate number of nodes in node pool
+<2> decrease number of nodes when you done without killing the cluster
+
+* (Optional) rename the cluster
+
+----
+kubectl config rename-context gke_cloud-private-dev_us-east4-a_viktor-operator-demo-us-east4 gke-1.11.7-us-east4-a
+----
+
+==== Install Helm and Tiller
+----
+❯ kubectl create serviceaccount tiller -n kube-system
+❯ kubectl create clusterrolebinding tiller --clusterrole=cluster-admin --serviceaccount kube-system:tiller
+❯ helm init --service-account tiller
+----
+
+=== Provision Confluent Platform
+
+.Create namespace
+----
+k create -f ./cp-demo-namespace.yml
+----
+
+==== Provision Operator
+
+NOTE: TDB The `cp-operator-deployment` project should be clonned somewhere
+
+.Using `deployCP.sh`
+----
+./deployCP.sh -c operator -n dsg -p gcp --debug true -f ~/projects/confluent/demo-scene/kubernetes-twitter-streams/helm/cp-demo-values.yaml
+----
+
+.Deploy with Help
+----
+❯ kubectl -n dsg patch serviceaccount default -p '{"imagePullSecrets": [{"name": "confluent-docker-registry" }]}'
+
+❯ helm install -f /Users/viktor/projects/confluent/demo-scene/kubernetes-twitter-streams/helm/cp-demo-values.yaml --name vikgamov-operator /Users/viktor/projects/confluent/cp-operator-deployment/scripts/../helm/confluent-operator --namespace dsg --wait --set operator.enabled=true
+----
+
+==== Provision Zookeeper and Kafka
+
+.Using `deployCP.sh`
+----
+./deployCP.sh -c kafka -n dsg -p gcp --debug true -f ~/projects/confluent/demo-scene/kubernetes-twitter-streams/helm/cp-demo-values.yaml -a '--set kafka.name=kafka' -a '--set zookeeper.enabled=true'
+----
+
+.Deploy with Helm
+----
+helm install -f /Users/viktor/projects/confluent/demo-scene/kubernetes-twitter-streams/helm/cp-demo-values.yaml --name vikgamov-kafka /Users/viktor/projects/confluent/cp-operator-deployment/scripts/../helm/confluent-operator --namespace dsg --wait --set kafka.enabled=true --set zookeeper.enabled=true
+----
+
+* Deploy Schema Registry 
+
+.Using `deployCP.sh`
+----
+
+----
+
+.with Helm
+----
+helm install -f /Users/viktor/projects/confluent/demo-scene/kubernetes-twitter-streams/helm/cp-demo-values.yaml --name vikgamov-schemaregistry /Users/viktor/projects/confluent/cp-operator-deployment/scripts/../helm/confluent-operator --namespace dsg --wait --set schemaregistry.enabled=true
+----
+
+==== Provision topics for connector
+
+WARNING: Need a workaround!
+
+Topic autocreation is disabled by default.
+The topics for the connector need to be created
+
+----
+cd helm/cp-demo/charts/cp-kafka-topics
+helm upgrade --install cp-kafka-topics -f ./values.yaml . --set zookeeperConnect=zookeeper:2181/kafka-dsg
+
+# this chart can be removed after topics are created
+helm delete cp-kafka-topics --purge
+----
+
+==== Provision Kafka Connect Twitter and KSQL
+
+.Dry run commands
+----
+cd helm/cp-demo
+
+helm install --dry-run -f ./kafka-connect-twitter/values.yaml ./kafka-connect-twitter --name connect-twitter --set kafka.bootstrapEndpoint=kafka:9071 --debug | c -l yaml
+----
+
+.Deploy Chart
+----
+helm install -f ./kafka-connect-twitter/values.yaml ./kafka-connect-twitter --name connect-twitter --set kafka.bootstrapEndpoint=kafka:9071
+----
+
+.start the connector
+----
+export POD_NAME=$(kubectl get pods --namespace dsg -l "app.kubernetes.io/name=connect-twitter,app.kubernetes.io/instance=connect-twitter" -o jsonpath="{.items[0].metadata.name}")
+kubectl port-forward $POD_NAME 8083:8083
+
+# validate 
+curl -s -XGET http://localhost:8083/connector-plugins| jq '.[].class' | grep twitter
+
+kubectl exec -c connect-twitter-server -it kafka-connect-twitter-66967cf5b9-qwmlx -- /bin/bash
+
+curl -sXPOST -H 'Content-Type: application/json' --data @connect_twitter.json http://localhost:8083/connectors
+----
+
+
+helm upgrade --install cp-demo -f ./cp-demo/values.yaml cp-demo/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 helm install --dry-run -f ./providers/kubecon.yaml ./confluent-operator --name confluent-platform --namespace operator --debug  #<1>
 helm install -f ./providers/kubecon.yaml ./confluent-operator --name confluent-platform --namespace operator  #<2>
+
+helm upgrade --install confluent-platform -f ./providers/kubecon.yaml ./confluent-operator  --namespace operator --set kafka.enabled=true,zookeeper.enabled=true    #<3>
 ----
 <1> dry run command
 <2> deploy
+<3> using upgrade syntax
 
 .Dry run commands
 ----
@@ -47,6 +197,7 @@ helm install --dry-run -f ./kafka-connect-twitter/values.yaml ./kafka-connect-tw
 ----
 helm install -f ./kafka-connect-twitter/values.yaml ./kafka-connect-twitter --name connect-twitter --namespace operator --set kafka.bootstrapEndpoint=kafka:9071
 ----
+
 
 
 == Adding Prometheus and Grafana Monitoring into the mix
@@ -62,3 +213,31 @@ helm install stable/grafana
 
 . Add Prometheus as Data Source in Grafana, url should be something like: `http://illmannered-marmot-prometheus-server:9090`
 . Import dashboard under grafana-dashboard into Grafana
+
+
+sequence
+
+. provision operator
+. provision zk
+. provision kafka
+. provision SR
+. create a topic for tweets and delete tweets
+
+----
+
+# install help with 
+helm upgrade --install cp-kafka-topics -f ./values.yaml .
+
+kafka-topics --create --topic twitter_json_01 --zookeeper zookeeper:2181/kafka-operator --partitions 6 --replication-factor 2
+
+kafka-topics --create --topic twitter_deletes_json_01 --zookeeper zookeeper:2181/kafka-operator --partitions 6 --replication-factor 2
+----
+
+. provision connect with twitter and ksql server
+. start the connector
+
+----
+curl -sXPOST -H 'Content-Type: application/json' --data @connect_twitter.json http://localhost:8083/connectors
+----
+
+. provision c3 (SR, and ksql will be picked up)

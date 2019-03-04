@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: {{ include "cp-kafka-topics.fullname" . }}
+    labels:
+        app.kubernetes.io/name: {{ include "cp-kafka-topics.name" . }}
+        helm.sh/chart: {{ include "cp-kafka-topics.chart" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+    replicas: {{ .Values.replicaCount }}
+    selector:
+        matchLabels:
+            app.kubernetes.io/name: {{ include "cp-kafka-topics.name" . }}
+            app.kubernetes.io/instance: {{ .Release.Name }}
+    template:
+        metadata:
+            labels:
+                app.kubernetes.io/name: {{ include "cp-kafka-topics.name" . }}
+                app.kubernetes.io/instance: {{ .Release.Name }}
+        spec:
+            volumes:
+                    {{- if .Values.createTopics }}
+                - name: kafka-properties
+                  configMap:
+                      name: {{ template "cp-kafka-topics.fullname" . }}-kafka-properties-configmap
+                {{- end }}
+            containers:
+                - name: {{ .Chart.Name }}
+                  image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+                  imagePullPolicy: {{ .Values.imagePullPolicy }}
+                  volumeMounts:
+                          {{- if .Values.createTopics }}
+                      - name: kafka-properties
+                        mountPath: /etc/myconfigs/
+                        {{- end }}
+                  command:
+                      - sh
+                      - -exc
+                      - |
+                          kafka-topics --create --if-not-exists --topic twitter_json_01 --zookeeper {{ .Values.zookeeperConnect}} --partitions 6 --replication-factor 2
+                          kafka-topics --create --if-not-exists --topic twitter_deletes_json_01 --zookeeper {{ .Values.zookeeperConnect}} --partitions 6 --replication-factor 2

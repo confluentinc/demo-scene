@@ -7,3 +7,7 @@ dependencies:
     version: ">=1.0.0"
     repository:  file://.charts/cp-ksql-server
     condition: cp-ksql-server.enabled
+  - name: cp-kafka-topics
+    version: ">=1.0.0"
+    repository:  file://.charts/cp-kafka-topics
+    condition: cp-kafka-topics.enabled

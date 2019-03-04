@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: {{ template "cp-kafka-topics.fullname" . }}-kafka-properties-configmap
+    labels:
+        app: {{ template "cp-kafka-topics.name" . }}
+        chart: {{ template "cp-kafka-topics.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+data:
+    kafka.properties: |
+        bootstrap.servers=kafka:9071
+        sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="{{ .Values.apikey.username}}" password="{{.Values.apikey.password }}";
+        sasl.mechanism=PLAIN
+        security.protocol=SASL_PLAINTEXT
+        

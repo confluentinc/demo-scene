@@ -1,0 +1,123 @@
+## Overriding values for Chart's values.yaml
+## Example values to run Confluent Operator in GCP
+global:
+  provider:
+    name: gcp
+    region: us-east4
+    kubernetes:
+      deployment:
+        ## If kubernetes is deployed in multi zone mode then specify availability-zones as appropriate
+        ## If kubernetes is deployed in single availability zone then specify appropriate values
+        zones:
+          - us-east4-a
+    storage:
+      ## https://kubernetes.io/docs/concepts/storage/storage-classes/#gce
+      ##
+      provisioner: kubernetes.io/gce-pd
+      reclaimPolicy: Delete
+      parameters:
+        type: pd-ssd
+    ## Docker registry endpoint where Confluent Images are available.
+    ##
+    registry:
+      fqdn: confluent-docker.jfrog.io
+      credential:
+        required: true
+        username: platform-ops-jfrog@confluent.io
+        password: AKCp5btKzpjCQgCGHZvfEiNFZFYNzUZZr39t69UaEgQX9SEcyACoTrECnxK6cL9Li74ZQ9sw4
+  apikey:
+    username: test
+    password: test123
+
+## Zookeeper cluster
+##
+zookeeper:
+  name: zookeeper
+  replicas: 3
+  resources:
+    cpu: 200m
+    memory: 1024Mi
+
+## Kafka Cluster
+##
+kafka:
+  name: kafka
+  replicas: 3
+  resources:
+    cpu: 200m
+    memory: 4Gi
+  volume:
+    data0: 50000Mi
+    log: 250Mi
+  external:
+    enabled: false
+    domain: ""
+  tls:
+    enabled: false
+    fullchain: |-
+    privkey: |-
+
+schemaregistry:
+  name: schemaregistry
+  replicas: 1
+  enabled: false
+  tls:
+    enabled: false
+    fullchain: |-
+    privkey: |-
+  external:
+    enabled: false
+    domain: ""
+  dependencies:
+    kafka:
+      brokerCount: 3
+      bootstrapEndpoint: kafka:9071
+
+## Control Center (C3) Resource configuration
+##
+controlcenter:
+  name: controlcenter
+  license: ""
+  ##
+  ## C3 dependencies
+  ##
+  dependencies:
+    c3KafkaCluster:
+      brokerCount: 3
+      bootstrapEndpoint: kafka:9071
+      zookeeper:
+        endpoint: zookeeper:2181
+    connectCluster:
+      enabled: true
+      endpoints: http://kafka-connect-twitter:8083
+    ksql:
+      enabled: true
+      url: "http://cp-demo-cp-ksql-server:8088"
+    schemaregistry:
+      enabled: true
+      url: http://schemaregistry:8081
+  ##
+  ## C3 External Access
+  ##
+  external:
+    enabled: false
+    domain: ""
+  ##
+  ## TLS configuration
+  ##
+  tls:
+    enabled: false
+    fullchain: |-
+    privkey: |-
+    cacerts: |-
+  ##
+  ## C3 authentication
+  ##
+  auth:
+    basic:
+      enabled: true
+      ##
+      ## map with key as user and value as password and role
+      property:
+        admin: Developer1,Administrators
+        disallowed: no_access
