@@ -40,6 +40,14 @@ output "Control Center               " {
 
 }
 
+output "Jaeger UI                    " {
+
+  value = "${var.instance_count["jaeger_server"] >= 1
+           ? "${join(",", formatlist("http://%s", aws_alb.jaeger_server.*.dns_name))}"
+           : "Jaeger UI has been disabled"}"
+
+}
+
 output "Bastion Server IP Address    " {
 
   value = "${var.instance_count["bastion_server"] >= 1

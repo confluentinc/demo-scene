@@ -194,6 +194,43 @@ resource "aws_instance" "control_center" {
 }
 
 ###########################################
+############# Jaeger Server ###############
+###########################################
+
+resource "aws_instance" "jaeger_server" {
+
+  depends_on = ["aws_subnet.private_subnet",
+                "aws_nat_gateway.default"]
+
+  count = "${var.instance_count["jaeger_server"] >= 1
+           ? var.instance_count["jaeger_server"] : 1}"
+
+  ami = "ami-0922553b7b0369273"
+  instance_type = "t3.medium"
+  key_name = "${aws_key_pair.generated_key.key_name}"
+
+  subnet_id = "${element(aws_subnet.private_subnet.*.id, count.index)}"
+  vpc_security_group_ids = ["${aws_security_group.jaeger_server.id}"]
+
+  user_data = "${data.template_file.jaeger_server_bootstrap.rendered}"
+
+  ebs_block_device {
+
+    device_name = "/dev/xvdb"
+    volume_type = "gp2"
+    volume_size = 100
+
+  }
+
+  tags {
+
+    Name = "jaeger-server-${count.index}"
+
+  }
+
+}
+
+###########################################
 ############ Bastion Server ###############
 ###########################################
 
@@ -575,6 +612,73 @@ resource "aws_alb_listener" "control_center_listener" {
   default_action {
 
     target_group_arn = "${aws_alb_target_group.control_center_target_group.arn}"
+    type = "forward"
+
+  }
+
+}
+
+###########################################
+########### Jaeger Server LBR #############
+###########################################
+
+resource "aws_alb_target_group" "jaeger_server_target_group" {
+
+  name = "jaeger-server-target-group"  
+  port = "16686"
+  protocol = "HTTP"
+  vpc_id = "${aws_vpc.default.id}"
+
+  health_check {    
+
+    healthy_threshold = 3    
+    unhealthy_threshold = 3    
+    timeout = 3   
+    interval = 5    
+    path = "/"
+    port = "16686"
+
+  }
+
+}
+
+resource "aws_alb_target_group_attachment" "jaeger_server_attachment" {
+
+  count = "${var.instance_count["jaeger_server"] >= 1
+           ? var.instance_count["jaeger_server"] : 1}"
+
+  target_group_arn = "${aws_alb_target_group.jaeger_server_target_group.arn}"
+  target_id = "${element(aws_instance.jaeger_server.*.id, count.index)}"
+  port = 16686
+
+}
+
+resource "aws_alb" "jaeger_server" {
+
+  depends_on = ["aws_instance.jaeger_server"]
+
+  name = "jaeger-server"
+  subnets = ["${aws_subnet.public_subnet_1.id}", "${aws_subnet.public_subnet_2.id}"]
+  security_groups = ["${aws_security_group.load_balancer.id}"]
+  internal = false
+
+  tags {
+
+    Name = "jaeger-server"
+
+  }
+
+}
+
+resource "aws_alb_listener" "jaeger_server_listener" {
+
+  load_balancer_arn = "${aws_alb.jaeger_server.arn}"
+  protocol = "HTTP"
+  port = "80"
+  
+  default_action {
+
+    target_group_arn = "${aws_alb_target_group.jaeger_server_target_group.arn}"
     type = "forward"
 
   }
