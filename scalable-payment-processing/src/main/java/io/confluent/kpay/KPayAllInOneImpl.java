@@ -6,12 +6,15 @@ import io.confluent.kpay.control.PauseControllable;
 import io.confluent.kpay.control.StartStopController;
 import io.confluent.kpay.control.model.Status;
 import io.confluent.kpay.ktablequery.KTableResourceEndpoint;
+import io.confluent.kpay.ktablequery.WindowKTableResourceEndpoint;
 import io.confluent.kpay.metrics.PaymentsThroughput;
 import io.confluent.kpay.metrics.model.ThroughputStats;
 import io.confluent.kpay.payments.AccountProcessor;
 import io.confluent.kpay.payments.PaymentsConfirmed;
 import io.confluent.kpay.payments.PaymentsInFlight;
 import io.confluent.kpay.payments.model.AccountBalance;
+import io.confluent.kpay.payments.model.ConfirmedStats;
+import io.confluent.kpay.payments.model.InflightStats;
 import io.confluent.kpay.payments.model.Payment;
 import io.confluent.kpay.util.KafkaTopicClient;
 import io.confluent.kpay.util.KafkaTopicClientImpl;
@@ -41,28 +44,28 @@ public class KPayAllInOneImpl implements KPay {
     private static final Logger log = LoggerFactory.getLogger(KPayAllInOneImpl.class);
 
     private String paymentsIncomingTopic = "kpay.payments.incoming";
-    private String paymentsInflightTopic = "kpay.payments.inflight";;
-    private String paymentsCompleteTopic = "kpay.payments.complete";;
-    private String paymentsConfirmedTopic = "kpay.payments.confirmed";;
+    private String paymentsInflightTopic = "kpay.payments.inflight";
+    private String paymentsCompleteTopic = "kpay.payments.complete";
+    private String paymentsConfirmedTopic = "kpay.payments.confirmed";
+    private String controlStatusTopic = "kpay.control.status";
+
     private String bootstrapServers;
 
     private KafkaTopicClient topicClient;
 
-
     private long instanceId = System.currentTimeMillis();
+
+
     private PaymentsInFlight paymentsInFlight;
-
-    // start stop status events to control the flow
-    private String controlStatusTopic = "kpay.control.status";
-
-
-    private PaymentsThroughput instrumentationThroughput;
     private AccountProcessor paymentAccountProcessor;
     private PaymentsConfirmed paymentsConfirmed;
+    private PaymentsThroughput instrumentationThroughput;
+
+
     private AdminClient adminClient;
     private StartStopController controllerStartStop;
-    private ScheduledFuture future;
-    private PaymentRunnable paymentCommand;
+    private ScheduledFuture scheduledPaymentFuture;
+    private PaymentRunnable paymentRunnable;
     private String thisIpAddress;
 
     public KPayAllInOneImpl(String bootstrapServers) {
@@ -96,9 +99,9 @@ public class KPayAllInOneImpl implements KPay {
         controllerStartStop.start();
     }
 
-    private int instrumentionPortOffset = 21000;
+    private int instrumentationPortOffset = 21000;
     private void startInstrumentation() throws UnknownHostException {
-        instrumentationThroughput = new PaymentsThroughput(paymentsCompleteTopic, getPaymentsProperties(bootstrapServers, instrumentionPortOffset++));
+        instrumentationThroughput = new PaymentsThroughput(paymentsCompleteTopic, getPaymentsProperties(bootstrapServers, instrumentationPortOffset++));
         instrumentationThroughput.start();
     }
 
@@ -142,13 +145,13 @@ public class KPayAllInOneImpl implements KPay {
 
 
     @Override
-    public void generatePayments() {
+    public void generatePayments(final int ratePerSecond) {
 
         KafkaProducer<String, Payment> producer =
                 new KafkaProducer<>(properties(), new StringSerializer(), new Payment.Serde().serializer());
 
         ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-        paymentCommand = new PaymentRunnable() {
+        paymentRunnable = new PaymentRunnable() {
 
             int position;
             String[] from = new String[]{"larry", "joe", "mary", "bob"};
@@ -171,21 +174,30 @@ public class KPayAllInOneImpl implements KPay {
                 log.info("Stopping payment generation");
                 producer.close();
             }
-
         };
-        future = scheduledExecutor.scheduleAtFixedRate(paymentCommand, 2, 10, TimeUnit.SECONDS);
+
+        log.info("Generating Payments at:" + ratePerSecond);
+        scheduledPaymentFuture = scheduledExecutor.scheduleAtFixedRate(paymentRunnable, 1000, ratePerSecond > 1000 ? 1 : 1000/ratePerSecond, TimeUnit.MILLISECONDS);
     }
 
 
     @Override
     public void stopPayments() {
-        future.cancel(false);
-        paymentCommand.stop();
+        log.info("Stopping Payment generation");
+
+        scheduledPaymentFuture.cancel(false);
+        paymentRunnable.stop();
+        scheduledPaymentFuture = null;
+    }
+
+    @Override
+    public boolean isGeneratingPayments() {
+        return scheduledPaymentFuture != null;
     }
 
     private <V> ProducerRecord<String, Payment> buildRecord(String topicName,
-                                                      Long timestamp,
-                                                      String key, Payment payment) {
+                                                            Long timestamp,
+                                                            String key, Payment payment) {
         return new ProducerRecord<>(topicName, null, timestamp,  key, payment);
     }
 
@@ -202,6 +214,20 @@ public class KPayAllInOneImpl implements KPay {
         sort(accountKeys);
         List<Pair<String, AccountBalance>> pairs = microRestService.get(accountKeys);
         return pairs.stream().map(p -> p.getV()).collect(Collectors.toList());
+    }
+
+    public Pair<InflightStats, ConfirmedStats> getPaymentPipelineStats() {
+        WindowKTableResourceEndpoint<String, InflightStats> paymentsInFlightSvc = paymentsInFlight.getMicroRestService();
+
+        List<Pair<String, InflightStats>> inflightStats = paymentsInFlightSvc.get(new ArrayList<>(paymentsInFlightSvc.keySet()));
+
+        WindowKTableResourceEndpoint<String, ConfirmedStats> paymentsConfirmedSvc = paymentsConfirmed.getMicroRestService();
+
+        List<Pair<String, ConfirmedStats>> confirmedStats = paymentsConfirmedSvc.get(new ArrayList<>(paymentsConfirmedSvc.keySet()));
+
+        if (inflightStats.size() == 0 || confirmedStats.size() == 0) return new Pair<>(new InflightStats(), new ConfirmedStats());
+
+        return new Pair<>(inflightStats.get(0).getV(), confirmedStats.get(0).getV());
     }
 
     @Override

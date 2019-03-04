@@ -17,9 +17,9 @@ package io.confluent.kpay.payments;
 
 import io.confluent.kpay.control.PauseControllable;
 import io.confluent.kpay.ktablequery.KTableRestClient;
+import io.confluent.kpay.payments.model.InflightStats;
 import io.confluent.kpay.utils.IntegrationTestHarness;
 import io.confluent.kpay.payments.model.Payment;
-import io.confluent.kpay.payments.model.PaymentStats;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -103,7 +103,7 @@ public class PaymentsInflightIntegTest {
 
     System.out.println("Inflight:"+ inflightPayment);
 
-    KeyValueIterator<Windowed<String>, PaymentStats> all = paymentsInFlight.getStore().all();
+    KeyValueIterator<Windowed<String>, InflightStats> all = paymentsInFlight.getStore().all();
     Object value = all.next().value;
     System.out.println(value);
 
@@ -130,7 +130,7 @@ public class PaymentsInflightIntegTest {
 
     System.out.println("Inflight:"+ inflightPayment);
 
-    KeyValueIterator<Windowed<String>, PaymentStats> all = paymentsInFlight.getStore().all();
+    KeyValueIterator<Windowed<String>, InflightStats> all = paymentsInFlight.getStore().all();
     Object value = all.next().value;
     System.out.println(value);
   }

@@ -19,8 +19,8 @@ import io.confluent.kpay.control.PauseControllable;
 import io.confluent.kpay.ktablequery.KTableRestClient;
 import io.confluent.kpay.payments.model.AccountBalance;
 import io.confluent.kpay.payments.model.ConfirmedStats;
+import io.confluent.kpay.payments.model.InflightStats;
 import io.confluent.kpay.payments.model.Payment;
-import io.confluent.kpay.payments.model.PaymentStats;
 import io.confluent.kpay.utils.IntegrationTestHarness;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -113,9 +113,9 @@ public class PaymentsIntegrationTest {
 
     // verify the postal state of each processor, i.e. inflight == 0; neil == -10; john == 10; confirmed == 10
 
-    KeyValueIterator<Windowed<String>, PaymentStats> all = paymentsInFlight.getStore().all();
+    KeyValueIterator<Windowed<String>, InflightStats> all = paymentsInFlight.getStore().all();
 
-    PaymentStats value = all.next().value;
+    InflightStats value = all.next().value;
 
     // should be 0
     System.out.println("Test Inflight:" + value);
@@ -139,7 +139,7 @@ public class PaymentsIntegrationTest {
 
 
 //    Rest
-    KTableRestClient<String, PaymentStats> inflightClient = new KTableRestClient<String, PaymentStats>(false, paymentsInFlight.streams(), PaymentsInFlight.STORE_NAME){};
+    KTableRestClient<String, InflightStats> inflightClient = new KTableRestClient<String, InflightStats>(false, paymentsInFlight.streams(), PaymentsInFlight.STORE_NAME){};
     int inflightSize = inflightClient.size();
     System.out.println("InflightSize:" + inflightSize);
     inflightClient.stop();
@@ -151,7 +151,7 @@ public class PaymentsIntegrationTest {
     accountClient.stop();
 
 
-    KTableRestClient<String, PaymentStats> confirmedClient = new KTableRestClient<String, PaymentStats>(false, paymentsConfirmed.streams(), PaymentsConfirmed.STORE_NAME){};
+    KTableRestClient<String, InflightStats> confirmedClient = new KTableRestClient<String, InflightStats>(false, paymentsConfirmed.streams(), PaymentsConfirmed.STORE_NAME){};
     int confirmedSize = confirmedClient.size();
     System.out.println("ConfirmedSize:" + confirmedSize);
     confirmedClient.stop();
@@ -193,9 +193,9 @@ public class PaymentsIntegrationTest {
 
     // verify the postal state of each processor, i.e. inflight == 0; neil == -10; john == 10; confirmed == 10
 
-    KeyValueIterator<Windowed<String>, PaymentStats> inflightStatus = paymentsInFlight.getStore().all();
+    KeyValueIterator<Windowed<String>, InflightStats> inflightStatus = paymentsInFlight.getStore().all();
 
-    PaymentStats inflightStats = inflightStatus.next().value;
+    InflightStats inflightStats = inflightStatus.next().value;
 
     // should be 0
     System.out.println("Test Inflight:" + inflightStats);

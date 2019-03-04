@@ -3,8 +3,8 @@ package io.confluent.kpay.payments;
 import io.confluent.kpay.control.Controllable;
 import io.confluent.kpay.ktablequery.WindowKTableResourceEndpoint;
 import io.confluent.kpay.ktablequery.WindowKVStoreProvider;
+import io.confluent.kpay.payments.model.InflightStats;
 import io.confluent.kpay.payments.model.Payment;
-import io.confluent.kpay.payments.model.PaymentStats;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
@@ -27,8 +27,8 @@ public class PaymentsInFlight {
 
     private static long ONE_DAY = 24 * 60 * 60 * 1000L;
 
-    private final KTable<Windowed<String>, PaymentStats> paymentStatsKTable;
-    private WindowKTableResourceEndpoint<String, PaymentStats> microRestService;
+    private final KTable<Windowed<String>, InflightStats> paymentStatsKTable;
+    private WindowKTableResourceEndpoint<String, InflightStats> microRestService;
 
     private final Topology topology;
     private Properties streamsConfig;
@@ -43,8 +43,8 @@ public class PaymentsInFlight {
         KStream<String, Payment> inflight = builder.stream(Arrays.asList(paymentsIncomingTopic, paymentsCompleteTopic));
 
         // emit the  payments as Debits on the 'inflight' stream
-        Materialized<String, PaymentStats, WindowStore<Bytes, byte[]>> inflightFirst = Materialized.as(STORE_NAME);
-        Materialized<String, PaymentStats, WindowStore<Bytes, byte[]>> inflightWindowStore = inflightFirst.withKeySerde(new StringSerde()).withValueSerde(new PaymentStats.Serde());
+        Materialized<String, InflightStats, WindowStore<Bytes, byte[]>> inflightFirst = Materialized.as(STORE_NAME);
+        Materialized<String, InflightStats, WindowStore<Bytes, byte[]>> inflightWindowStore = inflightFirst.withKeySerde(new StringSerde()).withValueSerde(new InflightStats.Serde());
 
         /**
          * Inflight processing
@@ -54,7 +54,7 @@ public class PaymentsInFlight {
                 .groupBy((key, value) -> "all-payments") // will force a repartition-topic :(
                 .windowedBy(TimeWindows.of(ONE_DAY))
                 .aggregate(
-                        PaymentStats::new,
+                        InflightStats::new,
                         (key, value, aggregate) -> aggregate.update(value),
                         inflightWindowStore
                 );
@@ -81,7 +81,7 @@ public class PaymentsInFlight {
 
         log.info(topology.describe().toString());
 
-        microRestService = new WindowKTableResourceEndpoint<String, PaymentStats>(new WindowKVStoreProvider<>(streams, paymentStatsKTable)){};
+        microRestService = new WindowKTableResourceEndpoint<String, InflightStats>(new WindowKVStoreProvider<>(streams, paymentStatsKTable)){};
         microRestService.start(streamsConfig);
     }
 
@@ -91,7 +91,7 @@ public class PaymentsInFlight {
         microRestService.stop();
     }
 
-    public ReadOnlyWindowStore<String, PaymentStats> getStore() {
+    public ReadOnlyWindowStore<String, InflightStats> getStore() {
         return streams.store(paymentStatsKTable.queryableStoreName(), QueryableStoreTypes.windowStore());
     }
 
@@ -101,5 +101,9 @@ public class PaymentsInFlight {
 
     public KafkaStreams streams() {
         return streams;
+    }
+
+    public WindowKTableResourceEndpoint<String, InflightStats> getMicroRestService() {
+        return microRestService;
     }
 }

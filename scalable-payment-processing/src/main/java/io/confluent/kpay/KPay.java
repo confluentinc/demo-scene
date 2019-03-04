@@ -17,6 +17,9 @@ package io.confluent.kpay;
 
 import io.confluent.kpay.metrics.model.ThroughputStats;
 import io.confluent.kpay.payments.model.AccountBalance;
+import io.confluent.kpay.payments.model.ConfirmedStats;
+import io.confluent.kpay.payments.model.InflightStats;
+import io.confluent.kpay.util.Pair;
 
 import java.util.List;
 
@@ -36,16 +39,20 @@ interface KPay {
 
     /**
      * Data simulation
+     * @param ratePerSecond
      */
-    void generatePayments();
+    void generatePayments(int ratePerSecond);
 
     void stopPayments();
+
+    boolean isGeneratingPayments();
 
     /**
      * Trust plane: instumentation and dql's
      * @return
      */
     ThroughputStats viewMetrics();
+    Pair<InflightStats, ConfirmedStats> getPaymentPipelineStats();
 
     /**
      * Business plane
@@ -53,4 +60,6 @@ interface KPay {
      */
     List<AccountBalance> listAccounts();
     String showAccountDetails(String accountName);
+
+
 }

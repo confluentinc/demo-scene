@@ -18,18 +18,6 @@ window.chartColors = {
 
 
 
-function displayServerVersion() {
-    var xhr = new XMLHttpRequest();
-    xhr.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-            var serverVersionResponse = JSON.parse(this.responseText);
-            document.getElementById("copyright").innerHTML = "(c) Confluent Inc., KPay" + serverVersionResponse.KsqlServerInfo.version
-        }
-    };
-    xhr.open("GET", "/info", true);
-    xhr.send();
-}
-
 function sendRequest(resource, sqlExpression) {
     xhr.abort();
 
@@ -91,8 +79,8 @@ function createTable() {
                         }
                      ]
     } );
-    $('#refreshTable').click(function() {
-        refreshTable();
+    $('#refreshAccountTable').click(function() {
+        refreshAccountTable();
         refreshChart();
     })
 }
@@ -112,7 +100,7 @@ function createTable() {
     "name": "mary"
   }
  */
-function refreshTable() {
+function refreshAccountTable() {
     $.get({
           url:"/kpay/listAccounts",
           success:function(data){
@@ -141,9 +129,8 @@ function randomBar(date, lastClose) {
     };
 }
 
-// TODO: add labels dynamically https://github.com/chartjs/Chart.js/issues/2738
-function createChart() {
-    console.log("Loading mainChart")
+function createPaymentPipelineChart() {
+    console.log("Loading createPaymentPipelineChart")
     var date = moment().subtract(1, 'hour');
 
     var data = [randomBar(date, 30)];
@@ -152,38 +139,87 @@ function createChart() {
         data.push(randomBar(date, data[data.length - 1].y));
     }
 
-    //var data = [];
-    var ctx = document.getElementById('mainChart').getContext('2d');
+    var ctx = document.getElementById('paymentPipelineChart').getContext('2d');
     var cfg = {
         type: 'bar',
         data: {
-       // labels: ['total', 'submitted', 'allocated', 'running', 'error', 'completed'],
-        /** {
-          "total": 0,
-          "submitted": 0,
-          "allocated": 0,
-          "running": 0,
-          "error": 0,
-          "completed": 0,
-          "time": 0
+            datasets: [{
+                label: 'Inflight Count',
+                data: [],
+                type: 'line',
+                pointRadius: 1,
+                fill: false,
+                lineTension: 0,
+                borderWidth: 2,
+                cubicInterpolationMode: 'monotone'
+            },
+                {
+                    label: 'Inflight $',
+                    data: [],
+                    type: 'line',
+                    pointRadius: 1,
+                    fill: false,
+                    backgroundColor: window.chartColors.yellow,
+                    borderColor: window.chartColors.yellow,
+
+                    lineTension: 0,
+                    borderWidth: 2,
+                    cubicInterpolationMode: 'monotone'
+                },{
+                    label: 'Confirmed Count',
+                    data: [],
+                    type: 'line',
+                    pointRadius: 1,
+                    fill: false,
+                    backgroundColor: window.chartColors.orange,
+                    borderColor: window.chartColors.orange,
+                    lineTension: 0,
+                    borderWidth: 2,
+                    cubicInterpolationMode: 'monotone'
+                },{
+                    label: 'Confirmed $',
+                    data: [],
+                    type: 'line',
+                    pointRadius: 1,
+                    fill: false,
+                    backgroundColor: window.chartColors.blue,
+                    borderColor: window.chartColors.blue,
+                    lineTension: 0,
+                    borderWidth: 2
+                }]
+        },
+        options: {
+            scales: {
+                xAxes: [{
+                    type: 'time',
+                    distribution: 'series'
+                }],
+                yAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Pipeline performance'
+                    }
+                }]
+            }
         }
-         {
-  "largestPayment": {
-    "amount": 75.66,
-    "from": "larry",
-    "id": "pay-1551457231539",
-    "state": "complete",
-    "timestamp": 1551457231539,
-    "to": "allan",
-    "txnId": "pay-1551457231539"
-  },
-  "totalPayments": 3
-  "totalDollarAmount": 170.22,
-  "maxLatency": 471,
-  "minLatency": 338,
-  "throughputPerWindow": 0,
+    };
+    paymentPipelineChart = new Chart(ctx, cfg);
 }
-        **/
+
+function createLatencyChart() {
+    console.log("Loading createLatencyChart")
+    var date = moment().subtract(1, 'hour');
+
+    var data = [randomBar(date, 30)];
+    while (data.length < 60) {
+        date = date.clone().add(1, 'minute');
+        data.push(randomBar(date, data[data.length - 1].y));
+    }
+
+    var ctx = document.getElementById('latencyChart').getContext('2d');
+    var cfg = {
+        type: 'bar',
+        data: {
             datasets: [{
                 label: 'Payment Count',
                 data: [],
@@ -238,7 +274,7 @@ function createChart() {
                 yAxes: [{
                     scaleLabel: {
                         display: true,
-                        labelString: 'Payment statistics'
+                        labelString: 'Pipeline latency'
                     }
                 }]
             }
@@ -247,30 +283,59 @@ function createChart() {
 chart = new Chart(ctx, cfg);
 }
 
-function removeChartData(chart) {
-    chart.data.labels.pop();
-    chart.data.datasets.forEach((dataset) => {
-        dataset.data.pop();
-    });
-    chart.update();
-}
 
-function addChartData(label, data) {
-    //chart.data.labels.push(label);
-    chart.data.datasets.forEach((dataset) => {
-        dataset.data.push(data);
-    });
-    chart.update();
+/**
+ *  {
+  "k": {
+    "type": "inflightStats",
+    "amount": 45.8,
+    "count": 1
+  },
+  "v": {
+    "type": "confirmedStats",
+    "amount": 8444.69,
+    "count": 170
+  }
 }
+**/
+function refreshPaymentPipelineChart() {
+    $.get({
+        url: "/kpay/metrics/pipeline",
+        success: function (e) {
+            console.log(e)
+            var inflightCount = new Object();
+            inflightCount.y = e.k.count;
+            inflightCount.t = e.k.timestamp;
 
+            var inflightAmount = new Object();
+            inflightAmount.y = e.k.amount;
+            inflightAmount.t = e.k.timestamp;
+
+            var confirmedCount = new Object();
+            confirmedCount.y = e.v.count;
+            confirmedCount.t = e.v.timestamp;
+
+            var confirmedAmount = new Object();
+            confirmedAmount.y = e.v.amount;
+            confirmedAmount.t = e.v.timestamp;
+
+            paymentPipelineChart.data.datasets[0].data.push(inflightCount);
+            paymentPipelineChart.data.datasets[1].data.push(inflightAmount);
+            paymentPipelineChart.data.datasets[2].data.push(confirmedCount);
+            paymentPipelineChart.data.datasets[3].data.push(confirmedAmount);
+            paymentPipelineChart.update();
+            return false;
+        }
+    })
+}
 
 /**
  "totalPayments": 3
  "totalDollarAmount": 170.22,
  "maxLatency": 471,
  "minLatency": 338,
-**/
-function refreshChart() {
+ **/
+function refreshLatencyChart() {
     $.get({
         url: "/kpay/metrics/throughput",
         success: function (e) {
@@ -302,15 +367,18 @@ function refreshChart() {
 }
 
 function createStuff() {
-    createChart();
+    createLatencyChart();
+    createPaymentPipelineChart();
     createTable();
-    refreshTable();
-    refreshChart();
 
+    refreshAccountTable();
+    refreshLatencyChart();
+    refreshPaymentPipelineChart();
 }
 window.onload = createStuff;
 
 setInterval(function(){
-    refreshChart();
-    refreshTable();
-}, 10000);
+    refreshLatencyChart();
+    refreshPaymentPipelineChart();
+    refreshAccountTable();
+}, 5000);

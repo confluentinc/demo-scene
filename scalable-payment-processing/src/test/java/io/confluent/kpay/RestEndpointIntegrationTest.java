@@ -7,7 +7,11 @@ import org.junit.Test;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class RestEndpointIntegrationTest {
 
@@ -38,17 +42,21 @@ public class RestEndpointIntegrationTest {
 
     @Test
     public void runServerForAbit() throws Exception {
-
         generatePaymentData();
 
         Thread.sleep(5 * 60 * 60 * 1000);
     }
 
     private void generatePaymentData() {
+
         Client client = ClientBuilder.newClient();
-        String response = client.target("http://localhost:8080").path("/kpay/generatePayments")
-                .request(MediaType.APPLICATION_JSON)
-                .get(String.class);
+
+        WebTarget tsTarget = client.target("http://localhost:8080").path("/kpay/payments/start");
+
+        String response =
+                tsTarget.request(MediaType.APPLICATION_JSON_TYPE)
+                        .post(Entity.entity("4", MediaType.APPLICATION_JSON_TYPE),
+                                String.class);
 
         System.out.println("TEST DATA:" + response);
     }

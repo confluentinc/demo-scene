@@ -53,7 +53,7 @@ public class PaymentsThroughput {
          * Statistic processing
          */
         statsKTable = complete
-                .groupBy((key, value) -> "all-payments") // will force a repartition-topic
+                .groupBy((key, value) -> "all-payments") // forces a repartition
                 .windowedBy(TimeWindows.of(ONE_MINUTE))
                 .aggregate(
                         ThroughputStats::new,
@@ -70,7 +70,7 @@ public class PaymentsThroughput {
                         stats = stats.merge(metricStats);
                     }
                     processedLast = key.window().end();
-                    System.out.println("**** Processing" + " key:" + key.key() + " time:" + key.window().end() + " ---" + metricStats);
+//                    System.out.println("**** Processing" + " key:" + key.key() + " time:" + key.window().end() + " ---" + metricStats);
                 });
         topology = builder.build();
     }

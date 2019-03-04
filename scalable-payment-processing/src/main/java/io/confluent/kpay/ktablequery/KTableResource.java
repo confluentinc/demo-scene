@@ -19,18 +19,20 @@ public interface KTableResource<K,V> {
 
     @GET()
     @Path("/size")
+    @Operation(summary = "number of items",  tags = {"ktable"} )
     @Produces(MediaType.APPLICATION_JSON)
     int size();
 
     @GET()
     @Path("/keys")
+    @Operation(summary = "set of keys",  tags = {"ktable"} )
     @Produces(MediaType.APPLICATION_JSON)
     Set<K> keySet();
 
     @POST
     @Path("/get")
     @Operation(summary = "singular get operation",
-            tags = {"query"},
+            tags = {"ktable"},
             responses = {
                     @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),
                     @ApiResponse(responseCode = "405", description = "Invalid input")
@@ -40,7 +42,7 @@ public interface KTableResource<K,V> {
     @POST
     @Path("/getQuery")
     @Operation(summary = "multi get operation",
-            tags = {"query"},
+            tags = {"ktable"},
             responses = {
                     @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),
                     @ApiResponse(responseCode = "405", description = "Invalid input")

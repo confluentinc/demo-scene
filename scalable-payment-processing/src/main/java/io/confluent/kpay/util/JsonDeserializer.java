@@ -17,7 +17,6 @@ package io.confluent.kpay.util;
 
 
 import com.google.gson.Gson;
-import io.confluent.kpay.payments.model.PaymentStats;
 import org.apache.kafka.common.serialization.Deserializer;
 
 import java.util.Map;

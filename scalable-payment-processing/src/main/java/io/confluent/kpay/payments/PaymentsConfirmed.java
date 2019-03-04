@@ -3,7 +3,6 @@ package io.confluent.kpay.payments;
 import io.confluent.kpay.ktablequery.*;
 import io.confluent.kpay.payments.model.ConfirmedStats;
 import io.confluent.kpay.payments.model.Payment;
-import io.confluent.kpay.payments.model.PaymentStats;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
@@ -95,6 +94,10 @@ public class PaymentsConfirmed {
 
     public KafkaStreams streams() {
         return streams;
+    }
+
+    public WindowKTableResourceEndpoint<String, ConfirmedStats> getMicroRestService() {
+        return microRestService;
     }
 
     /**

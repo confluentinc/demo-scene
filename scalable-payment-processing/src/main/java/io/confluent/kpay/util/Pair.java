@@ -1,9 +1,11 @@
 package io.confluent.kpay.util;
 
 public class Pair<K,V> {
-    private final K k;
-    private final V v;
+    private K k;
+    private V v;
 
+
+    public Pair(){};
     public Pair(K k, V v) {
 
         this.k = k;
@@ -16,5 +18,13 @@ public class Pair<K,V> {
 
     public V getV() {
         return v;
+    }
+
+    public void setK(K k) {
+        this.k = k;
+    }
+
+    public void setV(V v) {
+        this.v = v;
     }
 }

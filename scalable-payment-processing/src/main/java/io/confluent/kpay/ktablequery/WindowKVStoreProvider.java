@@ -1,11 +1,9 @@
 package io.confluent.kpay.ktablequery;
 
-import io.confluent.kpay.payments.model.PaymentStats;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Windowed;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
-import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 import org.apache.kafka.streams.state.ReadOnlyWindowStore;
 
 public class WindowKVStoreProvider<K, V> implements WindowStoreProvider {

@@ -14,6 +14,21 @@ public class ConfirmedStats {
 
     private int count;
     private BigDecimal amount = new BigDecimal(0);
+    private long timestamp;
+
+    public ConfirmedStats update(Payment value) {
+
+        this.timestamp = System.currentTimeMillis();
+        log.debug("handle:{}" + value);
+        if (value.getState() == Payment.State.confirmed) {
+            // remove 'complete'd payments
+            this.amount = this.amount.add(value.getAmount());
+            this.count++;
+        } else {
+            // log error
+        }
+        return this;
+    }
 
     public BigDecimal getAmount() {
         return amount;
@@ -23,18 +38,21 @@ public class ConfirmedStats {
         this.amount = amount;
     }
 
-    public ConfirmedStats update(Payment value) {
+    public int getCount() {
+        return count;
+    }
 
-        log.debug("handle:{}" + value);
-    if (value.getState() == Payment.State.confirmed) {
-        // remove 'complete'd payments
-        this.amount = this.amount.add(value.getAmount());
-        this.count++;
-    } else {
-        // log error
+    public void setCount(int count) {
+        this.count = count;
     }
-        return this;
+    public long getTimestamp() {
+        return timestamp;
     }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
 
     @Override
     public String toString() {

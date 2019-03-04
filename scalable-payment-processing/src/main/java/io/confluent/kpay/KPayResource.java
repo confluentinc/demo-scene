@@ -17,6 +17,9 @@ package io.confluent.kpay;
 
 import io.confluent.kpay.metrics.model.ThroughputStats;
 import io.confluent.kpay.payments.model.AccountBalance;
+import io.confluent.kpay.payments.model.ConfirmedStats;
+import io.confluent.kpay.payments.model.InflightStats;
+import io.confluent.kpay.util.Pair;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -58,24 +61,24 @@ public class KPayResource {
      * Data generation functions
      * @return
      */
-    @GET
-    @Path("/generatePayments")
+    @POST
+    @Path("/payments/start")
     @Operation(summary = "start processing some payments",
-            tags = {"test"},
+            tags = {"payment generation"},
             responses = {
                     @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),
                     @ApiResponse(responseCode = "405", description = "Invalid input")
             })
-    public String generatePayments() {
-        instance.getInstance().generatePayments();
+    public String generatePayments(@Parameter(description = "Submit task to the worker queues", required = true) String paymentsPerSecond) {
+        instance.getInstance().generatePayments(Integer.parseInt(paymentsPerSecond));
         return "{ status: \"success\", message: \"payments is running\", title: \"Success\" }";
     }
 
 
     @POST
-    @Path("/stopPayments")
+    @Path("/payments/stop")
     @Operation(summary = "stop processing some payments",
-            tags = {"test"},
+            tags = {"payment generation"},
             responses = {
                     @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),
                     @ApiResponse(responseCode = "405", description = "Invalid input")
@@ -84,6 +87,20 @@ public class KPayResource {
         instance.getInstance().stopPayments();
         return "{ status: \"success\", message: \"payments stopped\", title: \"Success\" }";
     }
+
+    @GET
+    @Path("/payments/status")
+    @Operation(summary = "check payment running status",
+            tags = {"payment generation"},
+            responses = {
+                    @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "405", description = "Invalid input")
+            })
+    public String paymentGenstatus() {
+        return String.format("{ status: \"%b\"}", instance.getInstance().isGeneratingPayments());
+    }
+
+
 
 
     /**
@@ -101,6 +118,18 @@ public class KPayResource {
     public ThroughputStats viewMetrics() {
         return instance.getInstance().viewMetrics();
     }
+    @GET
+    @Path("/metrics/pipeline")
+    @Operation(summary = "view payment pipeline metrics",
+            tags = {"metrics"},
+            responses = {
+                    @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "405", description = "Invalid input")
+            })
+    public Pair<InflightStats, ConfirmedStats> pipelineStats() {
+        return instance.getInstance().getPaymentPipelineStats();
+    }
+
 
 //    @GET
 //    @Path("/metrics/dlq")
@@ -141,7 +170,7 @@ public class KPayResource {
     @Produces("application/json")
     @Path("/status")
     public String status() {
-        return String.format("{ status: \"%s\", message: \"processing status\", metrics: \"some metrics maybe?\" }", instance.getInstance().status());
+        return String.format("{ status: \"%s\" }", instance.getInstance().status());
     };
 
 

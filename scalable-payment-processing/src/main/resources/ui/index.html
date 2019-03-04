@@ -115,12 +115,23 @@
 
         <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
           <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h5 >Activity</h5>
+            <h5>Control Plane</h5>
             <div class="btn-toolbar mb-2 mb-md-0">
               <div class="btn-group mr-2">
-                <button class="btn btn-sm btn-outline-secondary" id="refreshTable">Refresh</button>
-                <!--<button class="btn btn-sm btn-outline-secondary">Export</button>-->
+                <button class="btn btn-sm btn-outline-secondary" id="payments">Payment simulation</button>
+                <button class="btn btn-sm btn-outline-secondary" id="resumePayments" title="resume">&gt;</button>
+                <button class="btn btn-sm btn-outline-secondary" id="pausePayments" title="pause">||</button>
+                <button class="btn btn-sm btn-outline-secondary" id="statusPayments" title="current status of generation - running or stopped">...</button>
+                <input tips="number of trades to generate" type="text" title="number of payments per second" name="amount" value="10">
+
+                &nbsp;&nbsp;&nbsp;&nbsp;
+
+                <button class="btn btn-sm btn-outline-secondary" id="processing" title="payment processing pipeline control">Processing pipeline</button>
+                <button class="btn btn-sm btn-outline-secondary" id="resumeProgressing" title="resume data processing">&gt;</button>
+                <button class="btn btn-sm btn-outline-secondary" id="pauseProcessing" title="pause data processing">||</button>
+                <button class="btn btn-sm btn-outline-secondary" id="statusProcessing" title="current status of processors - running or stopped">...</button>
               </div>
+
               <button class="btn btn-sm btn-outline-secondary dropdown-toggle">
                 <span data-feather="calendar"></span>
                 This week
@@ -128,9 +139,13 @@
             </div>
           </div>
 
-          <canvas class="my-4 w-100" id="mainChart" width="900" height="180"></canvas>
+          <h5>Trust: Performance & Observablity</h5>
 
-          <h5>User accounts</h5>
+          <canvas class="my-4 w-100" id="paymentPipelineChart" width="900" height="180"></canvas>
+
+          <canvas class="my-4 w-100" id="latencyChart" width="900" height="180"></canvas>
+
+          <h5>Core: User accounts</h5>
           <div class="table-responsive">
             <table id="accountTable" class="display" width="100%"></table>
           </div>
