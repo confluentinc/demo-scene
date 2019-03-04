@@ -2,7 +2,7 @@
 
 This Docker Compose can be used to spin up an environment in which to explore and test the Kafka Connect JDBC source connector. 
 
-The associated blog article can be found at https://confluent.io/blog
+The associated blog article can be found at https://www.confluent.io/blog/kafka-connect-deep-dive-jdbc-source-connector
 
 .Current environment
 
