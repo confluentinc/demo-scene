@@ -69,7 +69,7 @@ Once you see output then it means Kafka is running and you can proceed
 [source,bash]
 ----
 $ docker-compose logs -f kafka|Select-String "INFO Kafka version"
-kafka_1             | [2018-09-03 14:08:09,790] INFO Kafka version : 2.0.0-cp1 (org.apache.kafka.common.utils.AppInfoParser)
+kafka_1             | [2019-03-04 16:04:53,441] INFO Kafka version : 2.1.0-cp1 (org.apache.kafka.common.utils.AppInfoParser)
 ----
 
 Press Ctrl-C twice to exit the `docker-compose logs` command
@@ -907,7 +907,9 @@ KSQL can create aggregations of event data, either over all events to date (and 
 * Hopping (e.g. every 5 minutes, advancing 1 minute: 00:00-00:05, 00:01-00:06)
 * Session (Sets a timeout for the given key, after which any new data is treated as a new session)
 
-To understand more about these time windows, you can read the related https://docs.confluent.io/current/streams/developer-guide/dsl-api.html#windowing[Kafka Streams documentation]. Since KSQL is built on Kafka Streams, the concepts are the same. The https://docs.confluent.io/current/ksql/docs/tutorials/examples.html#aggregating-windowing-and-sessionization[KSQL-specific documentation] is also useful.
+To understand more about these time windows, you can read the related https://docs.confluent.io/current/streams/developer-guide/dsl-api.html#windowing[Kafka Streams documentation]. Since KSQL is built on Kafka Streams, the concepts are the same. The https://docs.confluent.io/current/ksql/docs/tutorials/examples.html#aggregating-windowing-and-sessionization[KSQL-specific documentation] is also useful. 
+
+NOTE: KSQL will _re-emit_ aggregates as they are updated by incoming events. This means that you will see multiple rows of output for a given window/key.
 
 image::images/ksql_workshop_05.png[Aggregating data with KSQL]
 
@@ -917,7 +919,8 @@ This shows the number of ratings per customer status, per minute:
 
 [source,sql]
 ----
-SELECT CLUB_STATUS, COUNT(*) AS RATING_COUNT \
+SELECT TIMESTAMPTOSTRING(WindowStart(), 'yyyy-MM-dd HH:mm:ss'), \
+       CLUB_STATUS, COUNT(*) AS RATING_COUNT \
 FROM RATINGS_WITH_CUSTOMER_DATA \
      WINDOW TUMBLING (SIZE 1 MINUTES) \
 GROUP BY CLUB_STATUS;
@@ -931,12 +934,14 @@ gold | 12
 bronze | 13
 ----
 
-Note that the time window itself is not shown in the output here. To access that we need to persist the results. Instead of `CREATE STREAM` as we did above, we're going to instead persist with a `CREATE TABLE`, since aggregates are always a table (key + value). Just as before though, a Kafka topic is continually populated with the results of the query:
+The time window itself is exposed in the results using the function `WindowStart()`, which is then cast from epoch to human-readable form with the `TIMESTAMPTOSTRING` function. 
+
+Aggregates can be persisted too. Instead of `CREATE STREAM` as we did above, we're going to instead persist with a `CREATE TABLE`, since aggregates are always a table (key + value). Just as before though, a Kafka topic is continually populated with the results of the query:
 
 [source,sql]
 ----
 CREATE TABLE RATINGS_BY_CLUB_STATUS AS \
-SELECT CLUB_STATUS, COUNT(*) AS RATING_COUNT \
+SELECT WindowStart() AS WINDOW_START_TS, CLUB_STATUS, COUNT(*) AS RATING_COUNT \
 FROM RATINGS_WITH_CUSTOMER_DATA \
      WINDOW TUMBLING (SIZE 1 MINUTES) \
 GROUP BY CLUB_STATUS;
@@ -951,39 +956,11 @@ GROUP BY CLUB_STATUS;
 ksql>
 ----
 
-In the resulting `TABLE` there are some characteristics to note:
-
-* The `ROWTIME` is the timestamp of the most recent message to arrive in that aggregate.
-* The `ROWKEY` is a composite key of the window start timestamp as an epoch, plus the column(s) defined in the `GROUP BY`. It's not currently possible to access the window start/end time programatically from KSQL, but https://github.com/confluentinc/ksql/issues/1674[this is planned].
-
-Using the `ROWKEY` column it's possible to examine the aggregate values:
-
-[source,sql]
-----
-SELECT ROWKEY, \
-        CLUB_STATUS, RATING_COUNT \
-FROM RATINGS_BY_CLUB_STATUS \
-LIMIT 5;
-----
-
-[source,sql]
-----
-platinum : Window{start=1535986500000 end=-} | platinum | 23
-silver : Window{start=1535983740000 end=-} | silver | 9
-gold : Window{start=1535983740000 end=-} | gold | 39
-gold : Window{start=1535983800000 end=-} | gold | 46
-platinum : Window{start=1535983980000 end=-} | platinum | 18
-Limit Reached
-Query terminated
-ksql>
-----
-
-
 This table that we've created is just a first class object in KSQL, updated in real time with the results from the aggregate query. Because it's just another object in KSQL, we can query and filter it as any other:
 
 [source,sql]
 ----
-SELECT ROWKEY, \
+SELECT TIMESTAMPTOSTRING(WINDOW_START_TS, 'yyyy-MM-dd HH:mm:ss'), \
         CLUB_STATUS, RATING_COUNT \
 FROM RATINGS_BY_CLUB_STATUS \
 WHERE CLUB_STATUS='bronze';
@@ -991,14 +968,15 @@ WHERE CLUB_STATUS='bronze';
 
 [source,sql]
 ----
-bronze : Window{start=1535986740000 end=-} | bronze | 23
-bronze : Window{start=1535986800000 end=-} | bronze | 22
-bronze : Window{start=1535986860000 end=-} | bronze | 35
-bronze : Window{start=1535986920000 end=-} | bronze | 25
-bronze : Window{start=1535986980000 end=-} | bronze | 30
+2019-03-04 17:42:00 | bronze | 2
+2019-03-04 17:42:00 | bronze | 3
+2019-03-04 17:42:00 | bronze | 5
+2019-03-04 17:42:00 | bronze | 9
+2019-03-04 17:42:00 | bronze | 10
 ----
 
 If you let the `SELECT` output continue to run, you'll see all of the past time window aggregate values—but also the current one. Note that the _current_ time window's aggregate value will continue to update, because new events are being continually processed and reflected in the value. If you were to send an event to the source `ratings` topic with a timestamp in the past, the corresponding time window's aggregate would be re-emitted.
+
 
 == Optional: Stream data to Elasticsearch
 
@@ -1088,7 +1066,7 @@ Use the http://localhost:5601/app/kibana#/management/elasticsearch/index_managem
 
 image::images/kibana_01.png[]
 
-Add the index pattern to Kibana, and then use the Discover and Visualise options to explore and create analyses on the data:
+http://localhost:5601/app/kibana#/management/kibana/index?_g=()[Add the index pattern to Kibana], and then use the Discover and Visualise options to explore and create analyses on the data:
 
 image::images/kibana_02.png[]
 
