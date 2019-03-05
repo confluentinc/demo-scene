@@ -149,7 +149,7 @@ Make sure that you get a successful start up screen:
 
 Copyright 2017-2018 Confluent Inc.
 
-CLI v5.1.2, Server v5.1.2 located at http://ksql-server:8088
+CLI v5.1.0, Server v5.1.0 located at http://ksql-server:8088
 
 Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
 
@@ -307,6 +307,7 @@ Successfully changed local property 'auto.offset.reset' from 'null' to 'earliest
 ----
 
 <<<
+
 
 == Creating a Kafka topic populated by a filtered stream
 
@@ -550,7 +551,7 @@ Press Ctrl-C to cancel and return to the KSQL command prompt.
 
 <<<
 
-==== Re-Key Customers Topic
+=== Re-Key Topics with KSQL
 
 Since we're going to eventually join the customer data to the ratings, the customer Kafka messages _must be keyed on the field on which we are performing the join_. If this is not the case the join will fail and we'll get `NULL` values in the result.
 
@@ -582,10 +583,15 @@ In our example this doesn't matter, but be aware of this if you rely on this re-
 
 [source,sql]
 ----
-ksql> CREATE STREAM CUSTOMERS_SRC_REKEY \
+SET 'auto.offset.reset' = 'earliest';
+
+CREATE STREAM CUSTOMERS_SRC_REKEY \
         WITH (PARTITIONS=1) AS \
         SELECT * FROM CUSTOMERS_SRC PARTITION BY ID;
+----
 
+[source,sql]
+----
  Message
 ----------------------------
  Stream created and running
@@ -597,18 +603,18 @@ ksql>
 ====
 *Optional*
 
-To inspect the key for a given stream/table, use the `ROWKEY` system column.
+To inspect the key for a given stream/table, you can use the `ROWKEY` system column.
 
 Here we compare it to the join column (`ID`); for the join to succeed they must be equal.
 
-In the source stream, the `ROWKEY` reflects the key of the underlying Kafka messages as set by the producer:
+In the source stream, the `ROWKEY` reflects the key of the underlying Kafka messages as set by the producer (read by KSQL as a String): 
 
 [source,sql]
 ----
 ksql> SELECT C.ROWKEY, C.ID FROM CUSTOMERS_SRC C LIMIT 3;
-Struct{id=1} | 1
-Struct{id=2} | 2
-Struct{id=3} | 3
+ | 1
+ | 2
+ | 3
 Limit Reached
 Query terminated
 ----
@@ -944,7 +950,6 @@ WHERE CLUB_STATUS='bronze';
 ----
 
 If you let the `SELECT` output continue to run, you'll see all of the past time window aggregate values—but also the current one. Note that the _current_ time window's aggregate value will continue to update, because new events are being continually processed and reflected in the value. If you were to send an event to the source `ratings` topic with a timestamp in the past, the corresponding time window's aggregate would be re-emitted.
-
 
 == Optional: Stream data to Elasticsearch
 
