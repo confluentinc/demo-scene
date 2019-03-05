@@ -168,10 +168,6 @@ ksql> SHOW TOPICS;
 -------------------------------------------------------------------------------------------------------------
  _confluent-metrics              | false      | 12         | 1                  | 0         | 0
  _schemas                        | false      | 1          | 1                  | 0         | 0
- asgard.demo.CUSTOMERS           | false      | 1          | 1                  | 1         | 1
- asgard.demo.CUSTOMERS-raw       | false      | 1          | 1                  | 2         | 2
- docker-connect-debezium-configs | false      | 1          | 1                  | 0         | 0
- docker-connect-debezium-offsets | false      | 25         | 1                  | 0         | 0
  ratings                         | false      | 1          | 1                  | 0         | 0
 [...]
 -------------------------------------------------------------------------------------------------------------
@@ -486,17 +482,20 @@ docker-compose exec connect-debezium bash -c '/scripts/create-mysql-source.sh'
 
 You should see `HTTP/1.1 201 Created`, twice.
 
-If you are interested you can inspect the script file (`scripts/create-mysql-source.sh` in the workshop folder) that includes the configuration payload in JSON.
+[NOTE]
+====
+*Optional*: If you are interested you can inspect the script file (`scripts/create-mysql-source.sh` in the workshop folder) that includes the configuration payload in JSON. 
 
-1. The connector called `mysql-source-demo-customers` flattens the before/after record state data, along with the nested metadata, into a single flat structure. This is what we use during the rest of the workshop.
-+
-The flattening is done using a *Single Message Transform* from Debezium, called `io.debezium.transforms.UnwrapFromEnvelope`.
+1. The connector called `mysql-source-demo-customers` flattens the before/after record state data, along with the nested metadata, into a single flat structure. This is what we use during the rest of the workshop. 
 + 
-The connector also uses two Single Message Transforms to illustrate how metadata can be added to ingested data. The `InsertField` transformation adds the topic name into a field called `messagetopic`, and some fixed text into the `messagesource` field.
+The flattening is done using a *Single Message Transform* from Debezium, called `io.debezium.transforms.UnwrapFromEnvelope`. 
++ 
+The connector also uses two Single Message Transforms to illustrate how metadata can be added to ingested data. The `InsertField` transformation adds the topic name into a field called `messagetopic`, and some fixed text into the `messagesource` field. 
 
 2. The connector `mysql-source-demo-customers-raw` retains the nested structure of the before/after record data.
 +
-A Single Message Transform is used to route the messages to a different topic. By default Debezium will use the format `server.schema.table` when streaming a table's data to a Kafka topic. We use the `RegexRouter` to redirect the messages to a topic with a `-raw` suffix.
+A Single Message Transform is used to route the messages to a different topic. By default Debezium will use the format `server.schema.table` when streaming a table's data to a Kafka topic. We use the `RegexRouter` to redirect the messages to a topic with a `-raw` suffix. 
+====
 
 === Exploring CDC change records
 
@@ -972,7 +971,7 @@ Create a dynamic mapping in Elasticsearch so that the timestamp of source data i
 
 [source,bash]
 ----
-curl -XPUT "http://localhost:9200/_template/kafkaconnect/" -H 'Content-Type: application/json' -d' { "index_patterns": "*", "settings": { "number_of_shards": 1, "number_of_replicas": 0 }, "mappings": { "_default_": { "dynamic_templates": [ { "dates": { "match": "TS", "mapping": { "type": "date" } } }, { "non_analysed_string_template": { "match": "*", "match_mapping_type": "string", "mapping": { "type": "keyword" } } } ] } } }'
+curl -XPUT "http://localhost:9200/_template/kafkaconnect/" -H 'Content-Type: application/json' -d' { "index_patterns": "*", "settings": { "number_of_shards": 1, "number_of_replicas": 0 }, "mappings": { "_default_": { "dynamic_templates": [ { "dates": { "match": "*TS", "mapping": { "type": "date" } } }, { "non_analysed_string_template": { "match": "*", "match_mapping_type": "string", "mapping": { "type": "keyword" } } } ] } } }'
 ----
 
 Create a connector to stream `RATINGS_WITH_CUSTOMER_DATA` to Elasticsearch:
@@ -1015,10 +1014,7 @@ curl -X "POST" "http://localhost:18083/connectors/" \
     "schema.ignore": "true",
     "type.name": "type.name=kafkaconnect",
     "topic.index.map": "RATINGS_BY_CLUB_STATUS:ratings_agg_by_status_1min",
-    "connection.url": "http://elasticsearch:9200",
-    "transforms": "ExtractTimestamp",
-    "transforms.ExtractTimestamp.type": "org.apache.kafka.connect.transforms.InsertField$Value",
-    "transforms.ExtractTimestamp.timestamp.field" : "TS"
+    "connection.url": "http://elasticsearch:9200"
   }
 }'
 ----
