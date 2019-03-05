@@ -86,7 +86,9 @@ ksql-workshop_datagen-ratings_1    bash -c echo Waiting for K ...   Up
 ksql-workshop_elasticsearch_1      /usr/local/bin/docker-entr ...   Up      0.0.0.0:9200->9200/tcp, 9300/tcp
 ksql-workshop_kafka-connect-cp_1   /etc/confluent/docker/run        Up      0.0.0.0:18083->18083/tcp, 8083/tcp, 9092/tcp
 ksql-workshop_kafka_1              /etc/confluent/docker/run        Up      0.0.0.0:9092->9092/tcp
+ksql-workshop_kafkacat_1           sleep infinity                   Up
 ksql-workshop_kibana_1             /usr/local/bin/kibana-docker     Up      0.0.0.0:5601->5601/tcp
+ksql-workshop_ksql-cli_1           /bin/sh                          Up
 ksql-workshop_ksql-server_1        /etc/confluent/docker/run        Up      8088/tcp
 ksql-workshop_mysql_1              docker-entrypoint.sh mysqld      Up      3306/tcp, 33060/tcp
 ksql-workshop_schema-registry_1    /etc/confluent/docker/run        Up      8081/tcp
@@ -101,13 +103,11 @@ The event stream driving this example is a simulated stream of events purporting
 
 === Inspect the ratings data
 
-Here we use https://github.com/edenhill/kafkacat/[`kafkacat` ] for showing the Kafka messages and detailed metadata.
+The ratings data is in a Kafka topic. Here we use https://github.com/edenhill/kafkacat/[`kafkacat` ] for showing the Kafka messages and detailed metadata.
 
 [source,bash]
 ----
-docker run --network ksql-workshop_default `
-          --tty --interactive --rm `
-          confluentinc/cp-kafkacat `
+docker-compose exec kafkacat `
           kafkacat -b kafka:29092 -C -K: `
           -f '\nKey (%K bytes): %k\t\nValue (%S bytes): %s\n\Partition: %p\tOffset: %o\n--\n' `
           -t ratings
@@ -116,133 +116,6 @@ docker run --network ksql-workshop_default `
 Note that the data is in Avro, so you will see lots of special characters in the output.
 
 Press Ctrl-C to cancel and return to the command prompt.
-
-NOTE: On Linux the name of the network _may_ be `ksqlworkshop_default` (no `-` between `ksql` and `workshop`). Use `docker network ls` to check, and modify the `docker run` command above (and subsequently in this workshop) accordingly.
-
-== Source Data : Customers
-
-=== Populate customer data
-
-Depending on time available, and your interest in exploring database integration with Kafka, you may opt for one of the two methods below for getting customer data into Kafka.
-
-==== Option A: RDBMS
-
-**This shows how to ingest the data using https://www.confluent.io/blog/no-more-silos-how-to-integrate-your-databases-with-apache-kafka-and-cdc[Kafka Connect and CDC]. If you want, you can replace this step with the following one ("Option B").**
-
-Check that Kafka Connect with Debezium's connector has started:
-
-[source,bash]
-----
-docker-compose logs -f connect-debezium | Select-String "Kafka Connect started"
-----
-
-Wait for the output:
-
-[source,bash]
-----
-connect-debezium_1  | 2018-09-04 11:33:04,639 INFO   ||  Kafka Connect started   [org.apache.kafka.connect.runtime.Connect]
-----
-
-Press Ctrl-C to return to the command prompt.
-
-We'll now create _two_ Kafka Connect connectors. Both stream events from MySQL into Kafka using Debezium, but differ in how they handle the message structure.
-
-[source,bash]
-----
-docker-compose exec connect-debezium bash -c '/scripts/create-mysql-source.sh'
-----
-
-You should see `HTTP/1.1 201 Created`, twice.
-
-If you are interested you can inspect the script file (`scripts/create-mysql-source.sh` in the workshop folder) that includes the configuration payload in JSON.
-
-1. The connector called `mysql-source-demo-customers` flattens the before/after record state data, along with the nested metadata, into a single flat structure. This is what we use during the rest of the workshop.
-+
-The flattening is done using a *Single Message Transform* from Debezium, called `io.debezium.transforms.UnwrapFromEnvelope`.
-+ 
-The connector also uses two Single Message Transforms to illustrate how metadata can be added to ingested data. The `InsertField` transformation adds the topic name into a field called `messagetopic`, and some fixed text into the `messagesource` field.
-
-2. The connector `mysql-source-demo-customers-raw` retains the nested structure of the before/after record data.
-+
-A Single Message Transform is used to route the messages to a different topic. By default Debezium will use the format `server.schema.table` when streaming a table's data to a Kafka topic. We use the `RegexRouter` to redirect the messages to a topic with a `-raw` suffix.
-
-===== Exploring CDC change records
-
-Start a MySQL command prompt:
-
-[source,bash]
-----
-docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
-----
-
-Now in a separate terminal window run the following, to stream the contents of the customers topic and any changes to stdout:
-
-[source,bash]
-----
-# Make sure you run this from the `demo-scene/ksql-workshop` folder
-docker-compose exec -T kafka `
-      kafka-console-consumer `
-      --bootstrap-server kafka:29092 `
-      --topic asgard.demo.CUSTOMERS-raw --from-beginning | jq '.'
-----
-
-(_https://stedolan.github.io/jq/[jq] is useful here—if you don't have it installed, remove `|jq '.'` from the above command)._
-
-Note the customer data shown, and the structure of it, with `before`, `after`, and `source` data.
-
-From the MySQL command prompt, make some changes to the data:
-
-[source,sql]
-----
-INSERT INTO CUSTOMERS (ID,FIRST_NAME,LAST_NAME) VALUES (42,'Rick','Astley');
-UPDATE CUSTOMERS SET FIRST_NAME = 'Thomas', LAST_NAME ='Smith' WHERE ID=2;
-----
-
-You should see each DML cause an almost-instantaneous update on the Kafka topic. For each change, inspect the output of the Kafka topic. Observe the difference between an `INSERT` and `UPDATE`.
-
-==== Option B: Manually
-
-If you want to follow the simpler path for this workshop, you can just mock up the data that would be coming from our customers table on a database. In practice you would ingest the data using https://www.confluent.io/blog/no-more-silos-how-to-integrate-your-databases-with-apache-kafka-and-cdc[Kafka Connect and CDC]
-
-Run the following command to send the customer data to the `customers` topic:
-
-[source,bash]
-----
-docker run --network ksql-workshop_default `
-           --interactive --rm `
-           --volume ${PWD}/data:/data confluentinc/cp-kafkacat `
-           kafkacat -b kafka:29092 `
-                    -t asgard.demo.CUSTOMERS `
-                    -P -l /data/customers.json
-----
-
-Note that there is no output from this command. We will verify its success in the next step.
-
-=== Inspect customer data
-
-Run this command to inspect the content of the main `asgard.demo.CUSTOMERS` topic that we populated.
-
-[source,bash]
-----
-docker run --network ksql-workshop_default `
-          --tty --interactive --rm `
-          confluentinc/cp-kafkacat `
-          kafkacat -b kafka:29092 -C -K: `
-          -f '\nKey (%K bytes): %k\t\nValue (%S bytes): %s\n\Partition: %p\tOffset: %o\n--\n' `
-          -t asgard.demo.CUSTOMERS
-----
-
-You should see messages, similar to this:
-
-----
-Key (-1 bytes):
-Value (168 bytes): {"id":1,"first_name":"Annemarie","last_name":"Arent","email":"aarent0@cpanel.net","gender":"Female","club_status":"platinum","comments":"Organized web-enabled ability"}
-Partition: 0    Offset: 0
---
-----
-
-Press Ctrl-C to cancel and return to the command prompt.
-
 
 <<<
 
@@ -256,9 +129,7 @@ Launch the CLI:
 
 [source,bash]
 ----
-docker run --network ksql-workshop_default `
-           --tty --interactive --rm `
-           confluentinc/cp-ksql-cli:5.1.2 http://ksql-server:8088
+docker-compose exec ksql-cli ksql http://ksql-server:8088
 ----
 
 Make sure that you get a successful start up screen:
@@ -327,41 +198,13 @@ Format:AVRO
 Press Ctrl-C to cancel and return to the KSQL prompt.
 
 <<<
-=== Inspect a topic contents - Customers
-
-Here we use the `FROM BEGINNING` argument, which tells KSQL to go back to the _beginning_ of the topic and show all data from there
-
-[source,sql]
-----
-ksql> PRINT 'asgard.demo.CUSTOMERS' FROM BEGINNING;
-Format:JSON
-{"ROWTIME":1529499994472,"ROWKEY":"null","id":1,"first_name":"Annemarie","last_name":"Arent","email":"aarent0@cpanel.net","gender":"Female","club_status":"platinum","comments":"Organized web-enabled ability"}
-{"ROWTIME":1529499994472,"ROWKEY":"null","id":2,"first_name":"Merilyn","last_name":"Doughartie","email":"mdoughartie1@dedecms.com","gender":"Female","club_status":"platinum","comments":"Optimized local definition"}
-----
-
-Press Ctrl-C to cancel and return to the KSQL prompt. This may take up to a minute to cancel (https://github.com/confluentinc/ksql/issues/1759[#1759]). If it still does not cancel then just start a new KSQL CLI using the `docker run` command from above and proceed to the next step.
-
-<<<
-=== KSQL offsets
-
-Since Apache Kafka persists data, it is possible to use KSQL to query and process data from the past, as well as new events that arrive on the topic.
-
-To tell KSQL to process from beginning of topic run `SET 'auto.offset.reset' = 'earliest';`
-
-Run this now, so that future processing includes all existing data—this is important for the Customer data, since no new messages are arriving on this topic and thus we need to make sure we work with the messages already present.
-
-[source,sql]
-----
-ksql> SET 'auto.offset.reset' = 'earliest';
-Successfully changed local property 'auto.offset.reset' from 'null' to 'earliest'
-----
-
-<<<
 == Querying and processing the Ratings topic
 
 Having inspected the topics and contents of them, let's get into some SQL now. The first step in KSQL is to register the source topic with KSQL.
 
 === Register the ratings topic
+
+By registering a topic with KSQL, we declare its schema and properties.
 
 The inbound event stream of ratings data is a `STREAM`—later we will talk about `TABLE`, but for now, we just need a simple `CREATE STREAM` with the appropriate values in the `WITH` clause:
 
@@ -448,6 +291,23 @@ Query terminated
 ksql>
 ----
 
+<<<
+=== KSQL offsets
+
+Since Apache Kafka persists data, it is possible to use KSQL to query and process data from the past, as well as new events that arrive on the topic.
+
+To tell KSQL to process from beginning of topic run `SET 'auto.offset.reset' = 'earliest';`
+
+Run this now, so that future processing includes all existing data. 
+
+[source,sql]
+----
+ksql> SET 'auto.offset.reset' = 'earliest';
+Successfully changed local property 'auto.offset.reset' from 'null' to 'earliest'
+----
+
+<<<
+
 == Creating a Kafka topic populated by a filtered stream
 
 image::images/ksql_workshop_02.png[Filtering data with KSQL]
@@ -470,7 +330,7 @@ What this does is set a KSQL continuous query running that processes messages on
 * selects just the specified columns
 ** If you wanted to take all columns from the source stream, you would simply use `SELECT *`
 
-Each processed message is written to a new Kafka topic. Remember, this is a _continuous query_, so every single source message—past, present, and future—will be processed with low-latency in this way.
+Each processed message is written to a new Kafka topic. Remember, this is a _continuous query_, so every single source message—past, present, and future—will be processed with low-latency in this way. If we only want to process _new_ messages and not existing ones, we would configure `SET 'auto.offset.reset' = 'latest';`.
 
 _This method of creating derived topics is frequently referred to by the acronym of the statement—`CSAS` (-> `CREATE STREAM … AS SELECT`)._
 
@@ -596,47 +456,113 @@ Format:AVRO
 
 <<<
 
-== Joining Data in KSQL
+== Source Data : Customers
 
-image::images/ksql_workshop_03.png[Joining data with KSQL]
+This shows how to ingest the data using https://www.confluent.io/blog/no-more-silos-how-to-integrate-your-databases-with-apache-kafka-and-cdc[Kafka Connect and CDC].
 
-Remember our Customer data? Let's bring that into play, and use it to enrich the inbound stream of ratings data to show against each rating who the customer is, and their club status ('platinum','gold', etc).
+Check that Kafka Connect with Debezium's connector has started: 
 
-=== Prepare the Customer data
+[source,bash]
+----
+docker-compose logs -f connect-debezium | Select-String "Kafka Connect started"
+----
 
-We're going to model the Customers topic as a **KSQL Table**. This is a semantic construct that enables us to work with the data in the topic as key/value pairs, with a single value for each key. You can read more about https://docs.confluent.io/current/streams/concepts.html#duality-of-streams-and-tables[this here].
+Wait for the output:
 
-==== Inspect Customers Data
+[source,bash]
+----
+connect-debezium_1  | 2018-09-04 11:33:04,639 INFO   ||  Kafka Connect started   [org.apache.kafka.connect.runtime.Connect]
+----
 
-Let's check the data first, using the very handy `PRINT` command:
+Press Ctrl-C to return to the command prompt.
 
-`PRINT 'asgard.demo.CUSTOMERS' FROM BEGINNING;`
+We'll now create _two_ Kafka Connect connectors. Both stream events from MySQL into Kafka using Debezium, but differ in how they handle the message structure.
+
+[source,bash]
+----
+docker-compose exec connect-debezium bash -c '/scripts/create-mysql-source.sh'
+----
+
+You should see `HTTP/1.1 201 Created`, twice.
+
+If you are interested you can inspect the script file (`scripts/create-mysql-source.sh` in the workshop folder) that includes the configuration payload in JSON.
+
+1. The connector called `mysql-source-demo-customers` flattens the before/after record state data, along with the nested metadata, into a single flat structure. This is what we use during the rest of the workshop.
++
+The flattening is done using a *Single Message Transform* from Debezium, called `io.debezium.transforms.UnwrapFromEnvelope`.
++ 
+The connector also uses two Single Message Transforms to illustrate how metadata can be added to ingested data. The `InsertField` transformation adds the topic name into a field called `messagetopic`, and some fixed text into the `messagesource` field.
+
+2. The connector `mysql-source-demo-customers-raw` retains the nested structure of the before/after record data.
++
+A Single Message Transform is used to route the messages to a different topic. By default Debezium will use the format `server.schema.table` when streaming a table's data to a Kafka topic. We use the `RegexRouter` to redirect the messages to a topic with a `-raw` suffix.
+
+=== Exploring CDC change records
+
+Start a MySQL command prompt:
+
+[source,bash]
+----
+docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
+----
+
+Now in a separate terminal window run the following, to stream the contents of the customers topic and any changes to stdout:
+
+[source,bash]
+----
+# Make sure you run this from the `demo-scene/ksql-workshop` folder
+docker-compose exec -T kafka-connect-cp `
+        kafka-avro-console-consumer `
+        --bootstrap-server kafka:29092 `
+        --property schema.registry.url=http://schema-registry:8081 `
+        --topic asgard.demo.CUSTOMERS-raw --from-beginning|jq '.'
+----
+
+(_https://stedolan.github.io/jq/[jq] is useful here—if you don't have it installed, remove `|jq '.'` from the above command)._
+
+Note the customer data shown, and the structure of it, with `before`, `after`, and `source` data.
+
+From the MySQL command prompt, make some changes to the data:
+
+[source,sql]
+----
+INSERT INTO CUSTOMERS (ID,FIRST_NAME,LAST_NAME) VALUES (42,'Rick','Astley');
+UPDATE CUSTOMERS SET FIRST_NAME = 'Thomas', LAST_NAME ='Smith' WHERE ID=2;
+----
+
+You should see each DML cause an almost-instantaneous update on the Kafka topic. For each change, inspect the output of the Kafka topic. Observe the difference between an `INSERT` and `UPDATE`.
+
+=== Inspect a topic contents with KSQL - Customers
+
+Let's look at the customer data from the KSQL prompt. This is pretty much the same as using `kafka-avro-console-consumer` as we did above.
+
+Here we use the `FROM BEGINNING` argument, which tells KSQL to go back to the _beginning_ of the topic and show all data from there
 
 [source,sql]
 ----
 ksql> PRINT 'asgard.demo.CUSTOMERS' FROM BEGINNING;
-Format:JSON
-{"ROWTIME":1529492614185,"ROWKEY":"null","id":1,"first_name":"Annemarie","last_name":"Arent","email":"aarent0@cpanel.net","gender":"Female","club_status":"platinum","comments":"Organized web-enabled ability"}
+Format:AVRO
+3/4/19 5:50:42 PM UTC, Struct{id=1}, {"id": 1, "first_name": "Rica", "last_name": "Blaisdell", "email": "rblaisdell0@rambler.ru", "gender": "Female", "club_status": "bronze", "comments": "Universal optimal hierarchy", "create_ts": "2019-03-04T17:48:20Z", "update_ts": "2019-03-04T17:48:20Z", "messagetopic": "asgard.demo.CUSTOMERS", "messagesource": "Debezium CDC from MySQL on asgard"}
+3/4/19 5:50:42 PM UTC, Struct{id=2}, {"id": 2, "first_name": "Ruthie", "last_name": "Brockherst", "email": "rbrockherst1@ow.ly", "gender": "Female", "club_status": "platinum", "comments": "Reverse-engineered tangible interface", "create_ts": "2019-03-04T17:48:20Z", "update_ts": "2019-03-04T17:48:20Z", "messagetopic": "asgard.demo.CUSTOMERS", "messagesource": "Debezium CDC from MySQL on asgard"}
 ----
 
-Press Ctrl-C to cancel and return to the KSQL prompt. This may take up to a minute to cancel (https://github.com/confluentinc/ksql/issues/1759[#1759]).
+Press Ctrl-C to cancel and return to the KSQL command prompt. 
+
+<<<
 
 ==== Re-Key Customers Topic
 
-When we join the customer data to the ratings, the customer Kafka messages _must be keyed on the field on which we are performing the join_. If this is not the case the join will fail and we'll get `NULL` values in the result.
+Since we're going to eventually join the customer data to the ratings, the customer Kafka messages _must be keyed on the field on which we are performing the join_. If this is not the case the join will fail and we'll get `NULL` values in the result.
 
-Our source customer messages are not currently keyed correctly. Depending on how you chose to populate the Customer topic earlier:
-
-* From Debezium, the messages are actually keyed using the Primary Key of the source table, but using a key serialisation that KSQL does not support - and thus in effect is not useful as a key in KSQL at all
-* From a manual input of JSON messages, the key is null (observe the `"ROWKEY":"null"` in the `PRINT` output above)
+Our source customer messages are currently keyed using the Primary Key of the source table, but using a key serialisation that KSQL https://github.com/confluentinc/ksql/issues/824[does not yet support]—and thus in effect is not useful as a key in KSQL at all.
 
 To re-key a topic in Kafka we can use KSQL!
 
-First we will register the customer topic. Note that because it is in JSON format we need to declare all of the columns and their datatypes:
+First we will register the customer topic. 
 
 [source,sql]
 ----
-ksql> CREATE STREAM CUSTOMERS_SRC (id BIGINT, first_name VARCHAR, last_name VARCHAR, email VARCHAR, gender VARCHAR, club_status VARCHAR, comments VARCHAR) WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='JSON');
+ksql> CREATE STREAM CUSTOMERS_SRC WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
 
  Message
 ----------------
@@ -645,7 +571,7 @@ ksql> CREATE STREAM CUSTOMERS_SRC (id BIGINT, first_name VARCHAR, last_name VARC
 ksql>
 ----
 
-With the stream registered, we can now re-key the topic, using a KSQL `CSAS` and the `PARTITION BY` clause. Note that we're taking the opportunity to re-serialise the data into Avro format. We're also changing the number of partitions from that of the source (4) to match that of the `ratings` topic (1):
+With the stream registered, we can now re-key the topic, using a KSQL `CSAS` and the `PARTITION BY` clause. Note that we're also changing the number of partitions from that of the source (4) to match that of the `ratings` topic (1):
 
 [IMPORTANT]
 ====
@@ -657,7 +583,7 @@ In our example this doesn't matter, but be aware of this if you rely on this re-
 [source,sql]
 ----
 ksql> CREATE STREAM CUSTOMERS_SRC_REKEY \
-        WITH (PARTITIONS=1, VALUE_FORMAT='AVRO') AS \
+        WITH (PARTITIONS=1) AS \
         SELECT * FROM CUSTOMERS_SRC PARTITION BY ID;
 
  Message
@@ -675,14 +601,14 @@ To inspect the key for a given stream/table, use the `ROWKEY` system column.
 
 Here we compare it to the join column (`ID`); for the join to succeed they must be equal.
 
-In the source stream, the `ROWKEY` is null (or `Struct{id=x}` if streamed from Debezium) because the key of the underlying Kafka messages is null:
+In the source stream, the `ROWKEY` reflects the key of the underlying Kafka messages as set by the producer:
 
 [source,sql]
 ----
 ksql> SELECT C.ROWKEY, C.ID FROM CUSTOMERS_SRC C LIMIT 3;
-null | 1
-null | 2
-null | 3
+Struct{id=1} | 1
+Struct{id=2} | 2
+Struct{id=3} | 3
 Limit Reached
 Query terminated
 ----
@@ -701,9 +627,13 @@ ksql>
 ----
 ====
 
-==== Create Customers Table
+<<< 
 
-Now, create a `TABLE` over the new re-keyed Kafka topic. Why's it a table? Because *for each key* (user id), we want to know *its current value* (name, status, etc)
+== The Stream/Table duality
+
+We're now going to model the Customers topic as a **KSQL Table**. This is a semantic construct that enables us to work with the data in the topic as key/value pairs, with a single value for each key. You can read more about https://docs.confluent.io/current/streams/concepts.html#duality-of-streams-and-tables[this here].
+
+Register a `TABLE` over the new re-keyed Kafka topic. Why's it a table? Because *for each key* (user id), we want to know *its current value* (name, status, etc)
 
 [source,sql]
 ----
@@ -718,9 +648,8 @@ ksql>
 
 [NOTE]
 ====
-_n.b. if you get the error `Unable to verify the AVRO schema is compatible with KSQL` then_ :
+_n.b. if you get the error `Avro schema for message values on topic CUSTOMERS_SRC_REKEY does not exist in the Schema Registry.` then_ :
 
-* Retry the command after a second or two (ref. https://github.com/confluentinc/ksql/issues/1394[#1394]).
 * Check that the topic's source stream is created:
 +
 [source,sql]
@@ -754,21 +683,60 @@ DROP STREAM CUSTOMERS_SRC_REKEY;
 Then re-run the `CREATE STREAM CUSTOMERS_SRC_REKEY[…]` from above. Use `SHOW QUERIES;` to list the queries running if the name differs from that shown in the `TERMINATE` statement.
 ====
 
-
 Query the table:
 
 [source,sql]
 ----
-ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS;
-1 | Annemarie | Arent | aarent0@cpanel.net | platinum
-2 | Merilyn | Doughartie | mdoughartie1@dedecms.com | platinum
+ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS LIMIT 3;
+1 | Rica | Blaisdell | rblaisdell0@rambler.ru | bronze
+3 | Mariejeanne | Cocci | mcocci2@techcrunch.com | bronze
+4 | Hashim | Rumke | hrumke3@sohu.com | platinum
+Limit Reached
+Query terminated
 ----
 
+Both `CUSTOMER` (table) and `CUSTOMER_SRC_REKEY` (stream) are driven from the same Kafka topic. You can examine the stream/table duality by running two KSQL sessions side-by-side, each querying one for a given key: 
 
-<<<
-=== Stream-Table join
+[source,sql]
+----
+ksql> SET 'auto.offset.reset' = 'earliest';
+Successfully changed local property 'auto.offset.reset' to 'earliest'. Use the UNSET command to revert your change.
+ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS WHERE ID=2;
+2 | Thomas | Smith | rbrockherst1@ow.ly | platinum
+----
 
-Now let's join our ratings data (`RATINGS`), which includes user ID, to our user information (`CUSTOMERS`).
+[source,sql]
+----
+ksql> SET 'auto.offset.reset' = 'earliest';
+Successfully changed local property 'auto.offset.reset' to 'earliest'. Use the UNSET command to revert your change.
+ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS_SRC_REKEY WHERE ID=2;
+2 | Ruthie | Brockherst | rbrockherst1@ow.ly | platinum
+2 | Thomas | Smith | rbrockherst1@ow.ly | platinum
+----
+
+Leave each query running, and in a third window bring up a MySQL session 
+
+[source,bash]
+----
+docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
+----
+
+In MySQL make changes (one at a time) to the record for the ID being queried: 
+
+[source,sql]
+----
+UPDATE CUSTOMERS SET EMAIL='foo@bar.com' WHERE ID=2;
+UPDATE CUSTOMERS SET EMAIL='example@bork.bork.bork.com' WHERE ID=2;
+----
+
+When you make the change on MySQL you should see the two KSQL queries emit the new values almost immediately. Then, _cancel and re-run_ the two KSQL queries (against table and stream respectively). Each time you should note that the stream contains *every* event related to the source table record, whilst the table hold the *current* state. 
+
+<<< 
+== Joining Data in KSQL
+
+image::images/ksql_workshop_03.png[Joining data with KSQL]
+
+Let's use the customer data (`CUSTOMERS`) and use it to enrich the inbound stream of ratings data (`RATINGS`) to show against each rating who the customer is, and their club status ('platinum','gold', etc). 
 
 Run the following SQL:
 
@@ -783,7 +751,7 @@ LIMIT 5;
 There are a couple of things to note about this query :
 
 * We're aliasing the table and stream names to make column names unambiguous
-* I'm using the backspace line continuation character
+* The backspace character can be used to denote line continuation
 
 In the output you should see a rating message, and the name of the customer who left it:
 
@@ -817,7 +785,7 @@ ON R.USER_ID = C.ID;
 2018-06-20 13:03:51 | 6 | 2 | 6902 | web | Surprisingly good, maybe you are getting your mojo back at long last! | Gianina | Mixhel | gold
 ----
 
-Press Ctrl-C to cancel the output.
+Press Ctrl-C to cancel the output. 
 
 <<<
 ==== Populating a Kafka topic with the results of a Stream-Table join
@@ -980,7 +948,7 @@ If you let the `SELECT` output continue to run, you'll see all of the past time 
 
 == Optional: Stream data to Elasticsearch
 
-NOTE: This section assumes that you are familiar with the use of Kibana
+NOTE: This section assumes that you are familiar with the use of Kibana. It has NOT been tested on Windows. 
 
 Using Kafka Connect you can stream data from a Kafka to one (or many) targets, including Elasticsearch, HDFS, S3, and so on.
 

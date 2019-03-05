@@ -82,6 +82,19 @@ services:
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
 
+  ksql-cli:
+    image: confluentinc/cp-ksql-cli:5.1.0
+    depends_on:
+      - ksql-server
+    entrypoint: /bin/sh
+    tty: true
+
+  kafkacat:
+    image: confluentinc/cp-kafkacat:latest
+    depends_on:
+      - kafka
+    entrypoint: sleep infinity
+
   # Runs the Kafka KSQL data generator for ratings
   datagen-ratings:
     image: confluentinc/ksql-examples:5.1.0

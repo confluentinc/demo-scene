@@ -1,6 +1,6 @@
 = Pre-requisites for KSQL Workshop
 Robin Moffatt <robin@confluent.io>
-v1.00, September 4, 2018
+v1.10, March 5, 2019
 
 [NOTE]
 ====
@@ -45,8 +45,12 @@ Should return a value greater than 8GB - if not, the Kafka stack will probably n
 git clone https://github.com/confluentinc/demo-scene.git
 ----
 
-0. Did you check that Docker has at least 8GB of memory available?
-** You really do need to do this
+3. Change to the KSQL workshop folder
++
+[source,bash]
+----
+cd demo-scene/ksql-workshop
+----
 
 3. Pull all required docker images—this will take a while!
 +
@@ -55,14 +59,17 @@ git clone https://github.com/confluentinc/demo-scene.git
 docker-compose pull
 ----
 
+0. Did you check that Docker has at least 8GB of memory available?
+** You really do need to do this
+
 3. You may find it useful to have `jq` installed
 +
 * Mac: `brew install jq`
 * RHEL-based: `sudo yum install -y jq`
 * Debian-based: `sudo apt install -y jq`
 * Windows: two options: 
-  1. http://chocolately.org/docs/installation[Install choco] and then run `choco install jq`
-  2. Download from https://stedolan.github.io/jq/download/[the official `jq` website] and add to Path 
+** http://chocolately.org/docs/installation[Install choco] and then run `choco install jq`
+** Download from https://stedolan.github.io/jq/download/[the official `jq` website] and add to Path 
 
 4. Linux only:
 + 

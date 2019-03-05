@@ -16,9 +16,10 @@ curl -i -X POST -H "Accept:application/json" \
             "database.history.kafka.bootstrap.servers": "kafka:29092",
             "database.history.kafka.topic": "dbhistory.demo" ,
             "include.schema.changes": "true",
-            "key.converter":"org.apache.kafka.connect.storage.StringConverter",
-            "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-            "value.converter.schemas.enable": false,
+            "value.converter": "io.confluent.connect.avro.AvroConverter",
+            "value.converter.schema.registry.url": "http://schema-registry:8081",
+            "key.converter": "io.confluent.connect.avro.AvroConverter",
+            "key.converter.schema.registry.url": "http://schema-registry:8081",
             "transforms": "unwrap,InsertTopic,InsertSourceDetails",
             "transforms.unwrap.type": "io.debezium.transforms.UnwrapFromEnvelope",
             "transforms.InsertTopic.type":"org.apache.kafka.connect.transforms.InsertField$Value",
@@ -28,6 +29,7 @@ curl -i -X POST -H "Accept:application/json" \
             "transforms.InsertSourceDetails.static.value":"Debezium CDC from MySQL on asgard"
        }
     }'
+
 curl -i -X POST -H "Accept:application/json" \
     -H  "Content-Type:application/json" http://connect-debezium:8083/connectors/ \
     -d '{
@@ -44,9 +46,10 @@ curl -i -X POST -H "Accept:application/json" \
             "database.history.kafka.bootstrap.servers": "kafka:29092",
             "database.history.kafka.topic": "dbhistory.demo-raw" ,
             "include.schema.changes": "true",
-            "key.converter":"org.apache.kafka.connect.storage.StringConverter",
-            "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-            "value.converter.schemas.enable": false,
+            "key.converter": "io.confluent.connect.avro.AvroConverter",
+            "key.converter.schema.registry.url": "http://schema-registry:8081",
+            "value.converter": "io.confluent.connect.avro.AvroConverter",
+            "value.converter.schema.registry.url": "http://schema-registry:8081",
             "transforms": "addTopicSuffix",
             "transforms.addTopicSuffix.type":"org.apache.kafka.connect.transforms.RegexRouter",
             "transforms.addTopicSuffix.regex":"(.*)",
