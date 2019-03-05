@@ -2,7 +2,15 @@ resource "null_resource" "local_config" {
 
     provisioner "local-exec" {
 
-        command = "echo '${data.template_file.cc_props_template.rendered}' >> ~/.ccloud/config"
+        command = "rm ~/.ccloud/config"
+        interpreter = ["bash", "-c"]
+        on_failure = "continue"
+
+    }
+
+    provisioner "local-exec" {
+
+        command = "echo '${data.template_file.config_properties.rendered}' >> ~/.ccloud/config"
         interpreter = ["bash", "-c"]
         on_failure = "continue"
 

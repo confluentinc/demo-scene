@@ -8,7 +8,7 @@ variable "bucket_suffix" {
 
 }
 
-data "template_file" "cc_props_template" {
+data "template_file" "config_properties" {
 
   template = "${file("templates/cc.props.tpl")}"
 

@@ -61,8 +61,8 @@ cat > interceptorsConfig.json <<- "EOF"
          "service":"KSQL Server",
          "config":{
             "sampler":{
-               "type":"const",
-               "param":1
+               "type" : "const",
+               "param" : 1
             },
             "reporter":{
                "logSpans":true
