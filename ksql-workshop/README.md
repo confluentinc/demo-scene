@@ -1,8 +1,6 @@
-![image](../images/confluent-logo-300-2.png)
-
 # Overview
 
-This KSQL ratings demo showcases Kafka stream processing using KSQL. This demo was initially created for a KSQL workshop.
+This KSQL ratings demo showcases Apache Kafka® stream processing using KSQL. This demo was initially created for a KSQL workshop.
 
 ----
 
@@ -18,7 +16,7 @@ As with the other demos in this repo, you may run the entire demo end-to-end wit
 # Prerequisites
 
 * [Common demo prerequisites](https://github.com/confluentinc/examples#prerequisites)
-* [Confluent Platform 5.0](https://www.confluent.io/download/)
+* [Confluent Platform 5.1](https://www.confluent.io/download/)
 * If you are running the [step-by-step guide](ksql-workshop.adoc)
   * Docker
   * Docker Compose
