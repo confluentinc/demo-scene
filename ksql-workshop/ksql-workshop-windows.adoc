@@ -110,7 +110,7 @@ The ratings data is in a Kafka topic. Here we use https://github.com/edenhill/ka
 docker-compose exec kafkacat `
           kafkacat -b kafka:29092 -C -K: `
           -f '\nKey (%K bytes): %k\t\nValue (%S bytes): %s\n\Partition: %p\tOffset: %o\n--\n' `
-          -t ratings
+          -t ratings -o end
 ----
 
 Note that the data is in Avro, so you will see lots of special characters in the output.
