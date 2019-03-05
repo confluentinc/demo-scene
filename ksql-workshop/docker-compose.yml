@@ -117,7 +117,13 @@ services:
 
 # Other systems
   mysql:
-    image: debezium/example-mysql:0.8
+    # *-----------------------------*
+    # To connect to the DB: 
+    #   docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
+    # *-----------------------------*
+    image: mysql:5.7
+    ports:
+      - 3306:3306
     environment:
      - MYSQL_ROOT_PASSWORD=debezium
      - MYSQL_USER=mysqluser
@@ -126,7 +132,7 @@ services:
      - ${PWD}/data/customers.sql:/docker-entrypoint-initdb.d/z99_dump.sql
 
   connect-debezium:
-    image: debezium/connect:0.8
+    image: debezium/connect:0.9.2.Final
     depends_on:
      - kafka
      - mysql
