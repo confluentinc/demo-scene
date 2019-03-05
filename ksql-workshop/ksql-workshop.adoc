@@ -1026,6 +1026,8 @@ es_sink_unhappy_platinum_customers  |  RUNNING  |  RUNNING
 
 Use the http://localhost:5601/app/kibana#/management/elasticsearch/index_management/home?_g=()[Kibana interface] to check that docs are arriving in Elasticsearch:
 
+NOTE: If you get an error screen from Kibana then try restarting the container (`docker-compose restart kibana`).
+
 image::images/kibana_01.png[]
 
 http://localhost:5601/app/kibana#/management/kibana/index?_g=()[Add the index pattern to Kibana], and then use the Discover and Visualise options to explore and create analyses on the data:
