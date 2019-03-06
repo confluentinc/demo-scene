@@ -1,8 +1,9 @@
 = Workshop: Real-time SQL Stream Processing at Scale with Apache Kafka and KSQL (Windows)
 :doctype: book
+:toc:
 :sectnums:
 Robin Moffatt <@rmoff>, Sven Erik Knop <@sven_erik_knop>
-v1.32, February 28, 2019
+v1.33, March 6, 2019
 
 :toc:
 
@@ -97,29 +98,9 @@ ksql-workshop_zookeeper_1          /etc/confluent/docker/run        Up      2181
 
 IMPORTANT: If any components do not show "Up" under the `State` column (e.g. they say "Exit") then you must rectify this before continuing. As a first solution, try re-issuing the `docker-compose up -d command`.
 
-== Source Data : Rating events
-
-The event stream driving this example is a simulated stream of events purporting to show the ratings left by users on a website, with data elements including the device type that they used, the star rating, and a message associated with the rating.
-
-=== Inspect the ratings data
-
-The ratings data is in a Kafka topic. Here we use https://github.com/edenhill/kafkacat/[`kafkacat` ] for showing the Kafka messages and detailed metadata.
-
-[source,bash]
-----
-docker-compose exec kafkacat `
-          kafkacat -b kafka:29092 -C -K: `
-          -f '\nKey (%K bytes): %k\t\nValue (%S bytes): %s\n\Partition: %p\tOffset: %o\n--\n' `
-          -t ratings -o end
-----
-
-Note that the data is in Avro, so you will see lots of special characters in the output.
-
-Press Ctrl-C to cancel and return to the command prompt.
-
 <<<
 
-== KSQL CLI
+== KSQL
 
 KSQL can be used via the command line interface (CLI), a graphical UI built into Confluent Control Center, or the documented https://docs.confluent.io/current/ksql/docs/api.html[REST API].
 
@@ -156,7 +137,7 @@ Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
 ksql>
 ----
 
-=== See available Kafka topics
+==== See available Kafka topics
 
 KSQL can be used to view the topic metadata on a Kafka cluster (`SHOW TOPICS;`), as well as inspect the messages in a topic (`PRINT <topic>;`).
 
@@ -174,7 +155,9 @@ ksql> SHOW TOPICS;
 ksql>
 ----
 
-=== Inspect a topic contents - Ratings
+==== Inspect a topic contents - Ratings
+
+The event stream driving this example is a simulated stream of events purporting to show the ratings left by users on a website, with data elements including the device type that they used, the star rating, and a message associated with the rating.
 
 Using the `PRINT` command we can easily see column names and values within a topic's messages. Kafka messages consist of a timestamp, key, and message (payload), which are all shown in the `PRINT` output.
 
@@ -193,8 +176,25 @@ Format:AVRO
 
 Press Ctrl-C to cancel and return to the KSQL prompt.
 
+[NOTE]
+====
+*Optional*: You can also inspect the Kafka topic with a tool such as https://github.com/edenhill/kafkacat/[`kafkacat`]. Just like KSQL this shows the Kafka messages, but it also includes detailed metadata. 
+
+[source,bash]
+----
+docker-compose exec kafkacat `
+          kafkacat -b kafka:29092 -C -K: `
+          -f '\nKey (%K bytes): %k\t\nValue (%S bytes): %s\n\Partition: %p\tOffset: %o\n--\n' `
+          -t ratings -o end
+----
+
+Note that the data is in Avro, so you will see lots of special characters in the output.
+
+Press Ctrl-C to cancel and return to the command prompt.
+====
+
 <<<
-== Querying and processing the Ratings topic
+== Querying and filtering streams of data
 
 Having inspected the topics and contents of them, let's get into some SQL now. The first step in KSQL is to register the source topic with KSQL.
 
@@ -453,9 +453,9 @@ Format:AVRO
 
 <<<
 
-== Source Data : Customers
+== Kafka Connect / Integrating Kafka with a database
 
-This shows how to ingest the data using https://www.confluent.io/blog/no-more-silos-how-to-integrate-your-databases-with-apache-kafka-and-cdc[Kafka Connect and CDC].
+This shows how to ingest the Customers data from a database using https://www.confluent.io/blog/no-more-silos-how-to-integrate-your-databases-with-apache-kafka-and-cdc[Kafka Connect and CDC].
 
 Check that Kafka Connect with Debezium's connector has started: 
 
@@ -835,7 +835,7 @@ mdoughartie1@dedecms.com | 1 | worst. flight. ever. #neveragain
 ----
 
 <<<
-== Daisy-chaining derived streams
+=== Daisy-chaining derived streams
 
 image::images/ksql_workshop_04.png[Filtering enriched data with KSQL]
 
@@ -860,7 +860,7 @@ WHERE  STARS < 3 \
 ksql>
 ----
 
-=== Query the new stream
+==== Query the new stream
 
 Now we can query the derived stream to easily identify important customers who are not happy. Since this is backed by a Kafka topic being continually popuated by KSQL we can also drive other applications with this data, as well as land it to datastores down-stream for visualisation.
 
