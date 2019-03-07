@@ -23,7 +23,6 @@ variable "instance_count" {
     "kafka_connect"    =  0
     "ksql_server"      =  1
     "control_center"   =  1
-    "jaeger_server"    =  1
     "bastion_server"   =  0
 
   }
@@ -33,11 +32,5 @@ variable "instance_count" {
 variable "confluent_platform_location" {
 
   default = "http://packages.confluent.io/archive/5.1/confluent-5.1.0-2.11.zip"
-
-}
-
-variable "jaeger_tracing_location" {
-
-  default = "https://github.com/jaegertracing/jaeger/releases/download/v1.10.0/jaeger-1.10.0-linux-amd64.tar.gz"
 
 }

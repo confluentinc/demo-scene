@@ -119,11 +119,12 @@ resource "aws_s3_bucket_object" "cheat" {
   
 }
 
-resource "aws_s3_bucket_object" "ccloud_logo" {
+resource "aws_s3_bucket_object" "logo" {
 
     bucket = "${aws_s3_bucket.ccloud_demo.bucket}"
-    key = "ccloud-logo.jpg"
-    source = "../../webapp/ccloud-logo.jpg"
+    key = "logo.svg"
+    content_type = "image/svg+xml"
+    source = "../../webapp/logo.svg"
   
 }
 

@@ -57,10 +57,6 @@ data "template_file" "rest_proxy_bootstrap" {
 
   vars {
 
-    jaeger_tracing_location = "${var.jaeger_tracing_location}"
-    jaeger_collector = "${join(",", formatlist("%s:%s",
-      aws_instance.jaeger_server.*.private_ip, "14267"))}"
-
     confluent_platform_location = "${var.confluent_platform_location}"
     rest_proxy_properties = "${data.template_file.rest_proxy_properties.rendered}"
 
@@ -134,10 +130,6 @@ data "template_file" "ksql_server_bootstrap" {
 
   vars {
 
-    jaeger_tracing_location = "${var.jaeger_tracing_location}"
-    jaeger_collector = "${join(",", formatlist("%s:%s",
-      aws_instance.jaeger_server.*.private_ip, "14267"))}"
-
     confluent_platform_location = "${var.confluent_platform_location}"
     ksql_server_properties = "${data.template_file.ksql_server_properties.rendered}"
     broker_list = "${var.ccloud_broker_list}"
@@ -185,22 +177,6 @@ data "template_file" "control_center_bootstrap" {
 
     confluent_platform_location = "${var.confluent_platform_location}"
     control_center_properties = "${data.template_file.control_center_properties.rendered}"
-
-  }
-
-}
-
-###########################################
-######### Jaeger Server Bootstrap #########
-###########################################
-
-data "template_file" "jaeger_server_bootstrap" {
-
-  template = "${file("../util/jaeger-server.sh")}"
-
-  vars {
-
-    jaeger_tracing_location = "${var.jaeger_tracing_location}"
 
   }
 
