@@ -24,8 +24,8 @@ import java.util.Set;
 public class KTableRestClient<K,V> extends AbstractKTableClient<K,V> implements KTableResource<K,V> {
 
     private final String rootPath;
-    Class keyClass;
-    Class valueClass;
+    private Class keyClass;
+    private Class valueClass;
 
     Client client = ClientBuilder.newClient();
     private KafkaStreams streams;
@@ -45,9 +45,8 @@ public class KTableRestClient<K,V> extends AbstractKTableClient<K,V> implements 
     @Override
     public int size() {
         int result = 0;
-        List<HostStoreInfo> hostStoreInfos = getHostStoreInfos();
 
-        for (HostStoreInfo hostStoreInfo : hostStoreInfos) {
+        for (HostStoreInfo hostStoreInfo : getHostStoreInfos()) {
             result += client.target(hostStoreInfo.getAddress()).path(String.format("/%s/size", rootPath))
                     .request(MediaType.APPLICATION_JSON)
                     .get(int.class);
@@ -58,10 +57,8 @@ public class KTableRestClient<K,V> extends AbstractKTableClient<K,V> implements 
     @Override
     public Set<K> keySet() {
 
-        List<HostStoreInfo> hostStoreInfos = getHostStoreInfos();
-
         HashSet<K> result = new HashSet<>();
-        for (HostStoreInfo hostStoreInfo : hostStoreInfos) {
+        for (HostStoreInfo hostStoreInfo : getHostStoreInfos()) {
             result.addAll(client.target(hostStoreInfo.getAddress()).path(String.format("/%s/keys", rootPath))
                     .request(MediaType.APPLICATION_JSON)
                     .get(Set.class));
@@ -101,12 +98,10 @@ public class KTableRestClient<K,V> extends AbstractKTableClient<K,V> implements 
      * @return
      */
     protected List<HostStoreInfo> getHostStoreInfos() {
-        MetadataService metadataService = new MetadataService(streams);
-        return metadataService.streamsMetadataForStore(store);
+        return new MetadataService(streams).streamsMetadataForStore(store);
     }
     protected HostStoreInfo getHostStoreInfoForKey(String k) {
-        MetadataService metadataService = new MetadataService(streams);
-        return metadataService.streamsMetadataForStoreAndKey(store, k, new StringSerializer());
+        return new MetadataService(streams).streamsMetadataForStoreAndKey(store, k, new StringSerializer());
     }
 
     public void stop() {

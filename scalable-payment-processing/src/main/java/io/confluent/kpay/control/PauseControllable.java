@@ -7,8 +7,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public class PauseControllable implements Controllable {
 
 
-    long waitingSince;
-    boolean paused = false;
+    private long waitingSince;
+    private boolean paused = false;
     private final Lock lock = new ReentrantLock();
     private final Condition isPaused = lock.newCondition();
 
@@ -51,11 +51,12 @@ public class PauseControllable implements Controllable {
     public void pauseProcessing() {
         lock.lock();
         try {
+            waitingSince = System.currentTimeMillis();
             paused = true;
         } finally {
-            waitingSince = System.currentTimeMillis();
             lock.unlock();
         }
+
 
     }
 

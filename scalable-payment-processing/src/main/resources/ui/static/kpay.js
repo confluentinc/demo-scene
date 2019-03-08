@@ -366,6 +366,11 @@ function refreshLatencyChart() {
     })
 }
 
+/**
+ * Look at https://github.com/bpmn-io/bpmn-js
+ * Note: The source code responsible for displaying the bpmn.io logo (two green cogwheels in
+ a box)
+ */
 function createStuff() {
     createLatencyChart();
     createPaymentPipelineChart();
