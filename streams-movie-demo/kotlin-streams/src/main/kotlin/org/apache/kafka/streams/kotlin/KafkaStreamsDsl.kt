@@ -1,12 +1,8 @@
 package org.apache.kafka.streams.kotlin
 
 import org.apache.kafka.streams.KafkaStreams
-import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.StreamsConfig
 import org.apache.kafka.streams.Topology
-import org.apache.kafka.streams.kstream.KGroupedStream
-import org.apache.kafka.streams.kstream.KStream
-import org.apache.kafka.streams.kstream.KTable
 import org.apache.kafka.streams.processor.Processor
 import org.apache.kafka.streams.processor.ProcessorSupplier
 import org.apache.kafka.streams.state.KeyValueStore
@@ -61,10 +57,19 @@ fun KafkaStreamsModel.topology(block: Topology.() -> Unit) {
   this.dag = topology
 }
 
+interface /*enum*/ Key<T>
+interface KStreamsConfig {
+  infix fun <T> String.to(t: T)
+}
+
 @KStreamsDsl
-fun KafkaStreamsModel.config(block: () -> Map<*, *>) {
+fun KafkaStreamsModel.config(a: KStreamsConfig.() -> Unit) {
   val p = Properties()
-  p.putAll(block())
+  object : KStreamsConfig {
+    override fun <T> String.to(t: T) {
+      p.put(this, t)
+    }
+  }.a()
   this.config = p
 }
 
@@ -107,7 +112,7 @@ fun <K, V> Topology.processor(block: KProcessor<K, V>.() -> Unit): KProcessor<K,
 /**
  * simple pojo model/holder for Processor.
  * Uses K-prefix to avoid name clash
- * 
+ *
  * @see Processor
  */
 @KStreamsDsl

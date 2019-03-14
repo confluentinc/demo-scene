@@ -25,15 +25,13 @@ fun main() {
 
   kafkaStreamsApp {
     config {
-      mapOf(
-              // setting offset reset to earliest so that we can re-run the demo code with the same pre-loaded data
-              ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
-              StreamsConfig.APPLICATION_ID_CONFIG to "streams-wordcount-processor",
-              StreamsConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
-              StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG to 0,
-              StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG to Serdes.String().javaClass,
-              StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG to Serdes.String().javaClass
-      )
+      // setting offset reset to earliest so that we can re-run the demo code with the same pre-loaded data
+      ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest"
+      StreamsConfig.APPLICATION_ID_CONFIG to "streams-wordcount-processor"
+      StreamsConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092"
+      StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG to 0
+      StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG to Serdes.String().javaClass
+      StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG to Serdes.String().javaClass
     }
 
     topology {
