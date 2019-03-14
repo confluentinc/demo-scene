@@ -16,11 +16,11 @@
 package io.confluent.kpay.payments;
 
 import io.confluent.kpay.control.PauseControllable;
-import io.confluent.kpay.ktablequery.KTableRestClient;
 import io.confluent.kpay.payments.model.AccountBalance;
 import io.confluent.kpay.payments.model.ConfirmedStats;
 import io.confluent.kpay.payments.model.InflightStats;
 import io.confluent.kpay.payments.model.Payment;
+import io.confluent.kpay.rest_iq.KTableRestClient;
 import io.confluent.kpay.utils.IntegrationTestHarness;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -36,7 +36,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Properties;
 
 public class PaymentsIntegrationTest {
 

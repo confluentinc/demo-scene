@@ -1,9 +1,9 @@
 package io.confluent.kpay.payments;
 
-import io.confluent.kpay.ktablequery.KTableResourceEndpoint;
-import io.confluent.kpay.ktablequery.KVStoreProvider;
 import io.confluent.kpay.payments.model.AccountBalance;
 import io.confluent.kpay.payments.model.Payment;
+import io.confluent.kpay.rest_iq.KTableResourceEndpoint;
+import io.confluent.kpay.rest_iq.KVStoreProvider;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;

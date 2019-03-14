@@ -1,10 +1,10 @@
 package io.confluent.kpay.payments;
 
 import io.confluent.kpay.control.Controllable;
-import io.confluent.kpay.ktablequery.WindowKTableResourceEndpoint;
-import io.confluent.kpay.ktablequery.WindowKVStoreProvider;
 import io.confluent.kpay.payments.model.InflightStats;
 import io.confluent.kpay.payments.model.Payment;
+import io.confluent.kpay.rest_iq.WindowKTableResourceEndpoint;
+import io.confluent.kpay.rest_iq.WindowKVStoreProvider;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;

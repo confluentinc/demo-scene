@@ -5,8 +5,6 @@ import io.confluent.kpay.control.Controllable;
 import io.confluent.kpay.control.PauseControllable;
 import io.confluent.kpay.control.StartStopController;
 import io.confluent.kpay.control.model.Status;
-import io.confluent.kpay.ktablequery.KTableResourceEndpoint;
-import io.confluent.kpay.ktablequery.WindowKTableResourceEndpoint;
 import io.confluent.kpay.metrics.PaymentsThroughput;
 import io.confluent.kpay.metrics.model.ThroughputStats;
 import io.confluent.kpay.payments.AccountProcessor;
@@ -16,6 +14,8 @@ import io.confluent.kpay.payments.model.AccountBalance;
 import io.confluent.kpay.payments.model.ConfirmedStats;
 import io.confluent.kpay.payments.model.InflightStats;
 import io.confluent.kpay.payments.model.Payment;
+import io.confluent.kpay.rest_iq.KTableResourceEndpoint;
+import io.confluent.kpay.rest_iq.WindowKTableResourceEndpoint;
 import io.confluent.kpay.util.KafkaTopicClient;
 import io.confluent.kpay.util.KafkaTopicClientImpl;
 import io.confluent.kpay.util.Pair;
@@ -35,10 +35,13 @@ import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static java.util.Collections.*;
+import static java.util.Collections.sort;
 
 public class KPayAllInOneImpl implements KPay {
     private static final Logger log = LoggerFactory.getLogger(KPayAllInOneImpl.class);

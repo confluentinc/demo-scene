@@ -1,4 +1,4 @@
-package io.confluent.kpay.ktablequery;
+package io.confluent.kpay.rest_iq;
 
 import io.confluent.kpay.util.Pair;
 import io.swagger.v3.oas.annotations.Operation;

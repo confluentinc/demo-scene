@@ -1,4 +1,4 @@
-package io.confluent.kpay.ktablequery;
+package io.confluent.kpay.rest_iq;
 
 import io.confluent.kpay.util.GenericClassUtil;
 import io.confluent.kpay.util.Pair;

@@ -16,10 +16,10 @@
 package io.confluent.kpay.payments;
 
 import io.confluent.kpay.control.PauseControllable;
-import io.confluent.kpay.ktablequery.KTableRestClient;
 import io.confluent.kpay.payments.model.InflightStats;
-import io.confluent.kpay.utils.IntegrationTestHarness;
 import io.confluent.kpay.payments.model.Payment;
+import io.confluent.kpay.rest_iq.KTableRestClient;
+import io.confluent.kpay.utils.IntegrationTestHarness;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -32,7 +32,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
 public class PaymentsInflightIntegTest {
 

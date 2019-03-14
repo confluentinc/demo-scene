@@ -1,4 +1,4 @@
-package io.confluent.kpay.ktablequery;
+package io.confluent.kpay.rest_iq;
 
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.kstream.KTable;

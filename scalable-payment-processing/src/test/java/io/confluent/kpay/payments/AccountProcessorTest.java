@@ -15,9 +15,9 @@
  **/
 package io.confluent.kpay.payments;
 
-import io.confluent.kpay.ktablequery.KTableRestClient;
 import io.confluent.kpay.payments.model.AccountBalance;
 import io.confluent.kpay.payments.model.Payment;
+import io.confluent.kpay.rest_iq.KTableRestClient;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Serdes;

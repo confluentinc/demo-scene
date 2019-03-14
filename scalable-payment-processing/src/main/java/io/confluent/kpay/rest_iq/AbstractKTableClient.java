@@ -1,4 +1,4 @@
-package io.confluent.kpay.ktablequery;
+package io.confluent.kpay.rest_iq;
 
 abstract class AbstractKTableClient<K, V> {
 }

@@ -1,4 +1,4 @@
-package io.confluent.kpay.ktablequery;
+package io.confluent.kpay.rest_iq;
 
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.state.KeyValueIterator;
@@ -12,8 +12,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
-
-import static org.junit.Assert.*;
 
 public class KTableResourceEndpointTest {
 

@@ -1,4 +1,4 @@
-package io.confluent.kpay.ktablequery;
+package io.confluent.kpay.rest_iq;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import io.confluent.kpay.util.GenericClassUtil;
