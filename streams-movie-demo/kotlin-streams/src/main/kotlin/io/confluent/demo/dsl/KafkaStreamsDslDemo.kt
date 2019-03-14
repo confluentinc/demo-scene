@@ -3,15 +3,20 @@ package io.confluent.demo.dsl
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.StreamsConfig
-import org.apache.kafka.streams.kotlin.*
 import org.apache.kafka.streams.kotlin.KSerdes.producedWith
+import org.apache.kafka.streams.kotlin.count
+import org.apache.kafka.streams.kotlin.createTopology
+import org.apache.kafka.streams.kotlin.groupByKey
+import org.apache.kafka.streams.kotlin.kstream
 import java.util.*
 
 fun main() {
   val topology = createTopology {
     kstream<String, Long>(listOf("A", "B")) {
       groupByKey {
-        count {}.toStream()
+        count {
+          toStream()
+        }
       }
     }.to("group-by-counts",
             producedWith<String, Long>())

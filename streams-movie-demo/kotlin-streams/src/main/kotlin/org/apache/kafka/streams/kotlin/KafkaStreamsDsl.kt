@@ -67,7 +67,7 @@ fun KafkaStreamsModel.config(a: KStreamsConfig.() -> Unit) {
   val p = Properties()
   object : KStreamsConfig {
     override fun <T> String.to(t: T) {
-      p.put(this, t)
+      p.put(this, t.toString())
     }
   }.a()
   this.config = p

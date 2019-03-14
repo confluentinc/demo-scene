@@ -1,4 +1,4 @@
-package org.apache.kafka.streams.kotlin
+package io.confluent.demo.dsl
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,6 +23,7 @@ import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.StreamsConfig
+import org.apache.kafka.streams.kotlin.KSerdes
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import kotlin.concurrent.thread

@@ -1,9 +1,10 @@
-package org.apache.kafka.streams.kotlin
+package io.confluent.demo.dsl
 
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.common.serialization.Serdes.serdeFrom
 import org.apache.kafka.streams.StreamsConfig
+import org.apache.kafka.streams.kotlin.*
 import org.apache.kafka.streams.processor.Processor
 import org.apache.kafka.streams.processor.ProcessorContext
 import org.apache.kafka.streams.processor.PunctuationType
