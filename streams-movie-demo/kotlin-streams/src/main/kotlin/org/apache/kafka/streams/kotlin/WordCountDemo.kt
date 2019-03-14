@@ -23,9 +23,9 @@ import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.StreamsConfig
-import org.apache.kafka.streams.kstream.Produced
 import java.util.*
 import java.util.concurrent.CountDownLatch
+import kotlin.concurrent.thread
 
 /**
  * Demonstrates, using the high-level KStream DSL, how to implement the WordCount program
@@ -46,47 +46,40 @@ object WordCountDemo {
   @JvmStatic
   fun main(args: Array<String>) {
     val props = Properties()
-    props[StreamsConfig.APPLICATION_ID_CONFIG] = "streams-wordcount"
-    props[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = "localhost:9092"
-    props[StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG] = 0
-    props[StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG] = Serdes.String().javaClass.name
-    props[StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG] = Serdes.String().javaClass.name
-
-    // setting offset reset to earliest so that we can re-run the demo code with the same pre-loaded data
-    // Note: To re-run the demo, you need to use the offset reset tool:
-    // https://cwiki.apache.org/confluence/display/KAFKA/Kafka+Streams+Application+Reset+Tool
-    props[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
+    props.putAll(mapOf(
+            // setting offset reset to earliest so that we can re-run the demo code with the same pre-loaded data
+            // Note: To re-run the demo, you need to use the offset reset tool:
+            // https://cwiki.apache.org/confluence/display/KAFKA/Kafka+Streams+Application+Reset+Tool
+            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
+            StreamsConfig.APPLICATION_ID_CONFIG to "streams-wordcount-processor",
+            StreamsConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
+            StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG to 0,
+            StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG to Serdes.String().javaClass,
+            StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG to Serdes.String().javaClass
+    ))
 
     val builder = StreamsBuilder()
 
     val source = builder.stream<String, String>("streams-plaintext-input")
 
     val counts = source
-            .flatMapValues { value -> Arrays.asList(*value.toLowerCase(Locale.getDefault()).split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) }
-            .groupBy { key, value -> value }
+            .flatMapValues { value -> listOf(*value.toLowerCase(Locale.getDefault()).split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) }
+            .groupBy { _, value -> value }
             .count()
 
     // need to override value serde to Long type
-    counts.toStream().to("streams-wordcount-output", Produced.with(Serdes.String(), Serdes.Long()))
+    counts.toStream().to("streams-wordcount-output", KSerdes.producedWith<String, Long>())
 
     val streams = KafkaStreams(builder.build(), props)
     val latch = CountDownLatch(1)
 
     // attach shutdown handler to catch control-c
-    Runtime.getRuntime().addShutdownHook(object : Thread("streams-wordcount-shutdown-hook") {
-      override fun run() {
-        streams.close()
-        latch.countDown()
-      }
+    // opinionated ;)
+    Runtime.getRuntime().addShutdownHook(thread(start = false) {
+      streams.close()
+      latch.countDown()
     })
-
-    try {
-      streams.start()
-      latch.await()
-    } catch (e: Throwable) {
-      System.exit(1)
-    }
-
-    System.exit(0)
+    streams.start()
+    latch.await()
   }
 }

@@ -6,9 +6,6 @@ import org.apache.kafka.streams.kstream.KGroupedStream
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.KTable
 
-@DslMarker
-annotation class KStreamsDsl
-
 @KStreamsDsl
 fun createTopology(block: StreamsBuilder.() -> Unit): Topology = StreamsBuilder().also(block).build()
 
