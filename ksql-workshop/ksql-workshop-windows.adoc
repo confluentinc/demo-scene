@@ -70,7 +70,7 @@ Once you see output then it means Kafka is running and you can proceed
 [source,bash]
 ----
 $ docker-compose logs -f kafka|Select-String "INFO Kafka version"
-kafka_1             | [2019-03-04 16:04:53,441] INFO Kafka version : 2.1.0-cp1 (org.apache.kafka.common.utils.AppInfoParser)
+kafka_1             | [2019-03-15 16:04:53,441] INFO Kafka version : 2.1.1-cp1 (org.apache.kafka.common.utils.AppInfoParser)
 ----
 
 Press Ctrl-C twice to exit the `docker-compose logs` command
@@ -130,7 +130,7 @@ Make sure that you get a successful start up screen:
 
 Copyright 2017-2018 Confluent Inc.
 
-CLI v5.1.0, Server v5.1.0 located at http://ksql-server:8088
+CLI v5.1.2, Server v5.1.2 located at http://ksql-server:8088
 
 Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
 
