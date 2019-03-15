@@ -62,7 +62,7 @@ Once you see output then it means Kafka is running and you can proceed
 [source,bash]
 ----
 $ docker-compose logs -f kafka|grep "INFO Kafka version"
-kafka_1             | [2019-03-04 16:04:53,441] INFO Kafka version : 2.1.0-cp1 (org.apache.kafka.common.utils.AppInfoParser)
+kafka_1             | [2019-03-15 16:04:53,441] INFO Kafka version : 2.1.1-cp1 (org.apache.kafka.common.utils.AppInfoParser)
 ----
 
 Press Ctrl-C twice to exit the `docker-compose logs` command
