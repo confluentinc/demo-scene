@@ -176,6 +176,7 @@ services:
      - MYSQL_PASSWORD=mysqlpw
     volumes:
      - ${PWD}/data/customers.sql:/docker-entrypoint-initdb.d/z99_dump.sql
+     - ./my.cnf:/etc/mysql/my.cnf
 
   connect-debezium:
     image: debezium/connect:0.9.2.Final
