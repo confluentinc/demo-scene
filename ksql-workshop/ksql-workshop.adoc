@@ -78,7 +78,7 @@ $ docker-compose ps
 ksql-workshop_connect-debezium_1   /docker-entrypoint.sh start      Up      0.0.0.0:8083->8083/tcp, 8778/tcp, 9092/tcp, 9779/tcp
 ksql-workshop_datagen-ratings_1    bash -c echo Waiting for K ...   Up
 ksql-workshop_elasticsearch_1      /usr/local/bin/docker-entr ...   Up      0.0.0.0:9200->9200/tcp, 9300/tcp
-ksql-workshop_kafka-connect-cp_1   /etc/confluent/docker/run        Up      0.0.0.0:18083->18083/tcp, 8083/tcp, 9092/tcp
+ksql-workshop_kafka-connect_1      /etc/confluent/docker/run        Up      0.0.0.0:18083->18083/tcp, 8083/tcp, 9092/tcp
 ksql-workshop_kafka_1              /etc/confluent/docker/run        Up      0.0.0.0:9092->9092/tcp
 ksql-workshop_kafkacat_1           sleep infinity                   Up
 ksql-workshop_kibana_1             /usr/local/bin/kibana-docker     Up      0.0.0.0:5601->5601/tcp
@@ -504,7 +504,7 @@ Now in a separate terminal window run the following, to stream the contents of t
 [source,bash]
 ----
 # Make sure you run this from the `demo-scene/ksql-workshop` folder
-docker-compose exec -T kafka-connect-cp \
+docker-compose exec -T kafka-connect \
         kafka-avro-console-consumer \
         --bootstrap-server kafka:29092 \
         --property schema.registry.url=http://schema-registry:8081 \
