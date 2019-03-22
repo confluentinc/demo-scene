@@ -76,7 +76,7 @@ services:
       SCHEMA_REGISTRY_JMX_PORT: 31002
 
   ksql-server:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-server:5.2.x-latest
+    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-server:5.2.x-156
     depends_on:
       - kafka
       - schema-registry
@@ -86,11 +86,17 @@ services:
       KSQL_BOOTSTRAP_SERVERS: kafka:29092
       KSQL_LISTENERS: http://0.0.0.0:8088
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
+      KSQL_KSQL_SERVICE_ID: asgard
       KSQL_JMX_HOSTNAME: "localhost"
       KSQL_JMX_PORT: 31003
       KSQL_LOG4J_ROOT_LOGLEVEL: "INFO"
       KSQL_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+      # --- Processing log config ---
+      KSQL_LOG4J_PROCESSING_LOG_BROKERLIST: kafka:29092
+      KSQL_LOG4J_PROCESSING_LOG_TOPIC: asgard_processing_log
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_NAME: asgard_processing_log
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
 
   ksql-cli:
     image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-cli:5.2.x-latest
