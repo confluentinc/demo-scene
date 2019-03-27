@@ -82,6 +82,7 @@ services:
       - schema-registry
     ports:
       - '31003:31003'
+      - '8088:8088'
     environment:
       KSQL_BOOTSTRAP_SERVERS: kafka:29092
       KSQL_LISTENERS: http://0.0.0.0:8088
