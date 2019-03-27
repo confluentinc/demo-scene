@@ -10,7 +10,7 @@
 version: '2'
 services:
   zookeeper:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-zookeeper:5.2.x-latest
+    image: confluentinc/cp-zookeeper:5.2.0
     ports:
       - '31000:31000'
     environment:
@@ -37,7 +37,7 @@ services:
     # See https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
     # "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-
     #  
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-enterprise-kafka:5.2.x-latest
+    image: confluentinc/cp-enterprise-kafka:5.2.0
     ports:
       - '9092:9092'
       - '31001:31001'
@@ -62,7 +62,7 @@ services:
       KAFKA_JMX_PORT: 31001
 
   schema-registry:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-schema-registry:5.2.x-latest
+    image: confluentinc/cp-schema-registry:5.2.0
     depends_on:
       - zookeeper
       - kafka
@@ -76,7 +76,7 @@ services:
       SCHEMA_REGISTRY_JMX_PORT: 31002
 
   ksql-server:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-server:5.2.x-156
+    image: confluentinc/cp-ksql-server:5.2.0
     depends_on:
       - kafka
       - schema-registry
@@ -100,15 +100,14 @@ services:
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
 
   ksql-cli:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-cli:5.2.x-latest
+    image: confluentinc/cp-ksql-cli:5.2.0
     depends_on:
       - ksql-server
     entrypoint: /bin/sh
     tty: true
 
   kafka-connect:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-kafka-connect:5.2.x-latest
-    # image: confluentinc/cp-kafka-connect:5.1.2
+    image: confluentinc/cp-kafka-connect:5.2.0
     ports:
       - '8083:8083'
       - '31004:31004'
@@ -138,94 +137,50 @@ services:
       - zookeeper
       - kafka
       - schema-registry
-    command: 
-      - bash 
-      - -c 
-      - |
-        confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.1.1
-        confluent-hub install --no-prompt jcustenborder/kafka-connect-twitter:0.2.32
-        /etc/confluent/docker/run &
-        echo "Waiting for Kafka Connect to start listening on kafka-connect ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://kafka-connect:8083/connectors) -eq 000 ] ; do 
-          echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://kafka-connect:8083/connectors) " (waiting for 200)"
-          sleep 5 
-        done
-        nc -vz kafka-connect 8083
-        echo -e "\n--\n+> Creating Connector"
-        curl -X POST http://kafka-connect:8083/connectors -H "Content-Type: application/json" -d '
-        {
-          "name": "datagen-pageviews",
-          "config": {
-            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
-            "kafka.topic": "pageviews",
-            "quickstart": "pageviews",
-            "max.interval": 100,
-            "iterations": 10000000,
-            "tasks.max": "1"
-          }
-        }
-        '
-        sleep infinity
+    # Uncomment this bit if you want to automatically install the datagen and twitter connectors
+    # and set the datagen connector running  
+    # command: 
+    #   - bash 
+    #   - -c 
+    #   - |
+    #     confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.1.1
+    #     confluent-hub install --no-prompt jcustenborder/kafka-connect-twitter:0.2.32
+    #     /etc/confluent/docker/run &
+    #     echo "Waiting for Kafka Connect to start listening on kafka-connect ⏳"
+    #     while [ $$(curl -s -o /dev/null -w %{http_code} http://kafka-connect:8083/connectors) -eq 000 ] ; do 
+    #       echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://kafka-connect:8083/connectors) " (waiting for 200)"
+    #       sleep 5 
+    #     done
+    #     nc -vz kafka-connect 8083
+    #     echo -e "\n--\n+> Creating Connector"
+    #     curl -X POST http://kafka-connect:8083/connectors -H "Content-Type: application/json" -d '
+    #     {
+    #       "name": "datagen-pageviews",
+    #       "config": {
+    #         "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+    #         "kafka.topic": "pageviews",
+    #         "quickstart": "pageviews",
+    #         "max.interval": 100,
+    #         "iterations": 10000000,
+    #         "tasks.max": "1"
+    #       }
+    #     }
+    #     '
+    #     sleep infinity
 
-  # rest-proxy:
-  #   image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-kafka-rest:5.2.x-latest
-  #   depends_on:
-  #     - zookeeper
-  #     - kafka
-  #     - schema-registry
-  #   ports:
-  #     - '8082:8082'
-  #     - '31005:31005'
-  #   environment:
-  #     KAFKA_REST_HOST_NAME: rest-proxy
-  #     KAFKA_REST_BOOTSTRAP_SERVERS: 'kafka:29092'
-  #     KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
-  #     KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-  #     KAFKAREST_JMX_HOSTNAME: "localhost"
-  #     KAFKAREST_JMX_PORT: 31005
-
-  ksql-datagen-pageviews:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/ksql-examples:5.2.x-latest
-    depends_on: 
-      - ksql-server
+  rest-proxy:
+    image: confluentinc/cp-kafka-rest:5.2.0
+    depends_on:
+      - zookeeper
+      - kafka
       - schema-registry
-    command: 
-      - bash 
-      - -c 
-      - |
-        echo "Waiting for KSQL to start listening  ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088) -eq 000 ] ; do 
-          echo -e $$(date) " KSQL Server listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088) " (waiting for 200)"
-          sleep 5 
-        done
-        cub sr-ready schema-registry 8081 20 
-        ksql-datagen \
-        bootstrap-server=kafka:29092 \
-        quickstart=pageviews \
-        format=avro \
-        topic=pageviews \
-        schemaRegistryUrl=http://schema-registry:8081 \
-        maxInterval=500
-
-  ksql-datagen-users:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/ksql-examples:5.2.x-latest
-    depends_on: 
-      - ksql-server
-      - schema-registry
-    command: 
-      - bash 
-      - -c 
-      - |
-        echo "Waiting for KSQL to start listening  ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088) -eq 000 ] ; do 
-          echo -e $$(date) " KSQL Server listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088) " (waiting for 200)"
-          sleep 5 
-        done
-        cub sr-ready schema-registry 8081 20 
-        ksql-datagen \
-        bootstrap-server=kafka:29092 \
-        quickstart=users \
-        format=avro \
-        schemaRegistryUrl=http://schema-registry:8081
-        topic=users \
-        maxInterval=500
+    ports:
+      - '8082:8082'
+      - '31005:31005'
+    environment:
+      KAFKA_REST_HOST_NAME: rest-proxy
+      KAFKA_REST_BOOTSTRAP_SERVERS: 'kafka:29092'
+      KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
+      KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      KAFKAREST_JMX_HOSTNAME: "localhost"
+      KAFKAREST_JMX_PORT: 31005
