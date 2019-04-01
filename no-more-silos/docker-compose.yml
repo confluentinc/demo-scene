@@ -49,22 +49,23 @@ services:
       - zookeeper
       - kafka
       - schema-registry
+      - mysql
     ports:
       - 8083:8083
     environment:
       CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
       CONNECT_REST_PORT: 8083
-      CONNECT_GROUP_ID: compose-connect-group
-      CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
-      CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-offsets
-      CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+      CONNECT_GROUP_ID: kafka-connect
+      CONNECT_CONFIG_STORAGE_TOPIC: kafka-connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: kafka-connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: kafka-connect-status
       CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
       CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
       CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
@@ -73,19 +74,20 @@ services:
       CONNECT_PLUGIN_PATH: '/usr/share/java'
     volumes:
       - db-leach:/db-leach/
+      - /u01/jdbc-drivers/:/usr/share/java/kafka-connect-jdbc/drivers/
     #   - /my/local/folder/with/jdbc-driver.jar:/usr/share/java/kafka-connect-jdbc/jars/
     command: 
       - /bin/bash
       - -c 
       - |
-        # JDBC Drivers
-        # ------------
-        # MySQL
-        cd /usr/share/java/kafka-connect-jdbc/
-        curl https://cdn.mysql.com/Downloads/Connector-J/mysql-connector-java-8.0.13.tar.gz | tar xz 
-        # MS SQL
-        cd /usr/share/java/kafka-connect-jdbc/
-        curl http://central.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/7.0.0.jre8/mssql-jdbc-7.0.0.jre8.jar --output mssql-jdbc-7.0.0.jre8.jar
+        # # JDBC Drivers
+        # # ------------
+        # # MySQL
+        # cd /usr/share/java/kafka-connect-jdbc/
+        # curl https://cdn.mysql.com/Downloads/Connector-J/mysql-connector-java-8.0.13.tar.gz | tar xz 
+        # # MS SQL
+        # cd /usr/share/java/kafka-connect-jdbc/
+        # curl http://central.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/7.0.0.jre8/mssql-jdbc-7.0.0.jre8.jar --output mssql-jdbc-7.0.0.jre8.jar
         # Now launch Kafka Connect
         sleep infinity &
         /etc/confluent/docker/run 
@@ -119,7 +121,7 @@ services:
     # To connect to the DB: 
     #   docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
     # *-----------------------------*
-    image: mysql
+    image: debezium/example-mysql:0.8
     ports:
       - 3306:3306
     environment:
@@ -129,54 +131,78 @@ services:
     volumes:
      - ./data/mysql:/docker-entrypoint-initdb.d/
 
-  postgres:
-    # *-----------------------------*
-    # To connect to the DB: 
-    #   docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
-    # *-----------------------------*
-    image: postgres:11
+  # postgres:
+  #   # *-----------------------------*
+  #   # To connect to the DB: 
+  #   #   docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+  #   # *-----------------------------*
+  #   image: postgres:11
+  #   environment:
+  #    - POSTGRES_USER=postgres
+  #    - POSTGRES_PASSWORD=postgres
+  #   volumes:
+  #    - ./data/postgres:/docker-entrypoint-initdb.d/
+
+  # mssql:
+  #   # *-----------------------------*
+  #   # To connect to the DB: 
+  #   #   docker-compose exec mssql bash -c '/opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -U sa -P $SA_PASSWORD'
+  #   # *-----------------------------*
+  #   image: mcr.microsoft.com/mssql/server:2017-latest
+  #   environment: 
+  #     - SA_PASSWORD=Admin123
+  #     - ACCEPT_EULA=Y
+  #   volumes:
+  #    - ./data/mssql:/scripts/
+  #   command:
+  #     - /bin/bash
+  #     - -c 
+  #     - |
+  #       # Launch MSSQL and send to background
+  #       /opt/mssql/bin/sqlservr &
+  #       # Wait for it to be available
+  #       echo "Waiting for MS SQL to be available ⏳"
+  #       /opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -h-1 -V1 -U sa -P $$SA_PASSWORD -Q "SET NOCOUNT ON SELECT \"YAY WE ARE UP\" , @@servername"
+  #       is_up=$$?
+  #       while [ $$is_up -ne 0 ] ; do 
+  #         echo -e $$(date) 
+  #         /opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -h-1 -V1 -U sa -P $$SA_PASSWORD -Q "SET NOCOUNT ON SELECT \"YAY WE ARE UP\" , @@servername"
+  #         is_up=$$?
+  #         sleep 5 
+  #       done
+
+  #       # Run every script in /scripts
+  #       # TODO set a flag so that this is only done once on creation, 
+  #       #      and not every time the container runs
+  #       for foo in /scripts/*.sql
+  #         do /opt/mssql-tools/bin/sqlcmd -U sa -P $$SA_PASSWORD -l 30 -e -i $$foo
+  #       done
+  #       # So that the container doesn't shut down, sleep this thread
+  #       sleep infinity
+
+  connect-debezium:
+    image: debezium/connect:0.9.3.Final
+    depends_on:
+     - kafka
+     - mysql
+     - schema-registry
+    ports:
+     - 18083:18083
     environment:
-     - POSTGRES_USER=postgres
-     - POSTGRES_PASSWORD=postgres
+     - BOOTSTRAP_SERVERS=kafka:29092
+     - REST_PORT=18083
+     - ADVERTISED_PORT=18083
+     - ADVERTISED_HOST_NAME="http://connect-debezium"
+     - GROUP_ID=connect-debezium
+     - CONFIG_STORAGE_TOPIC=connect-debezium-configs
+     - OFFSET_STORAGE_TOPIC=connect-debezium-offsets
+     - STATUS_STORAGE_TOPIC=connect-debezium-status
+     - KEY_CONVERTER=io.confluent.connect.avro.AvroConverter
+     - VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter
+     - CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
+     - CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
     volumes:
-     - ./data/postgres:/docker-entrypoint-initdb.d/
-
-  mssql:
-    # *-----------------------------*
-    # To connect to the DB: 
-    #   docker-compose exec mssql bash -c '/opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -U sa -P $SA_PASSWORD'
-    # *-----------------------------*
-    image: mcr.microsoft.com/mssql/server:2017-latest
-    environment: 
-      - SA_PASSWORD=Admin123
-      - ACCEPT_EULA=Y
-    volumes:
-     - ./data/mssql:/scripts/
-    command:
-      - /bin/bash
-      - -c 
-      - |
-        # Launch MSSQL and send to background
-        /opt/mssql/bin/sqlservr &
-        # Wait for it to be available
-        echo "Waiting for MS SQL to be available ⏳"
-        /opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -h-1 -V1 -U sa -P $$SA_PASSWORD -Q "SET NOCOUNT ON SELECT \"YAY WE ARE UP\" , @@servername"
-        is_up=$$?
-        while [ $$is_up -ne 0 ] ; do 
-          echo -e $$(date) 
-          /opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -h-1 -V1 -U sa -P $$SA_PASSWORD -Q "SET NOCOUNT ON SELECT \"YAY WE ARE UP\" , @@servername"
-          is_up=$$?
-          sleep 5 
-        done
-
-        # Run every script in /scripts
-        # TODO set a flag so that this is only done once on creation, 
-        #      and not every time the container runs
-        for foo in /scripts/*.sql
-          do /opt/mssql-tools/bin/sqlcmd -U sa -P $$SA_PASSWORD -l 30 -e -i $$foo
-        done
-        # So that the container doesn't shut down, sleep this thread
-        sleep infinity
+     - $PWD/scripts:/scripts
 
 volumes:
     db-leach: {}

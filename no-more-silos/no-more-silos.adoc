@@ -1,0 +1,331 @@
+= No More Silos - CDC demo
+Robin Moffatt <robin@confluent.io>
+v1.00, April 1, 2019
+
+The slides that accompany this demo can be found here: https://speakerdeck.com/rmoff/no-more-silos-integrating-databases-and-apache-kafka
+
+== Running the test rig
+
+1. Bring up the stack
++
+[source,bash]
+----
+git clone https://github.com/confluentinc/demo-scene.git
+cd no-more-silos
+docker-compose up -d
+----
++
+This brings up the stack ready for use. 
+
+2. Launch the KSQL CLI: 
++
+[source,bash]
+----
+docker-compose exec ksql-cli bash -c 'echo -e "\n\n⏳ Waiting for KSQL to be available before launching CLI\n"; while [ $(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/) -eq 000 ] ; do echo -e $(date) "KSQL Server HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/) " (waiting for 200)" ; sleep 5 ; done; ksql http://ksql-server:8088'
+----
+
+4. Launch MySQL CLI
++
+[source,bash]
+----
+docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
+----
+
+
+== Part 01 - Query-Based CDC
+
+=== MySQL to Kafka using JDBC Source connector
+
+1. In MySQL, examine the data
++
+[source,sql]
+----
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, UPDATE_TS FROM customers;
+----
++
+[source,sql]
+----
++----+------------+-----------+----------------------------+---------------------+
+| ID | FIRST_NAME | LAST_NAME | EMAIL                      | UPDATE_TS           |
++----+------------+-----------+----------------------------+---------------------+
+|  1 | Bibby      | Argabrite | bargabrite0@google.com.hk  | 2019-04-01 16:51:18 |
+|  2 | Auberon    | Sulland   | asulland1@slideshare.net   | 2019-04-01 16:51:18 |
+|  3 | Marv       | Dalrymple | mdalrymple2@macromedia.com | 2019-04-01 16:51:18 |
+|  4 | Nolana     | Yeeles    | nyeeles3@drupal.org        | 2019-04-01 16:51:18 |
+|  5 | Modestia   | Coltart   | mcoltart4@scribd.com       | 2019-04-01 16:51:18 |
++----+------------+-----------+----------------------------+---------------------+
+5 rows in set (0.00 sec)
+----
+
+2. Create the connector
++
+[source,bash]
+----
+curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+          "name": "jdbc_source_mysql_00",
+          "config": {
+                  "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+                  "connection.url": "jdbc:mysql://mysql:3306/demo",
+                  "connection.user": "connect_user",
+                  "connection.password": "asgard",
+                  "topic.prefix": "mysql-00-",
+                  "tasks.max":1,
+                  "mode":"timestamp",
+                  "table.whitelist" : "demo.customers",
+                  "timestamp.column.name": "UPDATE_TS",
+                  "validate.non.null": false
+                  }
+          }'
+----
+
+3. Check it's running
++
+[source,bash]
+----
+curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+----
++
+[source,bash]
+----
+jdbc_source_mysql_00  |  RUNNING  |  RUNNING
+----
+
+4. Examine the data with one of the following options: 
++
+** With console consumer
++
+[source,bash]
+----
+docker-compose exec -T kafka-connect \
+          kafka-avro-console-consumer \
+          --bootstrap-server kafka:29092 \
+          --property schema.registry.url=http://schema-registry:8081 \
+          --topic mysql-00-customers --from-beginning | jq -c '.'
+----
++
+[source,bash]
+----
+{"id":1,"first_name":{"string":"Bibby"},"last_name":{"string":"Argabrite"},"email":{"string":"bargabrite0@google.com.
+hk"},"gender":{"string":"Female"},"comments":{"string":"Reactive exuding productivity"},"UPDATE_TS":{"long":155413747
+8000}}
+{"id":2,"first_name":{"string":"Auberon"},"last_name":{"string":"Sulland"},"email":{"string":"asulland1@slideshare.ne
+t"},"gender":{"string":"Male"},"comments":{"string":"Organized context-sensitive Graphical User Interface"},"UPDATE_T
+S":{"long":1554137478000}}
+----
++
+** In KSQL (doesn't have to be; it's just an easy tool to use)
++
+*** List topics: 
++
+[source,sql]
+----
+SHOW TOPICS;
+----
++
+[source,sql]
+----
+ Kafka Topic              | Registered | Partitions | Partition Replicas | Consumers | ConsumerGroups
+------------------------------------------------------------------------------------------------------
+ _confluent-metrics       | false      | 12         | 1                  | 0         | 0
+ _schemas                 | false      | 1          | 1                  | 0         | 0
+ connect-debezium-configs | false      | 1          | 1                  | 0         | 0
+ connect-debezium-offsets | false      | 25         | 1                  | 0         | 0
+ connect-debezium-status  | false      | 5          | 1                  | 0         | 0
+ kafka-connect-configs    | false      | 1          | 1                  | 0         | 0
+ kafka-connect-offsets    | false      | 25         | 1                  | 0         | 0
+ kafka-connect-status     | false      | 5          | 1                  | 0         | 0
+ mysql-00-customers       | false      | 1          | 1                  | 0         | 0
+------------------------------------------------------------------------------------------------------
+----
++
+*** Show the contents of the topic: 
++
+[source,sql]
+----
+PRINT 'mysql-00-customers' FROM BEGINNING;
+----
++
+[source,sql]
+----
+Format:AVRO
+4/1/19 5:01:52 PM UTC, null, {"id": 1, "first_name": "Bibby", "last_name": "Argabrite", "email": "bargabrite0@google.com.hk", "gender": "Female", "comments": "Reactive exuding productivity", "UPDATE_TS": 1554137478000}
+4/1/19 5:01:52 PM UTC, null, {"id": 2, "first_name": "Auberon", "last_name": "Sulland", "email": "asulland1@slideshare.net", "gender": "Male", "comments": "Organized context-sensitive Graphical User Interface", "UPDATE_TS": 1554137478000}
+4/1/19 5:01:52 PM UTC, null, {"id": 3, "first_name": "Marv", "last_name": "Dalrymple", "email": "mdalrymple2@macromedia.com", "gender": "Male", "comments": "Versatile didactic pricing structure", "UPDATE_TS": 1554137478000}
+4/1/19 5:01:52 PM UTC, null, {"id": 4, "first_name": "Nolana", "last_name": "Yeeles", "email": "nyeeles3@drupal.org", "gender": "Female", "comments": "Adaptive real-time archive", "UPDATE_TS": 1554137478000}
+4/1/19 5:01:52 PM UTC, null, {"id": 5, "first_name": "Modestia", "last_name": "Coltart", "email": "mcoltart4@scribd.com", "gender": "Female", "comments": "Reverse-engineered non-volatile success", "UPDATE_TS": 1554137478000}
+----
+
+5. Split the screen to show Kafka topic output along with MySQL. 
+
+6. Make changes in MySQL and observe that the Kafka topic (as shown by KSQL) updates automatically
++
+** Insert a new row in MySQL: 
++
+[source,sql]
+----
+INSERT INTO customers (ID, FIRST_NAME, LAST_NAME, EMAIL, GENDER, COMMENTS) VALUES (42, 'Rick', 'Astley', '', 'Male', '');
+----
++
+** Insert a new row in MySQL: 
++
+[source,sql]
+----
+UPDATE customers SET EMAIL = 'Never.gonna.give.you@up.com' WHERE ID = 42;
+----
+
+
+== Part 01 - Log-Based CDC
+
+=== MySQL to Kafka using JDBC Source connector
+
+1. In MySQL, examine the data
++
+[source,sql]
+----
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, UPDATE_TS FROM customers;
+----
++
+[source,sql]
+----
++----+------------+-----------+----------------------------+---------------------+
+| ID | FIRST_NAME | LAST_NAME | EMAIL                      | UPDATE_TS           |
++----+------------+-----------+----------------------------+---------------------+
+|  1 | Bibby      | Argabrite | bargabrite0@google.com.hk  | 2019-04-01 16:51:18 |
+|  2 | Auberon    | Sulland   | asulland1@slideshare.net   | 2019-04-01 16:51:18 |
+|  3 | Marv       | Dalrymple | mdalrymple2@macromedia.com | 2019-04-01 16:51:18 |
+|  4 | Nolana     | Yeeles    | nyeeles3@drupal.org        | 2019-04-01 16:51:18 |
+|  5 | Modestia   | Coltart   | mcoltart4@scribd.com       | 2019-04-01 16:51:18 |
+| 42 | Rick       | Astley    | Never.gonna.give.you@up.com| 2019-04-01 17:59:43 |
++----+------------+-----------+----------------------------+---------------------+
+5 rows in set (0.00 sec)
+----
+
+2. Create the connector
++
+[source,bash]
+----
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:18083/connectors/ \
+    -d '{
+      "name": "debezium-source-customers-00",
+      "config": {
+            "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+            "database.hostname": "mysql",
+            "database.port": "3306",
+            "database.user": "debezium",
+            "database.password": "dbz",
+            "database.server.id": "42",
+            "database.server.name": "asgard",
+            "table.whitelist": "demo.customers",
+            "database.history.kafka.bootstrap.servers": "kafka:29092",
+            "database.history.kafka.topic": "dbhistory.demo" ,
+            "include.schema.changes": "true"
+       }
+    }'
+----
+
+3. Check it's running
++
+[source,bash]
+----
+curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+----
++
+[source,bash]
+----
+jdbc_source_mysql_00  |  RUNNING  |  RUNNING
+----
+
+4. Examine the data with one of the following options: 
++
+** With console consumer
++
+[source,bash]
+----
+docker-compose exec -T kafka-connect \
+          kafka-avro-console-consumer \
+          --bootstrap-server kafka:29092 \
+          --property schema.registry.url=http://schema-registry:8081 \
+          --topic asgard.demo.customers --from-beginning | jq -c '.'
+----
++
+[source,bash]
+----
+{"id":1,"first_name":{"string":"Bibby"},"last_name":{"string":"Argabrite"},"email":{"string":"bargabrite0@google.com.
+hk"},"gender":{"string":"Female"},"comments":{"string":"Reactive exuding productivity"},"UPDATE_TS":{"long":155413747
+8000}}
+{"id":2,"first_name":{"string":"Auberon"},"last_name":{"string":"Sulland"},"email":{"string":"asulland1@slideshare.ne
+t"},"gender":{"string":"Male"},"comments":{"string":"Organized context-sensitive Graphical User Interface"},"UPDATE_T
+S":{"long":1554137478000}}
+----
++
+** In KSQL (doesn't have to be; it's just an easy tool to use)
++
+*** List topics: 
++
+[source,sql]
+----
+SHOW TOPICS;
+----
++
+[source,sql]
+----
+ Kafka Topic              | Registered | Partitions | Partition Replicas | Consumers | ConsumerGroups
+------------------------------------------------------------------------------------------------------
+ _confluent-metrics       | false      | 12         | 1                  | 0         | 0
+ _schemas                 | false      | 1          | 1                  | 0         | 0
+ connect-debezium-configs | false      | 1          | 1                  | 0         | 0
+ connect-debezium-offsets | false      | 25         | 1                  | 0         | 0
+ connect-debezium-status  | false      | 5          | 1                  | 0         | 0
+ kafka-connect-configs    | false      | 1          | 1                  | 0         | 0
+ kafka-connect-offsets    | false      | 25         | 1                  | 0         | 0
+ kafka-connect-status     | false      | 5          | 1                  | 0         | 0
+ mysql-00-customers       | false      | 1          | 1                  | 0         | 0
+------------------------------------------------------------------------------------------------------
+----
++
+*** Show the contents of the topic: 
++
+[source,sql]
+----
+PRINT 'mysql-00-customers' FROM BEGINNING;
+----
++
+[source,sql]
+----
+Format:AVRO
+4/1/19 5:01:52 PM UTC, null, {"id": 1, "first_name": "Bibby", "last_name": "Argabrite", "email": "bargabrite0@google.com.hk", "gender": "Female", "comments": "Reactive exuding productivity", "UPDATE_TS": 1554137478000}
+4/1/19 5:01:52 PM UTC, null, {"id": 2, "first_name": "Auberon", "last_name": "Sulland", "email": "asulland1@slideshare.net", "gender": "Male", "comments": "Organized context-sensitive Graphical User Interface", "UPDATE_TS": 1554137478000}
+4/1/19 5:01:52 PM UTC, null, {"id": 3, "first_name": "Marv", "last_name": "Dalrymple", "email": "mdalrymple2@macromedia.com", "gender": "Male", "comments": "Versatile didactic pricing structure", "UPDATE_TS": 1554137478000}
+4/1/19 5:01:52 PM UTC, null, {"id": 4, "first_name": "Nolana", "last_name": "Yeeles", "email": "nyeeles3@drupal.org", "gender": "Female", "comments": "Adaptive real-time archive", "UPDATE_TS": 1554137478000}
+4/1/19 5:01:52 PM UTC, null, {"id": 5, "first_name": "Modestia", "last_name": "Coltart", "email": "mcoltart4@scribd.com", "gender": "Female", "comments": "Reverse-engineered non-volatile success", "UPDATE_TS": 1554137478000}
+----
+
+5. Split the screen to show Kafka topic output along with MySQL. 
+
+6. Make changes in MySQL and observe that the Kafka topic (as shown by KSQL) updates automatically
++
+** Insert a new row in MySQL: 
++
+[source,sql]
+----
+INSERT INTO customers (ID, FIRST_NAME, LAST_NAME, EMAIL, GENDER, COMMENTS) VALUES (42, 'Rick', 'Astley', '', 'Male', '');
+----
++
+** Insert a new row in MySQL: 
++
+[source,sql]
+----
+UPDATE customers SET EMAIL = 'Never.gonna.give.you@up.com' WHERE ID = 42;
+----
++
+** Delete a new row in MySQL: 
++
+[source,sql]
+----
+DELETE FROM customers WHERE ID=1;
+----
+
+
+
+
