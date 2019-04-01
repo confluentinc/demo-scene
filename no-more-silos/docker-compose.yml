@@ -71,16 +71,17 @@ services:
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
-      CONNECT_PLUGIN_PATH: '/usr/share/java'
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/dbz-mysql-jar-leach'
     volumes:
       - db-leach:/db-leach/
+      - dbz-mysql-jar-leach:/dbz-mysql-jar-leach
       - /u01/jdbc-drivers/:/usr/share/java/kafka-connect-jdbc/drivers/
     #   - /my/local/folder/with/jdbc-driver.jar:/usr/share/java/kafka-connect-jdbc/jars/
     command: 
       - /bin/bash
       - -c 
       - |
-        # # JDBC Drivers
+        # # JDBC Drivers - download those required
         # # ------------
         # # MySQL
         # cd /usr/share/java/kafka-connect-jdbc/
@@ -88,9 +89,84 @@ services:
         # # MS SQL
         # cd /usr/share/java/kafka-connect-jdbc/
         # curl http://central.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/7.0.0.jre8/mssql-jdbc-7.0.0.jre8.jar --output mssql-jdbc-7.0.0.jre8.jar
+        #
         # Now launch Kafka Connect
-        sleep infinity &
-        /etc/confluent/docker/run 
+        /etc/confluent/docker/run &
+        #
+        echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -eq 000 ] ; do 
+          echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) " (waiting for 200)"
+          sleep 5 
+        done
+        echo "Waiting for Schema Registry to start listening on schema-registry:8081 ⏳"
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) -eq 000 ] ; do 
+          echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for 200)"
+          sleep 5 
+        done
+        #
+        echo -e "\n--\n+> Creating Kafka Connect JDBC Source"
+        curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+                  "name": "jdbc_source_mysql_00",
+                  "config": {
+                          "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+                          "connection.url": "jdbc:mysql://mysql:3306/demo",
+                          "connection.user": "connect_user",
+                          "connection.password": "asgard",
+                          "topic.prefix": "mysql-00-",
+                          "poll.interval.ms": 1000,
+                          "tasks.max":1,
+                          "mode":"timestamp",
+                          "table.whitelist" : "demo.customers",
+                          "timestamp.column.name": "UPDATE_TS",
+                          "validate.non.null": false
+                          }
+                  }'
+        #
+        echo -e "\n--\n+> Creating Kafka Connect Debezium source (1)"
+        curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+              "name": "debezium-source-customers-00",
+              "config": {
+                    "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+                    "database.hostname": "mysql",
+                    "database.port": "3306",
+                    "database.user": "debezium",
+                    "database.password": "dbz",
+                    "database.server.id": "42",
+                    "database.server.name": "asgard",
+                    "table.whitelist": "demo.customers",
+                    "database.history.kafka.bootstrap.servers": "kafka:29092",
+                    "database.history.kafka.topic": "dbhistory.demo" ,
+                    "include.schema.changes": "true"
+              }
+            }'
+        echo -e "\n--\n+> Creating Kafka Connect Debezium source (2)"
+        # curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+        #       "name": "debezium-source-customers-00-unwrap",
+        #       "config": {
+        #             "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+        #             "database.hostname": "mysql",
+        #             "database.port": "3306",
+        #             "database.user": "debezium",
+        #             "database.password": "dbz",
+        #             "database.server.id": "4242",
+        #             "database.server.name": "asgard",
+        #             "table.whitelist": "demo.customers",
+        #             "database.history.kafka.bootstrap.servers": "kafka:29092",
+        #             "database.history.kafka.topic": "dbhistory.demo" ,
+        #             "include.schema.changes": "true",
+        #             "transforms": "unwrap,addTopicSuffix",
+        #             "transforms.unwrap.type": "io.debezium.transforms.UnwrapFromEnvelope",
+        #             "transforms.addTopicSuffix.type":"org.apache.kafka.connect.transforms.RegexRouter",
+        #             "transforms.addTopicSuffix.regex":"(.*)",
+        #             "transforms.addTopicSuffix.replacement":"$$1-unwrap"
+        #       }
+        #     }'
+        # "transforms.key.type": "org.apache.kafka.connect.transforms.ExtractField$$Key",
+        # "transforms.key.field": "id",
+        #
+        # Don't let the container die
+        sleep infinity
+
 
   ksql-server:
     image: confluentinc/cp-ksql-server:5.2.0
@@ -186,13 +262,13 @@ services:
      - kafka
      - mysql
      - schema-registry
-    ports:
-     - 18083:18083
+    # ports:
+    #  - 18083:18083
     environment:
      - BOOTSTRAP_SERVERS=kafka:29092
-     - REST_PORT=18083
-     - ADVERTISED_PORT=18083
-     - ADVERTISED_HOST_NAME="http://connect-debezium"
+    #  - REST_PORT=18083
+    #  - ADVERTISED_PORT=18083
+    #  - ADVERTISED_HOST_NAME="connect-debezium"
      - GROUP_ID=connect-debezium
      - CONFIG_STORAGE_TOPIC=connect-debezium-configs
      - OFFSET_STORAGE_TOPIC=connect-debezium-offsets
@@ -202,7 +278,23 @@ services:
      - CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
      - CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
     volumes:
-     - $PWD/scripts:/scripts
+      - dbz-mysql-jar-leach:/kafka/connect
+    # command: 
+    #   - bash 
+    #   - -c 
+    #   - |
+    #     /docker-entrypoint.sh start & 
+    #     echo "Waiting for Kafka Connect to start listening on connect-debezium ⏳"
+    #     while [ $$(curl -s -o /dev/null -w %{http_code} http://connect-debezium:8083/connectors) -eq 000 ] ; do 
+    #       echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://connect-debezium:8083/connectors) " (waiting for 200)"
+    #       sleep 5 
+    #     done
+    #     echo "Waiting for Schema Registry to start listening on schema-registry:8081 ⏳"
+    #     while [ $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) -eq 000 ] ; do 
+    #       echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for 200)"
+    #       sleep 5 
+    #     done
 
 volumes:
     db-leach: {}
+    dbz-mysql-jar-leach: {}

@@ -17,6 +17,21 @@ docker-compose up -d
 +
 This brings up the stack ready for use. 
 
+2. Wait for Kafka Connect to be started
++
+[source,bash]
+----
+bash -c ' \
+echo "Waiting for Kafka Connect to start listening on localhost ⏳"
+while [ $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) -eq 000 ] ; do 
+  echo -e $(date) " Kafka Connect listener HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) " (waiting for 200)"
+  sleep 5 
+done
+echo -e $(date) " Kafka Connect is ready! Listener HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors)
+'
+----
+
+
 2. Launch the KSQL CLI: 
 +
 [source,bash]
@@ -32,7 +47,7 @@ docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
 ----
 
 
-== Part 01 - Query-Based CDC
+== Part 02 - Query-Based CDC
 
 === MySQL to Kafka using JDBC Source connector
 
@@ -69,6 +84,7 @@ curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json
                   "connection.user": "connect_user",
                   "connection.password": "asgard",
                   "topic.prefix": "mysql-00-",
+                  "poll.interval.ms": 1000,
                   "tasks.max":1,
                   "mode":"timestamp",
                   "table.whitelist" : "demo.customers",
@@ -174,7 +190,7 @@ UPDATE customers SET EMAIL = 'Never.gonna.give.you@up.com' WHERE ID = 42;
 ----
 
 
-== Part 01 - Log-Based CDC
+== Part 02 - Log-Based CDC
 
 === MySQL to Kafka using JDBC Source connector
 
@@ -233,7 +249,7 @@ curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} c
 +
 [source,bash]
 ----
-jdbc_source_mysql_00  |  RUNNING  |  RUNNING
+debezium-source-customers-00  |  RUNNING  |  RUNNING
 ----
 
 4. Examine the data with one of the following options: 
@@ -288,44 +304,96 @@ SHOW TOPICS;
 +
 [source,sql]
 ----
-PRINT 'mysql-00-customers' FROM BEGINNING;
+PRINT 'asgard.demo.customers' FROM BEGINNING;
 ----
 +
 [source,sql]
 ----
 Format:AVRO
-4/1/19 5:01:52 PM UTC, null, {"id": 1, "first_name": "Bibby", "last_name": "Argabrite", "email": "bargabrite0@google.com.hk", "gender": "Female", "comments": "Reactive exuding productivity", "UPDATE_TS": 1554137478000}
-4/1/19 5:01:52 PM UTC, null, {"id": 2, "first_name": "Auberon", "last_name": "Sulland", "email": "asulland1@slideshare.net", "gender": "Male", "comments": "Organized context-sensitive Graphical User Interface", "UPDATE_TS": 1554137478000}
-4/1/19 5:01:52 PM UTC, null, {"id": 3, "first_name": "Marv", "last_name": "Dalrymple", "email": "mdalrymple2@macromedia.com", "gender": "Male", "comments": "Versatile didactic pricing structure", "UPDATE_TS": 1554137478000}
-4/1/19 5:01:52 PM UTC, null, {"id": 4, "first_name": "Nolana", "last_name": "Yeeles", "email": "nyeeles3@drupal.org", "gender": "Female", "comments": "Adaptive real-time archive", "UPDATE_TS": 1554137478000}
-4/1/19 5:01:52 PM UTC, null, {"id": 5, "first_name": "Modestia", "last_name": "Coltart", "email": "mcoltart4@scribd.com", "gender": "Female", "comments": "Reverse-engineered non-volatile success", "UPDATE_TS": 1554137478000}
+4/1/19 11:05:56 PM UTC, T, {"before": {"id": 42, "first_name": "Rick", "last_name": "Astley", "email": "", "gender":
+"Male", "comments": "", "UPDATE_TS": "2019-04-01T23:03:44Z"}, "after": {"id": 42, "first_name": "Rick", "last_name":
+"Astley", "email": "Never.gonna.give.you@up.com", "gender": "Male", "comments": "", "UPDATE_TS": "2019-04-01T23:05:56
+Z"}, "source": {"version": "0.9.3.Final", "connector": "mysql", "name": "asgard", "server_id": 223344, "ts_sec": 1554159956, "gtid": null, "file": "mysql-bin.000003", "pos": 660, "row": 0, "snapshot": false, "thread": 16, "db": "demo", "table": "customers", "query": null}, "op": "u", "ts_ms": 1554159956290}
 ----
 
 5. Split the screen to show Kafka topic output along with MySQL. 
 
 6. Make changes in MySQL and observe that the Kafka topic (as shown by KSQL) updates automatically
 +
-** Insert a new row in MySQL: 
+** Update a new row in MySQL: 
 +
 [source,sql]
 ----
-INSERT INTO customers (ID, FIRST_NAME, LAST_NAME, EMAIL, GENDER, COMMENTS) VALUES (42, 'Rick', 'Astley', '', 'Male', '');
+UPDATE customers SET EMAIL = 'r.astley@example.com' WHERE ID = 42;
 ----
 +
-** Insert a new row in MySQL: 
-+
-[source,sql]
-----
-UPDATE customers SET EMAIL = 'Never.gonna.give.you@up.com' WHERE ID = 42;
-----
-+
-** Delete a new row in MySQL: 
+** Delete a row in MySQL: 
 +
 [source,sql]
 ----
-DELETE FROM customers WHERE ID=1;
+DELETE FROM customers WHERE ID=2;
 ----
 
+== Optional - Stream/Table duality in KSQL
 
+[source,sql]
+----
+SET 'auto.offset.reset' = 'earliest';
+CREATE STREAM CUSTOMERS_CDC_STREAM WITH (KAFKA_TOPIC='asgard.demo.customers', VALUE_FORMAT='AVRO');
+CREATE STREAM CUSTOMERS_AFTER AS 
+  SELECT AFTER->ID AS ID,
+         AFTER->FIRST_NAME AS FIRST_NAME,
+         AFTER->LAST_NAME AS LAST_NAME,
+         AFTER->EMAIL AS EMAIL,
+         AFTER->GENDER AS GENDER,
+         AFTER->COMMENTS AS COMMENTS
+    FROM CUSTOMERS_CDC_STREAM;
+CREATE STREAM CUSTOMERS_STREAM AS SELECT * FROM CUSTOMERS_AFTER PARTITION BY ID;
+SELECT ROWKEY, ID FROM CUSTOMERS_STREAM LIMIT 1;
+CREATE TABLE CUSTOMERS_TABLE WITH (KAFKA_TOPIC='CUSTOMERS_STREAM', VALUE_FORMAT='AVRO', KEY='ID');
+----
 
+* In MySQL, query the state: 
 
+[source,sql]
+----
+mysql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, UPDATE_TS FROM customers WHERE ID=42;
+----
++
+[source,sql]
+----
++----+------------+-----------+-----------------------------+---------------------+
+| ID | FIRST_NAME | LAST_NAME | EMAIL                       | UPDATE_TS           |
++----+------------+-----------+-----------------------------+---------------------+
+| 42 | Rick       | Astley    | Never.gonna.give.you@up.com | 2019-04-01 22:42:58 |
++----+------------+-----------+-----------------------------+---------------------+
+1 rows in set (0.00 sec)
+----
+
+* In KSQL query the table: 
++
+[source,sql]
+----
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM customers_TABLE WHERE ID=42;
+42 | Rick | Astley | Never.gonna.give.you@up.com | 2019-04-01T22:42:58Z
+----
+
+* In KSQL query the stream: 
++
+[source,sql]
+----
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM CUSTOMERS_STREAM WHERE ID=42;
+42 | Rick | Astley |
+42 | Rick | Astley | Never.gonna.give.you@up.com
+42 | Rick | Astley | r.astley@example.com
+----
+
+* Show before/after records: 
++
+[source,sql]
+----
+ksql> SELECT BEFORE->EMAIL, AFTER->EMAIL FROM CUSTOMERS_CDC_STREAM WHERE AFTER->ID=42;
+null |
+ | Never.gonna.give.you@up.com
+Never.gonna.give.you@up.com | r.astley@example.com
+----
