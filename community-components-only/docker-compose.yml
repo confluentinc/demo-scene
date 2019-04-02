@@ -10,7 +10,7 @@
 version: '2'
 services:
   zookeeper:
-    image: "confluentinc/cp-zookeeper:5.1.0"
+    image: confluentinc/cp-zookeeper:5.2.0
     ports:
       - '31000:31000'
     environment:
@@ -37,7 +37,7 @@ services:
     # See https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
     # "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-
     #  
-    image: "confluentinc/cp-enterprise-kafka:5.1.0"
+    image: confluentinc/cp-enterprise-kafka:5.2.0
     ports:
       - '9092:9092'
       - '31001:31001'
@@ -62,7 +62,7 @@ services:
       KAFKA_JMX_PORT: 31001
 
   schema-registry:
-    image: "confluentinc/cp-schema-registry:5.1.0"
+    image: confluentinc/cp-schema-registry:5.2.0
     depends_on:
       - zookeeper
       - kafka
@@ -76,35 +76,44 @@ services:
       SCHEMA_REGISTRY_JMX_PORT: 31002
 
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.1.0
+    image: confluentinc/cp-ksql-server:5.2.0
     depends_on:
       - kafka
       - schema-registry
     ports:
       - '31003:31003'
+      - '8088:8088'
     environment:
       KSQL_BOOTSTRAP_SERVERS: kafka:29092
       KSQL_LISTENERS: http://0.0.0.0:8088
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
+      KSQL_KSQL_SERVICE_ID: asgard
       KSQL_JMX_HOSTNAME: "localhost"
       KSQL_JMX_PORT: 31003
+      KSQL_LOG4J_ROOT_LOGLEVEL: "INFO"
+      KSQL_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+      # --- Processing log config ---
+      KSQL_LOG4J_PROCESSING_LOG_BROKERLIST: kafka:29092
+      KSQL_LOG4J_PROCESSING_LOG_TOPIC: asgard_processing_log
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_NAME: asgard_processing_log
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
 
   ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.1.0
+    image: confluentinc/cp-ksql-cli:5.2.0
     depends_on:
       - ksql-server
     entrypoint: /bin/sh
     tty: true
 
-  connect:
-    image: confluentinc/cp-kafka-connect:5.1.0
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:5.2.0
     ports:
       - '8083:8083'
       - '31004:31004'
     environment:
       CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
-      CONNECT_REST_PORT: 31003
+      CONNECT_REST_PORT: 8083
       CONNECT_GROUP_ID: compose-connect-group
       CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
       CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-offsets
@@ -115,22 +124,52 @@ services:
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-cp"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
       CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
       CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
-      CONNECT_PLUGIN_PATH: '/usr/share/java'
+      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components
       KAFKA_JMX_HOSTNAME: "localhost"
       KAFKA_JMX_PORT: 31004
     depends_on:
       - zookeeper
       - kafka
       - schema-registry
+    # Uncomment this bit if you want to automatically install the datagen and twitter connectors
+    # and set the datagen connector running  
+    # command: 
+    #   - bash 
+    #   - -c 
+    #   - |
+    #     confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.1.1
+    #     confluent-hub install --no-prompt jcustenborder/kafka-connect-twitter:0.2.32
+    #     /etc/confluent/docker/run &
+    #     echo "Waiting for Kafka Connect to start listening on kafka-connect ⏳"
+    #     while [ $$(curl -s -o /dev/null -w %{http_code} http://kafka-connect:8083/connectors) -eq 000 ] ; do 
+    #       echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://kafka-connect:8083/connectors) " (waiting for 200)"
+    #       sleep 5 
+    #     done
+    #     nc -vz kafka-connect 8083
+    #     echo -e "\n--\n+> Creating Connector"
+    #     curl -X POST http://kafka-connect:8083/connectors -H "Content-Type: application/json" -d '
+    #     {
+    #       "name": "datagen-pageviews",
+    #       "config": {
+    #         "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+    #         "kafka.topic": "pageviews",
+    #         "quickstart": "pageviews",
+    #         "max.interval": 100,
+    #         "iterations": 10000000,
+    #         "tasks.max": "1"
+    #       }
+    #     }
+    #     '
+    #     sleep infinity
 
   rest-proxy:
-    image: confluentinc/cp-kafka-rest:5.1.0
+    image: confluentinc/cp-kafka-rest:5.2.0
     depends_on:
       - zookeeper
       - kafka
