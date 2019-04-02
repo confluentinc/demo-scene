@@ -295,6 +295,26 @@ services:
     #       sleep 5 
     #     done
 
+  # Runs the Kafka KSQL data generator for ratings
+  datagen-ratings:
+    image: confluentinc/ksql-examples:5.1.0
+    depends_on:
+      - kafka
+      - schema-registry
+    command: "bash -c 'echo Waiting for Kafka to be ready... && \
+                       cub kafka-ready -b kafka:29092 1 300 && \
+                       echo Waiting for Confluent Schema Registry to be ready... && \
+                       cub sr-ready schema-registry 8081 300 && \
+                       echo Waiting a few seconds for topic creation to finish... && \
+                       sleep 20 && \
+                       ksql-datagen \
+                          quickstart=ratings \
+                          format=avro \
+                          topic=ratings \
+                          maxInterval=250 \
+                          bootstrap-server=kafka:29092 \
+                          schemaRegistryUrl=http://schema-registry:8081'"
+
 volumes:
     db-leach: {}
     dbz-mysql-jar-leach: {}

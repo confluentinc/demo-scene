@@ -47,11 +47,16 @@ docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
 ----
 
 
-== Part 02 - Query-Based CDC
+== Part 01 - Query-Based CDC
 
 === MySQL to Kafka using JDBC Source connector
 
 1. In MySQL, examine the data
++
+[source,sql]
+----
+DESCRIBE customers;
+----
 +
 [source,sql]
 ----
@@ -106,32 +111,9 @@ curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} c
 jdbc_source_mysql_00  |  RUNNING  |  RUNNING
 ----
 
-4. Examine the data with one of the following options: 
+4. Examine the data with KSQL (doesn't have to be; it's just an easy tool to use)
 +
-** With console consumer
-+
-[source,bash]
-----
-docker-compose exec -T kafka-connect \
-          kafka-avro-console-consumer \
-          --bootstrap-server kafka:29092 \
-          --property schema.registry.url=http://schema-registry:8081 \
-          --topic mysql-00-customers --from-beginning | jq -c '.'
-----
-+
-[source,bash]
-----
-{"id":1,"first_name":{"string":"Bibby"},"last_name":{"string":"Argabrite"},"email":{"string":"bargabrite0@google.com.
-hk"},"gender":{"string":"Female"},"comments":{"string":"Reactive exuding productivity"},"UPDATE_TS":{"long":155413747
-8000}}
-{"id":2,"first_name":{"string":"Auberon"},"last_name":{"string":"Sulland"},"email":{"string":"asulland1@slideshare.ne
-t"},"gender":{"string":"Male"},"comments":{"string":"Organized context-sensitive Graphical User Interface"},"UPDATE_T
-S":{"long":1554137478000}}
-----
-+
-** In KSQL (doesn't have to be; it's just an easy tool to use)
-+
-*** List topics: 
+** List topics: 
 +
 [source,sql]
 ----
@@ -154,7 +136,7 @@ SHOW TOPICS;
 ------------------------------------------------------------------------------------------------------
 ----
 +
-*** Show the contents of the topic: 
+** Show the contents of the topic: 
 +
 [source,sql]
 ----
@@ -170,6 +152,18 @@ Format:AVRO
 4/1/19 5:01:52 PM UTC, null, {"id": 4, "first_name": "Nolana", "last_name": "Yeeles", "email": "nyeeles3@drupal.org", "gender": "Female", "comments": "Adaptive real-time archive", "UPDATE_TS": 1554137478000}
 4/1/19 5:01:52 PM UTC, null, {"id": 5, "first_name": "Modestia", "last_name": "Coltart", "email": "mcoltart4@scribd.com", "gender": "Female", "comments": "Reverse-engineered non-volatile success", "UPDATE_TS": 1554137478000}
 ----
++
+NOTE: Instead of KSQL you can use a standard Kafka consumer
++
+[source,bash]
+----
+docker-compose exec -T kafka-connect \
+          kafka-avro-console-consumer \
+          --bootstrap-server kafka:29092 \
+          --property schema.registry.url=http://schema-registry:8081 \
+          --topic mysql-00-customers --from-beginning | jq -c '.'
+----
+
 
 5. Split the screen to show Kafka topic output along with MySQL. 
 
@@ -252,9 +246,69 @@ curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} c
 debezium-source-customers-00  |  RUNNING  |  RUNNING
 ----
 
-4. Examine the data with one of the following options: 
+4. Examine the data with console consumer
 +
-** With console consumer
+[source,bash]
+----
+docker-compose exec -T kafka-connect \
+          kafka-avro-console-consumer \
+          --bootstrap-server kafka:29092 \
+          --property schema.registry.url=http://schema-registry:8081 \
+          --topic asgard.demo.customers --from-beginning | jq '.op, .before, .after'
+----
++
+[source,bash]
+----
+"u"
+{
+  "asgard.demo.customers.Value": {
+    "id": 42,
+    "first_name": {
+      "string": "Rick"
+    },
+    "last_name": {
+      "string": "Astley"
+    },
+    "email": {
+      "string": ""
+    },
+    "gender": {
+      "string": "Male"
+    },
+    "comments": {
+      "string": ""
+    },
+    "UPDATE_TS": "2019-04-01T23:53:31Z"
+  }
+}
+{
+  "asgard.demo.customers.Value": {
+    "id": 42,
+    "first_name": {
+      "string": "Rick"
+    },
+    "last_name": {
+      "string": "Astley"
+    },
+    "email": {
+      "string": "Never.gonna.give.you@up.com"
+    },
+    "gender": {
+      "string": "Male"
+    },
+    "comments": {
+      "string": ""
+    },
+    "UPDATE_TS": "2019-04-01T23:53:38Z"
+  }
+}
+----
++
+NOTE: You can use KSQL here too: `PRINT 'asgard.demo.customers' FROM BEGINNING;`
+
+5. Split the screen to show Kafka topic output along with MySQL. 
+
+4. Rerun the console consumer to show compact output
 +
 [source,bash]
 ----
@@ -264,59 +318,7 @@ docker-compose exec -T kafka-connect \
           --property schema.registry.url=http://schema-registry:8081 \
           --topic asgard.demo.customers --from-beginning | jq -c '.'
 ----
-+
-[source,bash]
-----
-{"id":1,"first_name":{"string":"Bibby"},"last_name":{"string":"Argabrite"},"email":{"string":"bargabrite0@google.com.
-hk"},"gender":{"string":"Female"},"comments":{"string":"Reactive exuding productivity"},"UPDATE_TS":{"long":155413747
-8000}}
-{"id":2,"first_name":{"string":"Auberon"},"last_name":{"string":"Sulland"},"email":{"string":"asulland1@slideshare.ne
-t"},"gender":{"string":"Male"},"comments":{"string":"Organized context-sensitive Graphical User Interface"},"UPDATE_T
-S":{"long":1554137478000}}
-----
-+
-** In KSQL (doesn't have to be; it's just an easy tool to use)
-+
-*** List topics: 
-+
-[source,sql]
-----
-SHOW TOPICS;
-----
-+
-[source,sql]
-----
- Kafka Topic              | Registered | Partitions | Partition Replicas | Consumers | ConsumerGroups
-------------------------------------------------------------------------------------------------------
- _confluent-metrics       | false      | 12         | 1                  | 0         | 0
- _schemas                 | false      | 1          | 1                  | 0         | 0
- connect-debezium-configs | false      | 1          | 1                  | 0         | 0
- connect-debezium-offsets | false      | 25         | 1                  | 0         | 0
- connect-debezium-status  | false      | 5          | 1                  | 0         | 0
- kafka-connect-configs    | false      | 1          | 1                  | 0         | 0
- kafka-connect-offsets    | false      | 25         | 1                  | 0         | 0
- kafka-connect-status     | false      | 5          | 1                  | 0         | 0
- mysql-00-customers       | false      | 1          | 1                  | 0         | 0
-------------------------------------------------------------------------------------------------------
-----
-+
-*** Show the contents of the topic: 
-+
-[source,sql]
-----
-PRINT 'asgard.demo.customers' FROM BEGINNING;
-----
-+
-[source,sql]
-----
-Format:AVRO
-4/1/19 11:05:56 PM UTC, T, {"before": {"id": 42, "first_name": "Rick", "last_name": "Astley", "email": "", "gender":
-"Male", "comments": "", "UPDATE_TS": "2019-04-01T23:03:44Z"}, "after": {"id": 42, "first_name": "Rick", "last_name":
-"Astley", "email": "Never.gonna.give.you@up.com", "gender": "Male", "comments": "", "UPDATE_TS": "2019-04-01T23:05:56
-Z"}, "source": {"version": "0.9.3.Final", "connector": "mysql", "name": "asgard", "server_id": 223344, "ts_sec": 1554159956, "gtid": null, "file": "mysql-bin.000003", "pos": 660, "row": 0, "snapshot": false, "thread": 16, "db": "demo", "table": "customers", "query": null}, "op": "u", "ts_ms": 1554159956290}
-----
 
-5. Split the screen to show Kafka topic output along with MySQL. 
 
 6. Make changes in MySQL and observe that the Kafka topic (as shown by KSQL) updates automatically
 +
@@ -325,6 +327,11 @@ Z"}, "source": {"version": "0.9.3.Final", "connector": "mysql", "name": "asgard"
 [source,sql]
 ----
 UPDATE customers SET EMAIL = 'r.astley@example.com' WHERE ID = 42;
+----
++
+[source,sql]
+----
+UPDATE customers SET FIRST_NAME = 'BOB' WHERE ID = 42;
 ----
 +
 ** Delete a row in MySQL: 
@@ -348,25 +355,25 @@ CREATE STREAM CUSTOMERS_AFTER AS
          AFTER->GENDER AS GENDER,
          AFTER->COMMENTS AS COMMENTS
     FROM CUSTOMERS_CDC_STREAM;
-CREATE STREAM CUSTOMERS_STREAM AS SELECT * FROM CUSTOMERS_AFTER PARTITION BY ID;
+CREATE STREAM CUSTOMERS_STREAM WITH (PARTITIONS=1) AS SELECT * FROM CUSTOMERS_AFTER PARTITION BY ID;
 SELECT ROWKEY, ID FROM CUSTOMERS_STREAM LIMIT 1;
 CREATE TABLE CUSTOMERS_TABLE WITH (KAFKA_TOPIC='CUSTOMERS_STREAM', VALUE_FORMAT='AVRO', KEY='ID');
 ----
 
 * In MySQL, query the state: 
-
++
 [source,sql]
 ----
-mysql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, UPDATE_TS FROM customers WHERE ID=42;
+mysql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM customers WHERE ID=42;
 ----
 +
 [source,sql]
 ----
-+----+------------+-----------+-----------------------------+---------------------+
-| ID | FIRST_NAME | LAST_NAME | EMAIL                       | UPDATE_TS           |
-+----+------------+-----------+-----------------------------+---------------------+
-| 42 | Rick       | Astley    | Never.gonna.give.you@up.com | 2019-04-01 22:42:58 |
-+----+------------+-----------+-----------------------------+---------------------+
++----+------------+-----------+-----------------------------+
+| ID | FIRST_NAME | LAST_NAME | EMAIL                       |
++----+------------+-----------+-----------------------------+
+| 42 | Rick       | Astley    | Never.gonna.give.you@up.com |
++----+------------+-----------+-----------------------------+
 1 rows in set (0.00 sec)
 ----
 
@@ -374,7 +381,9 @@ mysql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, UPDATE_TS FROM customers WHERE I
 +
 [source,sql]
 ----
-SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM customers_TABLE WHERE ID=42;
+SET 'auto.offset.reset' = 'earliest';
+
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM CUSTOMERS_TABLE WHERE ID=42;
 42 | Rick | Astley | Never.gonna.give.you@up.com | 2019-04-01T22:42:58Z
 ----
 
@@ -382,6 +391,8 @@ SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM customers_TABLE WHERE ID=42;
 +
 [source,sql]
 ----
+SET 'auto.offset.reset' = 'earliest';
+
 SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM CUSTOMERS_STREAM WHERE ID=42;
 42 | Rick | Astley |
 42 | Rick | Astley | Never.gonna.give.you@up.com
@@ -392,8 +403,55 @@ SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM CUSTOMERS_STREAM WHERE ID=42;
 +
 [source,sql]
 ----
-ksql> SELECT OP, BEFORE->EMAIL, AFTER->EMAIL FROM CUSTOMERS_CDC_STREAM WHERE AFTER->ID=42;
-null |
- | Never.gonna.give.you@up.com
-Never.gonna.give.you@up.com | r.astley@example.com
+SET 'auto.offset.reset' = 'earliest';
+
+SELECT OP, BEFORE->EMAIL, AFTER->EMAIL FROM CUSTOMERS_CDC_STREAM WHERE AFTER->ID=42;
+[source,sql]
+----
++
+----
+c | null |
+u |  | Never.gonna.give.you@up.com
+u | Never.gonna.give.you@up.com | r.astley@example.com
+u | r.astley@example.com | r.astley@example.com
+----
+
+== Option - Stream/table joins
+
+* Join to a stream of events
++
+[source,sql]
+----
+CREATE STREAM RATINGS WITH (KAFKA_TOPIC='ratings',VALUE_FORMAT='AVRO');
+----
++
+[source,sql]
+----
+SELECT MESSAGE, STARS, USER_ID FROM RATINGS;
+----
++
+[source,sql]
+----
+SELECT R.RATING_ID, R.MESSAGE, R.STARS, \
+      C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, C.EMAIL AS EMAIL
+      FROM RATINGS R \
+        LEFT JOIN CUSTOMERS_TABLE C \
+        ON R.USER_ID = C.ID \
+      WHERE C.FIRST_NAME IS NOT NULL;
+----
++
+[source,sql]
+----
+CREATE STREAM RATINGS_ENRICHED AS \ 
+SELECT R.RATING_ID, R.MESSAGE, R.STARS, \
+      C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, C.EMAIL AS EMAIL
+      FROM RATINGS R \
+        LEFT JOIN CUSTOMERS_TABLE C \
+        ON R.USER_ID = C.ID \
+      WHERE C.FIRST_NAME IS NOT NULL;
+----
++
+[source,sql]
+----
+PRINT 'RATINGS_ENRICHED';
 ----
