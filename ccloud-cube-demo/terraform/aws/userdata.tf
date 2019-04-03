@@ -11,6 +11,7 @@ data "template_file" "schema_registry_properties" {
     broker_list = "${var.ccloud_broker_list}"
     access_key = "${var.ccloud_access_key}"
     secret_key = "${var.ccloud_secret_key}"
+    global_prefix = "${var.global_prefix}"
 
   }
 
@@ -79,6 +80,7 @@ data "template_file" "kafka_connect_properties" {
     broker_list = "${var.ccloud_broker_list}"
     access_key = "${var.ccloud_access_key}"
     secret_key = "${var.ccloud_secret_key}"
+    global_prefix = "${var.global_prefix}"
 
     schema_registry_url = "${join(",", formatlist("http://%s:%s",
       aws_instance.schema_registry.*.private_ip, "8081"))}"
@@ -113,6 +115,7 @@ data "template_file" "ksql_server_properties" {
     broker_list = "${var.ccloud_broker_list}"
     access_key = "${var.ccloud_access_key}"
     secret_key = "${var.ccloud_secret_key}"
+    global_prefix = "${var.global_prefix}"
 
     schema_registry_url = "${join(",", formatlist("http://%s:%s",
       aws_instance.schema_registry.*.private_ip, "8081"))}"
@@ -148,6 +151,7 @@ data "template_file" "control_center_properties" {
     broker_list = "${var.ccloud_broker_list}"
     access_key = "${var.ccloud_access_key}"
     secret_key = "${var.ccloud_secret_key}"
+    global_prefix = "${var.global_prefix}"
 
     schema_registry_url = "${join(",", formatlist("http://%s:%s",
       aws_instance.schema_registry.*.private_ip, "8081"))}"
@@ -157,6 +161,9 @@ data "template_file" "control_center_properties" {
 
     ksql_server_url = "${join(",", formatlist("http://%s:%s",
       aws_instance.ksql_server.*.private_ip, "8088"))}"
+
+    ksql_public_url = "${join(",", formatlist("http://%s:%s",
+      aws_alb.ksql_server.*.dns_name, "80"))}"
 
   }
 

@@ -18,3 +18,12 @@ ccloud-cube-demo/terraform/aws/terraform.tfstate.backup
 ccloud-cube-demo/terraform/aws/.terraform.tfstate.lock.info
 .idea
 delta_configs
+*.iml
+*.ipr
+*.ipj
+.classpath
+.project
+.settings/
+.DS_Store
+
+

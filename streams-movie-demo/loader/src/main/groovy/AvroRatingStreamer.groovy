@@ -11,11 +11,17 @@ class AvroRatingStreamer {
   static void main(args) {
     def stddev = 2
 
+
     Properties props = new Properties()
-    props.put('bootstrap.servers', args[0])
+    props.load(new FileInputStream(new File(args[0])))
+
+    def bootstrapServer = props.get('bootstrap.servers')
+    println "Streaming ratings to ${ bootstrapServer}"
+    println "Schema Registry at ${props.get('schema.registry.url')}"
     props.put('key.serializer', 'org.apache.kafka.common.serialization.LongSerializer')
     props.put('value.serializer', 'io.confluent.kafka.serializers.KafkaAvroSerializer')
-    props.put('schema.registry.url', 'http://localhost:8081')
+    props.put('schema.registry.url', props.get('schema.registry.url'))
+
     KafkaProducer producer = new KafkaProducer(props)
 
     try {
@@ -35,6 +41,7 @@ class AvroRatingStreamer {
         def pr = new ProducerRecord('ratings', rating.movieId, rating)
         producer.send(pr)
         recordsProduced++
+        Thread.sleep(250);
       }
     }
     finally {

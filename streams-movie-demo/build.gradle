@@ -69,8 +69,7 @@ project(':loader') {
   task loadAvroMovies(type: JavaExec) {
     main = 'AvroMovieLoader'
     classpath = sourceSets.main.runtimeClasspath
-    args "$projectDir/../data/movies.dat"
-    args env['KAFKA_BOOTSTRAP_SERVERS'] ?: 'localhost:9092'
+    args = [project.getProperty('configPath')]
   }
 
   jar {

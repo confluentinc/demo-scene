@@ -1,0 +1,7 @@
+{
+  "APPLICATION_HOSTNAME": "localhost",
+  "APPLICATION_PORT": 8666,
+  "KAFKA_BROKER": "localhost:9092",
+  "SCHEMA_REGISTRY_URL": "http://localhost:8081",
+  "REST_PROXY_URL": "http://localhost:8082"
+}

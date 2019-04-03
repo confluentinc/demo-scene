@@ -16,14 +16,6 @@ output "REST Proxy                   " {
 
 }
 
-output "Kafka Connect                " {
-
-  value = "${var.instance_count["kafka_connect"] >= 1
-           ? "${join(",", formatlist("http://%s", aws_alb.kafka_connect.*.dns_name))}"
-           : "Kafka Connect has been disabled"}"
-
-}
-
 output "KSQL Server                  " {
 
   value = "${var.instance_count["ksql_server"] >= 1

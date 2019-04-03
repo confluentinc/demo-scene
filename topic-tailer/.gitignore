@@ -1,0 +1,8 @@
+.DS_store
+.vscode
+node_modules
+dist
+*.log
+yarn.lock
+scripts
+TODO
