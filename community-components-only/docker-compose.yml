@@ -10,7 +10,7 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.2.0
+    image: confluentinc/cp-zookeeper:5.2.1
     ports:
       - '31000:31000'
     environment:
@@ -37,7 +37,7 @@ services:
     # See https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
     # "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-
     #  
-    image: confluentinc/cp-enterprise-kafka:5.2.0
+    image: confluentinc/cp-enterprise-kafka:5.2.1
     ports:
       - '9092:9092'
       - '31001:31001'
@@ -62,7 +62,7 @@ services:
       KAFKA_JMX_PORT: 31001
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.2.0
+    image: confluentinc/cp-schema-registry:5.2.1
     depends_on:
       - zookeeper
       - kafka
@@ -76,7 +76,7 @@ services:
       SCHEMA_REGISTRY_JMX_PORT: 31002
 
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.2.0
+    image: confluentinc/cp-ksql-server:5.2.1
     depends_on:
       - kafka
       - schema-registry
@@ -100,14 +100,14 @@ services:
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
 
   ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.2.0
+    image: confluentinc/cp-ksql-cli:5.2.1
     depends_on:
       - ksql-server
     entrypoint: /bin/sh
     tty: true
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect:5.2.0
+    image: confluentinc/cp-kafka-connect:5.2.1
     ports:
       - '8083:8083'
       - '31004:31004'
@@ -169,7 +169,7 @@ services:
     #     sleep infinity
 
   rest-proxy:
-    image: confluentinc/cp-kafka-rest:5.2.0
+    image: confluentinc/cp-kafka-rest:5.2.1
     depends_on:
       - zookeeper
       - kafka
