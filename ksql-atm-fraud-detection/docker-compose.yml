@@ -118,8 +118,8 @@ services:
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_PLUGIN_PATH: '/usr/share/java,/etc/kafka-connect/jars,/connectors'
       # Interceptor config
-      # CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
-      # CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
       CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.1.jar
     volumes:
       - $PWD/scripts:/scripts
@@ -289,17 +289,17 @@ services:
     image: confluentinc/cp-enterprise-kafka:5.2.1
     container_name: send-gess-to-kafka
     environment: 
-      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.1.0.jar
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.1.jar
     command: 
       - bash 
       - -c 
       - |
-        # echo "interceptor.classes=io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor" > /tmp/producer.config
-        # echo "confluent.monitoring.interceptor.bootstrap.servers=kafka:29092" >> /tmp/producer.config
-        # nc -v -u -l -p 6900 | \
-        # kafka-console-producer --broker-list kafka:29092 --topic atm_txns_gess --producer.config /tmp/producer.config
+        echo "interceptor.classes=io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor" > /tmp/producer.config
+        echo "confluent.monitoring.interceptor.bootstrap.servers=kafka:29092" >> /tmp/producer.config
         nc -v -u -l -p 6900 | \
-        kafka-console-producer --broker-list kafka:29092 --topic atm_txns_gess
+        kafka-console-producer --broker-list kafka:29092 --topic atm_txns_gess --producer.config /tmp/producer.config
+        # nc -v -u -l -p 6900 | \
+        # kafka-console-producer --broker-list kafka:29092 --topic atm_txns_gess
     volumes: 
       - monitoring-interceptors-share:/usr/share/java/monitoring-interceptors/
 
