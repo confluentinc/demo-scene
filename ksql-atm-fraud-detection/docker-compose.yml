@@ -123,6 +123,7 @@ services:
       CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.1.jar
     volumes:
       - $PWD/scripts:/scripts
+      - monitoring-interceptors-share:/usr/share/java/monitoring-interceptors/
     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
     command: 
       - bash 
@@ -162,7 +163,12 @@ services:
       CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       CONTROL_CENTER_REPLICATION_FACTOR: 1
       CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_REPLICATION: 1
+      CONTROL_CENTER_COMMAND_TOPIC_REPLICATION: 1
+      CONTROL_CENTER_STREAMS_NUM_STREAM_THREADS: 1
       CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_REPLICATION: 1
+      CONTROL_CENTER_STREAMS_CACHE_MAX_BYTES_BUFFERING: 104857600
       CONFLUENT_METRICS_TOPIC_REPLICATION: 1
       PORT: 9021
     command:
@@ -289,17 +295,19 @@ services:
     image: confluentinc/cp-enterprise-kafka:5.2.1
     container_name: send-gess-to-kafka
     environment: 
-      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.1.0.jar
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_REPLICATION: 1
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.1.1.jar
     command: 
       - bash 
       - -c 
       - |
-        # echo "interceptor.classes=io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor" > /tmp/producer.config
-        # echo "confluent.monitoring.interceptor.bootstrap.servers=kafka:29092" >> /tmp/producer.config
-        # nc -v -u -l -p 6900 | \
-        # kafka-console-producer --broker-list kafka:29092 --topic atm_txns_gess --producer.config /tmp/producer.config
+        echo "interceptor.classes=io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor" > /tmp/producer.config
+        echo "confluent.monitoring.interceptor.bootstrap.servers=kafka:29092" >> /tmp/producer.config
+        echo "confluent.monitoring.interceptor.topic.partitions=1" >> /tmp/producer.config
+        echo "confluent.monitoring.interceptor.topic.replication=1" >> /tmp/producer.config
         nc -v -u -l -p 6900 | \
-        kafka-console-producer --broker-list kafka:29092 --topic atm_txns_gess
+        kafka-console-producer --broker-list kafka:29092 --topic atm_txns_gess --producer.config /tmp/producer.config
     volumes: 
       - monitoring-interceptors-share:/usr/share/java/monitoring-interceptors/
 
