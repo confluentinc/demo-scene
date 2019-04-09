@@ -171,27 +171,25 @@ services:
     image: confluentinc/cp-ksql-cli:5.2.1
     entrypoint: /bin/sh
     tty: true
-    entrypoint: 
-      - /bin/bash
-      - -c
-      - |
-        echo -e "\n\n⏳ Waiting for KSQL to be available before launching CLI\n"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://ksql-server-asgard-01:8088/) -eq 000 ]
-        do 
-          echo -e $$(date) "KSQL Server HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://ksql-server-asgard-01:8088/) " (waiting for 200)"
-          sleep 5
-        done
-        echo -e "\n\n⏳ Waiting a couple of minutes until Kafka Connect is running and wikipedia connector created\n"
-        sleep 120
-        echo -e "\n\n-> Running KSQL commands\n"
-        cat > /tmp/scripts.ksql <<EOF
-        PRINT 'wikipedia' LIMIT 1;
-        CREATE STREAM WIKIPEDIA (createdat BIGINT, channel VARCHAR, sender STRUCT<nick VARCHAR, login VARCHAR, hostname VARCHAR>, message VARCHAR) WITH (kafka_topic='wikipedia', value_format='AVRO');
-        CREATE STREAM WIKIPEDIA_FLATTENED WITH (PARTITIONS=1) AS SELECT CREATEDAT, CHANNEL, SENDER->NICK AS SENDER_NICK, SENDER->LOGIN AS SENDER_LOGIN, SENDER->HOSTNAME AS SENDER_HOSTNAME, MESSAGE FROM WIKIPEDIA;
-        EOF
-        cat /tmp/scripts.ksql | ksql http://ksql-server-asgard-01:8088 2>&1
-        echo -e "\n\n-> Sleeping forever ZZZzzzz…\n"
-        sleep infinity
+    # entrypoint: 
+    #   - /bin/bash
+    #   - -c
+    #   - |
+    #     echo -e "\n\n⏳ Waiting for KSQL to be available before launching CLI\n"
+    #     while [ $$(curl -s -o /dev/null -w %{http_code} http://ksql-server-asgard-01:8088/) -eq 000 ]
+    #     do 
+    #       echo -e $$(date) "KSQL Server HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://ksql-server-asgard-01:8088/) " (waiting for 200)"
+    #       sleep 5
+    #     done
+    #     echo -e "\n\n-> Running KSQL commands\n"
+    #     cat > /tmp/scripts.ksql <<EOF
+    #     PRINT 'wikipedia' LIMIT 1;
+    #     CREATE STREAM WIKIPEDIA (createdat BIGINT, channel VARCHAR, sender STRUCT<nick VARCHAR, login VARCHAR, hostname VARCHAR>, message VARCHAR) WITH (kafka_topic='wikipedia', value_format='AVRO');
+    #     CREATE STREAM WIKIPEDIA_FLATTENED WITH (PARTITIONS=1) AS SELECT CREATEDAT, CHANNEL, SENDER->NICK AS SENDER_NICK, SENDER->LOGIN AS SENDER_LOGIN, SENDER->HOSTNAME AS SENDER_HOSTNAME, MESSAGE FROM WIKIPEDIA;
+    #     EOF
+    #     cat /tmp/scripts.ksql | ksql http://ksql-server-asgard-01:8088 2>&1
+    #     echo -e "\n\n-> Sleeping forever ZZZzzzz…\n"
+    #     sleep infinity
 
 # Kafka Connect ------------------------------------------------------------------------
 
@@ -244,30 +242,30 @@ services:
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 
         #
-        echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -eq 000 ] ; do 
-          echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) " (waiting for 200)"
-          sleep 5 
-        done
-        nc -vz $$CONNECT_REST_ADVERTISED_HOST_NAME $$CONNECT_REST_PORT
-        echo "Waiting for Schema Registry to start listening on schema-registry:8081 ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) -eq 000 ] ; do 
-          echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for 200)"
-          sleep 5 
-        done
-        #
-        echo -e "\n--\n+> Creating Kafka Connect IRC Source"
-        curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
-                  "name": "source_irc_00",
-                  "config": {
-                      "connector.class": "com.github.cjmatta.kafka.connect.irc.IrcSourceConnector",
-                      "irc.server": "irc.wikimedia.org",
-                      "kafka.topic": "wikipedia",
-                      "irc.channels": "#en.wikipedia,#en.wiktionary",
-                      "tasks.max": "2"
-                  }
-                  }' 2>&1
-        #
+        # echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
+        # while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -eq 000 ] ; do 
+        #   echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) " (waiting for 200)"
+        #   sleep 5 
+        # done
+        # nc -vz $$CONNECT_REST_ADVERTISED_HOST_NAME $$CONNECT_REST_PORT
+        # echo "Waiting for Schema Registry to start listening on schema-registry:8081 ⏳"
+        # while [ $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) -eq 000 ] ; do 
+        #   echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for 200)"
+        #   sleep 5 
+        # done
+        # #
+        # echo -e "\n--\n+> Creating Kafka Connect IRC Source"
+        # curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+        #           "name": "source_irc_00",
+        #           "config": {
+        #               "connector.class": "com.github.cjmatta.kafka.connect.irc.IrcSourceConnector",
+        #               "irc.server": "irc.wikimedia.org",
+        #               "kafka.topic": "wikipedia",
+        #               "irc.channels": "#en.wikipedia,#en.wiktionary",
+        #               "tasks.max": "2"
+        #           }
+        #           }' 2>&1
+        # #
         sleep infinity
 
   kafka-connect-pluto-02:
@@ -356,35 +354,35 @@ services:
       - |
         confluent-hub install --no-prompt cjmatta/kafka-connect-irc:5.0.0
         /etc/confluent/docker/run & 
-        echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -eq 000 ] ; do 
-          echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) " (waiting for 200)"
-          sleep 5 
-        done
-        nc -vz $$CONNECT_REST_ADVERTISED_HOST_NAME $$CONNECT_REST_PORT
-        echo "Waiting for Schema Registry to start listening on schema-registry:8081 ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) -eq 000 ] ; do 
-          echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for 200)"
-          sleep 5 
-        done
-        #
-        echo -e "\n--\n+> Creating Kafka Connect JDBC Sink"
-        curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
-                  "name": "sink_postgres_00",
-                  "config": { 
-                    "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
-                    "tasks.max": "1",
-                    "topics": "WIKIPEDIA_FLATTENED",
-                    "key.converter":"org.apache.kafka.connect.storage.StringConverter",
-                    "connection.url": "jdbc:postgresql://postgres:5432/",
-                    "connection.user": "postgres",
-                    "connection.password": "postgres",
-                    "auto.create": "true",
-                    "auto.evolve":"true",
-                    "pk.mode":"none"
-                    }	   
-                  }'
-        #
+        # echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
+        # while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -eq 000 ] ; do 
+        #   echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) " (waiting for 200)"
+        #   sleep 5 
+        # done
+        # nc -vz $$CONNECT_REST_ADVERTISED_HOST_NAME $$CONNECT_REST_PORT
+        # echo "Waiting for Schema Registry to start listening on schema-registry:8081 ⏳"
+        # while [ $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) -eq 000 ] ; do 
+        #   echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for 200)"
+        #   sleep 5 
+        # done
+        # #
+        # echo -e "\n--\n+> Creating Kafka Connect JDBC Sink"
+        # curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+        #           "name": "sink_postgres_00",
+        #           "config": { 
+        #             "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+        #             "tasks.max": "1",
+        #             "topics": "WIKIPEDIA_FLATTENED",
+        #             "key.converter":"org.apache.kafka.connect.storage.StringConverter",
+        #             "connection.url": "jdbc:postgresql://postgres:5432/",
+        #             "connection.user": "postgres",
+        #             "connection.password": "postgres",
+        #             "auto.create": "true",
+        #             "auto.evolve":"true",
+        #             "pk.mode":"none"
+        #             }	   
+        #           }'
+        # #
         sleep infinity
 
   # kafka-connect-mercury-02:
@@ -454,7 +452,7 @@ services:
       CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
       CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       # Multiple connect clusters here
-      CONTROL_CENTER_CONNECT_PLUTO_CLUSTER: 'kafka-connect-pluto-01:8083'
+      CONTROL_CENTER_CONNECT_PLUTO_CLUSTER: 'http://kafka-connect-pluto-01:8083,http://kafka-connect-pluto-02:8083'
       CONTROL_CENTER_CONNECT_MERCURY_CLUSTER: 'kafka-connect-mercury-01:8083'
       # Multiple KSQL clusters here
       CONTROL_CENTER_KSQL_ASGARD_URL: "http://ksql-server-asgard-01:8088,http://ksql-server-asgard-02:8088"
@@ -487,11 +485,3 @@ services:
     environment:
      - POSTGRES_USER=postgres
      - POSTGRES_PASSWORD=postgres
-
-  pgadmin:
-    image: dpage/pgadmin4
-    ports:
-      - "8080:80"
-    environment:
-     - PGADMIN_DEFAULT_EMAIL=robin@moffatt.me
-     - PGADMIN_DEFAULT_PASSWORD=Admin123
