@@ -21,7 +21,10 @@ import io.confluent.kpay.payments.model.ConfirmedStats;
 import io.confluent.kpay.payments.model.InflightStats;
 import io.confluent.kpay.payments.model.Payment;
 import io.confluent.kpay.rest_iq.KTableRestClient;
+import io.confluent.kpay.util.Pair;
 import io.confluent.kpay.utils.IntegrationTestHarness;
+import java.math.BigDecimal;
+import java.util.*;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serdes;
@@ -34,11 +37,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Properties;
 
 public class PaymentsIntegrationTest {
 
@@ -136,7 +134,12 @@ public class PaymentsIntegrationTest {
     Thread.sleep(100);
 
     // Account REST test
-    KTableRestClient<String, AccountBalance> accountClient = new KTableRestClient<String, AccountBalance>(true, accountProcessor.streams(), AccountProcessor.STORE_NAME){};
+    KTableRestClient<String, AccountBalance> accountClient = new KTableRestClient<String, AccountBalance>(true,
+            accountProcessor.streams(), AccountProcessor.STORE_NAME) {
+    };
+    Set<String> accountKeys = accountClient.keySet();
+    List<Pair<String, AccountBalance>> accountBalances = accountClient.get(new ArrayList<>(accountKeys));
+
     System.out.println("AccountSize-1:" + accountClient.size());
 
 

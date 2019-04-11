@@ -1,22 +1,25 @@
 package io.confluent.kpay;
 
 import io.confluent.kpay.utils.IntegrationTestHarness;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class RestEndpointIntegrationTest {
 
     private IntegrationTestHarness testHarness;
 
+
+    /**
+     * Look at adopting: https://www.testcontainers.org/modules/kafka
+     *
+     * @throws Exception
+     */
     @Before
     public void before() throws Exception {
         testHarness = new IntegrationTestHarness();

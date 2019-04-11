@@ -115,7 +115,7 @@
 
         <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
           <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h5>Control Plane</h5>
+            <h5>Pause and resume</h5>
             <div class="btn-toolbar mb-2 mb-md-0">
               <div class="btn-group mr-2">
                 <button class="btn btn-sm btn-outline-secondary" id="payments">Payment simulation</button>
@@ -144,13 +144,15 @@
             </div>
           </div>
 
-          <h5>Trust: Performance & Observablity</h5>
-
-          <canvas class="my-4 w-100" id="paymentPipelineChart" width="900" height="180"></canvas>
+          <h5>Instumentation metrics</h5>
 
           <canvas class="my-4 w-100" id="latencyChart" width="900" height="180"></canvas>
 
-          <h5>Core: User accounts</h5>
+          <h5>Business metrics</h5>
+
+          <canvas class="my-4 w-100" id="paymentPipelineChart" width="900" height="180"></canvas>
+
+          <h5>User accounts</h5>
           <div class="table-responsive">
             <table id="accountTable" class="display" width="100%"></table>
           </div>

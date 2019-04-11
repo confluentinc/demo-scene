@@ -4,6 +4,8 @@ import io.confluent.kpay.payments.model.ConfirmedStats;
 import io.confluent.kpay.payments.model.Payment;
 import io.confluent.kpay.rest_iq.WindowKTableResourceEndpoint;
 import io.confluent.kpay.rest_iq.WindowKVStoreProvider;
+import java.util.Collection;
+import java.util.Properties;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
@@ -19,15 +21,12 @@ import org.apache.kafka.streams.state.WindowStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.Properties;
-
 public class PaymentsConfirmed {
     public static final String STORE_NAME = "confirmed";
     long ONE_DAY = 24 * 60 * 60 * 1000L;
 
     private static final Logger log = LoggerFactory.getLogger(PaymentsConfirmed.class);
-    private final KTable<Windowed<String>, ConfirmedStats> statsKTable;
+    private final KTable<Windowed<String>, ConfirmedStats> confirmedKTable;
     private WindowKTableResourceEndpoint<String, ConfirmedStats> microRestService;
 
     private final Topology topology;
@@ -47,19 +46,19 @@ public class PaymentsConfirmed {
          */
         complete.transform(new CompleteTransformer()).to(paymentsConfirmedTopic);
 
-        Materialized<String, ConfirmedStats, WindowStore<Bytes, byte[]>> completeStore = Materialized.as(STORE_NAME);
-        Materialized<String, ConfirmedStats, WindowStore<Bytes, byte[]>> completeWindowStore = completeStore.withKeySerde(new StringSerde()).withValueSerde(new ConfirmedStats.Serde());
+        Materialized<String, ConfirmedStats, WindowStore<Bytes, byte[]>> confirmedStore = Materialized.as(STORE_NAME);
+        Materialized<String, ConfirmedStats, WindowStore<Bytes, byte[]>> confirmedWindowStore = confirmedStore.withKeySerde(new StringSerde()).withValueSerde(new ConfirmedStats.Serde());
 
         /**
          * Confirmation processing
          */
-        statsKTable = complete
+        confirmedKTable = complete
                 .groupBy((key, value) -> "all-payments") // will force a repartition-topic
                 .windowedBy(TimeWindows.of(ONE_DAY))
                 .aggregate(
                         ConfirmedStats::new,
                         (key, value, aggregate) -> aggregate.update(value),
-                        completeWindowStore
+                        confirmedWindowStore
                 );
 
         topology = builder.build();
@@ -74,7 +73,8 @@ public class PaymentsConfirmed {
 
         log.info(topology.describe().toString());
 
-        microRestService = new WindowKTableResourceEndpoint<String, ConfirmedStats>(new WindowKVStoreProvider<>(streams, statsKTable)){};
+        microRestService = new WindowKTableResourceEndpoint<String, ConfirmedStats>(new WindowKVStoreProvider<>(streams, confirmedKTable)) {
+        };
         microRestService.start(streamsConfig);
     }
 
@@ -90,7 +90,7 @@ public class PaymentsConfirmed {
 
 
     public ReadOnlyWindowStore<String, ConfirmedStats> getStore() {
-        return streams.store(statsKTable.queryableStoreName(), QueryableStoreTypes.windowStore());
+        return streams.store(confirmedKTable.queryableStoreName(), QueryableStoreTypes.windowStore());
     }
 
     public KafkaStreams streams() {

@@ -5,6 +5,8 @@ import io.confluent.kpay.payments.model.InflightStats;
 import io.confluent.kpay.payments.model.Payment;
 import io.confluent.kpay.rest_iq.WindowKTableResourceEndpoint;
 import io.confluent.kpay.rest_iq.WindowKVStoreProvider;
+import java.util.Arrays;
+import java.util.Properties;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
@@ -17,9 +19,6 @@ import org.apache.kafka.streams.state.ReadOnlyWindowStore;
 import org.apache.kafka.streams.state.WindowStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.Properties;
 
 public class PaymentsInFlight {
     private static final Logger log = LoggerFactory.getLogger(PaymentsInFlight.class);
@@ -51,7 +50,7 @@ public class PaymentsInFlight {
          */
         paymentStatsKTable = inflight
                 .filter((key, value) -> controllable.pauseMaybe())
-                .groupBy((key, value) -> "all-payments") // will force a repartition-topic :(
+                .groupBy((key, value) -> "all-payments")
                 .windowedBy(TimeWindows.of(ONE_DAY))
                 .aggregate(
                         InflightStats::new,
@@ -81,7 +80,9 @@ public class PaymentsInFlight {
 
         log.info(topology.describe().toString());
 
-        microRestService = new WindowKTableResourceEndpoint<String, InflightStats>(new WindowKVStoreProvider<>(streams, paymentStatsKTable)){};
+        microRestService = new WindowKTableResourceEndpoint<String, InflightStats>(new WindowKVStoreProvider<>(streams,
+                paymentStatsKTable)) {
+        };
         microRestService.start(streamsConfig);
     }
 

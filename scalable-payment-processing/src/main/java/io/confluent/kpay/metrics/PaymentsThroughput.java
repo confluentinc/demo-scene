@@ -3,6 +3,8 @@ package io.confluent.kpay.metrics;
 import io.confluent.kpay.metrics.model.ThroughputStats;
 import io.confluent.kpay.payments.model.ConfirmedStats;
 import io.confluent.kpay.payments.model.Payment;
+import java.util.Collection;
+import java.util.Properties;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
@@ -15,9 +17,6 @@ import org.apache.kafka.streams.state.StreamsMetadata;
 import org.apache.kafka.streams.state.WindowStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Collection;
-import java.util.Properties;
 
 /**
  * Track min/max/avg payment throughput per second per day
@@ -70,7 +69,6 @@ public class PaymentsThroughput {
                         stats = stats.merge(metricStats);
                     }
                     processedLast = key.window().end();
-//                    System.out.println("**** Processing" + " key:" + key.key() + " time:" + key.window().end() + " ---" + metricStats);
                 });
         topology = builder.build();
     }
