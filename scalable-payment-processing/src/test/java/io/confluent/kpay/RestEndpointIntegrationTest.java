@@ -54,7 +54,7 @@ public class RestEndpointIntegrationTest {
 
         Client client = ClientBuilder.newClient();
 
-        WebTarget tsTarget = client.target("http://localhost:8080").path("/kpay/payments/start");
+        WebTarget tsTarget = client.target("http://localhost:8080").path("/kpay/payments/startProcessors");
 
         String response =
                 tsTarget.request(MediaType.APPLICATION_JSON_TYPE)

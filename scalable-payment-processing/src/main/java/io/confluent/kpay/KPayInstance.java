@@ -15,11 +15,10 @@
  **/
 package io.confluent.kpay;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.UnknownHostException;
 import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class KPayInstance {
 
@@ -37,7 +36,7 @@ public class KPayInstance {
 
 
     /**
-     * Note: dont care about double locking because it is always created on startup in the Servlet Lifecycle.start()
+     * Note: dont care about double locking because it is always created on startup in the Servlet Lifecycle.startProcessors()
      */
     private static volatile KPayInstance singleton = null;
 
@@ -55,10 +54,10 @@ public class KPayInstance {
             kPay.initializeEnvironment();
 
             try {
-                kPay.start();
+                kPay.startProcessors();
             } catch (UnknownHostException e) {
                 e.printStackTrace();
-                log.error("Cannot start due to network config", e);
+                log.error("Cannot startProcessors due to network config", e);
             }
 
             singleton = new KPayInstance(kPay);

@@ -19,7 +19,7 @@ public class MicroRestService {
     /**
      * Start an embedded Jetty Server on the given port
      * @param hostAndPortString
-     * @throws Exception if jetty can't start
+     * @throws Exception if jetty can't startProcessors
      */
     public void start(Object instance, final String hostAndPortString) {
         log.info("Starting RestEndpoint on:" + hostAndPortString + " Instance:" + instance);
@@ -53,7 +53,7 @@ public class MicroRestService {
         } catch (final Exception exception) {
             log.error("Unavailable: " + hostAndPortString + " Instance:" + instance);
             exception.printStackTrace();
-            throw new RuntimeException("Failed to start Jetty", exception);
+            throw new RuntimeException("Failed to startProcessors Jetty", exception);
         }
     }
 

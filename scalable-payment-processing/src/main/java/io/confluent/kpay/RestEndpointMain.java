@@ -15,6 +15,8 @@
  **/
 package io.confluent.kpay;
 
+import java.io.File;
+import java.util.Properties;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -25,10 +27,6 @@ import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.net.MalformedURLException;
-import java.util.Properties;
 
 /**
  * Fire up Rest endpoint and Swagger UI
@@ -142,7 +140,7 @@ public class RestEndpointMain {
         try {
             server.start();
         } catch (Exception ex) {
-            log.error("Failed to start", ex);
+            log.error("Failed to startProcessors", ex);
             ex.printStackTrace();
             System.exit(1);
         }

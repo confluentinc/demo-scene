@@ -25,12 +25,11 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.util.List;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
-import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -62,8 +61,8 @@ public class KPayResource {
      * @return
      */
     @POST
-    @Path("/payments/start")
-    @Operation(summary = "start processing some payments",
+    @Path("/payments/startProcessors")
+    @Operation(summary = "startProcessors processing some payments",
             tags = {"payment generation"},
             responses = {
                     @ApiResponse(content = @Content(schema = @Schema(implementation = String.class))),

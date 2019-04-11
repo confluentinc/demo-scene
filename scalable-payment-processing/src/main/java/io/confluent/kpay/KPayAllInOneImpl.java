@@ -1,13 +1,14 @@
 package io.confluent.kpay;
 
 import io.confluent.common.utils.TestUtils;
+import io.confluent.kpay.control.ControlProperties;
 import io.confluent.kpay.control.Controllable;
 import io.confluent.kpay.control.PauseControllable;
 import io.confluent.kpay.control.StartStopController;
-import io.confluent.kpay.control.model.Status;
 import io.confluent.kpay.metrics.PaymentsThroughput;
 import io.confluent.kpay.metrics.model.ThroughputStats;
 import io.confluent.kpay.payments.AccountProcessor;
+import io.confluent.kpay.payments.PaymentProperties;
 import io.confluent.kpay.payments.PaymentsConfirmed;
 import io.confluent.kpay.payments.PaymentsInFlight;
 import io.confluent.kpay.payments.model.AccountBalance;
@@ -19,20 +20,7 @@ import io.confluent.kpay.rest_iq.WindowKTableResourceEndpoint;
 import io.confluent.kpay.util.KafkaTopicClient;
 import io.confluent.kpay.util.KafkaTopicClientImpl;
 import io.confluent.kpay.util.Pair;
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.StringSerializer;
-import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.state.StreamsMetadata;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.math.BigDecimal;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -40,24 +28,26 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.state.StreamsMetadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static java.util.Collections.sort;
 
 public class KPayAllInOneImpl implements KPay {
     private static final Logger log = LoggerFactory.getLogger(KPayAllInOneImpl.class);
 
-    private String paymentsIncomingTopic = "kpay.payments.incoming";
-    private String paymentsInflightTopic = "kpay.payments.inflight";
-    private String paymentsCompleteTopic = "kpay.payments.complete";
-    private String paymentsConfirmedTopic = "kpay.payments.confirmed";
-    private String controlStatusTopic = "kpay.control.status";
 
     private String bootstrapServers;
 
     private KafkaTopicClient topicClient;
-
-    private long instanceId = System.currentTimeMillis();
-
 
     private PaymentsInFlight paymentsInFlight;
     private AccountProcessor paymentAccountProcessor;
@@ -69,17 +59,15 @@ public class KPayAllInOneImpl implements KPay {
     private StartStopController controllerStartStop;
     private ScheduledFuture scheduledPaymentFuture;
     private PaymentRunnable paymentRunnable;
-    private String thisIpAddress;
 
     public KPayAllInOneImpl(String bootstrapServers) {
-
         this.bootstrapServers = bootstrapServers;
     }
 
     /**
      * Fire up all of the stream processors
      */
-    public void start() throws UnknownHostException {
+    public void startProcessors() throws UnknownHostException {
 
         Controllable pauseController = new PauseControllable();
 
@@ -98,25 +86,27 @@ public class KPayAllInOneImpl implements KPay {
     }
 
     private void startController(Controllable pauseController) {
-        controllerStartStop = new StartStopController(controlStatusTopic, getControlProperties(bootstrapServers), pauseController);
+        controllerStartStop = new StartStopController(ControlProperties.controlStatusTopic, ControlProperties.get(bootstrapServers), pauseController);
         controllerStartStop.start();
     }
 
     private int instrumentationPortOffset = 21000;
-    private void startInstrumentation() throws UnknownHostException {
-        instrumentationThroughput = new PaymentsThroughput(paymentsCompleteTopic, getPaymentsProperties(bootstrapServers, instrumentationPortOffset++));
+
+    private void startInstrumentation() {
+        instrumentationThroughput = new PaymentsThroughput(PaymentProperties.paymentsCompleteTopic, PaymentProperties.get(bootstrapServers, instrumentationPortOffset++));
         instrumentationThroughput.start();
     }
 
     private int paymentsPortOffset = 20000;
-    private void startPaymentPipeline(Controllable pauseController) throws UnknownHostException {
-        paymentsInFlight = new PaymentsInFlight(paymentsIncomingTopic, paymentsInflightTopic, paymentsCompleteTopic, getPaymentsProperties(bootstrapServers, paymentsPortOffset++), pauseController);
+
+    private void startPaymentPipeline(Controllable pauseController) {
+        paymentsInFlight = new PaymentsInFlight(PaymentProperties.paymentsIncomingTopic, PaymentProperties.paymentsInflightTopic, PaymentProperties.paymentsCompleteTopic, PaymentProperties.get(bootstrapServers, paymentsPortOffset++), pauseController);
         paymentsInFlight.start();
 
-        paymentAccountProcessor = new AccountProcessor(paymentsInflightTopic, paymentsCompleteTopic, getPaymentsProperties(bootstrapServers, paymentsPortOffset++));
+        paymentAccountProcessor = new AccountProcessor(PaymentProperties.paymentsInflightTopic, PaymentProperties.paymentsCompleteTopic, PaymentProperties.get(bootstrapServers, paymentsPortOffset++));
         paymentAccountProcessor.start();
 
-        paymentsConfirmed = new PaymentsConfirmed(paymentsCompleteTopic, paymentsConfirmedTopic, getPaymentsProperties(bootstrapServers, paymentsPortOffset++));
+        paymentsConfirmed = new PaymentsConfirmed(PaymentProperties.paymentsCompleteTopic, PaymentProperties.paymentsConfirmedTopic, PaymentProperties.get(bootstrapServers, paymentsPortOffset++));
         paymentsConfirmed.start();
     }
 
@@ -166,7 +156,7 @@ public class KPayAllInOneImpl implements KPay {
                 try {
                     Payment payment = new Payment("pay-" + System.currentTimeMillis(), System.currentTimeMillis() + "", from[position % from.length], to[position % from.length], new BigDecimal(Math.round((Math.random() * 100.0)*100.0)/100.0), Payment.State.incoming, System.currentTimeMillis() );
                     log.info("Send:" + payment);
-                    producer.send(buildRecord(paymentsIncomingTopic, System.currentTimeMillis(), payment.getId(), payment));
+                    producer.send(buildRecord(PaymentProperties.paymentsIncomingTopic, System.currentTimeMillis(), payment.getId(), payment));
                     position++;
                     producer.flush();
                 } catch (Throwable t) {
@@ -238,34 +228,10 @@ public class KPayAllInOneImpl implements KPay {
         return null;
     }
 
-    private Properties getPaymentsProperties(String broker, int portOffset) throws UnknownHostException {
-        Properties properties = getProperties(broker, Serdes.String().getClass().getName(), Payment.Serde.class.getName());
-        // payment processors start from 20000
-        properties.put(StreamsConfig.APPLICATION_SERVER_CONFIG, getIpAddress() + ":" + portOffset);
-        System.out.println(" APP PORT:" + properties.get(StreamsConfig.APPLICATION_SERVER_CONFIG));
-        return properties;
-    }
-
-    private Properties getControlProperties(String broker) {
-       return getProperties(broker, Serdes.String().getClass().getName(), Status.Serde.class.getName());
-    }
-    private Properties getProperties(String broker, String keySerdesClass, String valueSerdesClass) {
-        Properties props = new Properties();
-        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TEST-APP-ID-" + instanceId++);
-        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, broker);
-        props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, keySerdesClass);
-        props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, valueSerdesClass);
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        props.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 2000);
-        return props;
-    }
 
     public void initializeEnvironment() {
-        getTopicClient().createTopic(paymentsInflightTopic, 5, (short)1);
-        getTopicClient().createTopic(paymentsIncomingTopic, 5, (short) 1);
-        getTopicClient().createTopic(paymentsCompleteTopic, 5, (short) 1);
-        getTopicClient().createTopic(paymentsConfirmedTopic, 5, (short) 1);
-        getTopicClient().createTopic(controlStatusTopic, 5, (short) 1);
+        PaymentProperties.initializeEnvironment(getTopicClient());
+        ControlProperties.initializeEnvironment(getTopicClient());
     }
 
     private KafkaTopicClient getTopicClient() {
@@ -291,15 +257,6 @@ public class KPayAllInOneImpl implements KPay {
         producerConfig.put(ProducerConfig.RETRIES_CONFIG, 0);
         return producerConfig;
     }
-
-    private String getIpAddress() throws UnknownHostException {
-        if (thisIpAddress == null) {
-            InetAddress thisIp = InetAddress.getLocalHost();
-            thisIpAddress = thisIp.getHostAddress().toString();
-        }
-        return thisIpAddress;
-    }
-
 
     private interface PaymentRunnable extends Runnable {
         void stop();

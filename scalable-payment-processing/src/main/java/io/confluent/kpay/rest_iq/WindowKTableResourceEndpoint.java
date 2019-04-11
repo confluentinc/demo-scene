@@ -2,6 +2,7 @@ package io.confluent.kpay.rest_iq;
 
 import io.confluent.kpay.util.GenericClassUtil;
 import io.confluent.kpay.util.Pair;
+import java.util.*;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.Windowed;
@@ -9,8 +10,6 @@ import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.ReadOnlyWindowStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
 
 public class WindowKTableResourceEndpoint<K,V> implements WindowKTableResource<K, V> {
 
@@ -99,7 +98,7 @@ public class WindowKTableResourceEndpoint<K,V> implements WindowKTableResource<K
 
         if (property == null) {
             RuntimeException runtimeException = new RuntimeException("Not starting RestService for:" + streamsConfig.getProperty(StreamsConfig.APPLICATION_ID_CONFIG));
-            log.warn("Cannot start, missing config", runtimeException);
+            log.warn("Cannot startProcessors, missing config", runtimeException);
             return;
         }
         microRestService = new MicroRestService();
