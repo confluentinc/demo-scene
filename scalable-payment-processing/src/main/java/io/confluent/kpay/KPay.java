@@ -20,7 +20,6 @@ import io.confluent.kpay.payments.model.AccountBalance;
 import io.confluent.kpay.payments.model.ConfirmedStats;
 import io.confluent.kpay.payments.model.InflightStats;
 import io.confluent.kpay.util.Pair;
-
 import java.util.List;
 
 interface KPay {
@@ -48,7 +47,7 @@ interface KPay {
     boolean isGeneratingPayments();
 
     /**
-     * Trust plane: instumentation and dql's
+     * Trust plane: instrumentation and dql's
      * @return
      */
     ThroughputStats viewMetrics();
