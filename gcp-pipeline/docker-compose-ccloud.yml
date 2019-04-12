@@ -8,7 +8,7 @@ version: '2'
 services:
 
   schema-registry:
-    image: "confluentinc/cp-schema-registry:5.0.0"
+    image: "confluentinc/cp-schema-registry:5.2.1"
     ports:
       - '8081:8081'
     environment:
@@ -21,12 +21,14 @@ services:
       SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: INFO
   
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.0.0
+    image: confluentinc/cp-ksql-server:5.2.1
     depends_on:
       - schema-registry
     environment:
       KSQL_LISTENERS: http://0.0.0.0:8088
-      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: "https://CCLOUD_SCHEMA_REGISTRY"
+      KSQL_KSQL_SCHEMA_REGISTRY_BASIC_AUTH_CREDENTIALS_SOURCE: "USER_INFO"
+      KSQL_KSQL_SCHEMA_REGISTRY_BASIC_AUTH_USER_INFO: "SR_API_KEY:SR_API_SECRET"
       KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
       KSQL_BOOTSTRAP_SERVERS: CCLOUD_BROKER_HOST:9092
       KSQL_KSQL_SERVER_UI_ENABLED: false
@@ -40,8 +42,15 @@ services:
       KSQL_SASL_MECHANISM: PLAIN
       KSQL_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="CCLOUD_USERNAME" password="CCLOUD_PASSWORD";'
 
+        ksql-cli:
+    image: confluentinc/cp-ksql-cli:5.2.1
+    depends_on:
+      - ksql-server
+    entrypoint: /bin/sh
+    tty: true
+
   kafka-connect:
-    image: confluentinc/cp-kafka-connect:5.0.0
+    image: confluentinc/cp-kafka-connect:5.2.1
     ports:
       - "8083:8083"
     depends_on:
@@ -53,10 +62,14 @@ services:
       CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
       CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-offsets
       CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
-      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
-      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
-      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "https://CCLOUD_SCHEMA_REGISTRY"
+      CONNECT_VALUE_CONVERTER_BASIC_AUTH_CREDENTIALS_SOURCE: "USER_INFO"
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_BASIC_AUTH_USER_INFO: "SR_API_KEY:SR_API_SECRET"
+      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "https://CCLOUD_SCHEMA_REGISTRY"
+      CONNECT_KEY_CONVERTER_BASIC_AUTH_CREDENTIALS_SOURCE: "USER_INFO"
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_BASIC_AUTH_USER_INFO: "SR_API_KEY:SR_API_SECRET"
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-cp"
@@ -65,7 +78,6 @@ services:
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "3"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "3"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "3"
-      CONNECT_PLUGIN_PATH: '/usr/share/java,/u01/connectors'
       CONNECT_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "https"
       CONNECT_SASL_MECHANISM: "PLAIN"
       CONNECT_REQUEST_TIMEOUT_MS: "20000"
@@ -84,6 +96,20 @@ services:
       CONNECT_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="CCLOUD_USERNAME" password="CCLOUD_PASSWORD";'
       CONNECT_CONSUMER_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="CCLOUD_USERNAME" password="CCLOUD_PASSWORD";'
       CONNECT_PRODUCER_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="CCLOUD_USERNAME" password="CCLOUD_PASSWORD";'
+      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components,/u01/connectors
+    # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
+    command: 
+      - bash 
+      - -c 
+      - |
+        echo "Installing Connector"
+        confluent-hub install --no-prompt cjmatta/kafka-connect-irc:5.0.0
+        confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.1.1
+        #
+        echo "Launching Kafka Connect worker"
+        /etc/confluent/docker/run & 
+        #
+        sleep infinity
     volumes:
+      - /u01/connectors:/u01/connectors
       - $PWD/creds/gcp_creds.json:/root/creds/gcp_creds.json
-      - /u01/connectors/:/u01/connectors/
