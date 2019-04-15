@@ -220,7 +220,19 @@ public class KPayAllInOneImpl implements KPay {
 
         if (inflightStats.size() == 0 || confirmedStats.size() == 0) return new Pair<>(new InflightStats(), new ConfirmedStats());
 
-        return new Pair<>(inflightStats.get(0).getV(), confirmedStats.get(0).getV());
+        Iterator<Pair<String, InflightStats>> iterator = inflightStats.iterator();
+        InflightStats inflightStatsValue = iterator.next().getV();
+        while (iterator.hasNext()) {
+            inflightStatsValue.add(iterator.next().getV());
+        }
+
+        Iterator<Pair<String, ConfirmedStats>> confirmedIterator = confirmedStats.iterator();
+        ConfirmedStats confirmedStats1 = confirmedIterator.next().getV();
+        while (confirmedIterator.hasNext()) {
+            confirmedStats1.add(confirmedIterator.next().getV());
+        }
+
+        return new Pair<>(inflightStatsValue, confirmedStats1);
     }
 
     @Override

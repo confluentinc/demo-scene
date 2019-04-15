@@ -3,10 +3,9 @@ package io.confluent.kpay.payments.model;
 import io.confluent.kpay.util.JsonDeserializer;
 import io.confluent.kpay.util.JsonSerializer;
 import io.confluent.kpay.util.WrapperSerde;
+import java.math.BigDecimal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.math.BigDecimal;
 
 public class InflightStats {
     private static final Logger log = LoggerFactory.getLogger(InflightStats.class);
@@ -63,6 +62,10 @@ public class InflightStats {
         this.amount = amount;
     }
 
+    public void add(InflightStats other) {
+        this.amount.add(other.amount);
+        this.count += other.count;
+    }
 
 
     static public final class Serde extends WrapperSerde<InflightStats> {

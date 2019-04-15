@@ -50,7 +50,7 @@ public class PaymentsInFlight {
          */
         paymentStatsKTable = inflight
                 .filter((key, value) -> controllable.pauseMaybe())
-                .groupBy((key, value) -> "all-payments")
+                .groupBy((key, value) -> Integer.toString(key.hashCode() % 10))// reduce event key space for cross event aggregation
                 .windowedBy(TimeWindows.of(ONE_DAY))
                 .aggregate(
                         InflightStats::new,

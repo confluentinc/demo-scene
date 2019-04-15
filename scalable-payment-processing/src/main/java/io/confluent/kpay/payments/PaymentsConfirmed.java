@@ -53,7 +53,7 @@ public class PaymentsConfirmed {
          * Confirmation processing
          */
         confirmedKTable = complete
-                .groupBy((key, value) -> "all-payments") // will force a repartition-topic
+                .groupBy((key, value) -> Integer.toString(key.hashCode() % 10)) // redistribute to restricted key-set
                 .windowedBy(TimeWindows.of(ONE_DAY))
                 .aggregate(
                         ConfirmedStats::new,
