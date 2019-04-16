@@ -12,9 +12,9 @@ services:
     depends_on:
       - zookeeper
     ports:
-    # Exposes 9092 for external connections to the broker
-    # Use kafka:29092 for connections internal on the docker network
-    # See https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
+      # Exposes 9092 for external connections to the broker
+      # Use kafka:29092 for connections internal on the docker network
+      # See https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
       - 9092:9092
     environment:
       KAFKA_BROKER_ID: 1
@@ -104,36 +104,36 @@ services:
                           bootstrap-server=kafka:29092 \
                           schemaRegistryUrl=http://schema-registry:8081'"
 
-# Other systems
+  # Other systems
   mysql:
     image: debezium/example-mysql:0.8
     environment:
-     - MYSQL_ROOT_PASSWORD=debezium
-     - MYSQL_USER=mysqluser
-     - MYSQL_PASSWORD=mysqlpw
+      - MYSQL_ROOT_PASSWORD=debezium
+      - MYSQL_USER=mysqluser
+      - MYSQL_PASSWORD=mysqlpw
     volumes:
-     - ./customers.sql:/docker-entrypoint-initdb.d/z99_dump.sql
+      - ./customers.sql:/docker-entrypoint-initdb.d/z99_dump.sql
 
   connect-debezium:
     image: debezium/connect:0.8
     depends_on:
-     - kafka
-     - mysql
-     - schema-registry
+      - kafka
+      - mysql
+      - schema-registry
     ports:
-     - 8083:8083
+      - 8083:8083
     environment:
-     - BOOTSTRAP_SERVERS=kafka:29092
-     - GROUP_ID=1
-     - CONFIG_STORAGE_TOPIC=my_connect_configs
-     - OFFSET_STORAGE_TOPIC=my_connect_offsets
-     - STATUS_STORAGE_TOPIC=my_connect_status
-     - KEY_CONVERTER=io.confluent.connect.avro.AvroConverter
-     - VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter
-     - CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
-     - CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
+      - BOOTSTRAP_SERVERS=kafka:29092
+      - GROUP_ID=1
+      - CONFIG_STORAGE_TOPIC=my_connect_configs
+      - OFFSET_STORAGE_TOPIC=my_connect_offsets
+      - STATUS_STORAGE_TOPIC=my_connect_status
+      - KEY_CONVERTER=io.confluent.connect.avro.AvroConverter
+      - VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter
+      - CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
+      - CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
     volumes:
-     - $PWD/scripts:/scripts
+      - $PWD/scripts:/scripts
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.3.0
@@ -143,7 +143,7 @@ services:
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: "-Xms1g -Xmx1g"
     volumes:
-     - $PWD/scripts:/scripts
+      - $PWD/scripts:/scripts
 
   kibana:
     image: docker.elastic.co/kibana/kibana:6.3.0
