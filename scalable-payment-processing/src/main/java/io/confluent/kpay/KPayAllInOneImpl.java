@@ -227,12 +227,12 @@ public class KPayAllInOneImpl implements KPay {
         }
 
         Iterator<Pair<String, ConfirmedStats>> confirmedIterator = confirmedStats.iterator();
-        ConfirmedStats confirmedStats1 = confirmedIterator.next().getV();
+        ConfirmedStats confirmedStatsValue = confirmedIterator.next().getV();
         while (confirmedIterator.hasNext()) {
-            confirmedStats1.add(confirmedIterator.next().getV());
+            confirmedStatsValue.add(confirmedIterator.next().getV());
         }
 
-        return new Pair<>(inflightStatsValue, confirmedStats1);
+        return new Pair<>(inflightStatsValue, confirmedStatsValue);
     }
 
     @Override
