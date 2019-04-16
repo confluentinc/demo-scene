@@ -18,7 +18,7 @@ class JSONRatingStreamer {
 
       Properties props = new Properties()
       props.load(new FileInputStream(new File(args[0])))
-      def bootstrapServer = props.get('bootstrap.servers')
+      def bootstrapServer = System.getenv('KAFKA_BOOTSTRAP_SERVERS') ?: props.get('bootstrap.servers')
       println "Streaming ratings to ${ bootstrapServer}"
       props.put('bootstrap.servers', bootstrapServer)
       props.put('key.serializer', LongSerializer.class.getName())
