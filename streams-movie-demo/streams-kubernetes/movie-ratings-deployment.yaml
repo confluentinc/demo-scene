@@ -1,0 +1,35 @@
+---
+apiVersion: apps/v1
+kind: "Deployment"
+metadata:
+  name: "streaming-movie-ratings"
+  namespace: "default"
+  labels:
+    app: "streaming-movie-ratings"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "streaming-movie-ratings"
+  template:
+    metadata:
+      labels:
+        app: "streaming-movie-ratings"
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - "streaming-movie-ratings"
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: kafka-streams-stockstat
+          image: gcr.io/cloud-private-dev/gamussa/streaming-movie-ratings:latest
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: -DLOGLEVEL=INFO
+
