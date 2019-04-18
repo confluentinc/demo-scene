@@ -27,7 +27,7 @@ spec:
                       - "streaming-movie-ratings"
               topologyKey: "kubernetes.io/hostname"
       containers:
-        - name: kafka-streams-stockstat
+        - name: streaming-movie-ratings
           image: gcr.io/cloud-private-dev/gamussa/streaming-movie-ratings:latest
           env:
             - name: JAVA_TOOL_OPTIONS
