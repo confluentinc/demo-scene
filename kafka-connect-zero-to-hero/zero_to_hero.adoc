@@ -115,16 +115,30 @@ curl -i -X POST -H "Accept:application/json" \
         "type.name": "type.name=kafkaconnect",
         "connection.url": "http://elasticsearch:9200",
         "transforms": "dropTopicPrefix,extractKey",
+        "transforms.extractKey.type":"org.apache.kafka.connect.transforms.ExtractField$Key",
+        "transforms.extractKey.field":"id",
         "transforms.dropTopicPrefix.type":"org.apache.kafka.connect.transforms.RegexRouter",
         "transforms.dropTopicPrefix.regex":"mysql-debezium-(.*)",
-        "transforms.dropTopicPrefix.replacement":"$1",
-        "transforms.extractKey.type":"org.apache.kafka.connect.transforms.ValueToKey",
-        "transforms.extractKey.fields":"id"
+        "transforms.dropTopicPrefix.replacement":"$1"
       }
     }'
-
 ----
 
 
-https://github.com/confluentinc/kafka-connect-elasticsearch/issues/285
-https://stackoverflow.com/questions/54863240/mapper-parsing-exception-in-elasticsearch-6-5-4
+http://localhost:5601/app/kibana#/discover?_g=(refreshInterval:(pause:!f,value:5000),time:(from:now-15m,mode:quick,to:now))&_a=(columns:!(_source),index:'asgard.demo.orders',interval:auto,query:(language:lucene,query:''),sort:!(CREATE_TS,desc))[Inspect the data in Kibana] or from CLI: 
+
+[source,bash]
+----
+echo '{ "size": 1, "sort": [ { "CREATE_TS": { "order": "desc" } } ] }' |\
+  http http://localhost:9200/asgard.demo.orders/_search
+----
+
+or
+
+[source,bash]
+----
+curl -s http://localhost:9200/asgard.demo.orders/_search \
+  -H 'content-type: application/json' \
+  -d '{ "size": 1, "sort": [ { "CREATE_TS": { "order": "desc" } } ] }' |\
+  jq '.'
+----

@@ -248,7 +248,6 @@ services:
     ports:
       - 9200:9200
     environment:
-      xpack.security.enabled: "false"
       ES_JAVA_OPTS: "-Xms1g -Xmx1g"
     # volumes:
     #  - ${PWD}/scripts:/scripts
@@ -260,6 +259,31 @@ services:
       - elasticsearch
     ports:
       - 5601:5601
-    environment:
-      xpack.security.enabled: "false"
-      discovery.type: "single-node"
+    command: 
+      - bash 
+      - -c 
+      - |
+        /usr/local/bin/kibana-docker &
+        echo "Waiting for Kibana to be ready (checking http://localhost:5601/api/status) ⏳"
+        while [ $$(curl -s http://localhost:5601/api/status|grep --silent -e "\"status\":{\"overall\":{\"state\":\"green\"";echo $$?) -eq 1 ] ; do 
+        sleep 5 
+        done
+        echo "Pre-creating index pattern"
+        curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/asgard.demo.orders' \
+          -H 'kbn-xsrf: nevergonnagiveyouup' \
+          -H 'Content-Type: application/json' \
+          -d '{"attributes":{"title":"asgard.demo.orders","timeFieldName":"CREATE_TS"}}'
+
+        echo "Setting the index pattern as default"
+        curl -XPOST 'http://localhost:5601/api/kibana/settings' \
+          -H 'kbn-xsrf: nevergonnagiveyouup' \
+          -H 'content-type: application/json' \
+          -d '{"changes":{"defaultIndex":"asgard.demo.orders"}}'
+
+        echo "Opting out of telemetry"
+        curl -XPOST 'http://localhost:5601/api/telemetry/v1/optIn' \
+          -H 'kbn-xsrf: nevergonnagiveyouup' \
+          -H 'content-type: application/json' \
+          -d '{"enabled":false}'
+
+        sleep infinity

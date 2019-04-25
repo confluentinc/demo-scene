@@ -11,7 +11,6 @@ create table ORDERS (
 	id MEDIUMINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
 	order_id INT,
 	customer_id INT,
-	order_ts VARCHAR(50),
 	order_total_usd DECIMAL(11,2),
 	make VARCHAR(50),
 	model VARCHAR(50),
