@@ -1,0 +1,130 @@
+= From Zero to Hero with Kafka Connect - demo script
+Robin Moffatt <robin@confluent.io>
+v0.02, April 24, 2019
+
+== Running the test rig
+
+1. Bring up the stack
++
+[source,bash]
+----
+git clone https://github.com/confluentinc/demo-scene.git
+cd kafka-connect-zero-to-hero
+docker-compose up -d
+----
++
+This brings up the stack ready for use. 
+
+2. Wait for Kafka Connect to be started
++
+[source,bash]
+----
+bash -c ' \
+echo "Waiting for Kafka Connect to start listening on localhost ⏳"
+while [ $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) -eq 000 ] ; do 
+  echo -e $(date) " Kafka Connect listener HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) " (waiting for 200)"
+  sleep 5 
+done
+echo -e $(date) " Kafka Connect is ready! Listener HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors)
+'
+----
+
+
+== Demo 1 - Kafka Connect pipelines
+
+A MySQL database stores orders placed by an application. 
+
+* Kafka Connect - Debezium MySQL connector streams them into Kafka topic
+* Kafka Connect - Elasticsearch connector to stream orders from Kafka topic to Elasticsearch
+
+=== Ingest data from a database
+
+[source,bash]
+----
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -d '{
+      "name": "source-debezium-orders-00",
+      "config": {
+            "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+            "database.hostname": "mysql",
+            "database.port": "3306",
+            "database.user": "debezium",
+            "database.password": "dbz",
+            "database.server.id": "42",
+            "database.server.name": "asgard",
+            "table.whitelist": "demo.orders",
+            "database.history.kafka.bootstrap.servers": "kafka:29092",
+            "database.history.kafka.topic": "dbhistory.demo" ,
+            "decimal.handling.mode": "double",
+            "include.schema.changes": "true",
+            "transforms": "unwrap,addTopicPrefix",
+            "transforms.unwrap.type": "io.debezium.transforms.UnwrapFromEnvelope",
+            "transforms.addTopicPrefix.type":"org.apache.kafka.connect.transforms.RegexRouter",
+            "transforms.addTopicPrefix.regex":"(.*)",
+            "transforms.addTopicPrefix.replacement":"mysql-debezium-$1"
+       }
+    }'
+----
+
+Trigger the MySQL data generator with: 
+
+[source,bash]
+----
+docker-compose exec mysql /data/02_populate_more_orders.sh
+----
+
+Check the status of the connector
+
+[source,bash]
+----
+curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+----
+
+Output should be
+
+[source,bash]
+----
+source-debezium-orders-00  |  RUNNING  |  RUNNING
+----
+
+http://localhost:9021/management/topics[View the topic in Confluent Control Center] or from the CLI: 
+
+[source,bash]
+----
+docker-compose exec -T kafka-connect \
+            kafka-avro-console-consumer \
+            --bootstrap-server kafka:29092 \
+            --property schema.registry.url=http://schema-registry:8081 \
+            --topic mysql-debezium-asgard.demo.ORDERS | jq '.'
+----
+
+=== Stream data from Kafka to Elasticsearch
+
+[source,bash]
+----
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -d '{
+      "name": "sink-elastic-orders-00",
+      "config": {
+        "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+        "topics": "mysql-debezium-asgard.demo.ORDERS",
+        "key.ignore": "false",
+        "schema.ignore": "true",
+        "type.name": "type.name=kafkaconnect",
+        "connection.url": "http://elasticsearch:9200",
+        "transforms": "dropTopicPrefix,extractKey",
+        "transforms.dropTopicPrefix.type":"org.apache.kafka.connect.transforms.RegexRouter",
+        "transforms.dropTopicPrefix.regex":"mysql-debezium-(.*)",
+        "transforms.dropTopicPrefix.replacement":"$1",
+        "transforms.extractKey.type":"org.apache.kafka.connect.transforms.ValueToKey",
+        "transforms.extractKey.fields":"id"
+      }
+    }'
+
+----
+
+
+https://github.com/confluentinc/kafka-connect-elasticsearch/issues/285
+https://stackoverflow.com/questions/54863240/mapper-parsing-exception-in-elasticsearch-6-5-4
