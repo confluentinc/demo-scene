@@ -318,6 +318,7 @@ services:
 
   neo4j:
     image: neo4j:3.4-enterprise
+    container_name: neo4j
     ports:
     - "7474:7474"
     - "7687:7687"
