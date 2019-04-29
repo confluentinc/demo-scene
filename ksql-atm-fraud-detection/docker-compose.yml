@@ -188,7 +188,7 @@ services:
       - monitoring-interceptors-share:/usr/share/java/monitoring-interceptors/
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.5.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.7.0
     container_name: elasticsearch
     ports:
       - 9200:9200
@@ -212,7 +212,7 @@ services:
         sleep infinity
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:6.5.1
+    image: docker.elastic.co/kibana/kibana:6.7.0
     container_name: kibana
     depends_on:
       - elasticsearch
