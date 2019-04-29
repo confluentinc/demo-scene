@@ -245,7 +245,7 @@ services:
      - $PWD/scripts:/scripts
 
   mysql:
-    image: debezium/example-mysql:0.8
+    image: debezium/example-mysql:0.9
     container_name: mysql
     environment:
      - MYSQL_ROOT_PASSWORD=debezium
