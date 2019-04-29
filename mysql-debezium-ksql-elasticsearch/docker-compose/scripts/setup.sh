@@ -21,7 +21,7 @@ grep -q "Kafka Connect started" <(docker-compose logs -f $CONNECT_HOST)
 echo -e "\n--\n+> Creating Kafka Connect Elasticsearch sink"
 
 docker-compose exec kafka-connect-cp bash -c '/scripts/create-es-sink.sh'
-docker-compose exec kafka-connect-cp bash -c '/scripts/create-es-sink-lisa18.sh'
+docker-compose exec kafka-connect-cp bash -c '/scripts/create-es-sink-jfokus19.sh'
 
 echo -e "\n--\n+> Setting up Elasticsearch dummy data"
 
@@ -44,7 +44,7 @@ curl -XPOST "http://localhost:9200/unhappy_platinum_customers/type.name=kafkacon
           "CLUB_STATUS": "platinum",
           "EMAIL": "ltoopinc@icio.us"
         }'
-curl -XPOST "http://localhost:9200/lisa18/type.name=kafkaconnect" -H 'Content-Type: application/json' -d'{
+curl -XPOST "http://localhost:9200/jfokus19/type.name=kafkaconnect" -H 'Content-Type: application/json' -d'{
           "foo": "bar"
         }'
 
@@ -55,7 +55,7 @@ echo -e "\n--\n+> Register Kibana indices"
 #curl 'http://localhost:5601/api/saved_objects/index-pattern/ratings-enriched' -X DELETE -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' 
 curl -s 'http://localhost:5601/api/saved_objects/index-pattern/ratings-enriched' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"kafka-ratings-enriched-*","timeFieldName":"EXTRACT_TS"}}' --compressed 
 curl -s 'http://localhost:5601/api/saved_objects/index-pattern/unhappy_platinum_customers' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"unhappy_platinum_customers","timeFieldName":"EXTRACT_TS"}}' --compressed 
-curl -s 'http://localhost:5601/api/saved_objects/index-pattern/lisa18' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"lisa18"}}' --compressed 
+curl -s 'http://localhost:5601/api/saved_objects/index-pattern/jfokus19' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"jfokus19"}}' --compressed 
 
 echo -e "\n--\n+> Set default Kibana index"
 curl -s 'http://localhost:5601/api/kibana/settings' -H 'kbn-version: 6.3.0' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"changes":{"defaultIndex":"ratings-enriched"}}' --compressed

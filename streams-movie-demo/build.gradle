@@ -62,15 +62,14 @@ project(':loader') {
     tasks.create(name: "streamWith${generatorName}", type: JavaExec) {
       main = generatorName
       classpath = sourceSets.main.runtimeClasspath
-      args = [project.getProperty('configPath')]
+      args = [getConfigPath()]
     }
   }
 
   task loadAvroMovies(type: JavaExec) {
     main = 'AvroMovieLoader'
     classpath = sourceSets.main.runtimeClasspath
-    args "$projectDir/../data/movies.dat"
-    args env['KAFKA_BOOTSTRAP_SERVERS'] ?: 'localhost:9092'
+    args = [getConfigPath()]
   }
 
   jar {
@@ -155,4 +154,11 @@ project(':spring-streams') {
       mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
     }
   }
+}
+
+
+def getConfigPath() {
+  def path = project.getProperty('configPath')
+  def f = new File(path)
+  return f.absolutePath
 }

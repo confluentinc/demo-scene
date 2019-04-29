@@ -3,7 +3,7 @@
 :toc:
 :sectnums:
 Robin Moffatt <@rmoff>, Sven Erik Knop <@sven_erik_knop>
-v1.33, March 6, 2019
+v1.35, April 10, 2019
 
 :toc:
 
@@ -11,7 +11,7 @@ v1.33, March 6, 2019
 
 [quote]
 ____
-KSQL is the streaming SQL engine for Apache Kafka. Using just SQL it is possible for developers to build powerful stream processing applications. This talk will show practical examples of KSQL:
+KSQL is the streaming SQL engine for Apache Kafka. Using just SQL it is possible for developers to build powerful stream processing applications. This workshop will show practical examples of KSQL:
 
 * Filtering streams of data
 * Joining live events with reference data (e.g. from a database)
@@ -70,7 +70,7 @@ Once you see output then it means Kafka is running and you can proceed
 [source,bash]
 ----
 $ docker-compose logs -f kafka|Select-String "INFO Kafka version"
-kafka_1             | [2019-03-04 16:04:53,441] INFO Kafka version : 2.1.0-cp1 (org.apache.kafka.common.utils.AppInfoParser)
+kafka_1             | [2019-03-15 16:04:53,441] INFO Kafka version : 2.1.1-cp1 (org.apache.kafka.common.utils.AppInfoParser)
 ----
 
 Press Ctrl-C twice to exit the `docker-compose logs` command
@@ -80,23 +80,24 @@ Run `docker-compose ps` to confirm that all components are running:
 [source,bash]
 ----
 $ docker-compose ps
-              Name                            Command               State                          Ports
---------------------------------------------------------------------------------------------------------------------------------
-ksql-workshop_connect-debezium_1   /docker-entrypoint.sh start      Up      0.0.0.0:8083->8083/tcp, 8778/tcp, 9092/tcp, 9779/tcp
-ksql-workshop_datagen-ratings_1    bash -c echo Waiting for K ...   Up
-ksql-workshop_elasticsearch_1      /usr/local/bin/docker-entr ...   Up      0.0.0.0:9200->9200/tcp, 9300/tcp
-ksql-workshop_kafka-connect-cp_1   /etc/confluent/docker/run        Up      0.0.0.0:18083->18083/tcp, 8083/tcp, 9092/tcp
-ksql-workshop_kafka_1              /etc/confluent/docker/run        Up      0.0.0.0:9092->9092/tcp
-ksql-workshop_kafkacat_1           sleep infinity                   Up
-ksql-workshop_kibana_1             /usr/local/bin/kibana-docker     Up      0.0.0.0:5601->5601/tcp
-ksql-workshop_ksql-cli_1           /bin/sh                          Up
-ksql-workshop_ksql-server_1        /etc/confluent/docker/run        Up      8088/tcp
-ksql-workshop_mysql_1              docker-entrypoint.sh mysqld      Up      3306/tcp, 33060/tcp
-ksql-workshop_schema-registry_1    /etc/confluent/docker/run        Up      8081/tcp
-ksql-workshop_zookeeper_1          /etc/confluent/docker/run        Up      2181/tcp, 2888/tcp, 3888/tcp
+      Name                    Command               State                          Ports
+----------------------------------------------------------------------------------------------------------------
+connect-debezium   /docker-entrypoint.sh start      Up      0.0.0.0:8083->8083/tcp, 8778/tcp, 9092/tcp, 9779/tcp
+control-center     bash -c echo "Waiting two  ...   Up      0.0.0.0:9021->9021/tcp
+datagen-ratings    bash -c echo Waiting for K ...   Up
+elasticsearch      /usr/local/bin/docker-entr ...   Up      0.0.0.0:9200->9200/tcp, 9300/tcp
+kafka              /etc/confluent/docker/run        Up      0.0.0.0:9092->9092/tcp
+kafka-connect      /etc/confluent/docker/run        Up      0.0.0.0:18083->18083/tcp, 8083/tcp, 9092/tcp
+kafkacat           sleep infinity                   Up
+kibana             /usr/local/bin/kibana-docker     Up      0.0.0.0:5601->5601/tcp
+ksql-cli           /bin/sh                          Up
+ksql-server        /etc/confluent/docker/run        Up      0.0.0.0:8088->8088/tcp
+mysql              docker-entrypoint.sh mysqld      Up      0.0.0.0:3306->3306/tcp, 33060/tcp
+schema-registry    /etc/confluent/docker/run        Up      8081/tcp
+zookeeper          /etc/confluent/docker/run        Up      2181/tcp, 2888/tcp, 3888/tcp
 ----
 
-IMPORTANT: If any components do not show "Up" under the `State` column (e.g. they say "Exit") then you must rectify this before continuing. As a first solution, try re-issuing the `docker-compose up -d command`.
+IMPORTANT: If any components do not show "Up" under the `State` column (e.g. they say "Exit") then you must rectify this before continuing. As a first solution, try re-issuing the `docker-compose up -d` command.
 
 <<<
 
@@ -130,7 +131,7 @@ Make sure that you get a successful start up screen:
 
 Copyright 2017-2018 Confluent Inc.
 
-CLI v5.1.0, Server v5.1.0 located at http://ksql-server:8088
+CLI v5.2.1, Server v5.2.1 located at http://ksql-server:8088
 
 Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
 
@@ -451,6 +452,46 @@ Format:AVRO
 6/20/18 11:01:07 AM UTC, 55, {"RATING_ID": 55, "USER_ID": 10, "STARS": 2, "ROUTE_ID": 5232, "RATING_TIME": 1529492467552, "CHANNEL": "iOS", "MESSAGE": "why is it so difficult to keep the bathrooms clean ?"}
 ----
 
+=== Optional step: Alternative serialisation methods
+
+By default KSQL will write to the target stream using the same serialisation as the source. So if it's reading Avro data, it'll write Avro data. You can override this behaviour using the `WITH (VALUE_FORMAT='xx')` syntax. For example, if for some terrible reason you wanted to write data to CSV in a topic, you would run: 
+
+[source,sql]
+----
+CREATE STREAM POOR_RATINGS_CSV WITH (VALUE_FORMAT='DELIMITED') AS 
+  SELECT * FROM ratings WHERE STARS <3 AND CHANNEL='iOS';
+----
+
+You can use a similar syntax to change the name and partitions of the target Kafka topic: 
+
+[source,sql]
+----
+CREATE STREAM POOR_RATINGS_JSON WITH (VALUE_FORMAT='JSON', PARTITIONS=2) AS 
+  SELECT * FROM ratings WHERE STARS <3 AND CHANNEL='iOS';
+----
+
+[NOTE]
+====
+Re-serialising data this way can be a powerful use of KSQL in itself. Consider a source topic being written to in CSV format, and this topic is to be used by multiple consumers. One option is each consumer has to know the schema of the CSV. Another option is to declare the schema in KSQL once, and then reserialise the data into a better format such as Avro. Now each consumer can use the data without being tightly-coupled to the original system. 
+
+_The SQL code would look like this - the source topic doesn't exist in your workshop environment so you won't be able to actually run it._
+
+[source,sql]
+----
+CREATE STREAM USER_LOGON_CSV (first_name VARCHAR, 
+                              last_name  VARCHAR, 
+                              email      VARCHAR, 
+                              ip_address VARCHAR, 
+                              logon_date VARCHAR) 
+        WITH (KAFKA_TOPIC ='user_logons', 
+              VALUE_FORMAT='DELIMITED');
+
+CREATE STREAM USER_LOGON WITH (VALUE_FORMAT='AVRO') AS 
+  SELECT * FROM USER_LOGON_CSV;           
+----
+====
+
+
 <<<
 
 == Kafka Connect / Integrating Kafka with a database
@@ -584,8 +625,8 @@ In our example this doesn't matter, but be aware of this if you rely on this re-
 ----
 SET 'auto.offset.reset' = 'earliest';
 
-CREATE STREAM CUSTOMERS_SRC_REKEY \
-        WITH (PARTITIONS=1) AS \
+CREATE STREAM CUSTOMERS_SRC_REKEY 
+        WITH (PARTITIONS=1) AS 
         SELECT * FROM CUSTOMERS_SRC PARTITION BY ID;
 ----
 
@@ -747,9 +788,9 @@ Run the following SQL:
 
 [source,sql]
 ----
-SELECT R.MESSAGE, C.FIRST_NAME, C.LAST_NAME \
-FROM RATINGS R INNER JOIN CUSTOMERS C \
-ON R.USER_ID = C.ID \
+SELECT R.MESSAGE, C.FIRST_NAME, C.LAST_NAME 
+FROM RATINGS R INNER JOIN CUSTOMERS C 
+ON R.USER_ID = C.ID 
 LIMIT 5;
 ----
 
@@ -776,9 +817,9 @@ Now let's pull the full set of data, including a reformat of the timestamp into 
 
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(R.RATING_TIME, 'yyyy-MM-dd HH:mm:ss'), R.RATING_ID, R.STARS, R.ROUTE_ID,  R.CHANNEL, \
-R.MESSAGE, C.FIRST_NAME, C.LAST_NAME, C.CLUB_STATUS \
-FROM RATINGS R INNER JOIN CUSTOMERS C \
+SELECT TIMESTAMPTOSTRING(R.RATING_TIME, 'yyyy-MM-dd HH:mm:ss'), R.RATING_ID, R.STARS, R.ROUTE_ID,  R.CHANNEL, 
+R.MESSAGE, C.FIRST_NAME, C.LAST_NAME, C.CLUB_STATUS 
+FROM RATINGS R INNER JOIN CUSTOMERS C 
 ON R.USER_ID = C.ID;
 ----
 
@@ -799,12 +840,12 @@ Let's persist this as an enriched stream, by simply prefixing the query with `CR
 
 [source,sql]
 ----
-CREATE STREAM RATINGS_WITH_CUSTOMER_DATA WITH (PARTITIONS=1) AS \
-SELECT R.RATING_ID, R.CHANNEL, R.STARS, R.MESSAGE, \
-       C.ID, C.CLUB_STATUS, C.EMAIL, \
-       C.FIRST_NAME, C.LAST_NAME \
-FROM RATINGS R \
-     INNER JOIN CUSTOMERS C \
+CREATE STREAM RATINGS_WITH_CUSTOMER_DATA WITH (PARTITIONS=1) AS 
+SELECT R.RATING_ID, R.CHANNEL, R.STARS, R.MESSAGE, 
+       C.ID, C.CLUB_STATUS, C.EMAIL, 
+       C.FIRST_NAME, C.LAST_NAME 
+FROM RATINGS R 
+     INNER JOIN CUSTOMERS C 
        ON R.USER_ID = C.ID ;
 ----
 
@@ -822,9 +863,9 @@ Now that we have customer information added to every rating event, we can easily
 
 [source,sql]
 ----
-SELECT EMAIL, STARS, MESSAGE \
-FROM RATINGS_WITH_CUSTOMER_DATA \
-WHERE CLUB_STATUS='platinum' \
+SELECT EMAIL, STARS, MESSAGE 
+FROM RATINGS_WITH_CUSTOMER_DATA 
+WHERE CLUB_STATUS='platinum' 
   AND STARS <3;
 ----
 
@@ -843,10 +884,10 @@ Having enriched the initial stream of ratings events with customer data, we can 
 
 [source,sql]
 ----
-CREATE STREAM UNHAPPY_PLATINUM_CUSTOMERS AS \
-SELECT CLUB_STATUS, EMAIL, STARS, MESSAGE \
-FROM   RATINGS_WITH_CUSTOMER_DATA \
-WHERE  STARS < 3 \
+CREATE STREAM UNHAPPY_PLATINUM_CUSTOMERS AS 
+SELECT CLUB_STATUS, EMAIL, STARS, MESSAGE 
+FROM   RATINGS_WITH_CUSTOMER_DATA 
+WHERE  STARS < 3 
   AND  CLUB_STATUS = 'platinum';
 ----
 
@@ -892,10 +933,10 @@ This shows the number of ratings per customer status, per minute:
 
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(WindowStart(), 'yyyy-MM-dd HH:mm:ss'), \
-       CLUB_STATUS, COUNT(*) AS RATING_COUNT \
-FROM RATINGS_WITH_CUSTOMER_DATA \
-     WINDOW TUMBLING (SIZE 1 MINUTES) \
+SELECT TIMESTAMPTOSTRING(WindowStart(), 'yyyy-MM-dd HH:mm:ss'), 
+       CLUB_STATUS, COUNT(*) AS RATING_COUNT 
+FROM RATINGS_WITH_CUSTOMER_DATA 
+     WINDOW TUMBLING (SIZE 1 MINUTES) 
 GROUP BY CLUB_STATUS;
 ----
 
@@ -913,10 +954,10 @@ Aggregates can be persisted too. Instead of `CREATE STREAM` as we did above, we'
 
 [source,sql]
 ----
-CREATE TABLE RATINGS_BY_CLUB_STATUS AS \
-SELECT WindowStart() AS WINDOW_START_TS, CLUB_STATUS, COUNT(*) AS RATING_COUNT \
-FROM RATINGS_WITH_CUSTOMER_DATA \
-     WINDOW TUMBLING (SIZE 1 MINUTES) \
+CREATE TABLE RATINGS_BY_CLUB_STATUS AS 
+SELECT WindowStart() AS WINDOW_START_TS, CLUB_STATUS, COUNT(*) AS RATING_COUNT 
+FROM RATINGS_WITH_CUSTOMER_DATA 
+     WINDOW TUMBLING (SIZE 1 MINUTES) 
 GROUP BY CLUB_STATUS;
 ----
 
@@ -933,9 +974,9 @@ This table that we've created is just a first class object in KSQL, updated in r
 
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(WINDOW_START_TS, 'yyyy-MM-dd HH:mm:ss'), \
-        CLUB_STATUS, RATING_COUNT \
-FROM RATINGS_BY_CLUB_STATUS \
+SELECT TIMESTAMPTOSTRING(WINDOW_START_TS, 'yyyy-MM-dd HH:mm:ss'), 
+        CLUB_STATUS, RATING_COUNT 
+FROM RATINGS_BY_CLUB_STATUS 
 WHERE CLUB_STATUS='bronze';
 ----
 

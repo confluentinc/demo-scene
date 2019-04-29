@@ -2,6 +2,10 @@
 
 Scripts and samples to support Confluent Platform talks. May be rough around the edges. For automated tutorials and QA'd code, see https://github.com/confluentinc/examples/
 
+## Requirements
+
+You need to allocate Docker 8GB when running these. Avoid allocating all your machine's cores to Docker as this may cause the machine to become unresponsive when running large stacks. On a four-core Mac Book two cores for Docker should be fine. 
+
 ## Contents
 
 - Data pipelines (Database + KSQL + Elasticsearch)
