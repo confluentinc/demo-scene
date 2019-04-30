@@ -15,12 +15,13 @@ class AvroRatingStreamer {
     Properties props = new Properties()
     props.load(new FileInputStream(new File(args[0])))
 
-    def bootstrapServer = props.get('bootstrap.servers')
-    println "Streaming ratings to ${ bootstrapServer}"
-    println "Schema Registry at ${props.get('schema.registry.url')}"
+    def bootstrapServer = System.getenv('KAFKA_BOOTSTRAP_SERVERS') ?: props.get('bootstrap.servers')
+    def schemaRegistryServer = System.getenv('KAFKA_SCHEMA_REGISTRY_URL') ?: props.get('schema.registry.url')
+    println "Streaming ratings to ${bootstrapServer}"
+    println "Schema Registry at ${schemaRegistryServer}"
     props.put('key.serializer', 'org.apache.kafka.common.serialization.LongSerializer')
     props.put('value.serializer', 'io.confluent.kafka.serializers.KafkaAvroSerializer')
-    props.put('schema.registry.url', props.get('schema.registry.url'))
+    props.put('schema.registry.url', schemaRegistryServer)
 
     KafkaProducer producer = new KafkaProducer(props)
 
