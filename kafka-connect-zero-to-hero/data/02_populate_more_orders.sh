@@ -2,8 +2,10 @@
 #
 # Generate more data at https://www.mockaroo.com/bf24ebf0
 #
+
+echo -e "\n-> Data generator running :-)\n\n"
 while [ 1 -eq 1 ]; do 
-mysql -u root -p$MYSQL_ROOT_PASSWORD <<EOF
+mysql -u root -p$MYSQL_ROOT_PASSWORD 1>/tmp/datagen.log 2>&1 <<EOF
 use demo;
 
 SELECT SLEEP(RAND()*1.5);
