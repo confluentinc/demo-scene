@@ -11,7 +11,7 @@ curl -s \
      -X "POST" "http://localhost:18083/connectors/" \
      -H "Content-Type: application/json" \
      -d '{
-  "name": "es_sink_atm_txns",
+  "name": "sink_elastic_atm_txns",
   "config": {
     "topics": "atm_txns_gess",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
@@ -39,7 +39,7 @@ curl -s \
 curl -X "POST" "http://kafka-connect:18083/connectors/" \
      -H "Content-Type: application/json" \
      -d '{
-  "name": "es_sink_ATM_POSSIBLE_FRAUD",
+  "name": "sink_elastic_ATM_POSSIBLE_FRAUD",
   "config": {
     "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
     "connection.url": "http://elasticsearch:9200",
@@ -63,7 +63,7 @@ curl -X "POST" "http://kafka-connect:18083/connectors/" \
 curl -X "POST" "http://kafka-connect:18083/connectors/" \
      -H "Content-Type: application/json" \
      -d '{
-  "name": "es_sink_ATM_POSSIBLE_FRAUD_ENRICHED",
+  "name": "sink_elastic_ATM_POSSIBLE_FRAUD_ENRICHED",
   "config": {
     "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
     "connection.url": "http://elasticsearch:9200",

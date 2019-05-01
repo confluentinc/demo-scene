@@ -24,10 +24,6 @@ cat > ksql-server-ccloud.properties <<- "EOF"
 ${ksql_server_properties}
 EOF
 
-cat > ksql-queries.sql <<- "EOF"
-${ksql_queries}
-EOF
-
 ########### Creating the Service ############
 
 cat > /lib/systemd/system/ksql-server.service <<- "EOF"
@@ -53,7 +49,7 @@ systemctl start ksql-server
 
 ############# Populate Data ############
 
-bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:8088/info)" != "200" ]]; do sleep 5; done'
+bash -c 'while netstat -lnt | awk '$4 ~ /:8088/ {exit 1}'; do sleep 10; done'
 
 bash -c '/etc/confluent/confluent-5.1.0/bin/kafka-console-producer --broker-list ${broker_list} --producer.config /etc/confluent/confluent-5.1.0/etc/ksql/ksql-server-ccloud.properties --topic _NUMBERS --property "parse.key=true" --property "key.separator=:" <<EOF
 1:{"NUMBER" : 1, "X": 1, "Y" : 0, "Z" : 0}
@@ -61,9 +57,3 @@ bash -c '/etc/confluent/confluent-5.1.0/bin/kafka-console-producer --broker-list
 3:{"NUMBER" : 3, "X": -180, "Y" : 0, "Z" : 180}
 4:{"NUMBER" : 4, "X": 1, "Y" : 90, "Z" : -1}
 EOF'
-
-###### Create Streams and Tables #######
-
-#bash -c "/etc/confluent/confluent-5.1.0/bin/ksql <<EOF
-#RUN SCRIPT '/etc/confluent/confluent-5.1.0/etc/ksql/ksql-queries.sql';
-#EOF"

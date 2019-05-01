@@ -9,6 +9,7 @@ credentials.py
 credentials.pyc
 .vscode
 oradata
+ccloud-cube-demo/terraform/aws/initialize.sh
 ccloud-cube-demo/terraform/aws/cloud.auto.tfvars
 ccloud-cube-demo/terraform/aws/ccloud.auto.tfvars
 ccloud-cube-demo/terraform/aws/.terraform/**/*.*
@@ -16,3 +17,13 @@ ccloud-cube-demo/terraform/aws/terraform.tfstate
 ccloud-cube-demo/terraform/aws/terraform.tfstate.backup
 ccloud-cube-demo/terraform/aws/.terraform.tfstate.lock.info
 .idea
+delta_configs
+*.iml
+*.ipr
+*.ipj
+.classpath
+.project
+.settings/
+.DS_Store
+
+

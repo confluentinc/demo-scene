@@ -1,3 +1,4 @@
+import io.confluent.demo.ConfigLoader
 import io.confluent.demo.Parser
 import io.confluent.demo.Rating
 import org.apache.kafka.clients.producer.KafkaProducer
@@ -22,9 +23,9 @@ class RawRatingStreamer {
     if (args.length != 0) {
       bootstrapServer = args?.getAt(0)
     }
-    Properties props = new Properties()
-    println "Streaming ratings to ${bootstrapServer}"
-    props.put('bootstrap.servers', bootstrapServer)
+    Properties props = ConfigLoader.loadConfig(args?.getAt(0))
+    //println "Streaming ratings to ${bootstrapServer}"
+    //props.put('bootstrap.servers', bootstrapServer)
     props.put('key.serializer', LongSerializer.class.getName())
     props.put('value.serializer', StringSerializer.class.getName())
 

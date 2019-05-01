@@ -1,0 +1,10 @@
+USE [master]
+GO
+CREATE DATABASE demo;
+GO
+ALTER DATABASE [demo] SET CONTAINMENT = PARTIAL
+GO
+USE [demo]
+GO
+CREATE USER connect_user WITH PASSWORD = 'Asgard123';
+GO

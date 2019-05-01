@@ -15,7 +15,7 @@ image:images/the_cube.jpg[The Cube, 300, 500, role="center"]
 
 The application itself is a set of HTML pages stored in an S3 bucket in AWS, and this S3 bucket has been configured to act as a web server. Therefore, users can access from anywhere as long as they are using an HTTP-enabled device. The application presents the user with a cube that moves as the user moves its hands and body. It relies on the device orientation API found in most modern devices.
 
-Anyone capable of perfectly positioning the cube using the coordinates the represents the number three will be shown in the output of a KSQL query. This query is executed against a KSQL table called *SELECTED_WINNERS*, that is the result of a join between the inbound streams (created based on the *_EVENTS* topic) and a table that holds the information of the coordinates.
+Anyone capable of perfectly positioning the cube using the coordinates that represents the number three will be shown in the output of a KSQL query. This query is executed against a KSQL table called *SELECTED_WINNERS*, that is the result of a join between the inbound streams (created based on the *_EVENTS* topic) and a table that holds the information of the coordinates.
 
 image:images/selected_winner.png[Selected Winner]
 
@@ -29,7 +29,10 @@ This demo was created based on the open-source project called ccloud-tools: http
 2. You need to have Terraform installed locally. You can find more details about how to install it https://learn.hashicorp.com/terraform/getting-started/install.html[here].
 +
 
-3. You need to have the Confluent Cloud CLI installed locally. You can find more details about how to install it https://docs.confluent.io/current/cloud/cli/install.html[here]. Make sure to have the Confluent Cloud CLI in the path of your O.S, since the provisioning process creates the necessary topics from your computer using the 'ccloud' utility.
+3. You need to have the Confluent Cloud CLI installed locally. You can find more details about how to install it https://docs.confluent.io/current/cloud/cli/install.html[here]. Make sure to have the Confluent Cloud CLI in the path of your O.S, since the provisioning process creates the necessary topics from your computer using the 'ccloud' tool.
++
+
+4. You need to have the KSQL CLI installed locally. You can find more details about how to install it https://docs.confluent.io/current/ksql/docs/installation/installing.html#installation-instructions[here]. Make sure to have the KSQL CLI in the path of your O.S, since the provisioning process creates the necessary Streams/Tables from your computer using the 'ksql' tool.
 
 
 == Step 1: Create Kafka Cluster in Confluent Cloud
@@ -194,21 +197,33 @@ terraform apply -auto-approve
 
 [source,bash]
 ----
-Apply complete! Resources: 50 added, 0 changed, 0 destroyed.
+Apply complete! Resources: 52 added, 0 changed, 0 destroyed.
 
 Outputs:
 
-1) Playing the Game           = http://ccloud-demo-riferrei.s3-website-us-east-1.amazonaws.com
+1) Playing the Game           = http://ccloud-demo-custom.s3-website-us-east-1.amazonaws.com
 Bastion Server IP Address     = Bastion Server has been disabled
 Bastion Server Private Key    = Bastion Server has been disabled
-Control Center                = http://control-center-1113398061.us-east-1.elb.amazonaws.com
-KSQL Server                   = http://ksql-server-1946425298.us-east-1.elb.amazonaws.com
+Control Center                = http://control-center-0000000000.us-east-1.elb.amazonaws.com
+KSQL Server                   = http://ksql-server-0000000000000.us-east-1.elb.amazonaws.com
 Kafka Connect                 = Kafka Connect has been disabled
-REST Proxy                    = http://rest-proxy-900948845.us-east-1.elb.amazonaws.com
-Schema Registry               = http://schema-registry-689395304.us-east-1.elb.amazonaws.com
+REST Proxy                    = http://rest-proxy-00000000000000.us-east-1.elb.amazonaws.com
+Schema Registry               = http://schema-registry-000000000.us-east-1.elb.amazonaws.com
 ----
 
-== Step 6: Presenting the Demo
+== Step 6: Execute the Initialization Script
+
+In this step, you are going to execute a script that will create certain resources in the infrastructure provisioned by Terraform.
+These resources include the Avro schema that will be used for the _EVENTS topic, a record produced into that same topic, as well as a couple Streams and Tables necessary to play the demo.
+
+Note that the 'initialize.sh' script is created by Terraform, so don't worry if you don't see this file before running Terraform. This script is created by Terraform to make sure that the endpoints used are up-to-date with the infrastructure provisioned.
+
+[source,bash]
+----
+sh initialize.sh
+----
+
+== Step 7: Presenting the Demo
 
 In this step, you are going to present the demo to the audience and play the game with them. Keep in mind that the steps shown here are mandatory; and though you might be tempted to skip some of them and go straight to the action, that will cause the demo to fail.
 
@@ -234,40 +249,54 @@ image:images/demo-using-c3.png[Playing the Game]
 
 [source,bash]
 ----
-ksql KSQL_SERVER_ENDPOINT
+ksql http://ksql-server-000000000.us-east-1.elb.amazonaws.com
+
+
+                  ===========================================
+                  =        _  __ _____  ____  _             =
+                  =       | |/ // ____|/ __ \| |            =
+                  =       | ' /| (___ | |  | | |            =
+                  =       |  <  \___ \| |  | | |            =
+                  =       | . \ ____) | |__| | |____        =
+                  =       |_|\_\_____/ \___\_\______|       =
+                  =                                         =
+                  =  Streaming SQL Engine for Apache Kafka® =
+                  ===========================================
+
+Copyright 2017-2018 Confluent Inc.
+
+CLI v5.1.0, Server v5.1.0 located at http://ksql-server-000000000.us-east-1.elb.amazonaws.com
+
+Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
+
+ksql>
 ----
 
-7. In KSQL CLI, execute the following command:
+7. In KSQL CLI, execute the following commands:
 +
 
 [source,bash]
 ----
-PRINT _NUMBERS FROM BEGINNING;
+SET 'auto.offset.reset' = 'earliest';
 
-{"ROWTIME":1546904994638,"ROWKEY":"1","NUMBER":1,"X":1,"Y":0,"Z":0}
-{"ROWTIME":1546904994645,"ROWKEY":"3","NUMBER":3,"X":-180,"Y":0,"Z":180}
-{"ROWTIME":1546904994645,"ROWKEY":"2","NUMBER":2,"X":1,"Y":-90,"Z":1}
-{"ROWTIME":1546904994645,"ROWKEY":"4","NUMBER":4,"X":1,"Y":90,"Z":-1}
+SELECT * FROM NUMBERS;
 ----
-
-8. Explain to the audience that these are the coordinates from each number stored in the Kafka topic. Ask them to write down the coordinates for number 3, which is *X: -180, Y: 0, Z: 180*.
 +
-
-9. Create the streams and tables necessary to run the demo using the DDL statements below:
+The following results will be shown in the KSQL CLI terminal:
 +
 
 [source,bash]
 ----
-CREATE TABLE NUMBERS (NUMBER BIGINT, X INTEGER, Y INTEGER, Z INTEGER) WITH (KAFKA_TOPIC='_NUMBERS', VALUE_FORMAT='JSON', KEY='NUMBER');
-
-CREATE STREAM EVENTS WITH (KAFKA_TOPIC='_EVENTS', VALUE_FORMAT='AVRO');
-
-CREATE STREAM EVENTS_ENRICHED AS SELECT NAME, MOTION->X AS X, MOTION->Y AS Y, MOTION->Z AS Z, 3 AS NUMBER FROM EVENTS;
-
-CREATE TABLE SELECTED_WINNERS AS SELECT E.NAME AS NAME, COUNT(*) AS TOTAL FROM EVENTS_ENRICHED E LEFT OUTER JOIN NUMBERS N ON E.NUMBER = N.NUMBER WHERE E.X = N.X AND E.Y = N.Y AND E.Z = N.Z GROUP BY NAME;
+1548605261506 | 1 | 1 | 1 | 0 | 0
+1548605261514 | 2 | 2 | 1 | -90 | 1
+1548605261515 | 3 | 3 | -180 | 0 | 180
+1548605261515 | 4 | 4 | 1 | 90 | -1
 ----
++
 
-10. To prepare for the audience to play with the demo, execute the following query in the KSQL CLI:
+Explain to the audience that these are the coordinates from each number stored in the Kafka topic. Ask them to write down the coordinates for number 3, which is *X: -180, Y: 0, Z: 180*.
+
+8. To prepare for the audience to play with the demo, execute the following query in the KSQL CLI:
 +
 
 [source,bash]
@@ -275,12 +304,12 @@ CREATE TABLE SELECTED_WINNERS AS SELECT E.NAME AS NAME, COUNT(*) AS TOTAL FROM E
 SELECT CONCAT('AND THE WINNER IS ----------> ', NAME) AS MESSAGE FROM SELECTED_WINNERS;
 ----
 
-11. Explain the logic of the demo to the audience. The first person that correctly position the number 3 in the cube using the coordinates given previously will show up in the query that was just executed. The winner might win a prize... blah...
+9. Explain the logic of the demo to the audience. The first person that correctly position the number 3 in the cube using the coordinates given previously will show up in the query that was just executed. The winner might win a prize... blah...
 +
 
-12. Provide the url of the game to the audience. That is the same url that you used on step number one. You might want to use a URL shortener before providing that url. That will make easy for the audience to write it down in their mobile devices.
+10. Provide the url of the game to the audience. That is the same url that you used on step number one. You might want to use a URL shortener before providing that url. That will make easy for the audience to write it down in their mobile devices.
 
-== Step 7: Destroying the Demo
+== Step 8: Destroying the Demo
 
 In this step, you are going to destroy all the resources created by Terraform in the AWS account. This is important because the resources created costs money and are billed by the hour, therefore you don't want to just leave them there.
 

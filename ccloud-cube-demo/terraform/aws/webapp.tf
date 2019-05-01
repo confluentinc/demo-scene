@@ -8,7 +8,7 @@ variable "bucket_suffix" {
 
 }
 
-data "template_file" "cc_props_template" {
+data "template_file" "config_properties" {
 
   template = "${file("templates/cc.props.tpl")}"
 
@@ -44,7 +44,7 @@ resource "aws_s3_bucket" "ccloud_demo" {
             "Effect": "Allow",
             "Principal": "*",
             "Action": "s3:GetObject",
-            "Resource": "arn:aws:s3:::ccloud-demo${var.bucket_suffix}/*"
+            "Resource": "arn:aws:s3:::ccloud-demo-${var.bucket_suffix}/*"
         }
     ]
 }
@@ -54,32 +54,6 @@ resource "aws_s3_bucket" "ccloud_demo" {
 
         index_document = "index.html"
         error_document = "error.html"
-
-    }
-
-    ###########################################
-    ########### Local Provisioning ############
-    ###########################################
-
-    provisioner "local-exec" {
-
-        command = "echo '${data.template_file.cc_props_template.rendered}' >> ~/.ccloud/config"
-        interpreter = ["bash", "-c"]
-        on_failure = "continue"
-
-    }
-
-    provisioner "local-exec" {
-
-        command = "ccloud topic create _NUMBERS --partitions 4 --replication-factor 3"
-        on_failure = "continue"
-
-    }
-
-    provisioner "local-exec" {
-
-        command = "ccloud topic create _EVENTS --partitions 4 --replication-factor 3"
-        on_failure = "continue"
 
     }
 
@@ -145,11 +119,12 @@ resource "aws_s3_bucket_object" "cheat" {
   
 }
 
-resource "aws_s3_bucket_object" "ccloud_logo" {
+resource "aws_s3_bucket_object" "logo" {
 
     bucket = "${aws_s3_bucket.ccloud_demo.bucket}"
-    key = "ccloud-logo.jpg"
-    source = "../../webapp/ccloud-logo.jpg"
+    key = "logo.svg"
+    content_type = "image/svg+xml"
+    source = "../../webapp/logo.svg"
   
 }
 

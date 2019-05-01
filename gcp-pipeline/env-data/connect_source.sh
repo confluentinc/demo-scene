@@ -1,3 +1,10 @@
+#!/usr/bin/env bash
+
+ccloud topic create flood-monitoring-L2404
+ccloud topic create flood-monitoring-L2481
+ccloud topic create flood-monitoring-059793
+ccloud topic create flood-monitoring-3680
+
 # York - River level (1) 
 curl -i -X POST -H "Accept:application/json"  -H  "Content-Type:application/json" http://$CONNECT_HOST_SOURCE:8083/connectors/  -d '{ "name": "source_rest_flood-monitoring-L2404", "config": { "key.converter":"org.apache.kafka.connect.storage.StringConverter", "value.converter":"org.apache.kafka.connect.storage.StringConverter", "connector.class": "com.tm.kafka.connect.rest.RestSourceConnector", "tasks.max": "1", "rest.source.poll.interval.ms": "900000", "rest.source.method": "GET", "rest.source.url": "http://environment.data.gov.uk/flood-monitoring/id/stations/L2404", "rest.source.payload.converter.class": "com.tm.kafka.connect.rest.converter.StringPayloadConverter", "rest.source.properties": "Content-Type:application/json,Accept::application/json", "rest.source.topic.selector": "com.tm.kafka.connect.rest.selector.SimpleTopicSelector", "rest.source.destination.topics": "flood-monitoring-L2404" } }' 
 # York - River level (2) 

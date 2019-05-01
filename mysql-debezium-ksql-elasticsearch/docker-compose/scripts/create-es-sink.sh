@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # ---- Sink to Elasticsearch using timestamp-based index
 #
