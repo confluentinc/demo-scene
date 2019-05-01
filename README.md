@@ -30,6 +30,7 @@ Scripts and samples to support Confluent Platform talks. May be rough around the
 * Misc
   * [Hacky export/import between Kafka clusters](export-import-with-kafkacat) using `kafkacat`
   * Docker Compose for just the [community licensed components of Confluent Platform](cos)
+  * [KPay payment processing example](scalable-payment-processing)
 
 ## Feedback & Questions
 
