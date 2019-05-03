@@ -202,6 +202,21 @@ services:
         sleep 120  
         /etc/confluent/docker/run
 
+  rest-proxy:
+    image: confluentinc/cp-kafka-rest:5.2.1
+    depends_on:
+      - zookeeper
+      - kafka
+      - schema-registry
+    ports:
+      - '8082:8082'
+      - '31005:31005'
+    environment:
+      KAFKA_REST_HOST_NAME: rest-proxy
+      KAFKA_REST_BOOTSTRAP_SERVERS: 'kafka:29092'
+      KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
+      KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+
 # Other systems
   mysql:
     # *-----------------------------*
