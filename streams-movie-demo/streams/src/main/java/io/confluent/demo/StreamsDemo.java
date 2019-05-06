@@ -10,7 +10,6 @@ import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KGroupedStream;
@@ -21,6 +20,7 @@ import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.ValueJoiner;
 import org.apache.kafka.streams.state.KeyValueStore;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -28,17 +28,19 @@ import io.confluent.demo.util.CountAndSum;
 import io.confluent.demo.util.CountAndSumDeserializer;
 import io.confluent.demo.util.CountAndSumSerde;
 import io.confluent.demo.util.CountAndSumSerializer;
-import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
-import static java.util.Collections.singletonMap;
-import static org.apache.kafka.streams.StreamsConfig.*;
+import static io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.BASIC_AUTH_CREDENTIALS_SOURCE;
+import static io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.APPLICATION_ID_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.BOOTSTRAP_SERVERS_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.COMMIT_INTERVAL_MS_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG;
+import static org.apache.kafka.streams.StreamsConfig.REPLICATION_FACTOR_CONFIG;
+import static org.apache.kafka.streams.StreamsConfig.producerPrefix;
+import static org.apache.kafka.streams.StreamsConfig.topicPrefix;
 
 public class StreamsDemo {
 
@@ -54,7 +56,7 @@ public class StreamsDemo {
 
     Properties config = getStreamsConfig(KAFKA_BOOTSTRAP_SERVER, SCHEMA_REGISTRY_URL, args[0]);
 
-    final Map<String, String> serdeConfig = getSerdeConfig(SCHEMA_REGISTRY_URL);
+    final Map<String, String> serdeConfig = getSerdeConfig(config);
 
     final SpecificAvroSerde<Movie> movieSerde = getMovieAvroSerde(serdeConfig);
     final SpecificAvroSerde<Rating> ratingSerde = getRatingAvroSerde(serdeConfig);
@@ -111,8 +113,14 @@ public class StreamsDemo {
                                         Serdes.String()));
   }
 
-  private static Map<String, String> getSerdeConfig(String srUrl) {
-    return singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, srUrl);
+  private static Map<String, String> getSerdeConfig(Properties config) {
+    final String srUserInfoPropertyName = "schema.registry.basic.auth.user.info";
+    final HashMap<String, String> map = new HashMap<>();
+    
+    map.put(SCHEMA_REGISTRY_URL_CONFIG, config.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
+    map.put(BASIC_AUTH_CREDENTIALS_SOURCE, config.getProperty(BASIC_AUTH_CREDENTIALS_SOURCE));
+    map.put(srUserInfoPropertyName, config.getProperty(srUserInfoPropertyName));
+    return map;
   }
 
   private static SpecificAvroSerde<Rating> getRatingAvroSerde(Map<String, String> serdeConfig) {
@@ -205,8 +213,10 @@ public class StreamsDemo {
     if (configPath != null && !configPath.isEmpty()) {
       config = ConfigLoader.loadConfig(configPath);
     } else {
+      // assuming that we're running locally or url's explicitly provided
       config = new Properties();
       config.put(BOOTSTRAP_SERVERS_CONFIG, kafkaBootStrapServer);
+      config.put(SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
     }
 
     config.put(REPLICATION_FACTOR_CONFIG, 3);
@@ -217,7 +227,6 @@ public class StreamsDemo {
     config.put(CONSUMER_PREFIX + ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
                "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor");*/
     config.put(APPLICATION_ID_CONFIG, "kafka-films");
-    config.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
     config.put(DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.Long().getClass().getName());
     config.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.Double().getClass().getName());
     // start from the beginning
