@@ -1,0 +1,160 @@
+= Streaming Movie Ratings on Kubernetes
+Viktor Gamov <viktor@confluent.io>, © 2019 Confluent, Inc.
+2019-04-17
+:revdate: 2019-04-17 13:04:06 -0600
+:linkattrs:
+:ast: &ast;
+:y: &#10003;
+:n: &#10008;
+:y: icon:check-sign[role="green"]
+:n: icon:check-minus[role="red"]
+:c: icon:file-text-alt[role="blue"]
+:toc: auto
+:toc-placement: auto
+:toc-position: auto
+:toc-title: Table of content
+:toclevels: 3
+:idprefix:
+:idseparator: -
+:sectanchors:
+:icons: font
+:source-highlighter: highlight.js
+:highlightjs-theme: idea
+:experimental:
+
+This document explains how to build «Streaming Movies Demo» app docker image and run this in Kubernetes.
+
+toc::[]
+
+== Build a Docker image and publish to GCP private docker registry
+
+. Build an image and push to the docker registry: `./gradlew build jib` or you can build to a local tar: `./gradlew build jibBuildTar`
+. For local test via docker: 
++
+
+[source,shell]
+----
+docker pull gcr.io/cloud-private-dev/gamussa/streaming-movie-ratings:latest
+
+docker run -ti -e "JAVA_TOOL_OPTIONS=-DLOGLEVEL=INFO" --rm gcr.io/cloud-private-dev/gamussa/streaming-movie-ratings:latest
+----
+
+=== TODO
+
+* [ ] add instructions on using GCP docker registry and Artifactory 
+
+== Demo Playbook
+
+.load initial data
+----
+cat ./data/movies.dat | ccloud produce -t raw-movies
+cat ./data/ratings.dat | ccloud produce -t raw-ratings
+----
+
+.Consume results from Avro topic
+----
+confluent consume rated-movies --cloud --value-format avro --property schema.registry.url=https://sr.confluent.cloud --property basic.auth.credentials.source=USER_INFO --property schema.registry.basic.auth.user.info=<user_key> --from-beginning
+----
+
+or use CCloud UI (TBD add screenshot)
+
+=== Generate test load
+
+* Start raw rating generator
++
+
+[source,bash]
+----
+./gradlew loader:streamWithRawRatingStreamer -PconfigPath=$HOME/.ccloud/config
+----
++
+
+NOTE: I recommend to run the raw rating generator in a separate terminal window so you can interrupt it with kbd:[Ctrl+C]
+
+==== TODO
+
+* [ ] Create standalone generator app + docker image
+
+=== Troubleshooting 
+
+To start over
+
+.Reset Kafka Streams state
+----
+kafka-streams-application-reset --application-id kafka-films --bootstrap-servers your.bootstrap.server:9092 --config-file ~/.ccloud/config --input-topics raw_movies,raw_ratings
+----
+
+== Running Kubernetes cluster on GKE
+
+.Create GKE cluster
+[source,shell]
+----
+gcloud container clusters create kafka-streams-cluster \
+  --num-nodes 2 \
+  --machine-type n1-standard-1 \
+  --zone us-east1-c
+----
+
+.Deploy the container (stateless) - one instance, as specified in deployment:
+[source,shell]
+----
+kubectl create -f movie-ratings-deployment.yaml
+----
+
+you can start another window to watch the logs:
+
+[source,shell]
+----
+kubectl logs `kubectl get pods -l app=streaming-movie-ratings -o=name` -f`
+----
+
+.You can watch the output
+[source,shell]
+----
+confluent consume rated-movies --cloud --value-format avro --property schema.registry.url=https://sr.confluent.cloud --property basic.auth.credentials.source=USER_INFO --property schema.registry.basic.auth.user.info=your_sr_api_key --from-beginning
+----
+
+.Scale up to 3 instances
+[source,shell]
+----
+kubectl scale deployment streams-stock-stats --replicas=3 #<1>
+----
+<1> Having more than 3 instances is pointless since we only have 3 partitions in our topic
+
+Since we only configured 2 nodes and our deployment has "Anti-Affinity" properties, only 2 of the 3 instances will be scheduled (one on each node) and one will be pending.
+
+NOTE: Is you wish to add more nodes in the Kubernetes cluster nodes pool you can do that with the command
+`gcloud container clusters resize kafka-streams-cluster --size=3 --zone us-west1-c` 
+
+You can see that by running:
+
+`kubectl get pods`
+
+Watch the logs for the _rebalance_ and the output to see that the job just keeps running!
+
+.And scale back down
+[source,shell]
+----
+kubectl scale deployment streams-stock-stats --replicas=1
+----
+
+.Finally, you can just kill the whole job:
+[source,shell]
+----
+kubectl delete -f kafka-streams-stockstats-deployment.yaml
+----
+
+== To run with a stateful set!
+
+This example has a tiny tiny state, so if we restart a pod and the local state is lost and needs to be re-created, no big deal. 
+But if you have large state, you'll want to preserve it between restarts. 
+
+NOTE:  I configured shared storage, I didn't worry about stateful network identity - since this example doesn't include interactive queries.
+
+. You can watch the pods getting created, note how they each have an identity:
+`kubectl get pods -w -l app=streams-stock-stats`
+. Start the stateful set: `kubectl create -f kafka-streams-stockstats-stateful.yaml`
+. Delete a pod and watch it restart with its old state:
+`kubectl delete pods streams-stock-stats-1`
+. And finally, we can get rid of the entire set. Note that the storage will remain:
+`kubectl delete -f kafka-streams-stockstats-stateful.yaml`
