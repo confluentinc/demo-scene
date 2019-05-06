@@ -1,17 +1,9 @@
 package io.confluent.demo;
 
-import static io.confluent.demo.StreamsDemo.*;
-import static io.confluent.demo.StreamsDemo.getMovieAvroSerde;
-import static io.confluent.demo.StreamsDemo.getRatedMoviesTable;
-import static io.confluent.demo.StreamsDemo.getRatingAverageTable;
-import static io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.*;
-import static java.util.Collections.singletonMap;
-
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
-
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +11,15 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.annotation.EnableKafkaStreams;
 
 import java.util.Map;
+
+import static io.confluent.demo.StreamsDemo.getMovieAvroSerde;
+import static io.confluent.demo.StreamsDemo.getMoviesTable;
+import static io.confluent.demo.StreamsDemo.getRatedMovieAvroSerde;
+import static io.confluent.demo.StreamsDemo.getRatedMoviesTable;
+import static io.confluent.demo.StreamsDemo.getRatingAverageTable;
+import static io.confluent.demo.StreamsDemo.getRawRatingsStream;
+import static io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
+import static java.util.Collections.singletonMap;
 
 @Configuration
 @EnableKafka
@@ -33,7 +34,7 @@ public class KafkaStreamsConfig {
   KTable ratedMoviesTable(StreamsBuilder builder, KafkaProperties kafkaProperties) {
     final KStream<Long, String> rawRatingsStream = getRawRatingsStream(builder);
     final KTable<Long, Double> ratingAverageTable = getRatingAverageTable(rawRatingsStream);
-
+    
     final Map<String, String> serdeConfig = singletonMap(SCHEMA_REGISTRY_URL_CONFIG,
                                                          (String) kafkaProperties.buildStreamsProperties()
                                                              .get(SCHEMA_REGISTRY_URL_CONFIG));

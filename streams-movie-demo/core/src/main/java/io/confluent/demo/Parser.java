@@ -14,7 +14,7 @@ public class Parser {
                 .collect(Collectors.toList());
     }
 
-   static Movie parseMovie(String text) {
+   public static Movie parseMovie(String text) {
       String[] tokens = text.split("\\:\\:");
       String id = tokens[0];
       String title = tokens[1];

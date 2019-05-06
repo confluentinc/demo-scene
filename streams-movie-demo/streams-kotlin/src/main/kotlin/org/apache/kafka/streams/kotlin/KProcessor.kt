@@ -5,6 +5,7 @@ import kotlin.reflect.KProperty
 
 /** API **/
 data class ProcessorId(val name: String)
+
 data class SourceId(val name: String)
 
 interface ProcessorDelegate {
@@ -42,18 +43,6 @@ fun <T> processor(processorClass: Class<T>, name: String, action: ProcessorBuild
 inline fun <reified K, reified V> ProcessorBuilder.keyValueStore(name: String) = keyValueStore(K::class.java, V::class.java, name)
 
 inline fun <reified T> processor(name: String, noinline action: ProcessorBuilder.() -> Unit) = processor(T::class.java, name, action)
-
-
-/** example **/
-
-val source = SourceId("23")
-
-class MyProcessor
-
-val processor by processor<MyProcessor>("name") {
-  readFrom(source)
-  keyValueStore<String, Int>(name = "counts")  ///Serdes from type parameters, processor implicit
-}
 
 
 /** documentation references **/

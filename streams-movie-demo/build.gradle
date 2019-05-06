@@ -1,26 +1,27 @@
 buildscript {
   ext {
-    springBootVersion = '2.1.0.M3'
+    springBootVersion = '2.2.0.M2'
     shadowPluginVersion = '5.0.0'
     kotlinVersion = '1.3.21'
     jibPluginVersion = '1.1.1'
+    confluentVersion = '5.2.1'
+    kafkaVersion = '2.2.0'
   }
   repositories {
     jcenter()
     maven { url "https://repo.spring.io/milestone" }
-    maven {
-      url "https://plugins.gradle.org/m2/"
+    maven { url "https://plugins.gradle.org/m2/" }
     maven { url "https://kotlin.bintray.com/kotlinx" }
-    }
   }
+
   dependencies {
     classpath "com.commercehub.gradle.plugin:gradle-avro-plugin:0.14.2"
     classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
     classpath "com.github.jengelman.gradle.plugins:shadow:${shadowPluginVersion}"
     classpath "gradle.plugin.com.google.cloud.tools:jib-gradle-plugin:${jibPluginVersion}"
-classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}"
-    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}"
 
+    // kotlin compiler
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}"
     classpath "org.jetbrains.kotlin:kotlin-serialization:${kotlinVersion}"
   }
 }
@@ -44,7 +45,6 @@ configure(subprojects.findAll { (it.name == "streams") }) {
 }
 
 project(':core') {
-
   apply plugin: "com.commercehub.gradle.plugin.avro"
 
   avro {
@@ -53,10 +53,10 @@ project(':core') {
 
   dependencies {
     compile 'org.apache.avro:avro:1.8.2'
-    compile 'org.apache.kafka:kafka-clients:2.0.0'
-    compile 'javax.json:javax.json-api:1.1.2'
-    runtime 'org.glassfish:javax.json:1.1.2'
-    compile 'io.confluent:kafka-streams-avro-serde:5.0.0'
+    compile "org.apache.kafka:kafka-clients:${kafkaVersion}"
+    compile 'javax.json:javax.json-api:1.1.4'
+    runtime 'org.glassfish:javax.json:1.1.4'
+    compile "io.confluent:kafka-streams-avro-serde:${confluentVersion}"
   }
 
 }
@@ -118,13 +118,13 @@ project(':streams') {
   dependencies {
     compile project(':core')
 
-    compile 'org.apache.kafka:kafka-streams:2.1.0'
-    compile 'io.confluent:monitoring-interceptors:5.1.2'
+    compile "org.apache.kafka:kafka-streams:${kafkaVersion}"
+    compile "io.confluent:monitoring-interceptors:${confluentVersion}"
 
 //  compile 'io.confluent:kafka-avro-serializer:3.3.0'
 //  compile 'io.confluent:kafka-schema-registry-client:3.3.0'
     testCompile 'junit:junit:4.12'
-    testCompile 'org.apache.kafka:kafka-streams-test-utils:2.1.0'
+    testCompile "org.apache.kafka:kafka-streams-test-utils:${kafkaVersion}"
     testCompileOnly 'org.projectlombok:lombok:1.16.20'
     testAnnotationProcessor 'org.projectlombok:lombok:1.16.20'
   }
@@ -151,10 +151,6 @@ project(':spring-streams') {
     compile "org.springframework.boot:spring-boot-starter-web"
     compile 'org.springframework.kafka:spring-kafka'
   }
-  // Greenwich.M1 due Sept 21; use boot for dep management instead
-  ext {
-    springCloudVersion = 'Finchley.RC2'
-  }
 
   configurations.all {
     exclude group: 'org.slf4j', module: 'slf4j-log4j12'
@@ -169,9 +165,7 @@ project(':spring-streams') {
 }
 
 def getConfigPath() {
-  def path = project.getProperty('configPath')
-  def f = new File(path)
-  return f.absolutePath
+  new File(project.getProperty('configPath')).absolutePath
 }
 
 /**
@@ -206,9 +200,9 @@ project(':streams-kubernetes') {
     // TODO: configure via environment variables/configMaps in Kubernetes
     extraDirectory = file("${System.properties['user.home']}/.ccloud")
   }
+}
 
-
-project(':kotlin-streams') {
+project(':streams-kotlin') {
   apply plugin: 'kotlin'
   apply plugin: 'kotlinx-serialization'
 
@@ -216,5 +210,6 @@ project(':kotlin-streams') {
     compile project(':streams')
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile "org.jetbrains.kotlin:kotlin-reflect"
+    compile "org.slf4j:slf4j-log4j12:1.7.25"
   }
 }

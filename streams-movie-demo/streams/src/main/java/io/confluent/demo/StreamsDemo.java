@@ -113,7 +113,7 @@ public class StreamsDemo {
                                         Serdes.String()));
   }
 
-  private static Map<String, String> getSerdeConfig(Properties config) {
+  protected static Map<String, String> getSerdeConfig(Properties config) {
     final String srUserInfoPropertyName = "schema.registry.basic.auth.user.info";
     final HashMap<String, String> map = new HashMap<>();
     
