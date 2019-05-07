@@ -1,16 +1,20 @@
 package io.confluent.demo;
 
-import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.annotation.EnableKafkaStreams;
+import org.springframework.kafka.config.KafkaStreamsConfiguration;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Map;
+import java.util.Properties;
 
 import static io.confluent.demo.StreamsDemo.getMovieAvroSerde;
 import static io.confluent.demo.StreamsDemo.getMoviesTable;
@@ -18,53 +22,43 @@ import static io.confluent.demo.StreamsDemo.getRatedMovieAvroSerde;
 import static io.confluent.demo.StreamsDemo.getRatedMoviesTable;
 import static io.confluent.demo.StreamsDemo.getRatingAverageTable;
 import static io.confluent.demo.StreamsDemo.getRawRatingsStream;
-import static io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
-import static java.util.Collections.singletonMap;
+import static io.confluent.demo.StreamsDemo.getSerdeConfig;
+import static io.confluent.demo.StreamsDemo.getStreamsConfig;
 
 @Configuration
 @EnableKafka
 @EnableKafkaStreams
 public class KafkaStreamsConfig {
 
-  private static final int PARTITIONS = 1;
+  @Value("${kafka.bootstrapServers}")
+  private String bootstrapServer;
 
-  private static final short REPLICAS = (short) 1;
+  @Value("${confluent.schemaRegistryUrl}")
+  private String schemaRegistryUrl;
+
+  @Value("${server.port}")
+  private Integer port;
 
   @Bean
-  KTable ratedMoviesTable(StreamsBuilder builder, KafkaProperties kafkaProperties) {
+  KTable ratedMoviesTable(StreamsBuilder builder, KafkaStreamsConfiguration kafkaStreamsConfiguration) {
+
+    final Map<String, String> serdeConfig = getSerdeConfig(kafkaStreamsConfiguration.asProperties());
+
     final KStream<Long, String> rawRatingsStream = getRawRatingsStream(builder);
     final KTable<Long, Double> ratingAverageTable = getRatingAverageTable(rawRatingsStream);
-    
-    final Map<String, String> serdeConfig = singletonMap(SCHEMA_REGISTRY_URL_CONFIG,
-                                                         (String) kafkaProperties.buildStreamsProperties()
-                                                             .get(SCHEMA_REGISTRY_URL_CONFIG));
+
     final KTable<Long, Movie> moviesTable = getMoviesTable(builder, getMovieAvroSerde(serdeConfig));
     return getRatedMoviesTable(moviesTable, ratingAverageTable, getRatedMovieAvroSerde(serdeConfig));
   }
 
   @Bean
-  public NewTopic ratedMovies() {
-    return new NewTopic("rated-movies", PARTITIONS, REPLICAS);
-  }
-
-  @Bean
-  public NewTopic movies() {
-    return new NewTopic("movies", PARTITIONS, REPLICAS);
-  }
-
-  @Bean
-  public NewTopic rawMovies() {
-    return new NewTopic("raw-movies", PARTITIONS, REPLICAS);
-  }
-
-  @Bean
-  public NewTopic rawRatings() {
-    return new NewTopic("raw-ratings", PARTITIONS, REPLICAS);
-  }
-
-  @Bean
-  public NewTopic averageRatings() {
-    return new NewTopic("average-ratings", PARTITIONS, REPLICAS);
+  KafkaStreamsConfiguration defaultKafkaStreamsConfig() throws UnknownHostException {
+    final Properties
+        streamsConfig =
+        getStreamsConfig(bootstrapServer, schemaRegistryUrl, System.getProperty("user.home") + "/.ccloud/config");
+    streamsConfig.put(StreamsConfig.APPLICATION_SERVER_CONFIG, InetAddress.getLocalHost().getHostName() + ":" + port);
+    final KafkaStreamsConfiguration kafkaStreamsConfiguration = new KafkaStreamsConfiguration((Map) streamsConfig);
+    return kafkaStreamsConfiguration;
   }
 
 }

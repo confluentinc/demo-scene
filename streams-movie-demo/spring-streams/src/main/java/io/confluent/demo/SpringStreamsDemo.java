@@ -11,7 +11,7 @@ public class SpringStreamsDemo {
   public static void main(String[] args) {
     SpringApplication app = new SpringApplication(SpringStreamsDemo.class);
     app.setBannerMode(Banner.Mode.OFF);
-    app.setWebApplicationType(WebApplicationType.NONE);
+    app.setWebApplicationType(WebApplicationType.SERVLET);
     app.run(args);
 
   }
