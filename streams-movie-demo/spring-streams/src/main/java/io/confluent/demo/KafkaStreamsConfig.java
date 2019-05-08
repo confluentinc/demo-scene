@@ -61,10 +61,8 @@ public class KafkaStreamsConfig {
     return new KafkaStreamsConfiguration((Map) streamsConfig);
   }
 
-
   @Bean
   HostInfo getHostInfo() throws UnknownHostException {
     return new HostInfo(InetAddress.getLocalHost().getHostName(), port);
   }
-
 }

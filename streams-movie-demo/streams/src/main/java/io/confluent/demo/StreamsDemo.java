@@ -116,7 +116,7 @@ public class StreamsDemo {
   protected static Map<String, String> getSerdeConfig(Properties config) {
     final String srUserInfoPropertyName = "schema.registry.basic.auth.user.info";
     final HashMap<String, String> map = new HashMap<>();
-    
+
     map.put(SCHEMA_REGISTRY_URL_CONFIG, config.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
     map.put(BASIC_AUTH_CREDENTIALS_SOURCE, config.getProperty(BASIC_AUTH_CREDENTIALS_SOURCE));
     map.put(srUserInfoPropertyName, config.getProperty(srUserInfoPropertyName));
@@ -149,7 +149,13 @@ public class StreamsDemo {
                                                                                    movie.getTitle(),
                                                                                    movie.getReleaseYear(),
                                                                                    avg);
-    KTable<Long, RatedMovie> ratedMovies = ratingAverage.join(movies, joiner, Materialized.as("rated-movies-store") );
+    KTable<Long, RatedMovie>
+        ratedMovies =
+        ratingAverage
+            .join(movies, joiner,
+                  Materialized.<Long, RatedMovie, KeyValueStore<Bytes, byte[]>>as("rated-movies-store")
+                      .withValueSerde(ratedMovieSerde)
+                      .withKeySerde(Serdes.Long()));
 
     ratedMovies.toStream().to(RATED_MOVIES_TOPIC_NAME, Produced.with(Serdes.Long(), ratedMovieSerde));
     return ratedMovies;
@@ -230,7 +236,7 @@ public class StreamsDemo {
     config.put(DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.Long().getClass().getName());
     config.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.Double().getClass().getName());
     // start from the beginning
-    config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+    config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
     // config.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
     // Enable record cache of size 10 MB.

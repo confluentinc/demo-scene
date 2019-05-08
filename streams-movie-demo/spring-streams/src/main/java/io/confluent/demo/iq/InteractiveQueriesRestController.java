@@ -17,6 +17,8 @@ import org.springframework.web.client.RestTemplate;
 import java.util.List;
 
 import io.confluent.demo.Movie;
+import io.confluent.demo.Parser;
+import io.confluent.demo.RatedMovie;
 
 @RestController
 @RequestMapping("/iq")
@@ -62,25 +64,27 @@ public class InteractiveQueriesRestController {
       return fetchByKey(hostStoreInfo, "iq/keyvalue/" + storeName + "/" + key);
     }
 
+    final long l = Long.parseLong(key);
     switch (storeName) {
       case "movies-store":
         final ReadOnlyKeyValueStore<Long, Movie>
             movieReadOnlyKeyValueStore =
             metadataService.getKafkaStreams().store(storeName, QueryableStoreTypes.keyValueStore());
-        final long l = Long.parseLong(key);
         final Movie movie = movieReadOnlyKeyValueStore.get(l);
-        return new KeyValueBean<>(l, movie);
+        // TODO
+        // Workaround for @JsonComponent isn't working ;(
+        return new KeyValueBean<>(l, Parser.toJson(movie));
       case "rated-movies-store":
-        final ReadOnlyKeyValueStore<Object, Object>
+        final ReadOnlyKeyValueStore<Long, RatedMovie>
             ratedMoviesStore =
             metadataService.getKafkaStreams().store(storeName, QueryableStoreTypes.keyValueStore());
-
-        break;
+        final RatedMovie ratedMovie = ratedMoviesStore.get(l);
+        return new KeyValueBean<>(l, Parser.toJson(ratedMovie));
       default:
         throw new IllegalArgumentException("Unknown store name " + storeName);
     }
 
-    // Lookup the KeyValueStore with the provided storeName
+    /*// Lookup the KeyValueStore with the provided storeName
     final ReadOnlyKeyValueStore<String, Long>
         store =
         metadataService.getKafkaStreams().store(storeName, QueryableStoreTypes.keyValueStore());
@@ -93,7 +97,7 @@ public class InteractiveQueriesRestController {
     if (value == null) {
       throw new RuntimeException("not found");
     }
-    return new KeyValueBean(key, value);
+    return new KeyValueBean(key, value);*/
   }
 
   private KeyValueBean fetchByKey(final HostStoreInfo host, final String path) {
