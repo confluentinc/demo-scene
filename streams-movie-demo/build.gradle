@@ -150,6 +150,8 @@ project(':spring-streams') {
 
     compile "org.springframework.boot:spring-boot-starter-web"
     compile 'org.springframework.kafka:spring-kafka'
+    testCompile "org.springframework.boot:spring-boot-starter-test"
+    testCompile 'junit:junit'
   }
 
   configurations.all {
@@ -169,7 +171,7 @@ def getConfigPath() {
 }
 
 /**
- * Project to build docker image for Kubernetes + deployment scripts 
+ * Project to build docker image for Kubernetes + deployment scripts
  */
 project(':streams-kubernetes') {
   apply plugin: 'com.github.johnrengelman.shadow'
