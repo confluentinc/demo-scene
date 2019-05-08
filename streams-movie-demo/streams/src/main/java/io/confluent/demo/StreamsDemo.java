@@ -149,7 +149,7 @@ public class StreamsDemo {
                                                                                    movie.getTitle(),
                                                                                    movie.getReleaseYear(),
                                                                                    avg);
-    KTable<Long, RatedMovie> ratedMovies = ratingAverage.join(movies, joiner);
+    KTable<Long, RatedMovie> ratedMovies = ratingAverage.join(movies, joiner, Materialized.as("rated-movies-store") );
 
     ratedMovies.toStream().to(RATED_MOVIES_TOPIC_NAME, Produced.with(Serdes.Long(), ratedMovieSerde));
     return ratedMovies;

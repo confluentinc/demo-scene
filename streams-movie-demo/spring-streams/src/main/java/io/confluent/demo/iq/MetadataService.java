@@ -29,6 +29,10 @@ import java.util.stream.Collectors;
  */
 public class MetadataService {
 
+  public KafkaStreams getKafkaStreams() {
+    return streams;
+  }
+
   private final KafkaStreams streams;
 
   public MetadataService(final KafkaStreams streams) {

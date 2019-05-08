@@ -4,6 +4,7 @@ import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.state.HostInfo;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -57,8 +58,13 @@ public class KafkaStreamsConfig {
         streamsConfig =
         getStreamsConfig(bootstrapServer, schemaRegistryUrl, System.getProperty("user.home") + "/.ccloud/config");
     streamsConfig.put(StreamsConfig.APPLICATION_SERVER_CONFIG, InetAddress.getLocalHost().getHostName() + ":" + port);
-    final KafkaStreamsConfiguration kafkaStreamsConfiguration = new KafkaStreamsConfiguration((Map) streamsConfig);
-    return kafkaStreamsConfiguration;
+    return new KafkaStreamsConfiguration((Map) streamsConfig);
+  }
+
+
+  @Bean
+  HostInfo getHostInfo() throws UnknownHostException {
+    return new HostInfo(InetAddress.getLocalHost().getHostName(), port);
   }
 
 }
