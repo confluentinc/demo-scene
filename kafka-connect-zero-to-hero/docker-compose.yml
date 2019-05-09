@@ -101,6 +101,7 @@ services:
         echo "Installing Connector"
         confluent-hub install --no-prompt debezium/debezium-connector-mysql:0.9.4
         confluent-hub install --no-prompt jcustenborder/kafka-connect-spooldir:1.0.37
+        confluent-hub install --no-prompt neo4j/kafka-connect-neo4j:1.0.0
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 
@@ -203,26 +204,11 @@ services:
   #       sleep 120  
   #       /etc/confluent/docker/run
 
-  rest-proxy:
-    image: confluentinc/cp-kafka-rest:5.2.1
-    depends_on:
-      - zookeeper
-      - kafka
-      - schema-registry
-    ports:
-      - '8082:8082'
-      - '31005:31005'
-    environment:
-      KAFKA_REST_HOST_NAME: rest-proxy
-      KAFKA_REST_BOOTSTRAP_SERVERS: 'kafka:29092'
-      KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
-      KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-
 # Other systems
   mysql:
     # *-----------------------------*
     # To connect to the DB: 
-    #   docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
+    #   docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD demo'
     # *-----------------------------*
     image: debezium/example-mysql:0.9
     container_name: mysql
@@ -236,28 +222,16 @@ services:
      - ${PWD}/data/mysql:/docker-entrypoint-initdb.d
      - ${PWD}/data:/data
         
-  # connect-debezium:
-  #   image: debezium/connect:0.9.4.Final
-  #   container_name: connect-debezium
-  #   depends_on:
-  #    - kafka
-  #    - mysql
-  #    - schema-registry
-  #   ports:
-  #    - 8083:8083
-  #   environment:
-  #     BOOTSTRAP_SERVERS: kafka:29092
-  #     GROUP_ID: connect-debezium
-  #     CONFIG_STORAGE_TOPIC: docker-connect-debezium-configs
-  #     OFFSET_STORAGE_TOPIC: docker-connect-debezium-offsets
-  #     STATUS_STORAGE_TOPIC: docker-connect-debezium-status
-  #     KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
-  #     VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
-  #     CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-  #     CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-  #   volumes:
-  #    - ${PWD}/scripts:/scripts
-     
+  postgres:
+    # *-----------------------------*
+    # To connect to the DB: 
+    #   docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+    # *-----------------------------*
+    image: postgres:11
+    environment:
+     - POSTGRES_USER=postgres
+     - POSTGRES_PASSWORD=postgres
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.7.0
     container_name: elasticsearch
@@ -304,13 +278,13 @@ services:
 
         sleep infinity
 
-  # neo4j:
-  #   image: neo4j:3.4-enterprise
-  #   container_name: neo4j
-  #   ports:
-  #   - "7474:7474"
-  #   - "7687:7687"
-  #   environment:
-  #     NEO4J_AUTH: neo4j/connect
-  #     NEO4J_dbms_memory_heap_max__size: 8G
-  #     NEO4J_ACCEPT_LICENSE_AGREEMENT: 'yes'
+  neo4j:
+    image: neo4j:3.4-enterprise
+    container_name: neo4j
+    ports:
+    - "7474:7474"
+    - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/connect
+      NEO4J_dbms_memory_heap_max__size: 8G
+      NEO4J_ACCEPT_LICENSE_AGREEMENT: 'yes'

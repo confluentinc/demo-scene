@@ -39,6 +39,34 @@ A MySQL database stores orders placed by an application.
 
 === Ingest data from a database
 
+==== Look at the DB
+
+[source,bash]
+----
+docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD demo'
+----
+
+[source,sql]
+----
+SELECT * FROM ORDERS ORDER BY CREATE_TS DESC LIMIT 10;
+----
+
+Trigger the MySQL data generator with: 
+
+[source,bash]
+----
+docker-compose exec mysql /data/02_populate_more_orders.sh
+----
+
+Look at the new rows!
+
+[source,sql]
+----
+SELECT * FROM ORDERS ORDER BY CREATE_TS DESC LIMIT 10;
+----
+
+==== Create the connector
+
 [source,bash]
 ----
 curl -i -X POST -H "Accept:application/json" \
@@ -65,13 +93,6 @@ curl -i -X POST -H "Accept:application/json" \
             "transforms.addTopicPrefix.replacement":"mysql-debezium-$1"
        }
     }'
-----
-
-Trigger the MySQL data generator with: 
-
-[source,bash]
-----
-docker-compose exec mysql /data/02_populate_more_orders.sh
 ----
 
 Check the status of the connector
@@ -110,10 +131,10 @@ curl -i -X POST -H "Accept:application/json" \
       "config": {
         "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
         "topics": "mysql-debezium-asgard.demo.ORDERS",
-        "key.ignore": "true",
-        "schema.ignore": "true",
+        "connection.url": "http://elasticsearch:9200",
         "type.name": "type.name=kafkaconnect",
-        "connection.url": "http://elasticsearch:9200"
+        "key.ignore": "true",
+        "schema.ignore": "true"
       }
     }'
 ----
@@ -150,6 +171,26 @@ If you want to set the Elasticsearch document id to match the key of the source 
 ----
 ====
 
+=== Stream to Neo4j
+
+[source,bash]
+----
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -d '{
+          "name": "sink-neo4j-orders-00",
+          "config": {
+            "connector.class": "streams.kafka.connect.sink.Neo4jSinkConnector",
+            "topics": "mysql-debezium-asgard.demo.ORDERS",
+            "neo4j.server.uri": "bolt://neo4j:7687",
+            "neo4j.authentication.basic.username": "neo4j",
+            "neo4j.authentication.basic.password": "connect",
+            "neo4j.topic.cypher.mysql-debezium-asgard.demo.ORDERS": "MERGE (city:city{city: event.delivery_city}) MERGE (customer:customer{id: event.customer_id, delivery_address: event.delivery_address, delivery_city: event.delivery_city, delivery_company: event.delivery_company}) MERGE (vehicle:vehicle{make: event.make, model:event.model}) MERGE (city)<-[:LIVES_IN]-(customer)-[:BOUGHT{order_total_usd:event.order_total_usd,order_id:event.order_id}]->(vehicle)"
+          }
+        } '
+----
+
+View in http://localhost:7474/browser/[Neo4j browser]
 
 == Demo 2 - Single Message Transform
 
@@ -366,4 +407,162 @@ org.apache.kafka.connect.errors.ConnectException
 …
 Caused by: java.io.EOFException
    at com.github.shyiko.mysql.binlog.io.ByteArrayInputStream.read(ByteArrayInputStream.java:190)
+----
+
+== Demo 4 - Schema, where art thou? 
+
+Some sinks will require a schema. An example of this is the JDBC Sink. 
+
+Create source data, serialised in varying ways: 
+
+[source,bash]
+----
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -d '{
+      "name": "source-debezium-orders-01",
+      "config": {
+            "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+            "database.hostname": "mysql",
+            "database.port": "3306",
+            "database.user": "debezium",
+            "database.password": "dbz",
+            "database.server.id": "43",
+            "database.server.name": "asgard",
+            "table.whitelist": "demo.orders",
+            "database.history.kafka.bootstrap.servers": "kafka:29092",
+            "database.history.kafka.topic": "dbhistory.demo" ,
+            "decimal.handling.mode": "double",
+            "include.schema.changes": "true",
+            "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+            "value.converter.schemas.enable": "false",
+            "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+            "key.converter.schemas.enable": "false",
+            "transforms": "unwrap,addTopicPrefix",
+            "transforms.unwrap.type": "io.debezium.transforms.UnwrapFromEnvelope",
+            "transforms.addTopicPrefix.type":"org.apache.kafka.connect.transforms.RegexRouter",
+            "transforms.addTopicPrefix.regex":"(.*)",
+            "transforms.addTopicPrefix.replacement":"mysql-debezium-json-no-schema-$1"
+       }
+    }'
+----
+
+[source,bash]
+----
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -d '{
+      "name": "source-debezium-orders-02",
+      "config": {
+            "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+            "database.hostname": "mysql",
+            "database.port": "3306",
+            "database.user": "debezium",
+            "database.password": "dbz",
+            "database.server.id": "44",
+            "database.server.name": "asgard",
+            "table.whitelist": "demo.orders",
+            "database.history.kafka.bootstrap.servers": "kafka:29092",
+            "database.history.kafka.topic": "dbhistory.demo" ,
+            "decimal.handling.mode": "double",
+            "include.schema.changes": "true",
+            "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+            "value.converter.schemas.enable": "true",
+            "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+            "key.converter.schemas.enable": "true",
+            "transforms": "unwrap,addTopicPrefix",
+            "transforms.unwrap.type": "io.debezium.transforms.UnwrapFromEnvelope",
+            "transforms.addTopicPrefix.type":"org.apache.kafka.connect.transforms.RegexRouter",
+            "transforms.addTopicPrefix.regex":"(.*)",
+            "transforms.addTopicPrefix.replacement":"mysql-debezium-json-with-schema-$1"
+       }
+    }'
+----
+
+[source,bash]
+----
+curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+          "name": "sink_postgres_00",
+          "config": { 
+            "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+            "tasks.max": "1",
+            "topics": "mysql-debezium-json-no-schema-asgard.demo.ORDERS",
+            "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+            "value.converter.schemas.enable": "false",
+            "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+            "key.converter.schemas.enable": "false",
+            "connection.url": "jdbc:postgresql://postgres:5432/",
+            "connection.user": "postgres",
+            "connection.password": "postgres",
+            "auto.create": "true",
+            "auto.evolve":"true",
+            "pk.mode":"none",
+            "table.name.format": "sink_postgres_00"
+            }	   
+          }'
+----
+
+[source,bash]
+----
+curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+          "name": "sink_postgres_01",
+          "config": { 
+            "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+            "tasks.max": "1",
+            "topics": "mysql-debezium-json-with-schema-asgard.demo.ORDERS",
+            "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+            "value.converter.schemas.enable": "true",
+            "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+            "key.converter.schemas.enable": "true",
+            "connection.url": "jdbc:postgresql://postgres:5432/",
+            "connection.user": "postgres",
+            "connection.password": "postgres",
+            "auto.create": "true",
+            "auto.evolve":"true",
+            "pk.mode":"none",
+            "errors.tolerance": "all",
+            "table.name.format": "sink_postgres_01"
+            }	   
+          }'
+----
+
+[source,bash]
+----
+curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+          "name": "sink_postgres_02",
+          "config": { 
+            "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+            "tasks.max": "1",
+            "topics": "mysql-debezium-json-no-schema-asgard.demo.ORDERS",
+            "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+            "value.converter.schemas.enable": "true",
+            "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+            "key.converter.schemas.enable": "true",
+            "connection.url": "jdbc:postgresql://postgres:5432/",
+            "connection.user": "postgres",
+            "connection.password": "postgres",
+            "auto.create": "true",
+            "auto.evolve":"true",
+            "pk.mode":"none",
+            "table.name.format": "sink_postgres_01"
+            }	   
+          }'
+----
+
+[source,bash]
+----
+curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+          "name": "sink_postgres_03",
+          "config": { 
+            "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+            "tasks.max": "1",
+            "topics": "mysql-debezium-asgard.demo.ORDERS",
+            "connection.url": "jdbc:postgresql://postgres:5432/",
+            "connection.user": "postgres",
+            "connection.password": "postgres",
+            "auto.create": "true",
+            "auto.evolve":"true",
+            "pk.mode":"none"
+            }	   
+          }'
 ----
