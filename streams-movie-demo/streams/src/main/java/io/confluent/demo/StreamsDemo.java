@@ -32,6 +32,8 @@ import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
 import static io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.BASIC_AUTH_CREDENTIALS_SOURCE;
 import static io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
+import static java.util.Optional.of;
+import static java.util.Optional.ofNullable;
 import static org.apache.kafka.streams.StreamsConfig.APPLICATION_ID_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.BOOTSTRAP_SERVERS_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG;
@@ -117,9 +119,13 @@ public class StreamsDemo {
     final String srUserInfoPropertyName = "schema.registry.basic.auth.user.info";
     final HashMap<String, String> map = new HashMap<>();
 
-    map.put(SCHEMA_REGISTRY_URL_CONFIG, config.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
-    map.put(BASIC_AUTH_CREDENTIALS_SOURCE, config.getProperty(BASIC_AUTH_CREDENTIALS_SOURCE));
-    map.put(srUserInfoPropertyName, config.getProperty(srUserInfoPropertyName));
+    final String srUrlConfig = config.getProperty(SCHEMA_REGISTRY_URL_CONFIG);
+    final String srAuthCredsConfig = config.getProperty(BASIC_AUTH_CREDENTIALS_SOURCE);
+    final String srUserInfoConfig = config.getProperty(srUserInfoPropertyName);
+
+    map.put(SCHEMA_REGISTRY_URL_CONFIG, ofNullable(srUrlConfig).orElse(""));
+    map.put(BASIC_AUTH_CREDENTIALS_SOURCE, ofNullable(srAuthCredsConfig).orElse(""));
+    map.put(srUserInfoPropertyName, ofNullable(srUserInfoConfig).orElse(""));
     return map;
   }
 
@@ -239,8 +245,8 @@ public class StreamsDemo {
     config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
     // config.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
-    // Enable record cache of size 10 MB.
-    config.put(CACHE_MAX_BYTES_BUFFERING_CONFIG, 10 * 1024 * 1024L);
+    // Enable record cache of size 2 MB.
+    config.put(CACHE_MAX_BYTES_BUFFERING_CONFIG, 2 * 1024 * 1024L);
     // Set commit interval to 1 second.
     config.put(COMMIT_INTERVAL_MS_CONFIG, 1000);
     config.put(topicPrefix("segment.ms"), 15000000);

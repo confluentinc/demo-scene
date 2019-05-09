@@ -1,7 +1,9 @@
 package io.confluent.demo.iq;
 
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.state.HostInfo;
+import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +16,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import io.confluent.demo.Movie;
 import io.confluent.demo.Parser;
@@ -44,7 +48,7 @@ public class InteractiveQueriesRestController {
     return metadataService.streamsMetadata();
   }
 
-  @RequestMapping(value = "/instances/{storeName}", method = RequestMethod.GET)
+  @RequestMapping(value = "/instance/{storeName}", method = RequestMethod.GET)
   public List<HostStoreInfo> streamsMetadataForStore(@PathVariable("storeName") final String store) {
     return metadataService.streamsMetadataForStore(store);
   }
@@ -100,10 +104,32 @@ public class InteractiveQueriesRestController {
     return new KeyValueBean(key, value);*/
   }
 
+  private List<KeyValueBean> rangeForKeyValueStore(final String storeName,
+                                                   final Function<ReadOnlyKeyValueStore<String, Long>,
+                                                       KeyValueIterator<String, Long>> rangeFunction) {
+
+    // Get the KeyValue Store
+    final ReadOnlyKeyValueStore<String, Long>
+        store =
+        metadataService.getKafkaStreams().store(storeName, QueryableStoreTypes.keyValueStore());
+    final List<KeyValueBean> results = new ArrayList<>();
+    // Apply the function, i.e., query the store
+    final KeyValueIterator<String, Long> range = rangeFunction.apply(store);
+
+    // Convert the results
+    while (range.hasNext()) {
+      final KeyValue<String, Long> next = range.next();
+      results.add(new KeyValueBean<>(next.key, next.value));
+    }
+
+    return results;
+  }
+
   private KeyValueBean fetchByKey(final HostStoreInfo host, final String path) {
     RestTemplate template = new RestTemplate();
+    final String remoteUrl = String.format("http://%s:%d/%s", host.getHost(), host.getPort(), path);
     return template
-        .getForObject(String.format("http://%s:%d/%s", host.getHost(), host.getPort(), path), KeyValueBean.class);
+        .getForObject(remoteUrl, KeyValueBean.class);
   }
 
   private boolean thisHost(final HostStoreInfo host) {

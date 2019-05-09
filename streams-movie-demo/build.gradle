@@ -6,6 +6,7 @@ buildscript {
     jibPluginVersion = '1.1.1'
     confluentVersion = '5.2.1'
     kafkaVersion = '2.2.0'
+    lombokVersion = '1.18.8'
   }
   repositories {
     jcenter()
@@ -118,6 +119,7 @@ project(':streams') {
   dependencies {
     compile project(':core')
 
+    compile "org.slf4j:slf4j-log4j12:1.7.25"
     compile "org.apache.kafka:kafka-streams:${kafkaVersion}"
     compile "io.confluent:monitoring-interceptors:${confluentVersion}"
 
@@ -125,8 +127,8 @@ project(':streams') {
 //  compile 'io.confluent:kafka-schema-registry-client:3.3.0'
     testCompile 'junit:junit:4.12'
     testCompile "org.apache.kafka:kafka-streams-test-utils:${kafkaVersion}"
-    testCompileOnly 'org.projectlombok:lombok:1.16.20'
-    testAnnotationProcessor 'org.projectlombok:lombok:1.16.20'
+    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
   }
 
   task runApp(type: JavaExec) {
