@@ -22,8 +22,7 @@ Start the environment
 
 [source,bash]
 ----
-cd docker-compose
-./scripts/setup.sh
+docker-compose up -d
 ----
 
 === Run KSQL CLI and MySQL CLI
@@ -41,7 +40,6 @@ docker-compose exec ksql-cli bash -c 'echo -e "\n\n⏳ Waiting for KSQL to be av
 +
 [source,bash]
 ----
-cd docker-compose
 docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
 ----
 
@@ -92,7 +90,7 @@ SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
 
 [source,sql]
 ----
-CREATE STREAM POOR_RATINGS AS \
+CREATE STREAM POOR_RATINGS AS
 SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
 
 SELECT * FROM POOR_RATINGS LIMIT 5;
@@ -229,15 +227,14 @@ UPDATE CUSTOMERS SET CLUB_STATUS = 'bronze' where ID=42;
 UPDATE CUSTOMERS SET CLUB_STATUS = 'platinum' where ID=42;
 ----
 
-Point out before/after records in `raw` stream
 
----
-
-Return to slides 
-
----
-
-== Part 03 - KSQL for joining streams
+Here's the table - the latest value for a given key
+[source,sql]
+----
+ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS WHERE ID=42;
+42 | Rick | Astley | rick@example.com | platinum
+^CQuery terminated
+----
 
 ==== [Optional] Demonstrate Stream / Table difference
 
@@ -254,24 +251,36 @@ ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS_STREAM
 ksql>
 ----
 
-Here's the table - the latest value for a given key
-[source,sql]
+Optionally, point out before/after records in `raw` stream
+
+[source,bash]
 ----
-ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS WHERE ID=42;
-42 | Rick | Astley | rick@example.com | platinum
-^CQuery terminated
+docker-compose exec -T kafka-connect \
+        kafka-avro-console-consumer \
+        --bootstrap-server kafka:29092 \
+        --property schema.registry.url=http://schema-registry:8081 \
+        --topic asgard.demo.CUSTOMERS-raw --from-beginning|jq '.'
 ----
+
+---
+
+Return to slides 
+
+---
+
+== Part 03 - KSQL for joining streams
+
 
 === Join live stream of ratings to customer data
 
 [source,sql]
 ----
-ksql> SELECT R.RATING_ID, R.MESSAGE, \
-      C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, \
-      C.CLUB_STATUS \
-      FROM RATINGS R \
-        LEFT JOIN CUSTOMERS C \
-        ON R.USER_ID = C.ID \
+ksql> SELECT R.RATING_ID, R.MESSAGE, 
+      C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, 
+      C.CLUB_STATUS 
+      FROM RATINGS R 
+        LEFT JOIN CUSTOMERS C 
+        ON R.USER_ID = C.ID 
       WHERE C.FIRST_NAME IS NOT NULL;
 524 | Surprisingly good, maybe you are getting your mojo back at long last! | Patti Rosten | silver
 525 | meh | Fred Blaisdell | bronze
@@ -286,16 +295,16 @@ Persist this stream of data
 
 [source,sql]
 ----
-CREATE STREAM RATINGS_WITH_CUSTOMER_DATA \
-       WITH (PARTITIONS=1, \
-             KAFKA_TOPIC='ratings-enriched') \
-       AS \
-SELECT R.RATING_ID, R.MESSAGE, R.STARS, R.CHANNEL,\
-      C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, \
-      C.CLUB_STATUS, C.EMAIL \
-      FROM RATINGS R \
-        LEFT JOIN CUSTOMERS C \
-        ON R.USER_ID = C.ID \
+CREATE STREAM RATINGS_WITH_CUSTOMER_DATA 
+       WITH (PARTITIONS=1, 
+             KAFKA_TOPIC='ratings-enriched') 
+       AS 
+SELECT R.RATING_ID, R.MESSAGE, R.STARS, R.CHANNEL,
+      C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, 
+      C.CLUB_STATUS, C.EMAIL 
+      FROM RATINGS R 
+        LEFT JOIN CUSTOMERS C 
+        ON R.USER_ID = C.ID 
       WHERE C.FIRST_NAME IS NOT NULL;
 ----
 
@@ -323,11 +332,11 @@ Observe in the continuous KSQL query that the customer name has now changed.
 
 [source,sql]
 ----
-CREATE STREAM UNHAPPY_PLATINUM_CUSTOMERS \
-       WITH (VALUE_FORMAT='JSON', PARTITIONS=1) AS \
-SELECT FULL_NAME, CLUB_STATUS, EMAIL, STARS, MESSAGE \
-FROM   RATINGS_WITH_CUSTOMER_DATA \
-WHERE  STARS < 3 \
+CREATE STREAM UNHAPPY_PLATINUM_CUSTOMERS 
+       WITH (VALUE_FORMAT='JSON', PARTITIONS=1) AS 
+SELECT FULL_NAME, CLUB_STATUS, EMAIL, STARS, MESSAGE 
+FROM   RATINGS_WITH_CUSTOMER_DATA 
+WHERE  STARS < 3 
   AND  CLUB_STATUS = 'platinum';
 ----
 
@@ -354,7 +363,7 @@ Simple aggregation - count of ratings per person, per minute:
 
 [source,sql]
 ----
-ksql> SELECT FULL_NAME,COUNT(*) FROM RATINGS_WITH_CUSTOMER_DATA WINDOW TUMBLING (SIZE 1 MINUTE) GROUP BY FULL_NAME;
+ksql> SELECT TIMESTAMPTOSTRING(WindowStart(), 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, FULL_NAME,COUNT(*) FROM RATINGS_WITH_CUSTOMER_DATA WINDOW TUMBLING (SIZE 1 MINUTE) GROUP BY FULL_NAME;
 ----
 
 Persist this and show the timestamp:
