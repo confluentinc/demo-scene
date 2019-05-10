@@ -7,7 +7,7 @@
 # In KSQL you can do this with WITH (KAFKA_TOPIC='my-lowercase-topic') 
 # when creating a stream or table
 #
-curl -X "POST" "http://kafka-connect-cp:18083/connectors/" \
+curl -X "POST" "http://kafka-connect:18083/connectors/" \
      -H "Content-Type: application/json" \
      -d '{
   "name": "es_sink_ratings-with-customer-data-tsrouter",
@@ -34,7 +34,7 @@ curl -X "POST" "http://kafka-connect-cp:18083/connectors/" \
 #
 # Note that this is not currently compatible with TimestampRouter
 #
-curl -X "POST" "http://kafka-connect-cp:18083/connectors/" \
+curl -X "POST" "http://kafka-connect:18083/connectors/" \
      -H "Content-Type: application/json" \
      -d '{
   "name": "es_sink_unhappy_platinum_customers",
