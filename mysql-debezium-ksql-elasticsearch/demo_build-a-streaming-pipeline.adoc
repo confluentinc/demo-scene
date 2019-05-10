@@ -231,7 +231,11 @@ UPDATE CUSTOMERS SET CLUB_STATUS = 'platinum' where ID=42;
 Here's the table - the latest value for a given key
 [source,sql]
 ----
-ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS WHERE ID=42;
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS WHERE ID=42;
+----
+
+[source,sql]
+----
 42 | Rick | Astley | rick@example.com | platinum
 ^CQuery terminated
 ----
@@ -242,7 +246,11 @@ Here's the stream - every event, which in this context is every change event on 
 
 [source,sql]
 ----
-ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS_STREAM WHERE ID=42;
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS_STREAM WHERE ID=42;
+----
+
+[source,sql]
+----
 42 | Rick | Astley | null | null
 42 | Rick | Astley | rick@example.com | null
 42 | Rick | Astley | rick@example.com | bronze
@@ -259,7 +267,7 @@ docker-compose exec -T kafka-connect \
         kafka-avro-console-consumer \
         --bootstrap-server kafka:29092 \
         --property schema.registry.url=http://schema-registry:8081 \
-        --topic asgard.demo.CUSTOMERS-raw --from-beginning|jq '.'
+        --topic asgard.demo.CUSTOMERS-raw --from-beginning|jq -c '.'
 ----
 
 ---
@@ -275,13 +283,17 @@ Return to slides
 
 [source,sql]
 ----
-ksql> SELECT R.RATING_ID, R.MESSAGE, 
+SELECT R.RATING_ID, R.MESSAGE, 
       C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, 
       C.CLUB_STATUS 
       FROM RATINGS R 
         LEFT JOIN CUSTOMERS C 
         ON R.USER_ID = C.ID 
       WHERE C.FIRST_NAME IS NOT NULL;
+----
+
+[source,sql]
+----
 524 | Surprisingly good, maybe you are getting your mojo back at long last! | Patti Rosten | silver
 525 | meh | Fred Blaisdell | bronze
 526 | more peanuts please | Hashim Rumke | platinum
