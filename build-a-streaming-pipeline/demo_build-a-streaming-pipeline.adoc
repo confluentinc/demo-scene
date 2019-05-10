@@ -125,15 +125,26 @@ See [kafka-to-es-demo.adoc](kafka-to-es-demo.adoc)
 
 [source,sql]
 ----
-mysql> show tables;
+show tables;
+----
+
+[source,sql]
+----
 +----------------+
 | Tables_in_demo |
 +----------------+
 | CUSTOMERS      |
 +----------------+
 1 row in set (0.00 sec)
+----
 
-mysql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS LIMIT 5;
+[source,sql]
+----
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS LIMIT 5;
+----
+
+[source,sql]
+----
 +----+-------------+------------+------------------------+-------------+
 | ID | FIRST_NAME  | LAST_NAME  | EMAIL                  | CLUB_STATUS |
 +----+-------------+------------+------------------------+-------------+
