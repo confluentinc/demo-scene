@@ -1,1 +1,1 @@
-see [mysql-debezium-ksql-elasticsearch-docker.adoc](mysql-debezium-ksql-elasticsearch-docker.adoc)
+see [demo script](demo_build-a-streaming-pipeline.adoc)
