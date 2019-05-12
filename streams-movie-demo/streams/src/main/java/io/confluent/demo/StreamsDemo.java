@@ -241,7 +241,7 @@ public class StreamsDemo {
     config.put(APPLICATION_ID_CONFIG, "kafka-films");
     config.put(DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.Long().getClass().getName());
     config.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.Double().getClass().getName());
-    // start from the beginning
+    
     config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
     // config.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
