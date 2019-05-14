@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.Map;
 
-public class CountAndSumSerializer<T1,T2> implements Serializer<CountAndSum<T1, T2>> {
+public class CountAndSumSerializer<T1, T2> implements Serializer<CountAndSum<T1, T2>> {
 
   @Override
   public void configure(Map<String, ?> configs, boolean isKey) {
@@ -16,7 +16,7 @@ public class CountAndSumSerializer<T1,T2> implements Serializer<CountAndSum<T1, 
   @Override
   public byte[] serialize(String topic, CountAndSum<T1, T2> data) {
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
-    ObjectOutputStream out = null;
+    ObjectOutputStream out;
     byte[] bytes = null;
     try {
       out = new ObjectOutputStream(stream);

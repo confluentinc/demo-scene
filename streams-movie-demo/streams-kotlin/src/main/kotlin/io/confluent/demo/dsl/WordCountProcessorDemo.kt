@@ -22,7 +22,7 @@ fun main() {
   val inMemoryStore =
           Stores.keyValueStoreBuilder(inMemoryKeyValueStore("Counts"),
                   serdeFrom(String::class.java),
-                  serdeFrom(Int::class.java))
+                  serdeFrom(Integer::class.java))
 
   kafkaStreamsApp {
     config {
@@ -50,7 +50,7 @@ fun main() {
         parentNames = "Source"
       }
 
-      stateStore<String, Int> {
+      stateStore<String, Integer> {
         store = inMemoryStore
         processorName = "Process"
       }

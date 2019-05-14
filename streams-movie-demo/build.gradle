@@ -38,6 +38,7 @@ subprojects {
     maven { url 'http://packages.confluent.io/maven/' }
     maven { url "https://kotlin.bintray.com/kotlinx" }
     maven { url "https://repo.spring.io/milestone" }
+    maven { url 'https://jitpack.io' }
   }
 }
 
@@ -58,6 +59,9 @@ project(':core') {
     compile 'javax.json:javax.json-api:1.1.4'
     runtime 'org.glassfish:javax.json:1.1.4'
     compile "io.confluent:kafka-streams-avro-serde:${confluentVersion}"
+    compile("com.github.gAmUssA:streaming-utils:-SNAPSHOT") {
+      exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    }
   }
 
 }

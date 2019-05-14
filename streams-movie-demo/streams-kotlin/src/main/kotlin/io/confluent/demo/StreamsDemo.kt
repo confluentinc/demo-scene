@@ -4,6 +4,7 @@ import io.confluent.demo.util.CountAndSum
 import io.confluent.demo.util.CountAndSumDeserializer
 import io.confluent.demo.util.CountAndSumSerde
 import io.confluent.demo.util.CountAndSumSerializer
+import io.confluent.devx.kafka.config.ConfigLoader
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.BASIC_AUTH_CREDENTIALS_SOURCE
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde

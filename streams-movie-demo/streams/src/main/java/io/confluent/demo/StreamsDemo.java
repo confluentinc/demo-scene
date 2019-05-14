@@ -28,11 +28,12 @@ import io.confluent.demo.util.CountAndSum;
 import io.confluent.demo.util.CountAndSumDeserializer;
 import io.confluent.demo.util.CountAndSumSerde;
 import io.confluent.demo.util.CountAndSumSerializer;
+import io.confluent.devx.kafka.config.ConfigLoader;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
+import static io.confluent.devx.kafka.streams.TopologyVisualizer.visualize;
 import static io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.BASIC_AUTH_CREDENTIALS_SOURCE;
 import static io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
-import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static org.apache.kafka.streams.StreamsConfig.APPLICATION_ID_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.BOOTSTRAP_SERVERS_CONFIG;
@@ -79,7 +80,9 @@ public class StreamsDemo {
 
     // finish the topology
     Topology topology = builder.build();
-    System.out.println(topology.describe().toString());
+    final String topologyString = topology.describe().toString();
+    System.out.println(topologyString);
+    System.out.println(visualize(topologyString));
     KafkaStreams streamsApp = new KafkaStreams(topology, config);
 
     Runtime.getRuntime().addShutdownHook(new Thread(streamsApp::close));
