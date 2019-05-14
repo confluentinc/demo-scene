@@ -27,6 +27,7 @@ while [ $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors)
   sleep 10 
 done
 echo -e $(date) "\n\n--------------\n\o/ Kafka Connect is ready! Listener HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) "\n--------------\n"
+docker-compose logs -f kafka-connect-01
 '
 ----
 
