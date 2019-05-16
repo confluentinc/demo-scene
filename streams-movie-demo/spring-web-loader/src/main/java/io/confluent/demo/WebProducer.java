@@ -7,10 +7,10 @@ import static org.springframework.boot.Banner.Mode.OFF;
 import static org.springframework.boot.WebApplicationType.SERVLET;
 
 @SpringBootApplication
-public class WebApp {
+public class WebProducer {
 
   public static void main(String[] args) {
-    new SpringApplicationBuilder(WebApp.class)
+    new SpringApplicationBuilder(WebProducer.class)
         .web(SERVLET)
         .bannerMode(OFF)
         .run(args);

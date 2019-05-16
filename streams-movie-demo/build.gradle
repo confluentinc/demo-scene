@@ -106,7 +106,7 @@ project(':spring-web-loader') {
   apply plugin: 'io.spring.dependency-management'
 
   dependencies {
-    compile project(':core')
+    compile project(':streams')
 
     compile "org.springframework.boot:spring-boot-starter-web"
     compile 'org.springframework.kafka:spring-kafka'
