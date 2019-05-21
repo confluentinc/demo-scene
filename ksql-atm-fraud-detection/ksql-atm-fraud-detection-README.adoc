@@ -352,7 +352,7 @@ FROM ATM_TXNS_GESS A
      ON A.ACCOUNT_ID = B.ACCOUNT_ID;
 ----
 
-* Launch http://localhost:7474/browser/[Neo4j Browser] and run query: 
+* Launch http://localhost:7474/browser/[Neo4j Browser] (login: `neo4j / connect`) and run query: 
 +
 [source,sql]
 ----
