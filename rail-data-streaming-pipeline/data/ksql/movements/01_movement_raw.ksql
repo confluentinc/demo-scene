@@ -4,5 +4,5 @@
 CREATE STREAM NETWORKRAIL_TRAIN_MVT_X (
   header struct< msg_type VARCHAR, source_dev_id VARCHAR, user_id VARCHAR, original_data_source VARCHAR, msg_queue_timestamp VARCHAR, source_system_id VARCHAR >,
   BODY VARCHAR)
-  WITH (KAFKA_TOPIC='networkrail_TRAIN_MVT_EA_TOC_01_X', 
+  WITH (KAFKA_TOPIC='networkrail_TRAIN_MVT_X', 
             VALUE_FORMAT='JSON');
