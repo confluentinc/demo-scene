@@ -272,3 +272,4 @@ TODO
 * Cast appropriate fields to int (e.g. `TIMETABLE_VARIATION` to enable better analysis in Kibana)
 * Join cancellations to schedule to be able to show type of train (diesel etc), original destination etc
 * Find way to explode/process SCHEDULE_SEGMENT_LOCATION so that for a given train id we can show start/end stations and ideally list of stops in between
+* Fix `ksql-server        | [2019-05-24 21:39:31,495] ERROR {"type":1,"deserializationError":null,"recordProcessingError":{"errorMessage":"Error computing expression EXTRACTJSONFIELD(FETCH_FIELD_FROM_STRUCT(FETCH_FIELD_FROM_STRUCT(SCHEDULE_RAW.JSONSCHEDULEV1, 'SCHEDULE_SEGMENT'), 'SCHEDULE_LOCATION')[0], '$.tiploc_code') for column SCHEDULE_SEGMENT_ZERO_TIPLOC with index 11: null","record":null},"productionError":null} (processing.CSAS_SCHEDULE_00_2.Project.PROJECT:44)`
