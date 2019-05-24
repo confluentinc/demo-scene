@@ -1,1 +1,3 @@
 stomp
+credentials.properties
+set_credentials_env.sh
