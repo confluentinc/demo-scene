@@ -90,7 +90,7 @@ services:
     entrypoint: /bin/sh
     tty: true
     volumes:
-      - ./data/ksql/scripts:/data/ksql/scripts
+      - ./data:/data
 
   kafka-connect:
     image: confluentinc/cp-kafka-connect:5.2.1
@@ -102,7 +102,7 @@ services:
     ports:
       - 8083:8083
     environment:
-      CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
+      CONNECT_BOOTSTRAP_SERVERS: 'kafka:29092'
       CONNECT_REST_PORT: 8083
       CONNECT_GROUP_ID: compose-connect-group
       CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
@@ -112,21 +112,27 @@ services:
       CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
-      CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
-      CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
-      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
-      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
-      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect'
+      CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
+      CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
       CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/'
+      # External secrets config
+      # See https://docs.confluent.io/current/connect/security.html#externalizing-secrets
+      CONNECT_CONFIG_PROVIDERS: 'file'
+      CONNECT_CONFIG_PROVIDERS_FILE_CLASS: 'org.apache.kafka.common.config.provider.FileConfigProvider'
       # Interceptor config
       # CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       # CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
       # CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.1.jar
-    # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
+    volumes:
+      - ./data:/data
     command: 
+      # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
       - bash 
       - -c 
       - |

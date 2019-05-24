@@ -7,8 +7,8 @@ curl -i -X POST -H "Accept:application/json" \
   "config": {
     "connector.class": "io.confluent.connect.activemq.ActiveMQSourceConnector",
     "activemq.url": "tcp://datafeeds.networkrail.co.uk:61619",
-    "activemq.username": "NROD_USERNAME",
-    "activemq.password": "NROD_PASSWORD",
+    "activemq.username": "${file:/data/credentials.properties:NROD_USERNAME}",
+    "activemq.password": "${file:/data/credentials.properties:NROD_PASSWORD}",
     "jms.destination.type": "topic",
     "jms.destination.name": "TRAIN_MVT_EA_TOC",
     "kafka.topic": "networkrail_TRAIN_MVT",
@@ -30,8 +30,8 @@ curl -i -X POST -H "Accept:application/json" \
   "config": {
     "connector.class": "io.confluent.connect.activemq.ActiveMQSourceConnector",
     "activemq.url": "tcp://datafeeds.networkrail.co.uk:61619",
-    "activemq.username": "NROD_USERNAME",
-    "activemq.password": "NROD_PASSWORD",
+    "activemq.username": "${file:/data/credentials.properties:NROD_USERNAME}",
+    "activemq.password": "${file:/data/credentials.properties:NROD_PASSWORD}",
     "jms.destination.type": "topic",
     "jms.destination.name": "TRAIN_MVT_ED_TOC",
     "kafka.topic": "networkrail_TRAIN_MVT",
