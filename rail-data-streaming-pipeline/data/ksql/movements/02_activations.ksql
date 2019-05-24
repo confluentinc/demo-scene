@@ -5,7 +5,8 @@
 --    The value O should be P and P should be O.
 
 SET 'auto.offset.reset' = 'earliest';
-CREATE STREAM TRAIN_ACTIVATIONS_00 AS 
+CREATE STREAM TRAIN_ACTIVATIONS_00 
+  WITH (VALUE_FORMAT='AVRO') AS 
   SELECT HEADER, 
         EXTRACTJSONFIELD(body,'$.schedule_source') AS schedule_source,
         EXTRACTJSONFIELD(body,'$.tp_origin_timestamp') AS tp_origin_timestamp,

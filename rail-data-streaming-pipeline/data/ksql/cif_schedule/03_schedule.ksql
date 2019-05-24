@@ -1,5 +1,6 @@
 SET 'auto.offset.reset' = 'earliest';
-CREATE STREAM SCHEDULE_00 WITH (VALUE_FORMAT='AVRO') AS 
+CREATE STREAM SCHEDULE_00 
+   WITH (VALUE_FORMAT='AVRO') AS 
 SELECT JsonScheduleV1->CIF_train_uid AS CIF_train_uid,
        JsonScheduleV1->schedule_start_date AS schedule_start_date,
        JsonScheduleV1->CIF_stp_indicator AS CIF_stp_indicator,

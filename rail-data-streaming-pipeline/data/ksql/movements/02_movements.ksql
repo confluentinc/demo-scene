@@ -2,7 +2,8 @@
 -- https://wiki.openraildata.com/index.php?title=Train_Movements
 
 SET 'auto.offset.reset' = 'earliest';
-CREATE STREAM TRAIN_MOVEMENTS_00 AS 
+CREATE STREAM TRAIN_MOVEMENTS_00 
+     WITH (VALUE_FORMAT='AVRO') AS 
 SELECT HEADER, 
        EXTRACTJSONFIELD(BODY,'$.event_type') as event_type,
        EXTRACTJSONFIELD(BODY,'$.gbtt_timestamp')  as gbtt_timestamp,
@@ -38,7 +39,7 @@ WHERE header->msg_type = '0003';
 
 SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM TRAIN_MOVEMENTS_01 
-     WITH (TIMESTAMP='ACTUAL_TIMESTAMP', VALUE_FORMAT='AVRO') AS 
+     WITH (TIMESTAMP='ACTUAL_TIMESTAMP') AS 
 SELECT  TM.HEADER AS HEADER,
         TM.EVENT_TYPE AS EVENT_TYPE,
         TM.GBTT_TIMESTAMP AS GBTT_TIMESTAMP,
