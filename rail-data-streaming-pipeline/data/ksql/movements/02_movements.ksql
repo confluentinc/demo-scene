@@ -14,7 +14,7 @@ SELECT HEADER,
        EXTRACTJSONFIELD(BODY,'$.delay_monitoring_point') as delay_monitoring_point,
        EXTRACTJSONFIELD(BODY,'$.next_report_run_time') as next_report_run_time,
        EXTRACTJSONFIELD(BODY,'$.reporting_stanox') as reporting_stanox,
-       EXTRACTJSONFIELD(BODY,'$.actual_timestamp') as actual_timestamp,
+       CAST(EXTRACTJSONFIELD(BODY,'$.actual_timestamp') AS BIGINT) as actual_timestamp,
        EXTRACTJSONFIELD(BODY,'$.correction_ind') as correction_ind,
        EXTRACTJSONFIELD(BODY,'$.event_source') as event_source,
        EXTRACTJSONFIELD(BODY,'$.train_file_address') as train_file_address,
@@ -37,7 +37,8 @@ SELECT HEADER,
 WHERE header->msg_type = '0003';
 
 SET 'auto.offset.reset' = 'earliest';
-CREATE STREAM TRAIN_MOVEMENTS_01 AS 
+CREATE STREAM TRAIN_MOVEMENTS_01 
+     WITH (TIMESTAMP='ACTUAL_TIMESTAMP', VALUE_FORMAT='AVRO') AS 
 SELECT  TM.HEADER AS HEADER,
         TM.EVENT_TYPE AS EVENT_TYPE,
         TM.GBTT_TIMESTAMP AS GBTT_TIMESTAMP,
@@ -73,6 +74,6 @@ SELECT  TM.HEADER AS HEADER,
         TM.PLANNED_EVENT_TYPE AS PLANNED_EVENT_TYPE,
         TM.NEXT_REPORT_STANOX AS NEXT_REPORT_STANOX,
         TM.LINE_IND AS LINE_IND
-   FROM TRAIN_MOVEMENTS_00 TM 
+   FROM TRAIN_MOVEMENTS_00A TM 
         LEFT JOIN STANOX S
         ON TM.LOC_STANOX = S.STANOX;

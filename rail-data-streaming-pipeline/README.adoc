@@ -212,3 +212,50 @@ ILKLEY | 856800 | 17055 | ILK | ILKLEY | ILKLEY
 Limit Reached
 Query terminated
 ----
+
+=== Train Movements
+
+[source,sql]
+----
+run script '/data/ksql/movements/01_movement_raw.ksql';
+run script '/data/ksql/movements/02_activations.ksql';
+run script '/data/ksql/movements/02_movements.ksql';
+run script '/data/ksql/movements/03_movements_activations.ksql';
+run script '/data/ksql/movements/06_movements_activations_schedules.ksql';
+----
+
+==== Movements
+
+[source,sql]
+----
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') as ACTUAL_TIMESTAMP,
+       EVENT_TYPE,
+       LOC_NLCDESC,
+       CASE WHEN LEN(PLATFORM)> 0 THEN 'Platform' + PLATFORM ELSE '' END AS PLATFORM,
+       CASE WHEN VARIATION_STATUS = 'ON TIME' THEN 'ON TIME' 
+            WHEN VARIATION_STATUS = 'LATE' THEN TIMETABLE_VARIATION + ' MINS LATE' 
+            WHEN VARIATION_STATUS='EARLY' THEN TIMETABLE_VARIATION + ' MINS EARLY' 
+         END AS VARIATION ,
+       VARIATION_STATUS,
+       TOC,
+       TRAIN_ID,
+       TRAIN_SERVICE_CODE
+  FROM TRAIN_MOVEMENTS_01 
+  WHERE LOC_NLCDESC = 'BEN RHYDDING';
+----
+
+[source,sql]
+----
+2019-05-24 11:42:00 | ARRIVAL | BEN RHYDDING | Platform 1 | 1 MINS LATE | LATE | Arriva Trains Northern | 172D48MI24 | 11821020
+2019-05-24 11:42:00 | ARRIVAL | BEN RHYDDING | Platform 2 | ON TIME | ON TIME | Arriva Trains Northern | 172V27MJ24 | 11819020
+2019-05-24 11:43:00 | DEPARTURE | BEN RHYDDING | Platform 2 | 1 MINS LATE | LATE | Arriva Trains Northern | 172V27MJ24 | 11819020
+2019-05-24 11:43:00 | DEPARTURE | BEN RHYDDING | Platform 1 | 2 MINS LATE | LATE | Arriva Trains Northern | 172D48MI24 | 11821020
+2019-05-24 11:54:00 | ARRIVAL | BEN RHYDDING | Platform 1 | ON TIME | ON TIME | Arriva Trains Northern | 172V26MJ24 | 11819020
+----
+
+==== Activations
+
+[source,sql]
+----
+
+----
