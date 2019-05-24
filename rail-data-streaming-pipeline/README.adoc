@@ -16,13 +16,77 @@
 
 === Streams
 
+1. Create Kafka Connect connector(s):
++
+[source,bash]
+----
+./data/ingest/movements/00_ingest.sh
+----
++
+Check status: 
++
+[source,bash]
+----
+curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+----
++
+[source,bash]
+----
+source-activemq-networkrail-TRAIN_MVT_EA_TOC-01  |  RUNNING  |  RUNNING
+source-activemq-networkrail-TRAIN_MVT_ED_TOC-01  |  RUNNING  |  RUNNING
+----
++
+Check data: 
++
+[source,bash]
+----
+kafkacat -b localhost:9092 -t networkrail_TRAIN_MVT -C -c1
+
+{"messageID":"ID:opendata-backend.rockshore.net-42259-1558600921537-11:1:1:40:2938","messageType":"text","timestamp":1558693449805,"deliveryMode":2,"correlationID":null,"replyTo":null,"destination":{"desti
+nationType":"topic","name":"TRAIN_MVT_ED_TOC"},"redelivered":false,"type":null,"expiration":1558693749805,"priority":4,"properties":{},"bytes":null,"map":null,"text":"[{\"header\":{\"msg_type\":\"0003\",\"
+source_dev_id\":\"\",\"user_id\":\"\",\"original_data_source\":\"SMART\",\"msg_queue_timestamp\":\"1558693442000\",\"source_system_id\":\"TRUST\"},\"body\":{\"event_type\":\"ARR…
+----
+
+2. Set pipeline running to split out payload batches into single messages
++
+[source,bash]
+----
+./data/ingest/movements/01_explode.sh &
+----
++
+[source,bash]
+----
+Group tm_explode rebalanced (memberid rdkafka-c53a4270-e767-493a-b5de-2244b389e645): assigned: networkrail_TRAIN_MVT [0]
+% Reached end of topic networkrail_TRAIN_MVT [0] at offset 189
+{"header":{"msg_type":"0003","source_dev_id":"","user_id":"","original_data_source":"SMART","msg_queue_timestamp":"1558694355000","source_system_id":"TRUST"},"body":{"event_type":"DEPARTURE","gbtt_timestamp":"","original_loc_stanox":"","planned_timestamp":"1558697700000","timetable_variation":"4","original_loc_timestamp":"","current_train_id":"","delay_monitoring_point":"false","next_report_run_time":"4","reporting_stanox":"00000","actual_timestamp":"1558697940000","correction_ind":"false","event_source":"AUTOMATIC","
+…
+----
++
+Check the data on the target topic
++
+[source,bash]
+----
+kafkacat -b localhost:9092 -t networkrail_TRAIN_MVT_X -C -c1
+{"header":{"msg_type":"0003","source_dev_id":"","user_id":"","original_data_source":"SMART","msg_queue_timestamp":"1558694355000","source_system_id":"TRUST"},"body":{"event_type":"DEPARTURE","gbtt_timestamp":"","original_loc_stanox":"","planned_timestamp":"1558697700000","timetable_variation":"4","original_loc_timestamp":"","current_train_id":"","delay_monitoring_point":"false","next_report_run_time":"4","reporting_stanox":"00000","actual_timestamp":"1558697940000","correction_ind":"false","event_source":"AUTOMATIC","train_file_address":null,"platform":"","division_code":"20","train_terminated":"false","train_id":"321B74MH24","offroute_ind":"false","variation_status":"LATE","train_service_code":"11817020","toc_id":"20","loc_stanox":"32540","auto_expected":"true","direction_ind":"UP","route":"1","planned_event_type":"DEPARTURE","next_report_stanox":"32557","line_ind":""}}
+----
+
+
 === Batch
 
 [source,bash]
 ----
 source ./data/set_credentials_env.sh
-./data/ksql/scripts/corpus/00_ingest_corpus.sh
-./data/ksql/scripts/schedule_cif/00_ingest_schedule.sh
+./data/ingest/corpus_location/00_ingest_corpus.sh
+./data/ingest/cif_schedule/00_ingest_schedule.sh
+----
+
+[source,bash]
+----
+$ kafkacat -b localhost:9092 -t corpus -C -c1
+{"NLCDESC":"MERSEYRAIL ELECTRICS-HQ INPUT","NLC":"000800","TIPLOC":" ","3ALPHA":" ","STANOX":" ","NLCDESC16":"MPTE HQ INPUT","UIC":" "}
+
+$ kafkacat -b localhost:9092 -t CIF_FULL_DAILY -C -c1
+{"JsonTimetableV1":{"classification":"public","timestamp":1558653193,"owner":"Network Rail","Sender":{"organisation":"Rockshore","application":"NTROD","component":"SCHEDULE"},"Metadata":{"type":"full","sequence":2535}}}
 ----
 
 == KSQL
@@ -31,8 +95,8 @@ source ./data/set_credentials_env.sh
 
 [source,sql]
 ----
-run script '/data/ksql/scripts/corpus/01_corpus.ksql';
-run script '/data/ksql/scripts/corpus/02_stanox.ksql';
+run script '/data/ksql/corpus_location/01_corpus.ksql';
+run script '/data/ksql/corpus_location/02_stanox.ksql';
 ----
 
 [source,sql]
@@ -73,14 +137,16 @@ Limit Reached
 Query terminated
 ----
 
-=== CIF (schedule / train attribute data)
+=== CIF (schedule / train attribute data & location data)
 
 [source,sql]
 ----
-run script '/data/ksql/scripts/schedule_cif/01_schedule_raw.ksql';
-run script '/data/ksql/scripts/schedule_cif/02_tiploc.ksql';
-run script '/data/ksql/scripts/schedule_cif/03_schedule.ksql';
+run script '/data/ksql/cif_schedule/01_schedule_raw.ksql';
+run script '/data/ksql/cif_schedule/02_tiploc.ksql';
+run script '/data/ksql/cif_schedule/03_schedule.ksql';
 ----
+
+If you get `Avro schema for message values on topic TIPLOC_FLAT_KEYED does not exist in the Schema Registry.` after running `02_tiploc.ksql` then wait a few moments and then re-run it; the topic on which it's built is created and populated by the preceeding step, and it may not have kicked in yet. 
 
 [source,sql]
 ----
