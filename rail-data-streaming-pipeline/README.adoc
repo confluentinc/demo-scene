@@ -1,4 +1,6 @@
 = Building a Streaming Data Pipeline with Rail Data
+Robin Moffatt <robin@confluent.io>
+v1.00, May 24, 2019
 
 == Setup
 
@@ -258,7 +260,15 @@ SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') as ACTUAL_TIMESTAMP,
 
 ==== Activations
 
-[source,sql]
-----
+TODO
 
-----
+==== Cancellations
+
+TODO
+
+
+== TODO
+
+* Cast appropriate fields to int (e.g. `TIMETABLE_VARIATION` to enable better analysis in Kibana)
+* Join cancellations to schedule to be able to show type of train (diesel etc), original destination etc
+* Find way to explode/process SCHEDULE_SEGMENT_LOCATION so that for a given train id we can show start/end stations and ideally list of stops in between
