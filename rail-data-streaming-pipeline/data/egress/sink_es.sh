@@ -56,14 +56,47 @@ curl -i -X POST -H "Accept:application/json" \
 curl -i -X POST -H "Accept:application/json" \
     -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
     -d '{
-  "name": "sink-elastic-train-movements-and-schedule",
+  "name": "sink-elastic-train-movements-v00",
   "config": {
     "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
-    "topics": "TRAIN_MOVEMENTS_01,TRAIN_MOVEMENTS_ACTIVATIONS_SCHEDULE_00,SCHEDULE_01",
+    "topics": "TRAIN_MOVEMENTS_ACTIVATIONS_SCHEDULE_00",
     "connection.url": "http://elasticsearch:9200",
     "type.name": "type.name=kafkaconnect",
     "key.ignore": "true",
     "schema.ignore": "true",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter"
+  }
+}'
+
+
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -d '{
+  "name": "sink-elastic-schedule-v00",
+  "config": {
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "topics": "SCHEDULE_01",
+    "connection.url": "http://elasticsearch:9200",
+    "type.name": "type.name=kafkaconnect",
+    "key.ignore": "true",
+    "schema.ignore": "true",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter"
+  }
+}'
+
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -d '{
+  "name": "sink-elastic-train-movements-basic-v00",
+  "config": {
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "topics": "TRAIN_MOVEMENTS_01",
+    "connection.url": "http://elasticsearch:9200",
+    "type.name": "type.name=kafkaconnect",
+    "key.ignore": "true",
+    "schema.ignore": "true",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false"
   }
 }'
