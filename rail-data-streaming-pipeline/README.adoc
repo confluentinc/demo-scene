@@ -1,0 +1,148 @@
+= Building a Streaming Data Pipeline with Rail Data
+
+== Setup
+
+* Register for an account at https://datafeeds.networkrail.co.uk/
+* Set username and password in 
++
+[source,bash]
+----
+/data/credentials.properties
+/data/set_credentials_env.sh
+----
+
+
+== Data ingest
+
+=== Streams
+
+=== Batch
+
+[source,bash]
+----
+source ./data/set_credentials_env.sh
+./data/ksql/scripts/corpus/00_ingest_corpus.sh
+./data/ksql/scripts/schedule_cif/00_ingest_schedule.sh
+----
+
+== KSQL
+
+=== CORPUS (location data)
+
+[source,sql]
+----
+run script '/data/ksql/scripts/corpus/01_corpus.ksql';
+run script '/data/ksql/scripts/corpus/02_stanox.ksql';
+----
+
+[source,sql]
+----
+ksql> show streams;
+
+ Stream Name              | Kafka Topic              | Format
+-----------------------------------------------------------------
+ CORPUS_RAW               | corpus                   | JSON
+ CORPUS_BY_STANOX         | CORPUS_BY_STANOX         | AVRO
+ […]
+----
+
+[source,sql]
+----
+ksql> show tables;
+
+ Table Name                   | Kafka Topic                  | Format | Windowed
+---------------------------------------------------------------------------------
+ STANOX                       | CORPUS_BY_STANOX             | AVRO   | false
+ […]
+----
+
+[source,sql]
+----
+SET 'auto.offset.reset' = 'earliest';
+
+SELECT STANOX, NLCDESC
+  FROM STANOX
+ WHERE NLCDESC='ILKLEY' 
+ LIMIT 1;
+----
+
+[source,sql]
+----
+17055 | ILKLEY
+Limit Reached
+Query terminated
+----
+
+=== CIF (schedule / train attribute data)
+
+[source,sql]
+----
+run script '/data/ksql/scripts/schedule_cif/01_schedule_raw.ksql';
+run script '/data/ksql/scripts/schedule_cif/02_tiploc.ksql';
+run script '/data/ksql/scripts/schedule_cif/03_schedule.ksql';
+----
+
+[source,sql]
+----
+ksql> SHOW STREAMS;
+
+ Stream Name              | Kafka Topic              | Format
+-----------------------------------------------------------------
+ TIPLOC_FLAT_KEYED        | TIPLOC_FLAT_KEYED        | AVRO
+ SCHEDULE_RAW             | CIF_FULL_DAILY           | JSON
+ SCHEDULE_00              | SCHEDULE_00              | AVRO
+ SCHEDULE_01              | SCHEDULE_01              | AVRO
+ […]
+----
+
+
+[source,sql]
+----
+SELECT SCHEDULE_KEY,
+       TRAIN_STATUS,
+       POWER_TYPE,
+       SEATING_CLASSES,
+       TRAIN_CATEGORY 
+  FROM SCHEDULE_01 
+ WHERE ORIGINATING_LOCATION='ILKLEY' 
+ LIMIT 1;
+----
+
+[source,sql]
+----
+Y61618/2019-05-20/P | Passenger & Parcels (Permanent - WTT) | Electric Multiple Unit | Standard only | Ordinary Passenger Trains: Ordinary Passenger
+Limit Reached
+Query terminated
+----
+
+[source,sql]
+----
+ksql> SHOW TABLES;
+
+ Table Name                   | Kafka Topic                  | Format | Windowed
+---------------------------------------------------------------------------------
+ TIPLOC                       | TIPLOC_FLAT_KEYED            | AVRO   | false
+ […]
+----
+
+[source,sql]
+----
+SET 'auto.offset.reset' = 'earliest';
+
+SELECT TIPLOC_CODE, 
+       NALCO,
+       STANOX, 
+       CRS_CODE,
+       DESCRIPTION,
+       TPS_DESCRIPTION
+  FROM TIPLOC
+ WHERE DESCRIPTION='ILKLEY' 
+ LIMIT 1;
+----
+
+[source,sql]
+----
+ILKLEY | 856800 | 17055 | ILK | ILKLEY | ILKLEY
+Limit Reached
+Query terminated
+----
