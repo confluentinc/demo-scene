@@ -1,6 +1,7 @@
 -- https://wiki.openraildata.com/index.php?title=TOC_Codes
 -- https://wiki.openraildata.com/index.php?title=Train_Movements
 
+SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM TRAIN_MOVEMENTS_00 AS 
 SELECT HEADER, 
        EXTRACTJSONFIELD(BODY,'$.event_type') as event_type,
@@ -35,6 +36,7 @@ SELECT HEADER,
   FROM NETWORKRAIL_TRAIN_MVT_X 
 WHERE header->msg_type = '0003';
 
+SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM TRAIN_MOVEMENTS_01 AS 
 SELECT  TM.HEADER AS HEADER,
         TM.EVENT_TYPE AS EVENT_TYPE,

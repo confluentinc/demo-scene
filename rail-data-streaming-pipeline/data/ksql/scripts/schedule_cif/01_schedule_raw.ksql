@@ -20,3 +20,17 @@ CREATE STREAM SCHEDULE_RAW (
                               tps_description VARCHAR>)
   WITH (KAFKA_TOPIC='CIF_FULL_DAILY',
         VALUE_FORMAT='JSON');
+
+
+SET 'auto.offset.reset' = 'earliest';
+CREATE STREAM TIPLOC_FLAT_KEYED WITH (VALUE_FORMAT='AVRO') AS 
+SELECT  TiplocV1->TRANSACTION_TYPE  as TRANSACTION_TYPE ,
+        TiplocV1->TIPLOC_CODE  as TIPLOC_CODE ,
+        TiplocV1->NALCO  as NALCO ,
+        TiplocV1->STANOX  as STANOX ,
+        TiplocV1->CRS_CODE  as CRS_CODE ,
+        TiplocV1->DESCRIPTION  as DESCRIPTION ,
+        TiplocV1->TPS_DESCRIPTION as TPS_DESCRIPTION
+FROM    SCHEDULE_RAW 
+WHERE   TiplocV1 IS NOT NULL
+PARTITION BY TIPLOC_CODE;

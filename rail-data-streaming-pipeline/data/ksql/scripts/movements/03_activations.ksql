@@ -4,6 +4,7 @@
 --    There is a bug that causes this field to be populated incorrectly. 
 --    The value O should be P and P should be O.
 
+SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM TRAIN_ACTIVATIONS_00 AS 
   SELECT HEADER, 
         EXTRACTJSONFIELD(body,'$.schedule_source') AS schedule_source,
@@ -36,6 +37,7 @@ CREATE STREAM TRAIN_ACTIVATIONS_00 AS
   WHERE header->msg_type = '0001' 
   PARTITION BY TRAIN_ID;
 
+SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM TRAIN_ACTIVATIONS_01 AS
   SELECT TA.HEADER AS HEADER,
           TA.SCHEDULE_SOURCE AS SCHEDULE_SOURCE,
