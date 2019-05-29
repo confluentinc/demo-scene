@@ -50,7 +50,7 @@ project(':core') {
   apply plugin: "com.commercehub.gradle.plugin.avro"
 
   avro {
-    stringType = "CharSequence"
+    // stringType = "CharSequence"
   }
 
   dependencies {

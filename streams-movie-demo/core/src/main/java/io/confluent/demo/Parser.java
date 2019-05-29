@@ -13,7 +13,7 @@ import javax.json.JsonObject;
 
 public class Parser {
 
-    static List<CharSequence> parseArray(String text) {
+    static List<String> parseArray(String text) {
         return Collections.list(new StringTokenizer(text, "|")).stream()
                 .map(token -> (String) token)
                 .collect(Collectors.toList());
@@ -108,7 +108,7 @@ public class Parser {
           .build();
    }
    
-   static JsonArray toJsonArrayOfStrings(List<CharSequence> elements) {
+   static JsonArray toJsonArrayOfStrings(List<String> elements) {
        JsonArrayBuilder arrayBuilder = Json.createBuilderFactory(null).createArrayBuilder();
        for(CharSequence element : elements) {
           arrayBuilder.add(element.toString());
