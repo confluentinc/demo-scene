@@ -13,6 +13,7 @@ spring:
         default.key.serde: org.apache.kafka.common.serialization.Serdes$LongSerde
         default.value.serde: org.apache.kafka.common.serialization.Serdes$DoubleSerde
         schema.registry.url: http://localhost:8081
+        application.server: localhost:8080 
 logging:
   level:
     root: info

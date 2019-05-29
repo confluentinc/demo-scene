@@ -28,10 +28,13 @@ import io.confluent.demo.util.CountAndSum;
 import io.confluent.demo.util.CountAndSumDeserializer;
 import io.confluent.demo.util.CountAndSumSerde;
 import io.confluent.demo.util.CountAndSumSerializer;
+import io.confluent.devx.kafka.config.ConfigLoader;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
+import static io.confluent.devx.kafka.streams.TopologyVisualizer.visualize;
 import static io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.BASIC_AUTH_CREDENTIALS_SOURCE;
 import static io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
+import static java.util.Optional.ofNullable;
 import static org.apache.kafka.streams.StreamsConfig.APPLICATION_ID_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.BOOTSTRAP_SERVERS_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG;
@@ -77,7 +80,9 @@ public class StreamsDemo {
 
     // finish the topology
     Topology topology = builder.build();
-    System.out.println(topology.describe().toString());
+    final String topologyString = topology.describe().toString();
+    System.out.println(topologyString);
+    System.out.println(visualize(topologyString));
     KafkaStreams streamsApp = new KafkaStreams(topology, config);
 
     Runtime.getRuntime().addShutdownHook(new Thread(streamsApp::close));
@@ -113,13 +118,17 @@ public class StreamsDemo {
                                         Serdes.String()));
   }
 
-  private static Map<String, String> getSerdeConfig(Properties config) {
+  protected static Map<String, String> getSerdeConfig(Properties config) {
     final String srUserInfoPropertyName = "schema.registry.basic.auth.user.info";
     final HashMap<String, String> map = new HashMap<>();
-    
-    map.put(SCHEMA_REGISTRY_URL_CONFIG, config.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
-    map.put(BASIC_AUTH_CREDENTIALS_SOURCE, config.getProperty(BASIC_AUTH_CREDENTIALS_SOURCE));
-    map.put(srUserInfoPropertyName, config.getProperty(srUserInfoPropertyName));
+
+    final String srUrlConfig = config.getProperty(SCHEMA_REGISTRY_URL_CONFIG);
+    final String srAuthCredsConfig = config.getProperty(BASIC_AUTH_CREDENTIALS_SOURCE);
+    final String srUserInfoConfig = config.getProperty(srUserInfoPropertyName);
+
+    map.put(SCHEMA_REGISTRY_URL_CONFIG, ofNullable(srUrlConfig).orElse(""));
+    map.put(BASIC_AUTH_CREDENTIALS_SOURCE, ofNullable(srAuthCredsConfig).orElse(""));
+    map.put(srUserInfoPropertyName, ofNullable(srUserInfoConfig).orElse(""));
     return map;
   }
 
@@ -149,7 +158,13 @@ public class StreamsDemo {
                                                                                    movie.getTitle(),
                                                                                    movie.getReleaseYear(),
                                                                                    avg);
-    KTable<Long, RatedMovie> ratedMovies = ratingAverage.join(movies, joiner);
+    KTable<Long, RatedMovie>
+        ratedMovies =
+        ratingAverage
+            .join(movies, joiner,
+                  Materialized.<Long, RatedMovie, KeyValueStore<Bytes, byte[]>>as("rated-movies-store")
+                      .withValueSerde(ratedMovieSerde)
+                      .withKeySerde(Serdes.Long()));
 
     ratedMovies.toStream().to(RATED_MOVIES_TOPIC_NAME, Produced.with(Serdes.Long(), ratedMovieSerde));
     return ratedMovies;
@@ -229,12 +244,12 @@ public class StreamsDemo {
     config.put(APPLICATION_ID_CONFIG, "kafka-films");
     config.put(DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.Long().getClass().getName());
     config.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.Double().getClass().getName());
-    // start from the beginning
-    config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+    
+    config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
     // config.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
-    // Enable record cache of size 10 MB.
-    config.put(CACHE_MAX_BYTES_BUFFERING_CONFIG, 10 * 1024 * 1024L);
+    // Enable record cache of size 2 MB.
+    config.put(CACHE_MAX_BYTES_BUFFERING_CONFIG, 2 * 1024 * 1024L);
     // Set commit interval to 1 second.
     config.put(COMMIT_INTERVAL_MS_CONFIG, 1000);
     config.put(topicPrefix("segment.ms"), 15000000);

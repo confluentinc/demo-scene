@@ -9,10 +9,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ProducerFactory;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
+
+import static io.confluent.demo.StreamsDemo.getStreamsConfig;
 
 @Configuration
 @EnableKafka
@@ -26,13 +27,14 @@ public class KafkaConfiguration {
   String schemaRegistryUrl;
 
   @Bean
-  public ProducerFactory<Long, String> producerFactory() {
-    Map<String, Object> config = new HashMap<>();
-    config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+  public DefaultKafkaProducerFactory<Long, String> producerFactory() {
+    final Properties config =
+        getStreamsConfig(bootstrapServers, schemaRegistryUrl, System.getProperty("user.home") + "/.ccloud/config");
     config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class);
     config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
     //config.put("schema.registry.url", schemaRegistryUrl);
-    return new DefaultKafkaProducerFactory<>(config);
+
+    return new DefaultKafkaProducerFactory<Long, String>((Map) config);
   }
 
   @Bean
