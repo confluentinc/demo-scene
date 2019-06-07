@@ -70,9 +70,11 @@ SELECT  TM.HEADER AS HEADER,
         TM.VARIATION_STATUS AS VARIATION_STATUS,
         TM.TRAIN_SERVICE_CODE AS TRAIN_SERVICE_CODE,
         TM.TOC_ID AS TOC_ID,
-        CASE WHEN TM.TOC_ID = '20' THEN 'TransPennine Express'
-             WHEN TM.TOC_ID = '23' THEN 'Arriva Trains Northern'
-             ELSE '<unknown TOC code: ' + TM.TOC_ID + '>'
+        CASE WHEN TC.TOC_ID = '20' THEN 'TransPennine Express'
+               WHEN TC.TOC_ID = '23' THEN 'Arriva Trains Northern'
+               WHEN TC.TOC_ID = '28' THEN 'East Midlands Trains'
+               WHEN TC.TOC_ID = '61' THEN 'London North Eastern Railway'
+              ELSE '<unknown TOC code: ' + TC.TOC_ID + '>'
         END AS TOC,
         TM.LOC_STANOX AS LOC_STANOX,
         S.NLCDESC AS LOC_NLCDESC,

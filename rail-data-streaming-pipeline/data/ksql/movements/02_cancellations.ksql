@@ -30,7 +30,9 @@ CREATE STREAM TRAIN_CANCELLATIONS_01
           TC.ORIG_LOC_STANOX AS ORIG_LOC_STANOX,
           TC.TOC_ID AS TOC_ID,
           CASE WHEN TC.TOC_ID = '20' THEN 'TransPennine Express'
-              WHEN TC.TOC_ID = '23' THEN 'Arriva Trains Northern'
+               WHEN TC.TOC_ID = '23' THEN 'Arriva Trains Northern'
+               WHEN TC.TOC_ID = '28' THEN 'East Midlands Trains'
+               WHEN TC.TOC_ID = '61' THEN 'London North Eastern Railway'
               ELSE '<unknown TOC code: ' + TC.TOC_ID + '>'
           END AS TOC,
           TC.DEP_TIMESTAMP AS DEP_TIMESTAMP,
