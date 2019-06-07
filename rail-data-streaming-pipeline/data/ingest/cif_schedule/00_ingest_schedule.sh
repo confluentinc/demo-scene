@@ -12,6 +12,14 @@ curl -s -L -u "$NROD_USERNAME:$NROD_PASSWORD" "https://datafeeds.networkrail.co.
   gunzip | \
   kafkacat -b localhost -P -t CIF_FULL_DAILY
 
+curl -s -L -u "$NROD_USERNAME:$NROD_PASSWORD" "https://datafeeds.networkrail.co.uk/ntrod/CifFileAuthenticate?type=CIF_HB_TOC_FULL_DAILY&day=toc-full" | \
+  gunzip | \
+  kafkacat -b localhost -P -t CIF_FULL_DAILY
+
+curl -s -L -u "$NROD_USERNAME:$NROD_PASSWORD" "https://datafeeds.networkrail.co.uk/ntrod/CifFileAuthenticate?type=CIF_EM_TOC_FULL_DAILY&day=toc-full" | \
+  gunzip | \
+  kafkacat -b localhost -P -t CIF_FULL_DAILY
+
 
 ## Rejected option : filter records at ingest time, splitting into separate topics: 
 # curl -s -L -u "NROD_USERNAME:NROD_PASSWORD" "https://datafeeds.networkrail.co.uk/ntrod/CifFileAuthenticate?type=CIF_EA_TOC_FULL_DAILY&day=toc-full" | \
