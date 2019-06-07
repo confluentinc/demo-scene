@@ -1,3 +1,8 @@
+#!/usr/bin/env bash
+# This terminates all queries and drops all streams and tables. 
+# Use carefully!
+# @rmoff June 7, 2019
+
 curl -s -X "POST" "http://localhost:8088/ksql" \
            -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
            -d '{"ksql": "SHOW QUERIES;"}' | \
