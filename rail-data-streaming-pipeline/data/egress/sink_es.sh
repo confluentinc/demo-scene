@@ -83,7 +83,7 @@ curl -i -X POST -H "Accept:application/json" \
     "transforms.ValueToKey.type":"org.apache.kafka.connect.transforms.ValueToKey",
     "transforms.ValueToKey.fields":"MSG_KEY",
     "transforms.extractKey.type":"org.apache.kafka.connect.transforms.ExtractField$Key",
-    "transforms.extractKey.field":"MSG_KEY"    
+    "transforms.extractKey.field":"MSG_KEY",    
     "transforms.changeTopic.type":"org.apache.kafka.connect.transforms.RegexRouter",
     "transforms.changeTopic.regex":"TRAIN_MOVEMENTS_ACTIVATIONS_SCHEDULE_00",
     "transforms.changeTopic.replacement":"train-movements",
