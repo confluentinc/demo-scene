@@ -7,6 +7,7 @@ Pipeline has five dependent streams. I need to make a change to stream #2, to ad
 - I can't do this without dropping all dependent queries
 - I can't drop all dependent queries automatically because there's no CASCADE option and the query names are not deterministic so I can't script it either
 - Only way is manually, or to trash everything and rebuild (https://rmoff.net/2019/03/25/terminate-all-ksql-queries/)
+- Alternatively restart KSQL server with a new app id
 - Once I drop and recreate a stream it's going to either (a) reprocess _everything (`SET 'auto.offset.reset' = 'earliest';`) or it's going to skip messages received in between the stream being dropped and recreated (`SET 'auto.offset.reset' = 'latest';`).
 
 == Issue 02 - composite keys
@@ -16,3 +17,21 @@ I want to take advantage of idempoent updates in Elasticsearch, so that records 
 This means using `key.ignore=false` in Kafka Connect, and making sure the message key is set correctly.
 
 Can this be done in KSQL and PARTITION BY? Or in KSQL to create the composite key and then a series of SMT in Kafka Connect to set it as the message key?
+
+Also can be done in KSQL with PARTITION BY
+
+SELECT [...],
+        TMA.TRAIN_ID + CAST(TMA.ACTUAL_TIMESTAMP AS VARCHAR) + TMA.LOC_STANOX AS MSG_KEY
+  FROM  [...]
+PARTITION BY MSG_KEY;
+
+SMT:
+
+SELECT [...],
+        TMA.TRAIN_ID + CAST(TMA.ACTUAL_TIMESTAMP AS VARCHAR) + TMA.LOC_STANOX AS MSG_KEY
+
+"transforms": "ValueToKey,extractKey",
+"transforms.ValueToKey.type":"org.apache.kafka.connect.transforms.ValueToKey",
+"transforms.ValueToKey.fields":"MSG_KEY",
+"transforms.extractKey.type":"org.apache.kafka.connect.transforms.ExtractField$Key",
+"transforms.extractKey.field":"MSG_KEY",
