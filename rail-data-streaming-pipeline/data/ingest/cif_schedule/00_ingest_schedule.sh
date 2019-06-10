@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source $(dirname $(readlink -f $0))/../../set_credentials_env.sh
+
 # Make sure that on the SCHEDULE feeds page at 
 # https://datafeeds.networkrail.co.uk/ntrod/myFeeds you are subscribed
 # to the appropriate feed for the Train Operating Company (TOC) for 

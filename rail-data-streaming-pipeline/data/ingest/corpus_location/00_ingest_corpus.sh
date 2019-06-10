@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source $(dirname $(readlink -f $0))/../../set_credentials_env.sh
+
 # This uses jq to explode the source array into individual 
 # messages, since KSQL can't do that yet
 
