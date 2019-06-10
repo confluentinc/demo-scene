@@ -35,3 +35,7 @@ SELECT [...],
 "transforms.ValueToKey.fields":"MSG_KEY",
 "transforms.extractKey.type":"org.apache.kafka.connect.transforms.ExtractField$Key",
 "transforms.extractKey.field":"MSG_KEY",
+
+== Issue 02a - Composite keys in KSQL
+
+I want to specify multiple columns for a key in a TABLE but can only specify one (check this) - so have to create intermediate step to build composite key first before declaring a table
