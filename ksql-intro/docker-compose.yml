@@ -173,7 +173,7 @@ services:
             "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
             "kafka.topic": "orders",
             "schema.filename": "/data/orders.avsc",
-            "schema.keyfield": "id",
+            "schema.keyfield": "orderid",
             "tasks.max": "1"
           }
         }'
