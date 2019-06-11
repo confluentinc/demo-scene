@@ -1,3 +1,7 @@
+-- https://wiki.openraildata.com/index.php?title=Train_Activation
+-- An activation message is produced when a train entity is created from a schedule entity by the TRUST system. The train entity refers to a single run of a train on a specific day whereas the schedule entity is potentially valid for several months at a time. Within TRUST, this process is known as Train Call.
+-- Most trains are called automatically (auto-call) before the train is due to run, either 1 or 2 hours depending on the train's class. The TRUST mainframe runs an internal process every 30 seconds throughout the day, causing potentially two lots of train activation messages to be received every minute.
+
 SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM TRAIN_MOVEMENTS_ACTIVATIONS_00 AS 
 SELECT  TM.TRAIN_ID AS TRAIN_ID,
