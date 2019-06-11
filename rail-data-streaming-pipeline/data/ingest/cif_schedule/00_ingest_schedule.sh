@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+export PATH=$PATH:/home/rmoff/kafkacat/
 source $(dirname $(readlink -f $0))/../../set_credentials_env.sh
 
 # Make sure that on the SCHEDULE feeds page at 
