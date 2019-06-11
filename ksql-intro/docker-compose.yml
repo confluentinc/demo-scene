@@ -168,11 +168,22 @@ services:
         }'
         curl -s -X POST -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
             -d '{
-          "name": "source-datagen-orders",
+          "name": "source-datagen-orders-us",
           "config": {
             "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
             "kafka.topic": "orders",
-            "schema.filename": "/data/orders.avsc",
+            "schema.filename": "/data/orders_us.avsc",
+            "schema.keyfield": "orderid",
+            "tasks.max": "1"
+          }
+        }'
+        curl -s -X POST -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+            -d '{
+          "name": "source-datagen-orders-uk",
+          "config": {
+            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+            "kafka.topic": "orders_uk",
+            "schema.filename": "/data/orders_uk.avsc",
             "schema.keyfield": "orderid",
             "tasks.max": "1"
           }
