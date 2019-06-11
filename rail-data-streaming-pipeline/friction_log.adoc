@@ -38,4 +38,10 @@ SELECT [...],
 
 == Issue 02a - Composite keys in KSQL
 
-I want to specify multiple columns for a key in a TABLE but can only specify one (check this) - so have to create intermediate step to build composite key first before declaring a table
+I want to specify multiple columns for a key in a TABLE but can only specify one - so have to create intermediate step to build composite key first before declaring a table
+
+== Issue 03 - Scripting deployment
+
+When using KSQL to re-partition a topic in order for a table to be declared on it, if the `CREATE TABLE` runs too soon it will fail because the schema doesn't yet exist in the Schema Registry. 
+
+https://github.com/confluentinc/ksql/issues/2880
