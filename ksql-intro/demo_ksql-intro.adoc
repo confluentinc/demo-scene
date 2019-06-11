@@ -1,0 +1,330 @@
+## Getting started
+
+### Declare stream
+
+[source,sql]
+----
+SHOW TOPICS;
+
+PRINT 'orders';
+
+CREATE STREAM ORDERS WITH (VALUE_FORMAT='AVRO', KAFKA_TOPIC='orders');
+
+SHOW STREAMS;
+
+DESCRIBE ORDERS;
+
+SELECT * FROM ORDERS LIMIT 10;
+----
+
+### Filter for given state
+
+[source,sql]
+----
+SELECT * 
+  FROM ORDERS 
+ WHERE ADDRESS->STATE='New York';
+
+CREATE STREAM ORDERS_NY AS 
+  SELECT * 
+    FROM ORDERS 
+   WHERE ADDRESS->STATE='New York';
+----
+
+### Drop field
+
+[source,sql]
+----
+SELECT ORDERTIME, ORDERID, ITEMID, ORDERUNITS 
+  FROM ORDERS;
+
+CREATE STREAM ORDERS_NO_ADDRESS_DATA AS 
+  SELECT ORDERTIME, ORDERID, ITEMID, ORDERUNITS 
+    FROM ORDERS;
+----
+
+[source,sql]
+----
+DESCRIBE EXTENDED ORDERS_NO_ADDRESS;
+----
+
+### Flatten schema & derive new columns
+
+[source,sql]
+----
+CREATE STREAM ORDERS_FLAT AS 
+  SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS ORDER_TIMESTAMP, 
+         ORDERTIME AS ORDERTIME_EPOCH, 
+         ORDERID, 
+         ITEMID, 
+         ORDERUNITS, 
+         ADDRESS->STREET AS ADDRESS_STREET, 
+         ADDRESS->CITY AS ADDRESS_CITY, 
+         ADDRESS->STATE AS ADDRESS_STATE
+    FROM ORDERS;
+----
+
+
+### Reserialise to CSV
+
+[source,sql]
+----
+CREATE STREAM ORDERS_FLAT_CSV WITH (VALUE_FORMAT='DELIMITED', 
+                                    KAFKA_TOPIC='orders_csv') AS 
+  SELECT * FROM ORDERS_FLAT;
+
+PRINT 'ORDERS_CSV';
+----
+
+## Joins
+
+### Join to items reference
+[source,sql]
+----
+CREATE TABLE ITEM_REFERENCE_01 WITH (VALUE_FORMAT='AVRO', 
+                                     KAFKA_TOPIC='item_details_01', 
+                                     KEY='ID');
+
+SELECT TIMESTAMPTOSTRING(O.ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS ORDER_TIMESTAMP, 
+       O.ORDERID, 
+       O.ITEMID, 
+       I.MAKE, 
+       I.COLOUR, 
+       I.UNIT_COST, 
+       O.ORDERUNITS, 
+       O.ORDERUNITS * I.UNIT_COST AS TOTAL_ORDER_VALUE, 
+       O.ADDRESS
+  FROM ORDERS O 
+       INNER JOIN ITEM_REFERENCE_01 I 
+       ON O.ITEMID = I.ID 
+ LIMIT 5;
+
+CREATE STREAM ORDERS_ENRICHED AS 
+SELECT TIMESTAMPTOSTRING(O.ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS ORDER_TIMESTAMP, 
+       O.ORDERID, 
+       O.ITEMID, 
+       I.MAKE, 
+       I.COLOUR, 
+       I.UNIT_COST, 
+       O.ORDERUNITS, 
+       O.ORDERUNITS * I.UNIT_COST AS TOTAL_ORDER_VALUE, 
+       O.ADDRESS
+  FROM ORDERS O 
+       INNER JOIN ITEM_REFERENCE_01 I 
+       ON O.ITEMID = I.ID 
+ LIMIT 5;
+----
+
+## Aggregates 
+
+### Orders count per city
+
+[source,sql]
+----
+SELECT ADDRESS->STATE, COUNT(*) 
+  FROM ORDERS 
+  GROUP BY ADDRESS->STATE;
+----
+
+### Orders count per city per hour
+[source,sql]
+----
+SELECT TIMESTAMPTOSTRING(WINDOWSTART(),'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, 
+       ADDRESS->STATE, 
+       COUNT(*) 
+  FROM ORDERS 
+        WINDOW TUMBLING (SIZE 1 HOUR) 
+GROUP BY ADDRESS->STATE;
+----
+
+### Total order value per hour, by manufacturer
+
+[source,sql]
+----
+SELECT TIMESTAMPTOSTRING(WINDOWSTART(),'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, 
+       MAKE, 
+       COUNT(*) AS ORDER_COUNT, 
+       SUM(TOTAL_ORDER_VALUE) AS TOTAL_ORDER_VALUE 
+  FROM ORDERS_ENRICHED 
+         WINDOW TUMBLING (SIZE 1 HOUR) 
+GROUP BY MAKE;
+----
+
+### Manufacturers for which there have been more than $1000 of orders in an hour
+
+[source,sql]
+----
+SELECT TIMESTAMPTOSTRING(WINDOWSTART(),'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, 
+       MAKE, 
+       COUNT(*) AS ORDER_COUNT, 
+       SUM(TOTAL_ORDER_VALUE) AS TOTAL_ORDER_VALUE 
+  FROM ORDERS_ENRICHED 
+         WINDOW TUMBLING (SIZE 1 HOUR) 
+GROUP BY MAKE 
+HAVING SUM(TOTAL_ORDER_VALUE) > 1000;
+----
+
+## Time handling
+
+### Event time vs ingest time (`ORDERTIME` vs `ROWTIME`)
+
+[source,sql]
+----
+SELECT TIMESTAMPTOSTRING(ORDERTIME,'yyyy-MM-dd HH:mm:ss'), 
+       ORDERID 
+  FROM ORDERS 
+ WHERE ITEMID='Item_42' 
+ LIMIT 5;
+----
+
+[source,sql]
+----
+2019-06-09 02:31:24
+2019-06-09 04:15:56
+2019-06-09 19:47:26
+2019-06-09 22:34:47
+2019-06-09 21:49:11
+----
+
+[source,sql]
+----
+SELECT TIMESTAMPTOSTRING(WINDOWSTART(),'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, 
+       ITEMID, 
+       COUNT(*) AS ORDER_COUNT 
+  FROM ORDERS 
+         WINDOW TUMBLING (SIZE 1 HOUR) 
+ WHERE ITEMID='Item_42' 
+GROUP BY ITEMID;
+----
+
+[source,sql]
+----
+2019-06-11 10:00:00 | Item_42 | 1
+2019-06-11 10:00:00 | Item_42 | 18
+2019-06-11 10:00:00 | Item_42 | 19
+----
+
+[source,sql]
+----
+SELECT TIMESTAMPTOSTRING(ROWTIME,'yyyy-MM-dd HH:mm:ss'),
+       TIMESTAMPTOSTRING(ORDERTIME,'yyyy-MM-dd HH:mm:ss'), 
+       ORDERID 
+  FROM ORDERS 
+ WHERE ITEMID='Item_42' 
+ LIMIT 5;
+----
+
+[source,sql]
+----
+2019-06-11 11:34:36 | 2019-06-09 11:40:16 | 15
+2019-06-11 11:35:04 | 2019-06-09 12:49:45 | 129
+2019-06-11 11:35:35 | 2019-06-09 19:50:33 | 246
+2019-06-11 11:37:22 | 2019-06-09 23:02:23 | 657
+2019-06-11 11:37:50 | 2019-06-09 05:22:04 | 763
+----
+
+
+[source,sql]
+----
+CREATE STREAM ORDERS_BY_EVENTTIME WITH (VALUE_FORMAT='AVRO', 
+                                        KAFKA_TOPIC='orders', 
+                                        TIMESTAMP='ORDERTIME');
+----
+
+[source,sql]
+----
+SELECT TIMESTAMPTOSTRING(ROWTIME,'yyyy-MM-dd HH:mm:ss'),
+       TIMESTAMPTOSTRING(ORDERTIME,'yyyy-MM-dd HH:mm:ss'), 
+       ORDERID 
+  FROM ORDERS_BY_EVENTTIME 
+ WHERE ITEMID='Item_42'
+ LIMIT 5;
+----
+
+[source,sql]
+----
+2019-06-09 11:40:16 | 2019-06-09 11:40:16 | 15
+2019-06-09 12:49:45 | 2019-06-09 12:49:45 | 129
+2019-06-09 19:50:33 | 2019-06-09 19:50:33 | 246
+2019-06-09 23:02:23 | 2019-06-09 23:02:23 | 657
+2019-06-09 05:22:04 | 2019-06-09 05:22:04 | 763
+----
+
+[source,sql]
+----
+SELECT TIMESTAMPTOSTRING(WINDOWSTART(),'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, 
+       ITEMID, 
+       COUNT(*) AS ORDER_COUNT 
+  FROM ORDERS_BY_EVENTTIME 
+         WINDOW TUMBLING (SIZE 1 HOUR) 
+ WHERE ITEMID='Item_42' 
+GROUP BY ITEMID;
+----
+
+[source,sql]
+----
+2019-06-09 08:00:00 | Item_42 | 1
+2019-06-09 19:00:00 | Item_42 | 1
+2019-06-09 23:00:00 | Item_42 | 2
+----
+
+## CASE
+
+[source,sql]
+----
+SELECT ORDERID, 
+       ORDERUNITS,
+       CASE WHEN ORDERUNITS > 15 THEN 'Really big order' 
+            WHEN ORDERUNITS > 10 THEN 'Big order' 
+                                 ELSE 'Normal order' 
+         END AS ORDER_TYPE 
+  FROM ORDERS_ENRICHED;
+----
+
+
+[source,sql]
+----
+SELECT CASE WHEN ORDERUNITS > 15 THEN 'Really big order' 
+            WHEN ORDERUNITS > 10 THEN 'Big order' 
+                                 ELSE 'Normal order' 
+         END AS ORDER_TYPE,
+       COUNT(*) 
+  FROM ORDERS_ENRICHED 
+GROUP BY CASE WHEN ORDERUNITS > 15 THEN 'Really big order' 
+              WHEN ORDERUNITS > 10 THEN 'Big order' 
+                                   ELSE 'Normal order' 
+           END;
+----
+
+## INSERT INTO
+
+[source,sql]
+----
+CREATE STREAM ORDERS_UK WITH (VALUE_FORMAT='AVRO', KAFKA_TOPIC='orders_uk');
+
+SELECT * FROM ORDERS_UK;
+----
+
+[source,sql]
+----
+CREATE STREAM ORDERS_COMBINED AS 
+  SELECT 'US' AS SOURCE, 
+         'US-'+CAST(ORDERID AS VARCHAR) AS ORDERID, 
+         ORDERTIME, 
+         ITEMID, 
+         ORDERUNITS, 
+         ADDRESS 
+    FROM ORDERS;
+----
+
+[source,sql]
+----
+INSERT INTO ORDERS_COMBINED 
+  SELECT 'UK' AS SOURCE, 
+         'UK-'+CAST(ORDERID AS VARCHAR) AS ORDERID, 
+         ORDERTIME, 
+         ITEMID, 
+         ORDERUNITS, 
+         ADDRESS 
+    FROM ORDERS_UK;
+----
