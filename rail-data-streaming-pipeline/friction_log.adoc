@@ -45,3 +45,22 @@ I want to specify multiple columns for a key in a TABLE but can only specify one
 When using KSQL to re-partition a topic in order for a table to be declared on it, if the `CREATE TABLE` runs too soon it will fail because the schema doesn't yet exist in the Schema Registry. 
 
 https://github.com/confluentinc/ksql/issues/2880
+
+== Issue 04 - Cleaning the environment
+
+1. Bring down service
++
+[source,sql]
+----
+docker-compose stop ksql-server
+./data/ksql/delete_intermediate_topics.sh
+----
+
+2. Increment `KSQL_KSQL_SERVICE_ID` in `docker-compose.yml`
+
+3. Bring back up service
++
+[source,sql]
+----
+docker-compose start ksql-server
+----
