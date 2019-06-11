@@ -44,7 +44,7 @@ curl -i -X POST -H "Accept:application/json" \
     "topics": "TRAIN_CANCELLATIONS_02",
     "connection.url": "http://elasticsearch:9200",
     "type.name": "type.name=kafkaconnect",
-    "key.ignore": "true",
+    "key.ignore": "false",
     "schema.ignore": "true",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter"
   }

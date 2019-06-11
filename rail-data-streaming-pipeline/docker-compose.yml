@@ -70,7 +70,7 @@ services:
     environment:
       KSQL_BOOTSTRAP_SERVERS: kafka:29092
       KSQL_LISTENERS: http://0.0.0.0:8088
-      KSQL_KSQL_SERVICE_ID: confluent_rmoff_02
+      KSQL_KSQL_SERVICE_ID: confluent_rmoff_03
       KSQL_CUB_KAFKA_TIMEOUT: 300
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
