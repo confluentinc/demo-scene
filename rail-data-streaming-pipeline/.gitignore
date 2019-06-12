@@ -1,4 +1,4 @@
 stomp
 credentials.properties
 set_credentials_env.sh
-data/connect_monitor.log
+*.log
