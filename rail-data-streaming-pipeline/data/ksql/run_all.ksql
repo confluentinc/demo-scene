@@ -38,6 +38,7 @@ RUN SCRIPT '/data/ksql/02_cif_schedule/04_schedule_table.ksql';
 -- ----------------------------------------------------
 --  TIPLOC     | TIPLOC_FLAT_KEYED | AVRO   | false
 --  STANOX     | CORPUS_BY_STANOX  | AVRO   | false
+-- SCHEDULE_02 | SCHEDULE_01       | AVRO   | false
 -- ----------------------------------------------------
 
 -- ksql> SHOW STREAMS;
