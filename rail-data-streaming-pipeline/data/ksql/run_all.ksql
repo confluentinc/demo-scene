@@ -21,10 +21,16 @@ RUN SCRIPT '/data/ksql/01_corpus_location/02_stanox.ksql';
 -- ##############################################################
 
 RUN SCRIPT '/data/ksql/02_cif_schedule/01_schedule_raw.ksql';
+
 -- Make sure TIPLOC_FLAT_KEYED exists before continuing
 SELECT * FROM TIPLOC_FLAT_KEYED LIMIT 1;
 RUN SCRIPT '/data/ksql/02_cif_schedule/02_tiploc.ksql';
 RUN SCRIPT '/data/ksql/02_cif_schedule/03_schedule.ksql';
+
+-- Make sure SCHEDULE_01 exists before continuing
+SELECT * FROM SCHEDULE_01 LIMIT 1;
+RUN SCRIPT '/data/ksql/02_cif_schedule/04_schedule_table.ksql';
+
 
 -- ksql> SHOW TABLES;
 
