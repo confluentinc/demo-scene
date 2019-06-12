@@ -9,17 +9,17 @@ export PATH=$PATH:/usr/local/bin/
 date 
 
 # List current connectors and status
-curl -s "http://localhost:18083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:18083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+curl -s "http://localhost:28083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:28083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
 
 # Delete any Elasticsearch sink connectors
-curl -s "http://localhost:18083/connectors" | \
+curl -s "http://localhost:28083/connectors" | \
   jq -c '.[] | select(. | startswith("sink-elastic")) ' | \
   sed -e 's/\"//g'| \
-  xargs -I{name}  curl -X DELETE "http://localhost:18083/connectors/"{name}
+  xargs -I{name}  curl -X DELETE "http://localhost:28083/connectors/"{name}
 
 # What time is it Mr Wolf? 
 date 
 
 # List current connectors and status
-curl -s "http://localhost:18083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:18083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+curl -s "http://localhost:28083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:28083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
 

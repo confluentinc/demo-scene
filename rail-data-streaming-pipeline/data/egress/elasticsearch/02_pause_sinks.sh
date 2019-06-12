@@ -9,10 +9,10 @@ export PATH=$PATH:/usr/local/bin/
 date 
 
 # List current connectors and status
-curl -s "http://localhost:18083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:18083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+curl -s "http://localhost:28083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:28083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
 
 # Pause any Elasticsearch sink connectors
-curl -s "http://localhost:18083/connectors" | \
+curl -s "http://localhost:28083/connectors" | \
   jq -c '.[] | select(. | startswith("sink-elastic")) ' | \
   sed -e 's/\"//g'| \
-  xargs -I{name}  curl -X PUT "http://localhost:18083/connectors/"{name}"/pause"
+  xargs -I{name}  curl -X PUT "http://localhost:28083/connectors/"{name}"/pause"
