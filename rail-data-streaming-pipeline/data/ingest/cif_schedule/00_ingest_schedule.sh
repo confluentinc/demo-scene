@@ -23,8 +23,18 @@ curl -s -L -u "$NROD_USERNAME:$NROD_PASSWORD" "https://datafeeds.networkrail.co.
   gunzip | \
   kafkacat -b localhost -P -t CIF_FULL_DAILY
 
+# curl -s -L -u "$NROD_USERNAME:$NROD_PASSWORD" "https://datafeeds.networkrail.co.uk/ntrod/CifFileAuthenticate?type=CIF_EA_TOC_FULL_DAILY&day=toc-full" | \
+#   gunzip >  CIF_FULL_DAILY.json
+# curl -s -L -u "$NROD_USERNAME:$NROD_PASSWORD" "https://datafeeds.networkrail.co.uk/ntrod/CifFileAuthenticate?type=CIF_ED_TOC_FULL_DAILY&day=toc-full" | \
+#   gunzip >>  CIF_FULL_DAILY.json
+# curl -s -L -u "$NROD_USERNAME:$NROD_PASSWORD" "https://datafeeds.networkrail.co.uk/ntrod/CifFileAuthenticate?type=CIF_HB_TOC_FULL_DAILY&day=toc-full" | \
+#   gunzip >>  CIF_FULL_DAILY.json
+# curl -s -L -u "$NROD_USERNAME:$NROD_PASSWORD" "https://datafeeds.networkrail.co.uk/ntrod/CifFileAuthenticate?type=CIF_EM_TOC_FULL_DAILY&day=toc-full" | \
+#   gunzip >>  CIF_FULL_DAILY.json
+
 
 ## Rejected option : filter records at ingest time, splitting into separate topics: 
+## Why? Better to keep the logic in KSQL if possible.
 # curl -s -L -u "NROD_USERNAME:NROD_PASSWORD" "https://datafeeds.networkrail.co.uk/ntrod/CifFileAuthenticate?type=CIF_EA_TOC_FULL_DAILY&day=toc-full" | \
 #   gunzip | \
 #   grep JsonScheduleV1 | \
