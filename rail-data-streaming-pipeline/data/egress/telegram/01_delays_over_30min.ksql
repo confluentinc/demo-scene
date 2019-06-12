@@ -1,0 +1,8 @@
+CREATE STREAM TRAINS_DELAYED_OVER_30MIN AS 
+  SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss')  + ': ' + 
+        'Train arriving at ' + 
+        LOC_NLCDESC + ' ' + 
+        VARIATION + 
+        '. Train is operated by ' + TOC 
+   FROM TRAIN_MOVEMENTS_01 
+  WHERE TIMETABLE_VARIATION>30;
