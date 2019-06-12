@@ -3,6 +3,6 @@ CREATE STREAM TRAINS_DELAYED_OVER_30MIN AS
         'Train arriving at ' + 
         LOC_NLCDESC + ' ' + 
         VARIATION + 
-        '. Train is operated by ' + TOC 
+        '. Train is operated by ' + TOC AS MESSAGE
    FROM TRAIN_MOVEMENTS_01 
   WHERE TIMETABLE_VARIATION>30;
