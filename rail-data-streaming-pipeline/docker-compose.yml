@@ -167,7 +167,7 @@ services:
       - 28083:28083
     environment:
       CONNECT_BOOTSTRAP_SERVERS: 'kafka:29092'
-      CONNECT_REST_PORT: 18083
+      CONNECT_REST_PORT: 28083
       CONNECT_GROUP_ID: connect-02
       CONNECT_CONFIG_STORAGE_TOPIC: _connect-02-configs
       CONNECT_OFFSET_STORAGE_TOPIC: _connect-02-offsets
@@ -230,7 +230,7 @@ services:
       CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
       CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       CONTROL_CENTER_CONNECT_01_CLUSTER: 'kafka-connect:8083'
-      CONTROL_CENTER_CONNECT_02_CLUSTER: 'kafka-connect:18083'
+      CONTROL_CENTER_CONNECT_02_CLUSTER: 'kafka-connect:28083'
       CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       # The advertised URL needs to be the URL on which the browser
       #  can access the KSQL server (e.g. http://localhost:8088/info)
