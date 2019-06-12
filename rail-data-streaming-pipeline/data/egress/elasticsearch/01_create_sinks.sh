@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -H  "Content-Type:application/json" http://localhost:18083/connectors/ \
     -d '{
   "name": "sink-elastic-train_cancellations_02-v00",
   "config": {
@@ -16,7 +16,7 @@ curl -i -X POST -H "Accept:application/json" \
 }'
 
 curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -H  "Content-Type:application/json" http://localhost:18083/connectors/ \
     -d '{
   "name": "sink-elastic-schedule_01-v00",
   "config": {
@@ -31,7 +31,7 @@ curl -i -X POST -H "Accept:application/json" \
 }'
 
 curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -H  "Content-Type:application/json" http://localhost:18083/connectors/ \
     -d '{
   "name": "sink-elastic-train_movements_01-v00",
   "config": {
@@ -46,7 +46,7 @@ curl -i -X POST -H "Accept:application/json" \
 }'
 
 curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -H  "Content-Type:application/json" http://localhost:18083/connectors/ \
     -d '{
   "name": "sink-elastic-train_movements_activations_schedule_00-v00",
   "config": {
@@ -61,7 +61,7 @@ curl -i -X POST -H "Accept:application/json" \
 }'
 
 #curl -i -X POST -H "Accept:application/json" \
-#    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+#    -H  "Content-Type:application/json" http://localhost:18083/connectors/ \
 #    -d '{
 #  "name": "sink-elastic-train-movements-v03",
 #  "config": {
