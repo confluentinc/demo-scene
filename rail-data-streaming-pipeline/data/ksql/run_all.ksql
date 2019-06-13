@@ -1,5 +1,6 @@
 RUN SCRIPT '/data/ksql/01_corpus_location/01_corpus.ksql';
 -- Make sure CORPUS_BY_STANOX exists before continuing
+SET 'auto.offset.reset' = 'earliest';
 SELECT * FROM CORPUS_BY_STANOX LIMIT 1;
 RUN SCRIPT '/data/ksql/01_corpus_location/02_stanox.ksql';
 
@@ -34,12 +35,12 @@ RUN SCRIPT '/data/ksql/02_cif_schedule/04_schedule_table.ksql';
 
 -- ksql> SHOW TABLES;
 
---  Table Name | Kafka Topic       | Format | Windowed
--- ----------------------------------------------------
---  TIPLOC     | TIPLOC_FLAT_KEYED | AVRO   | false
---  STANOX     | CORPUS_BY_STANOX  | AVRO   | false
--- SCHEDULE_02 | SCHEDULE_01       | AVRO   | false
--- ----------------------------------------------------
+--  Table Name    | Kafka Topic       | Format | Windowed
+-- -------------------------------------------------------
+--  TIPLOC        | TIPLOC_FLAT_KEYED | AVRO   | false
+--  STANOX        | CORPUS_BY_STANOX  | AVRO   | false
+--  SCHEDULE_01_T | SCHEDULE_01       | AVRO   | false
+-- -------------------------------------------------------
 
 -- ksql> SHOW STREAMS;
 
@@ -59,8 +60,11 @@ RUN SCRIPT '/data/ksql/03_movements/01_movement_raw.ksql';
 RUN SCRIPT '/data/ksql/03_movements/02_activations.ksql';
 RUN SCRIPT '/data/ksql/03_movements/02_cancellations.ksql';
 RUN SCRIPT '/data/ksql/03_movements/02_movements.ksql';
-RUN SCRIPT '/data/ksql/03_movements/03_movements_activations.ksql';
-RUN SCRIPT '/data/ksql/03_movements/06_movements_activations_schedules.ksql';
+
+SELECT * FROM TRAIN_ACTIVATIONS_01 LIMIT 1;
+RUN SCRIPT '/data/ksql/03_movements/03_activations_table.ksql';
+RUN SCRIPT '/data/ksql/03_movements/04_movements_activations.ksql';
+RUN SCRIPT '/data/ksql/03_movements/05_movements_activations_schedules.ksql';
 
 
 

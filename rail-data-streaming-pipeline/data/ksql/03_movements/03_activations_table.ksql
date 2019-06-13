@@ -1,0 +1,5 @@
+-- SELECT * FROM TRAIN_ACTIVATIONS_01 LIMIT 1;
+
+CREATE TABLE TRAIN_ACTIVATIONS_01_T WITH (KAFKA_TOPIC='TRAIN_ACTIVATIONS_01',
+                                          VALUE_FORMAT='AVRO',
+                                          KEY='TRAIN_ID');

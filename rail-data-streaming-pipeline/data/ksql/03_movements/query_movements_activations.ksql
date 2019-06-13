@@ -1,3 +1,5 @@
+SET 'auto.offset.reset' = 'earliest';
+
 SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') as actual_timestamp, 
        EVENT_TYPE, 
        LOC_NLCDESC, 
@@ -10,6 +12,7 @@ SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') as actual_timestamp,
        SCHED_ORIGIN_DESC,
        SCHEDULE_KEY
   FROM TRAIN_MOVEMENTS_ACTIVATIONS_00 
- WHERE SCHEDULE_KEY IS NOT NULL;
+ WHERE SCHEDULE_KEY IS NOT NULL
+   AND LOC_NLCDESC='ILKLEY';
 
  
