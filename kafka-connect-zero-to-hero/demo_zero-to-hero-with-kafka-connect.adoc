@@ -174,39 +174,6 @@ curl -s 'http://localhost:5601/api/saved_objects/_bulk_get' \
   -d '[{"id":"mysql-debezium-asgard.demo.orders","type":"index-pattern"}]'
 ----
 
-http://localhost:5601/app/kibana#/discover?_g=(refreshInterval:(pause:!f,value:5000),time:(from:now-15m,mode:quick,to:now))&_a=(columns:!(order_id,customer_id,delivery_address,delivery_city,delivery_company,make,model,order_total_usd),index:mysql-debezium-asgard.demo.orders,interval:auto,query:(language:lucene,query:''),sort:!(CREATE_TS,desc))[Inspect the data in Kibana] or from CLI: 
-
-[source,bash]
-----
-echo '{ "size": 1, "sort": [ { "CREATE_TS": { "order": "desc" } } ] }' | \
-    http http://localhost:9200/mysql-debezium-asgard.demo.orders/_search | \
-    jq '.hits[]'
-----
-
-or
-
-[source,bash]
-----
-curl -s http://localhost:9200/mysql-debezium-asgard.demo.orders/_search \
-  -H 'content-type: application/json' \
-  -d '{ "size": 1, "sort": [ { "CREATE_TS": { "order": "desc" } } ] }' |\
-  jq '.'
-----
-
-[NOTE]
-====
-If you want to set the Elasticsearch document id to match the key of the source database record use the following: 
-
-[source,bash]
-----
-        "key.ignore": "true",
-        …
-        "transforms": "extractKey",
-        "transforms.extractKey.type":"org.apache.kafka.connect.transforms.ExtractField$Key",
-        "transforms.extractKey.field":"id"
-----
-====
-
 === Stream to Neo4j
 
 [source,bash]
@@ -225,6 +192,35 @@ curl -i -X POST -H "Accept:application/json" \
           }
         } '
 ----
+
+=== View in Elasticsearch
+
+
+http://localhost:5601/app/kibana#/discover?_g=(refreshInterval:(pause:!f,value:5000),time:(from:now-15m,mode:quick,to:now))&_a=(columns:!(order_id,customer_id,delivery_address,delivery_city,delivery_company,make,model,order_total_usd),index:mysql-debezium-asgard.demo.orders,interval:auto,query:(language:lucene,query:''),sort:!(CREATE_TS,desc))[Inspect the data in Kibana] or from CLI: 
+
+[source,bash]
+----
+curl -s http://localhost:9200/mysql-debezium-asgard.demo.orders/_search \
+  -H 'content-type: application/json' \
+  -d '{ "size": 1, "sort": [ { "CREATE_TS": { "order": "desc" } } ] }' |\
+  jq '.'
+----
+
+[NOTE]
+====
+If you want to set the Elasticsearch document id to match the key of the source database record use the following: 
+
+[source,bash]
+----
+"key.ignore": "true",
+…
+"transforms": "extractKey",
+"transforms.extractKey.type":"org.apache.kafka.connect.transforms.ExtractField$Key",
+"transforms.extractKey.field":"id"
+----
+====
+
+=== View in Neo4j
 
 View in http://localhost:7474/browser/[Neo4j browser]
 
