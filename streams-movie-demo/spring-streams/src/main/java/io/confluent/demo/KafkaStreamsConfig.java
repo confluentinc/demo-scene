@@ -17,6 +17,8 @@ import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Properties;
 
+import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
+
 import static io.confluent.demo.StreamsDemo.getMovieAvroSerde;
 import static io.confluent.demo.StreamsDemo.getMoviesTable;
 import static io.confluent.demo.StreamsDemo.getRatedMovieAvroSerde;
@@ -46,7 +48,8 @@ public class KafkaStreamsConfig {
     final Map<String, String> serdeConfig = getSerdeConfig(kafkaStreamsConfiguration.asProperties());
 
     final KStream<Long, String> rawRatingsStream = getRawRatingsStream(builder);
-    final KTable<Long, Double> ratingAverageTable = getRatingAverageTable(rawRatingsStream);
+    SpecificAvroSerde<CountAndSum> countAndSumSerde = StreamsDemo.getCountAndSumSerde(serdeConfig);
+    final KTable<Long, Double> ratingAverageTable = getRatingAverageTable(rawRatingsStream, countAndSumSerde);
 
     final KTable<Long, Movie> moviesTable = getMoviesTable(builder, getMovieAvroSerde(serdeConfig));
     return getRatedMoviesTable(moviesTable, ratingAverageTable, getRatedMovieAvroSerde(serdeConfig));

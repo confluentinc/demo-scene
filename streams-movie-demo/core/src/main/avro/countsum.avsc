@@ -1,0 +1,15 @@
+{
+  "namespace": "io.confluent.demo",
+  "type": "record",
+  "name": "CountAndSum",
+  "fields": [
+    {
+      "name": "count",
+      "type": "long"
+    },
+    {
+      "name": "sum",
+      "type": "double"
+    }
+  ]
+}

@@ -2,10 +2,7 @@ package io.confluent.demo;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.Serdes.LongSerde;
-import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
@@ -24,10 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import io.confluent.demo.util.CountAndSum;
-import io.confluent.demo.util.CountAndSumDeserializer;
-import io.confluent.demo.util.CountAndSumSerde;
-import io.confluent.demo.util.CountAndSumSerializer;
 import io.confluent.devx.kafka.config.ConfigLoader;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
@@ -63,15 +56,16 @@ public class StreamsDemo {
 
     final SpecificAvroSerde<Movie> movieSerde = getMovieAvroSerde(serdeConfig);
     final SpecificAvroSerde<Rating> ratingSerde = getRatingAvroSerde(serdeConfig);
-    // TODO: use it as final result
+
     final SpecificAvroSerde<RatedMovie> ratedMovieSerde = getRatedMovieAvroSerde(serdeConfig);
+    final SpecificAvroSerde<CountAndSum> countAndSumSerde = getCountAndSumSerde(serdeConfig);
 
     // Starting creating topology
     StreamsBuilder builder = new StreamsBuilder();
 
     // Ratings processor
     KStream<Long, String> rawRatingsStream = getRawRatingsStream(builder);
-    KTable<Long, Double> ratingAverage = getRatingAverageTable(rawRatingsStream);
+    KTable<Long, Double> ratingAverage = getRatingAverageTable(rawRatingsStream, countAndSumSerde);
 
     // Movies processors
     final KTable<Long, Movie> movies = getMoviesTable(builder, movieSerde);
@@ -87,6 +81,12 @@ public class StreamsDemo {
 
     Runtime.getRuntime().addShutdownHook(new Thread(streamsApp::close));
     streamsApp.start();
+  }
+
+  public static SpecificAvroSerde<CountAndSum> getCountAndSumSerde(Map<String, String> serdeConfig) {
+    final SpecificAvroSerde<CountAndSum> avroSerde = new SpecificAvroSerde<>();
+    avroSerde.configure(serdeConfig, false);
+    return avroSerde;
   }
 
   public static KTable<Long, Movie> getMoviesTable(StreamsBuilder builder,
@@ -106,7 +106,7 @@ public class StreamsDemo {
                              .withKeySerde(Serdes.Long()));
   }
 
-  protected static KStream<Long, String> getRawMoviesStream(StreamsBuilder builder) {
+  private static KStream<Long, String> getRawMoviesStream(StreamsBuilder builder) {
     return builder.stream(RAW_MOVIES_TOPIC_NAME,
                           Consumed.with(Serdes.Long(),
                                         Serdes.String()));
@@ -170,7 +170,8 @@ public class StreamsDemo {
     return ratedMovies;
   }
 
-  protected static KTable<Long, Double> getRatingAverageTable(KStream<Long, String> rawRatings) {
+  protected static KTable<Long, Double> getRatingAverageTable(KStream<Long, String> rawRatings,
+                                                              SpecificAvroSerde<CountAndSum> countAndSumSerde) {
 
     KStream<Long, Rating> ratings = rawRatings.mapValues(Parser::parseRating)
         .map((key, rating) -> new KeyValue<>(rating.getMovieId(), rating));
@@ -190,30 +191,20 @@ public class StreamsDemo {
 
     Implemented best practice https://cwiki.apache.org/confluence/display/KAFKA/Kafka+Stream+Usage+Patterns#KafkaStreamUsagePatterns-Howtocomputean(windowed)average?
      */
-    final KTable<Long, CountAndSum<Long, Double>> ratingCountAndSum = ratingsById.aggregate(
-        () -> new CountAndSum<>(0L, 0.0),
+    final KTable<Long, CountAndSum> ratingCountAndSum = ratingsById.aggregate(
+        () -> new CountAndSum(0L, 0.0),
         (key, value, aggregate) -> {
-          ++aggregate.count;
-          aggregate.sum += value;
+          aggregate.setCount(aggregate.getCount() + 1);
+          aggregate.setSum(aggregate.getSum() + value);
           return aggregate;
-        }, Materialized.with(new LongSerde(), new CountAndSumSerde<Long, Double>() {
-          @Override
-          public Serializer<CountAndSum<Long, Double>> serializer() {
-            return new CountAndSumSerializer<>();
-          }
-
-          @Override
-          public Deserializer<CountAndSum<Long, Double>> deserializer() {
-            return new CountAndSumDeserializer<>();
-          }
-        })
+        }, Materialized.with(Serdes.Long(), countAndSumSerde)
     );
 
-    /*KTable<Long, Double> ratingAverage = ratingSums.join(ratingCounts,
-                                                         (sum, count) -> sum / count.doubleValue(),
-                                                         Materialized.as("average-ratings"));*/
-    final KTable<Long, Double> ratingAverage = ratingCountAndSum.mapValues(value -> value.sum / value.count,
-                                                                           Materialized.as("average-ratings"));
+    final KTable<Long, Double>
+        ratingAverage =
+        ratingCountAndSum.mapValues(value -> value.getSum() / value.getCount(),
+                                    Materialized.as("average-ratings"));
+
     ratingAverage.toStream()
         .peek((key, value) -> { // debug only
           System.out.println("key = " + key + ", value = " + value);
@@ -234,7 +225,7 @@ public class StreamsDemo {
       config.put(SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
     }
 
-    config.put(REPLICATION_FACTOR_CONFIG, 3);
+    config.put(REPLICATION_FACTOR_CONFIG, 1);
 
     /*config.put(PRODUCER_PREFIX + ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,
                "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor");
@@ -244,8 +235,8 @@ public class StreamsDemo {
     config.put(APPLICATION_ID_CONFIG, "kafka-films");
     config.put(DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.Long().getClass().getName());
     config.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.Double().getClass().getName());
-    
-    config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+
+    config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
     // config.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
     // Enable record cache of size 2 MB.
