@@ -28,8 +28,9 @@ spec:
               topologyKey: "kubernetes.io/hostname"
       containers:
         - name: streaming-movie-ratings
-          image: gcr.io/cloud-private-dev/gamussa/streaming-movie-ratings:latest
+          image: gamov-docker.jfrog.io/dev/streaming-movie-ratings:latest
           env:
             - name: JAVA_TOOL_OPTIONS
               value: -DLOGLEVEL=INFO
-
+      imagePullSecrets:
+        - name: regcred
