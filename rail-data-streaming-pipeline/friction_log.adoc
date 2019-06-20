@@ -42,11 +42,11 @@ I want to specify multiple columns for a key in a TABLE but can only specify one
 
 == Issue 03 - Scripting deployment
 
-When using KSQL to re-partition a topic in order for a table to be declared on it, if the `CREATE TABLE` runs too soon it will fail because the schema doesn't yet exist in the Schema Registry. 
+When using KSQL to re-partition a topic in order for a table to be declared on it, if the `CREATE TABLE` runs too soon it will fail because the schema doesn't yet exist in the Schema Registry.
 
 https://github.com/confluentinc/ksql/issues/2880
 
-== Issue 04 - Cleaning the environment
+== Issue 04 - Cleaning the environment is extremely cumbersome
 
 1. Bring down service
 +
@@ -58,9 +58,28 @@ docker-compose stop ksql-server
 
 2. Increment `KSQL_KSQL_SERVICE_ID` in `docker-compose.yml`
 
-3. Bring back up service
+3. Bring back up service (`up` is necessary vs `start` as the latter just resumes the existing container, whereas `up` will re-parse the docker-compose.yml and apply any changes before restart the container)
 +
 [source,sql]
 ----
-docker-compose start ksql-server
+docker-compose up -d ksql-server
 ----
++
+Check metastore is clean:
++
+[source,sql]
+----
+SHOW STREAMS;
+SHOW TABLES;
+
+----
+
+
+== Issue 05 - Which topics are live? How big are they?
+
+Once streams are built and data is flowing, it can be hard to keep track of what is what, particularly in a dev environment where there are lots of versions of streams etc.
+
+When I do SHOW STREAMS I really want to know:
+
+- When was the last message received? -> which streams are stale (not popualted) or dead (problem with the source query, e.g. seriallisation of source records)
+- How many messages are there on it? -> is the number going up? Does it match my mental model of how much data there should be?
