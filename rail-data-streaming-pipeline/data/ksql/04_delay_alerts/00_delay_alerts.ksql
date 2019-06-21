@@ -16,11 +16,12 @@ CREATE STREAM TRAINS_DELAYED_ALERT AS
 
 SET 'auto.offset.reset' = 'earliest';
 
-CREATE STREAM TRAINS_DELAYED_ALERT_TG AS 
-SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss')  + '\n' +
-     '🚂  Train from ' + ORIGINATING_LOCATION + ' arrived at ' +
+
+CREATE STREAM TRAINS_DELAYED_ALERT_TG AS
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss')  + '\\n' +
+     'Train from ' + ORIGINATING_LOCATION + ' arrived at ' +
      LOC_NLCDESC + ' *' +
      VARIATION +
      '* (_alert threshold: ' +CAST(ALERT_OVER_MINS AS VARCHAR)+' mins_).' +
-     '\nTrain id: `' + TRAIN_UID + '` is operated by ' + TOC AS MESSAGE
+     '\\nTrain id: `' + TRAIN_UID + '` is operated by ' + TOC AS MESSAGE
 FROM TRAINS_DELAYED_ALERT;
