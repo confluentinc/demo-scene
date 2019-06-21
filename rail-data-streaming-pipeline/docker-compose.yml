@@ -71,7 +71,7 @@ services:
     environment:
       KSQL_BOOTSTRAP_SERVERS: kafka:29092
       KSQL_LISTENERS: http://0.0.0.0:8088
-      KSQL_KSQL_SERVICE_ID: confluent_rmoff_04
+      KSQL_KSQL_SERVICE_ID: confluent_rmoff_05
       KSQL_CUB_KAFKA_TIMEOUT: 300
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
@@ -239,7 +239,7 @@ services:
       CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
       CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
       CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect-03'
-      CONNECT_LOG4J_ROOT_LOGLEVEL: 'DEBUG'
+      CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
       CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
@@ -252,6 +252,7 @@ services:
       # Interceptor config
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      CONNECT_CONSUMER_AUTO_OFFSET_RESET: "latest"
       CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.1.jar
     volumes:
       - ./data:/data
@@ -262,6 +263,7 @@ services:
       - |
         echo "Installing connector plugins"
         confluent-hub install --no-prompt fbascheper/kafka-connect-telegram:0.2.0
+        confluent-hub install --no-prompt confluentinc/kafka-connect-http:1.0.0-preview
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 

@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 
+echo 'Connectors'
+echo '----------'
+curl -s "http://localhost:28083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:28083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+
+echo ' '
 echo 'Indices and doc count'
 echo '---------------------'
-curl -s "http://localhost:9200/_cat/indices/train*"
+curl -s "http://localhost:9200/_cat/indices/train*?h=i,dc"
 
 echo ' '
 

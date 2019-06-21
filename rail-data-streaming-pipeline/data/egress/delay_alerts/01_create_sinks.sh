@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+
+
 curl -X POST -H "Content-Type: application/json" http://localhost:38083/connectors/ \
       -d '{
             "name": "sink-http-telegram-delay-alerts-04",

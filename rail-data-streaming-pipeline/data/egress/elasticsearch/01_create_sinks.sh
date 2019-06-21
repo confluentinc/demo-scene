@@ -2,7 +2,7 @@
 
 curl -X POST -H  "Content-Type:application/json" http://localhost:28083/connectors/ \
     -d '{
-  "name": "sink-elastic-train_movements_01-v00",
+  "name": "sink-elastic-train_movements_01-v01",
   "config": {
     "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
     "topics": "TRAIN_MOVEMENTS_01",
@@ -16,7 +16,7 @@ curl -X POST -H  "Content-Type:application/json" http://localhost:28083/connecto
 
 curl -X POST -H  "Content-Type:application/json" http://localhost:28083/connectors/ \
     -d '{
-  "name": "sink-elastic-train_movements_activations_schedule_00-v00",
+  "name": "sink-elastic-train_movements_activations_schedule_00-v01",
   "config": {
     "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
     "topics": "TRAIN_MOVEMENTS_ACTIVATIONS_SCHEDULE_00",
@@ -30,7 +30,7 @@ curl -X POST -H  "Content-Type:application/json" http://localhost:28083/connecto
 
 curl -X POST -H  "Content-Type:application/json" http://localhost:28083/connectors/ \
     -d '{
-  "name": "sink-elastic-train_cancellations_02-v00",
+  "name": "sink-elastic-train_cancellations_02-v01",
   "config": {
     "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
     "topics": "TRAIN_CANCELLATIONS_02",
@@ -45,7 +45,7 @@ curl -X POST -H  "Content-Type:application/json" http://localhost:28083/connecto
 # curl -X POST -H "Accept:application/json" \
 #     -H  "Content-Type:application/json" http://localhost:28083/connectors/ \
 #     -d '{
-#   "name": "sink-elastic-schedule_01-v00",
+#   "name": "sink-elastic-schedule_01-v01",
 #   "config": {
 #     "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
 #     "topics": "SCHEDULE_01",
