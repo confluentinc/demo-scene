@@ -11,7 +11,7 @@ curl -i -X POST -H "Accept:application/json" \
 		"topics": "TRAIN_MOVEMENTS_ACTIVATIONS_SCHEDULE_00",
 		"s3.region": "us-west-2",
 		"s3.bucket.name": "rmoff-rail-streaming-demo",
-		"flush.size": "3",
+		"flush.size": "524288",
 		"storage.class": "io.confluent.connect.s3.storage.S3Storage",
 		"format.class": "io.confluent.connect.s3.format.avro.AvroFormat",
 		"schema.generator.class": "io.confluent.connect.storage.hive.schema.DefaultSchemaGenerator",
@@ -19,7 +19,7 @@ curl -i -X POST -H "Accept:application/json" \
 		"partitioner.class": "io.confluent.connect.storage.partitioner.TimeBasedPartitioner",
  		"path.format":"\'year\'=YYYY/\'month\'=MM/\'day\'=dd",
 		"timestamp.extractor":"Record",
-		"partition.duration.ms": 300000,
+		"partition.duration.ms": 1800000,
 		"locale":"en",
 		"timezone": "UTC"
 	}
