@@ -1,4 +1,5 @@
 stomp
 credentials.properties
+aws_credentials
 set_credentials_env.sh
 *.log
