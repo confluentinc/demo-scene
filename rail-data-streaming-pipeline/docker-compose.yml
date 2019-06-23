@@ -253,10 +253,12 @@ services:
       # Interceptor config
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-      CONNECT_CONSUMER_AUTO_OFFSET_RESET: "latest"
       CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.1.jar
+      # Offset configuration
+      CONNECT_CONSUMER_AUTO_OFFSET_RESET: "earliest"
     volumes:
       - ./data:/data
+      - ./data/aws_credentials2:/root/.aws/credentials
     command: 
       # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
       - bash 
@@ -265,6 +267,68 @@ services:
         echo "Installing connector plugins"
         confluent-hub install --no-prompt fbascheper/kafka-connect-telegram:0.2.0
         confluent-hub install --no-prompt confluentinc/kafka-connect-http:1.0.0-preview
+        #
+        echo "Launching Kafka Connect worker"
+        /etc/confluent/docker/run & 
+        #
+        echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -eq 000 ] ; do 
+          echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) " (waiting for 200)"
+          sleep 5 
+        done
+        nc -vz $$CONNECT_REST_ADVERTISED_HOST_NAME $$CONNECT_REST_PORT
+        #
+        #
+        sleep infinity
+
+  kafka-connect-04:
+    image: confluentinc/cp-kafka-connect:5.2.1
+    container_name: kafka-connect-04
+    depends_on:
+      - zookeeper
+      - kafka
+      - schema-registry
+    ports:
+      - 48083:48083
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: 'kafka:29092'
+      CONNECT_REST_PORT: 48083
+      CONNECT_GROUP_ID: connect-04
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-04-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-04-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-04-status
+      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect-03'
+      CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
+      CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/'
+      # External secrets config
+      # See https://docs.confluent.io/current/connect/security.html#externalizing-secrets
+      CONNECT_CONFIG_PROVIDERS: 'file'
+      CONNECT_CONFIG_PROVIDERS_FILE_CLASS: 'org.apache.kafka.common.config.provider.FileConfigProvider'
+      # Interceptor config
+      CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.1.jar
+      # Offset configuration
+      CONNECT_CONSUMER_AUTO_OFFSET_RESET: "earliest"
+    volumes:
+      - ./data:/data
+    command: 
+      # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
+      - bash 
+      - -c 
+      - |
+        echo "Installing connector plugins"
+        confluent-hub install --no-prompt confluentinc/kafka-connect-replicator:latest
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 
@@ -291,9 +355,10 @@ services:
     environment:
       CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
       CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      CONTROL_CENTER_CONNECT_01_CLUSTER: 'kafka-connect:8083'
-      CONTROL_CENTER_CONNECT_02_CLUSTER: 'kafka-connect:28083'
-      CONTROL_CENTER_CONNECT_03_CLUSTER: 'kafka-connect:38083'
+      CONTROL_CENTER_CONNECT_01_SOURCE_ACTIVEMQ_CLUSTER: 'kafka-connect:8083'
+      CONTROL_CENTER_CONNECT_02_SINK_ELASTIC_S3_CLUSTER: 'kafka-connect-02:28083'
+      CONTROL_CENTER_CONNECT_03_SINK_ALERTS_CLUSTER: 'kafka-connect-03:38083'
+      CONTROL_CENTER_CONNECT_03_REPLICATOR_CLUSTER: 'kafka-connect-04:48083'
       CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       # The advertised URL needs to be the URL on which the browser
       #  can access the KSQL server (e.g. http://localhost:8088/info)
@@ -358,6 +423,13 @@ services:
     #   docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
     # *-----------------------------*
     image: postgres:11
+    ports:
+      - 15432:5432
     environment:
      - POSTGRES_USER=postgres
      - POSTGRES_PASSWORD=postgres
+
+  superset:
+    image: huksley/superset
+    ports: 
+      - 18088:8088
