@@ -10,7 +10,7 @@ curl -i -X PUT -H "Accept:application/json" \
 	"header.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
 	"src.kafka.bootstrap.servers": "proxmox01.moffatt.me:9092",
 	"dest.kafka.bootstrap.servers": "kafka:29092",
-	"topic.whitelist": "TRAIN_MOVEMENTS_ACTIVATIONS_SCHEDULE_00",
+	"topic.whitelist": "_schemas, TRAIN_MOVEMENTS_ACTIVATIONS_SCHEDULE_00, networkrail_TRAIN_MVT_X",
 	"topic.rename.format":"${topic}",
 	"confluent.license":"",
 	"confluent.topic.bootstrap.servers":"kafka:29092",
