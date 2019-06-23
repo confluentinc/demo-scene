@@ -143,7 +143,6 @@ services:
       - -c 
       - |
         echo "Installing connector plugins"
-        confluent-hub install --no-prompt neo4j/kafka-connect-neo4j:1.0.0
         confluent-hub install --no-prompt confluentinc/kafka-connect-activemq:5.2.1
         #
         echo "Launching Kafka Connect worker"
