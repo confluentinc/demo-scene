@@ -97,9 +97,9 @@ services:
     volumes:
       - ./data:/data
 
-  kafka-connect:
+  kafka-connect-01:
     image: confluentinc/cp-kafka-connect:5.2.1
-    container_name: kafka-connect
+    container_name: kafka-connect-01
     depends_on:
       - zookeeper
       - kafka
@@ -108,6 +108,7 @@ services:
       - 8083:8083
     environment:
       CONNECT_BOOTSTRAP_SERVERS: 'kafka:29092'
+      CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect-01'
       CONNECT_REST_PORT: 8083
       CONNECT_GROUP_ID: compose-connect-group
       CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
@@ -119,7 +120,6 @@ services:
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
       CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
-      CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect'
       CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
       CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
@@ -170,6 +170,7 @@ services:
       - 28083:28083
     environment:
       CONNECT_BOOTSTRAP_SERVERS: 'kafka:29092'
+      CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect-02'
       CONNECT_REST_PORT: 28083
       CONNECT_GROUP_ID: connect-02
       CONNECT_CONFIG_STORAGE_TOPIC: _connect-02-configs
@@ -181,7 +182,6 @@ services:
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
       CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
-      CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect-02'
       CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
       CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
@@ -231,6 +231,7 @@ services:
       - 38083:38083
     environment:
       CONNECT_BOOTSTRAP_SERVERS: 'kafka:29092'
+      CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect-03'
       CONNECT_REST_PORT: 38083
       CONNECT_GROUP_ID: connect-03
       CONNECT_CONFIG_STORAGE_TOPIC: _connect-03-configs
@@ -242,7 +243,6 @@ services:
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
       CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
-      CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect-03'
       CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
       CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
@@ -295,6 +295,7 @@ services:
       - 48083:48083
     environment:
       CONNECT_BOOTSTRAP_SERVERS: 'kafka:29092'
+      CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect-04'
       CONNECT_REST_PORT: 48083
       CONNECT_GROUP_ID: connect-04
       CONNECT_CONFIG_STORAGE_TOPIC: _connect-04-configs
@@ -306,7 +307,6 @@ services:
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
       CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
-      CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect-03'
       CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
       CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
@@ -358,8 +358,8 @@ services:
     environment:
       CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
       CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      CONTROL_CENTER_CONNECT_01_SOURCE_ACTIVEMQ_CLUSTER: 'kafka-connect:8083'
-      CONTROL_CENTER_CONNECT_02_SINK_ELASTIC_S3_CLUSTER: 'kafka-connect-02:28083'
+      CONTROL_CENTER_CONNECT_01_SOURCE_ACTIVEMQ_CLUSTER: 'kafka-connect-01:8083'
+      CONTROL_CENTER_CONNECT_02_SINK_ANALYTICS_CLUSTER: 'kafka-connect-02:28083'
       CONTROL_CENTER_CONNECT_03_SINK_ALERTS_CLUSTER: 'kafka-connect-03:38083'
       CONTROL_CENTER_CONNECT_03_REPLICATOR_CLUSTER: 'kafka-connect-04:48083'
       CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
