@@ -303,7 +303,7 @@ services:
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
       CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
-      CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect-03'
+      CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect-04'
       CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
       CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
