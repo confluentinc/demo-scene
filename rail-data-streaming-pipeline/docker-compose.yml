@@ -426,6 +426,7 @@ services:
     #   docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
     # *-----------------------------*
     image: postgres:11
+    container_name: postgres
     ports:
       - 15432:5432
     environment:
@@ -434,5 +435,8 @@ services:
 
   superset:
     image: tylerfowler/superset
+    container_name: superset
     ports: 
       - 18088:8088
+    depends_on:
+      - postgres
