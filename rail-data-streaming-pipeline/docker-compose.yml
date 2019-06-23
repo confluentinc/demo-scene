@@ -440,3 +440,11 @@ services:
       - 18088:8088
     depends_on:
       - postgres
+
+  kafkacat:
+    #image: confluentinc/cp-kafkacat:latest
+    image: edenhill/kafkacat:sr-wip
+    container_name: kafkacat
+    depends_on:
+      - kafka
+    entrypoint: sleep infinity
