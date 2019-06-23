@@ -36,11 +36,11 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: DOCKER_NET:PLAINTEXT,HOST:PLAINTEXT,VPN:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: DOCKER_NET
-      KAFKA_LISTENERS: DOCKER_NET://0.0.0.0:29092,HOST://0.0.0.0:9092,VPN://0.0.0.0:39092
-      KAFKA_ADVERTISED_LISTENERS: DOCKER_NET://kafka:29092,HOST://localhost:9092,VPN://172.27.230.24:39092
-      #KAFKA_ADVERTISED_LISTENERS: DOCKER_NET://kafka:29092,HOST://proxmox01.moffatt.me:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,HOST://localhost:9092
+      #KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,HOST://proxmox01.moffatt.me:9092
       KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
@@ -61,7 +61,7 @@ services:
       - kafka
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:29092
 
   ksql-server:
     image: confluentinc/cp-ksql-server:5.2.1
@@ -136,6 +136,7 @@ services:
       CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.1.jar
     volumes:
       - ./data:/data
+      - /Users/Robin/cp/confluent-5.2.0-SNAPSHOT/share/java/kafka-connect-replicator/:/usr/share/confluent-hub-components/kafka-connect-replicator
     command: 
       # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
       - bash 
@@ -432,6 +433,6 @@ services:
      - POSTGRES_PASSWORD=postgres
 
   superset:
-    image: huksley/superset
+    image: tylerfowler/superset
     ports: 
       - 18088:8088
