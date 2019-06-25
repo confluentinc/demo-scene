@@ -2,13 +2,13 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.2.0
+    image: confluentinc/cp-zookeeper:5.2.2
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.2.0
+    image: confluentinc/cp-enterprise-kafka:5.2.2
     depends_on:
       - zookeeper
     ports:
@@ -33,7 +33,7 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.2.0
+    image: confluentinc/cp-schema-registry:5.2.2
     ports:
       - 8081:8081
     depends_on:
@@ -44,7 +44,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect:5.2.0
+    image: confluentinc/cp-kafka-connect:5.2.2
     depends_on:
       - zookeeper
       - kafka
@@ -169,7 +169,7 @@ services:
 
 
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.2.0
+    image: confluentinc/cp-ksql-server:5.2.2
     depends_on:
       - kafka
       - schema-registry
@@ -185,7 +185,7 @@ services:
     # To connect to the KSQL CLI: 
     #   docker-compose exec ksql-cli ksql http://ksql-server:8088
     # *-----------------------------*
-    image: confluentinc/cp-ksql-cli:5.2.0
+    image: confluentinc/cp-ksql-cli:5.2.2
     depends_on:
       - ksql-server
     entrypoint: /bin/sh
@@ -197,7 +197,7 @@ services:
     # To connect to the DB: 
     #   docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
     # *-----------------------------*
-    image: debezium/example-mysql:0.8
+    image: debezium/example-mysql:0.9
     ports:
       - 3306:3306
     environment:
@@ -297,7 +297,8 @@ services:
 
   # Runs the Kafka KSQL data generator for ratings
   datagen-ratings:
-    image: confluentinc/ksql-examples:5.1.0
+    # Uses 5.1.2 - in 5.2.2 the schemaRegistryUrl doesn't work
+    image: confluentinc/ksql-examples:5.2.2
     depends_on:
       - kafka
       - schema-registry
