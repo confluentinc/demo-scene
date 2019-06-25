@@ -2,13 +2,13 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.2.2
+    image: confluentinc/cp-zookeeper:5.0.1
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.2.2
+    image: confluentinc/cp-enterprise-kafka:5.0.1
     depends_on:
       - zookeeper
     ports:
@@ -33,7 +33,7 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.2.2
+    image: confluentinc/cp-schema-registry:5.0.1
     ports: 
       - 8081:8081
     depends_on:
@@ -44,7 +44,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   kafka-connect-cp:
-    image: confluentinc/cp-kafka-connect:5.2.2
+    image: confluentinc/cp-kafka-connect:5.0.1
     depends_on:
       - zookeeper
       - kafka
@@ -82,7 +82,7 @@ services:
         sleep infinity &
         /etc/confluent/docker/run
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.2.2
+    image: confluentinc/cp-ksql-server:5.0.1
     depends_on:
       - kafka
       - schema-registry
@@ -94,7 +94,7 @@ services:
       KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
 
   ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.2.2
+    image: confluentinc/cp-ksql-cli:5.0.1
     depends_on:
       - ksql-server
     entrypoint: /bin/sh
@@ -102,7 +102,7 @@ services:
 
   # Runs the Kafka KSQL data generator for ratings
   datagen-ratings:
-    image: confluentinc/ksql-examples:5.1.2
+    image: confluentinc/ksql-examples:5.0.1
     depends_on:
       - kafka
       - schema-registry
