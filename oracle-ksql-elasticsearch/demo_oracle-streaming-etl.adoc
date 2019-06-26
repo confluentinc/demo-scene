@@ -1,6 +1,6 @@
 = Streaming ETL demo - Enriching event stream data with CDC data from Oracle, stream into Elasticsearch
 Robin Moffatt <robin@confluent.io>
-v1.35, December 4, 2018
+v1.40, June 26, 2019
 
 image:images/ksql-debezium-es.png[Kafka Connect / KSQL / Elasticsearch]
 
@@ -34,16 +34,14 @@ Optionally, use something like `screen` or `tmux` to have these both easily to h
 +
 [source,bash]
 ----
-cd docker-compose
-docker-compose exec ksql-cli ksql http://ksql-server:8088
+docker exec -it ksql-cli bash -c 'echo -e "\n\n⏳ Waiting for KSQL to be available before launching CLI\n"; while [ $(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/) -eq 000 ] ; do echo -e $(date) "KSQL Server HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/) " (waiting for 200)" ; sleep 1 ; done; ksql http://ksql-server:8088'
 ----
 
 * SQL*Plus
 +
 [source,bash]
 ----
-cd docker-compose
-docker-compose exec oracle bash -c 'sleep 1;rlwrap sqlplus Debezium/dbz@localhost:1521/ORCLPDB1'
+docker exec -it oracle bash -c 'sleep 1;rlwrap sqlplus Debezium/dbz@localhost:1521/ORCLPDB1'
 ----
 +
 _(the `sleep` is necessary to avoid `rlwrap: error: My terminal reports width=0 (is it emacs?)  I can't handle this, sorry!` https://github.com/moby/moby/issues/28009[ref])_
@@ -91,7 +89,7 @@ SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS, UPDATE_TS FROM CUSTOMERS;
    5 Hansiain        Coda            hcoda4@senate.gov              platinum     04-DEC-18 10.56.37.000000 AM
 ----
 
-=== Check status of Debezium connectors
+=== Check status of Kafka Connect connectors
 
 [source,bash]
 ----
@@ -174,7 +172,7 @@ SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
 
 [source,sql]
 ----
-CREATE STREAM POOR_RATINGS AS \
+CREATE STREAM POOR_RATINGS AS 
 SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
 ----
 
@@ -215,7 +213,7 @@ CREATE STREAM CUSTOMERS_STREAM_SRC WITH (KAFKA_TOPIC='ora-CUSTOMERS-jdbc', VALUE
 
 CREATE STREAM CUSTOMERS_STREAM WITH (PARTITIONS=1) AS SELECT * FROM CUSTOMERS_STREAM_SRC PARTITION BY ID;
 
-SELECT ID, FIRST_NAME, LAST_NAME, CLUB_STATUS FROM CUSTOMERS_STREAM WHERE ID=42;
+SELECT ID, FIRST_NAME, LAST_NAME, CLUB_STATUS FROM CUSTOMERS_STREAM WHERE ID=42 LIMIT 1;
 ----
 
 
@@ -251,12 +249,12 @@ ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS WHERE 
 
 [source,sql]
 ----
-ksql> SELECT R.RATING_ID, R.MESSAGE, \
-      C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, \
-      C.CLUB_STATUS \
-      FROM RATINGS R \
-        LEFT JOIN CUSTOMERS C \
-        ON R.USER_ID = C.ID \
+ksql> SELECT R.RATING_ID, R.MESSAGE, 
+      C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, 
+      C.CLUB_STATUS 
+      FROM RATINGS R 
+        LEFT JOIN CUSTOMERS C 
+        ON R.USER_ID = C.ID 
       WHERE C.FIRST_NAME IS NOT NULL;
 524 | Surprisingly good, maybe you are getting your mojo back at long last! | Patti Rosten | silver
 525 | meh | Fred Blaisdell | bronze
@@ -271,23 +269,23 @@ Persist this stream of data & create stream of unhappy VIPs
 
 [source,sql]
 ----
-CREATE STREAM RATINGS_WITH_CUSTOMER_DATA \
-       WITH (PARTITIONS=1, \
-             KAFKA_TOPIC='ratings-enriched') \
-       AS \
-SELECT R.RATING_ID, R.MESSAGE, R.STARS, R.CHANNEL,\
-      C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, \
-      C.CLUB_STATUS, C.EMAIL \
-      FROM RATINGS R \
-        LEFT JOIN CUSTOMERS C \
-        ON R.USER_ID = C.ID \
+CREATE STREAM RATINGS_WITH_CUSTOMER_DATA 
+       WITH (PARTITIONS=1, 
+             KAFKA_TOPIC='ratings-enriched') 
+       AS 
+SELECT R.RATING_ID, R.MESSAGE, R.STARS, R.CHANNEL,
+      C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, 
+      C.CLUB_STATUS, C.EMAIL 
+      FROM RATINGS R 
+        LEFT JOIN CUSTOMERS C 
+        ON R.USER_ID = C.ID 
       WHERE C.FIRST_NAME IS NOT NULL;
 
-CREATE STREAM UNHAPPY_PLATINUM_CUSTOMERS \
-       WITH (VALUE_FORMAT='JSON', PARTITIONS=1) AS \
-SELECT FULL_NAME, CLUB_STATUS, EMAIL, STARS, MESSAGE \
-FROM   RATINGS_WITH_CUSTOMER_DATA \
-WHERE  STARS < 3 \
+CREATE STREAM UNHAPPY_PLATINUM_CUSTOMERS 
+       WITH (VALUE_FORMAT='JSON', PARTITIONS=1) AS 
+SELECT FULL_NAME, CLUB_STATUS, EMAIL, STARS, MESSAGE 
+FROM   RATINGS_WITH_CUSTOMER_DATA 
+WHERE  STARS < 3 
   AND  CLUB_STATUS = 'platinum';
 
 ----
