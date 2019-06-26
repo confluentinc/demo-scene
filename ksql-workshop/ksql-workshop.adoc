@@ -86,7 +86,9 @@ kibana             /usr/local/bin/kibana-docker     Up      0.0.0.0:5601->5601/t
 ksql-cli           /bin/sh                          Up
 ksql-server        /etc/confluent/docker/run        Up      0.0.0.0:8088->8088/tcp
 mysql              docker-entrypoint.sh mysqld      Up      0.0.0.0:3306->3306/tcp, 33060/tcp
+nginx              nginx -g daemon off;             Up      80/tcp, 0.0.0.0:8080->8080/tcp
 schema-registry    /etc/confluent/docker/run        Up      8081/tcp
+websockets         docker-entrypoint.sh bash  ...   Up      3000/tcp
 zookeeper          /etc/confluent/docker/run        Up      2181/tcp, 2888/tcp, 3888/tcp
 ----
 
@@ -403,6 +405,14 @@ messages-per-sec:      0.33   total-messages:      1857     last-message: 6/20/1
 
 
 _N.B. you can use the up arrow on your keyboard to cycle through KSQL command history for easy access and replay of previous commands. Ctrl-R also works for searching command history._
+
+=== Web Application for the derived stream
+
+We now have the derived data in a Kafka topic. A team in our organization is interested in building an application to view this derived data in a web application.
+
+A sample NodeJS websockets application has been built from the code in link:websockets[].  You can view the application at http://localhost:8080.
+
+image::images/websockets.png[]
 
 === Query the stream
 
@@ -1086,16 +1096,36 @@ To terminate the workshop environment, run `docker-compose down`:
 [source,bash]
 ----
 $ docker-compose down
-Stopping ksql-workshop_ksql-server_1     ... done
-Stopping ksql-workshop_datagen-ratings_1 ... done
-Stopping ksql-workshop_schema-registry_1 ... done
-Stopping ksql-workshop_kafka_1           ... done
-Stopping ksql-workshop_zookeeper_1       ... done
-Removing ksql-workshop_ksql-server_1     ... done
-Removing ksql-workshop_datagen-ratings_1 ... done
-Removing ksql-workshop_schema-registry_1 ... done
-Removing ksql-workshop_kafka_1           ... done
-Removing ksql-workshop_zookeeper_1       ... done
+Stopping control-center   ... done
+Stopping datagen-ratings  ... done
+Stopping connect-debezium ... done
+Stopping kafka-connect    ... done
+Stopping ksql-cli         ... done
+Stopping schema-registry  ... done
+Stopping kafkacat         ... done
+Stopping ksql-server      ... done
+Stopping kibana           ... done
+Stopping kafka            ... done
+Stopping nginx            ... done
+Stopping elasticsearch    ... done
+Stopping websockets       ... done
+Stopping zookeeper        ... done
+Stopping mysql            ... done
+Removing control-center   ... done
+Removing datagen-ratings  ... done
+Removing connect-debezium ... done
+Removing kafka-connect    ... done
+Removing ksql-cli         ... done
+Removing schema-registry  ... done
+Removing kafkacat         ... done
+Removing ksql-server      ... done
+Removing kibana           ... done
+Removing kafka            ... done
+Removing nginx            ... done
+Removing elasticsearch    ... done
+Removing websockets       ... done
+Removing zookeeper        ... done
+Removing mysql            ... done
 Removing network ksql-workshop_default
 ----
 
