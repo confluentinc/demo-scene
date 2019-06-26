@@ -109,7 +109,7 @@ services:
 
   # Runs the Kafka KSQL data generator for ratings
   datagen-ratings:
-    image: confluentinc/ksql-examples:5.1.2
+    image: confluentinc/ksql-examples:5.2.2
     container_name: datagen-ratings
     depends_on:
       - kafka
