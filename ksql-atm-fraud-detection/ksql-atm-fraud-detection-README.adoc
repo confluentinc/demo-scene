@@ -298,3 +298,68 @@ http://localhost:5601/app/kibana#/dashboard/fraudulent-atm-transactions?_g=(refr
 
 http://localhost:5601/app/kibana#/discover/90f2e7f0-ef15-11e8-a410-976398351471?_g=(refreshInterval:(pause:!f,value:30000),time:(from:now-15m,mode:quick,to:now))&_a=(columns:!(ACCOUNT_ID,CUSTOMER_NAME,TX1_ATM,TX1_AMOUNT,TX2_ATM,TX2_AMOUNT,DISTANCE_BETWEEN_TXN_KM,MINUTES_DIFFERENCE),filters:!(),index:atm-possible-fraud-enriched,interval:auto,query:(language:lucene,query:''),sort:!(TX1_TIMESTAMP,desc))[Show detail view in Kibana]
 
+== Demo 4 : customer data enrichment -> Neo4j
+
+Kafka Connect can stream data from a topic directly to Neo4j: 
+
+image::images/neo02.png[]
+
+But note how the data is missing any information about the account holder. We can use KSQL to enrich the raw stream of all transactions and adds in information about the account holder. 
+
+* Declare stream and tables if not already: 
++
+[source,sql]
+----
+CREATE STREAM ATM_TXNS_GESS (account_id VARCHAR, 
+                            atm VARCHAR, 
+                            location STRUCT<lon DOUBLE, 
+                                            lat DOUBLE>, 
+                            amount INT, 
+                            timestamp VARCHAR, 
+                            transaction_id VARCHAR) 
+            WITH (KAFKA_TOPIC='atm_txns_gess', 
+            VALUE_FORMAT='JSON', 
+            TIMESTAMP='timestamp', 
+            TIMESTAMP_FORMAT='yyyy-MM-dd HH:mm:ss X');
+
+SET 'auto.offset.reset' = 'earliest';
+CREATE STREAM ACCOUNTS_STREAM WITH (KAFKA_TOPIC='asgard.demo.accounts', VALUE_FORMAT='AVRO');
+CREATE STREAM ACCOUNTS_REKEYED WITH (PARTITIONS=1) AS SELECT * FROM ACCOUNTS_STREAM PARTITION BY ACCOUNT_ID;
+-- This select statement is simply to make sure that we have time for the ACCOUNTS_REKEYED topic
+-- to be created before we define a table against it
+SELECT * FROM ACCOUNTS_REKEYED LIMIT 1;
+CREATE TABLE ACCOUNTS WITH (KAFKA_TOPIC='ACCOUNTS_REKEYED',VALUE_FORMAT='AVRO',KEY='ACCOUNT_ID');
+----
+
+* Do the join:
++
+[source,sql]
+----
+CREATE STREAM ATM_TXNS_GESS_ENRICHED WITH (PARTITIONS=1) AS 
+SELECT A.ACCOUNT_ID AS ACCOUNT_ID,
+        A.TIMESTAMP AS TIMESTAMP,
+        A.AMOUNT AS AMOUNT,
+        A.ATM AS ATM,
+        A.LOCATION AS LOCATION,
+        A.TRANSACTION_ID AS TRANSACTION_ID,
+        B.FIRST_NAME + ' ' + B.LAST_NAME AS CUSTOMER_NAME, 
+        B.EMAIL AS CUSTOMER_EMAIL, 
+        B.PHONE AS CUSTOMER_PHONE, 
+        B.ADDRESS AS CUSTOMER_ADDRESS, 
+        B.COUNTRY AS CUSTOMER_COUNTRY 
+FROM ATM_TXNS_GESS A 
+     INNER JOIN ACCOUNTS B 
+     ON A.ACCOUNT_ID = B.ACCOUNT_ID;
+----
+
+* Launch http://localhost:7474/browser/[Neo4j Browser] (login: `neo4j / connect`) and run query: 
++
+[source,sql]
+----
+MATCH p=(n)-->() WHERE exists(n.customer_name) RETURN p LIMIT 2
+----
++
+image::images/neo01.png[]
++
+image::images/neo03.png[]
+

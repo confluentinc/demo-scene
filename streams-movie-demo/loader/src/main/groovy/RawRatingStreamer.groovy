@@ -1,6 +1,7 @@
 import io.confluent.demo.ConfigLoader
 import io.confluent.demo.Parser
 import io.confluent.demo.Rating
+import io.confluent.devx.kafka.config.ConfigLoader
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.LongSerializer

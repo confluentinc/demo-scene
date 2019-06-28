@@ -26,26 +26,25 @@ import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import lombok.extern.slf4j.Slf4j;
 
-import static io.confluent.demo.StreamsDemo.*;
+import static io.confluent.demo.StreamsDemo.RATED_MOVIES_TOPIC_NAME;
 import static io.confluent.demo.StreamsDemo.RAW_MOVIES_TOPIC_NAME;
 import static io.confluent.demo.StreamsDemo.RAW_RATINGS_TOPIC_NAME;
 import static io.confluent.demo.StreamsDemo.getMoviesTable;
 import static io.confluent.demo.StreamsDemo.getRatedMoviesTable;
 import static io.confluent.demo.StreamsDemo.getRatingAverageTable;
 import static io.confluent.demo.StreamsDemo.getRawRatingsStream;
+import static io.confluent.demo.StreamsDemo.getSerdeConfig;
 import static io.confluent.demo.StreamsDemo.getStreamsConfig;
 import static io.confluent.demo.fixture.MoviesAndRatingsData.DUMMY_KAFKA_CONFLUENT_CLOUD_9092;
 import static io.confluent.demo.fixture.MoviesAndRatingsData.DUMMY_SR_CONFLUENT_CLOUD_8080;
 import static io.confluent.demo.fixture.MoviesAndRatingsData.LETHAL_WEAPON_MOVIE;
 import static io.confluent.demo.fixture.MoviesAndRatingsData.LETHAL_WEAPON_RATING_9;
-import static io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
-import static java.util.Collections.singletonMap;
 
 @Slf4j
 public class StreamsDemoE2ETest {
 
-  TopologyTestDriver td;
-  SpecificAvroSerde<RatedMovie> ratedMovieSerde;
+  private TopologyTestDriver td;
+  private SpecificAvroSerde<RatedMovie> ratedMovieSerde;
 
 
   @Before
@@ -56,25 +55,27 @@ public class StreamsDemoE2ETest {
     // workaround https://stackoverflow.com/a/50933452/27563
     config.setProperty(StreamsConfig.STATE_DIR_CONFIG, "/tmp/kafka-streams/" + LocalDateTime.now().toString());
 
+    final Map<String, String> mockSerdeConfig = getSerdeConfig(config);
+
     //building topology
     StreamsBuilder builder = new StreamsBuilder();
 
-    final MockSchemaRegistryClient mockSRClient = new MockSchemaRegistryClient();
-    final Map<String, String> mockSerdeConfig = singletonMap(SCHEMA_REGISTRY_URL_CONFIG, DUMMY_SR_CONFLUENT_CLOUD_8080);
-    SpecificAvroSerde<Movie> movieSerde = new SpecificAvroSerde<>(mockSRClient);
+    SpecificAvroSerde<Movie> movieSerde = new SpecificAvroSerde<>(new MockSchemaRegistryClient());
     movieSerde.configure(mockSerdeConfig, false);
-    ratedMovieSerde = new SpecificAvroSerde<>(mockSRClient);
+
+    ratedMovieSerde = new SpecificAvroSerde<>(new MockSchemaRegistryClient());
     ratedMovieSerde.configure(mockSerdeConfig, false);
 
-    final KTable<Long, Movie> moviesTable = getMoviesTable(builder, movieSerde);
     final KStream<Long, String> rawRatingsStream = getRawRatingsStream(builder);
     final KTable<Long, Double> ratingAverageTable = getRatingAverageTable(rawRatingsStream);
+
+    final KTable<Long, Movie> moviesTable = getMoviesTable(builder, movieSerde);
     final KTable<Long, RatedMovie>
         ratedMoviesTable =
         getRatedMoviesTable(moviesTable, ratingAverageTable, ratedMovieSerde);
 
     final Topology topology = builder.build();
-    log.info("Topology = {}\n", topology);
+    log.info("Topology = \n{}", topology.describe());
     td = new TopologyTestDriver(topology, config);
   }
 

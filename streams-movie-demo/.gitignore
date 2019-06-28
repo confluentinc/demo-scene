@@ -9,5 +9,6 @@ target/
 .project
 .settings
 bin
-.idea/
+!.idea/icon.png
+!.idea/icon_dark.png
 workshop/delta_configs

@@ -27,6 +27,8 @@ class RatingUtil {
       [id: 658, rating: 4.6], // Beowulf
       [id: 547, rating: 2.3], // American Pie 2
       [id: 496, rating: 6.9], // 13 Going on 30
+      [id: 193, rating: 8.0], // Terminator
+      [id: 501, rating: 8.5] // Terminator 2
   ]
 
   static Rating generateRandomRating(List<LinkedHashMap<String, Number>> ratingTargets, int stddev) {

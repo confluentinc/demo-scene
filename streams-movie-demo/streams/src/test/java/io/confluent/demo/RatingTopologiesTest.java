@@ -28,17 +28,17 @@ import static io.confluent.demo.StreamsDemo.RAW_RATINGS_TOPIC_NAME;
 import static io.confluent.demo.StreamsDemo.getRatingAverageTable;
 import static io.confluent.demo.StreamsDemo.getRawRatingsStream;
 import static io.confluent.demo.StreamsDemo.getStreamsConfig;
-import static io.confluent.demo.fixture.MoviesAndRatingsData.*;
+import static io.confluent.demo.fixture.MoviesAndRatingsData.LETHAL_WEAPON_RATING_10;
+import static io.confluent.demo.fixture.MoviesAndRatingsData.LETHAL_WEAPON_RATING_8;
 import static org.junit.Assert.assertNotNull;
 
 @Slf4j
 public class RatingTopologiesTest {
 
   private TopologyTestDriver testDriver;
-  private StreamsDemo demoApp;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     final Properties streamsConfig = getStreamsConfig("dummy:1234", "", "");
     StreamsBuilder builder = new StreamsBuilder();
     final KStream<Long, String> rawRatingsStream = getRawRatingsStream(builder);

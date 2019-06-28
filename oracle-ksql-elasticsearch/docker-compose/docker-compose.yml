@@ -2,13 +2,15 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.0.1
+    image: confluentinc/cp-zookeeper:5.2.2
+    container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.0.1
+    image: confluentinc/cp-enterprise-kafka:5.2.2
+    container_name: kafka
     depends_on:
       - zookeeper
     ports:
@@ -33,8 +35,9 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.0.1
-    ports: 
+    image: confluentinc/cp-schema-registry:5.2.2
+    container_name: schema-registry
+    ports:
       - 8081:8081
     depends_on:
       - zookeeper
@@ -44,7 +47,8 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   kafka-connect-cp:
-    image: confluentinc/cp-kafka-connect:5.0.1
+    image: confluentinc/cp-kafka-connect:5.2.2
+    container_name: kafka-connect-cp
     depends_on:
       - zookeeper
       - kafka
@@ -74,15 +78,17 @@ services:
     volumes:
       - $PWD/scripts:/scripts
       - db-leach:/db-leach/
-    command: 
-      - bash 
-      - -c 
+    command:
+      - bash
+      - -c
       - |
         cp /db-leach/jdbc/lib/ojdbc8.jar /usr/share/java/kafka-connect-jdbc
         sleep infinity &
         /etc/confluent/docker/run
+
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.0.1
+    image: confluentinc/cp-ksql-server:5.2.2
+    container_name: ksql-server
     depends_on:
       - kafka
       - schema-registry
@@ -94,7 +100,8 @@ services:
       KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
 
   ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.0.1
+    image: confluentinc/cp-ksql-cli:5.2.2
+    container_name: ksql-cli
     depends_on:
       - ksql-server
     entrypoint: /bin/sh
@@ -102,7 +109,8 @@ services:
 
   # Runs the Kafka KSQL data generator for ratings
   datagen-ratings:
-    image: confluentinc/ksql-examples:5.0.1
+    image: confluentinc/ksql-examples:5.2.2
+    container_name: datagen-ratings
     depends_on:
       - kafka
       - schema-registry
@@ -122,9 +130,10 @@ services:
 
 # Other systems
   oracle:
-    # You need to build this image first, following the instructions at 
+    # You need to build this image first, following the instructions at
     # https://github.com/oracle/docker-images/blob/master/OracleDatabase/SingleInstance/README.md
     image: oracle/database:12.2.0.1-ee
+    container_name: oracle
     environment:
       - ORACLE_PWD=Admin123
     ports:
@@ -137,7 +146,8 @@ services:
       - db-leach:/opt/oracle/product/12.2.0.1/dbhome_1/
 
   connect-debezium:
-    image: debezium/connect:0.9
+    image: debezium/connect:0.9.3.Final
+    container_name: connect-debezium
     depends_on:
      - kafka
      - oracle
@@ -158,9 +168,9 @@ services:
     volumes:
       - $PWD/scripts:/scripts
       - db-leach:/db-leach/
-    command: 
-      - bash 
-      - -c 
+    command:
+      - bash
+      - -c
       - |
         cp /db-leach/jdbc/lib/ojdbc8.jar /kafka/libs
         cp /db-leach/rdbms/jlib/xstreams.jar /kafka/libs
@@ -189,7 +199,8 @@ services:
   #   image: domgiles/swingbench:latest
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.3.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.7.0
+    container_name: elasticsearch
     ports:
       - 9200:9200
     environment:
@@ -199,7 +210,8 @@ services:
      - $PWD/scripts:/scripts
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:6.3.0
+    image: docker.elastic.co/kibana/kibana:6.7.0
+    container_name: kibana
     depends_on:
       - elasticsearch
     ports:
@@ -210,6 +222,3 @@ services:
 
 volumes:
     db-leach: {}
-
-
-

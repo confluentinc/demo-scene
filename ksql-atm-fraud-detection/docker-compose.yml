@@ -119,7 +119,7 @@ services:
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
-      CONNECT_PLUGIN_PATH: '/usr/share/java,/etc/kafka-connect/jars,/connectors'
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/'
       # Interceptor config
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
@@ -132,7 +132,20 @@ services:
       - bash 
       - -c 
       - |
+        echo "Waiting for installation to complete"
+        confluent-hub install --no-prompt neo4j/kafka-connect-neo4j:1.0.0
+        #
+        echo -e "\tWaiting for installation to complete"
+        while [ ! -d /usr/share/confluent-hub-components/neo4j-kafka-connect-neo4j ]
+          do
+          sleep 1
+          echo -en "\tWaiting for installation to complete…"
+          date
+        done
+        #
+        echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 
+        #
         echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
         while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -eq 000 ] ; do 
           echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) " (waiting for 200)"
@@ -141,6 +154,9 @@ services:
         nc -vz $$CONNECT_REST_ADVERTISED_HOST_NAME $$CONNECT_REST_PORT
         echo -e "\n--\n+> Creating Kafka Connect Elasticsearch sink"
         /scripts/create-es-sink.sh 
+        nc -vz $$CONNECT_REST_ADVERTISED_HOST_NAME $$CONNECT_REST_PORT
+        echo -e "\n--\n+> Creating Kafka Connect Neo4J sink"
+        /scripts/create-neo4j-sink.sh
         sleep infinity
 
   control-center:
@@ -187,7 +203,7 @@ services:
       - monitoring-interceptors-share:/usr/share/java/monitoring-interceptors/
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.5.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.7.0
     container_name: elasticsearch
     ports:
       - 9200:9200
@@ -211,7 +227,7 @@ services:
         sleep infinity
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:6.5.1
+    image: docker.elastic.co/kibana/kibana:6.7.0
     container_name: kibana
     depends_on:
       - elasticsearch
@@ -244,7 +260,7 @@ services:
      - $PWD/scripts:/scripts
 
   mysql:
-    image: debezium/example-mysql:0.8
+    image: debezium/example-mysql:0.9
     container_name: mysql
     environment:
      - MYSQL_ROOT_PASSWORD=debezium
@@ -300,6 +316,8 @@ services:
   send-gess-to-kafka:
     image: confluentinc/cp-enterprise-kafka:5.2.1
     container_name: send-gess-to-kafka
+    depends_on:
+     - control-center
     environment: 
       CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.1.jar
     command: 
@@ -314,6 +332,19 @@ services:
         kafka-console-producer --broker-list kafka:29092 --topic atm_txns_gess --producer.config /tmp/producer.config
     volumes: 
       - monitoring-interceptors-share:/usr/share/java/monitoring-interceptors/
+
+  neo4j:
+    image: neo4j:3.4-enterprise
+    container_name: neo4j
+    ports:
+    - "7474:7474"
+    - "7687:7687"
+    environment:
+      NEO4J_kafka_zookeeper_connect: zookeeper:2181
+      NEO4J_kafka_bootstrap_servers: broker:9093
+      NEO4J_AUTH: neo4j/connect
+      NEO4J_dbms_memory_heap_max__size: 8G
+      NEO4J_ACCEPT_LICENSE_AGREEMENT: 'yes'
 
 volumes: 
   monitoring-interceptors-share: {}

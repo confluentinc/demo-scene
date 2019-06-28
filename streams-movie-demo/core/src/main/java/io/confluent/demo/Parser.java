@@ -4,17 +4,22 @@ import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.stream.Collectors;
-import javax.json.*;
+
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
 
 public class Parser {
 
-    static List<CharSequence> parseArray(String text) {
+    static List<String> parseArray(String text) {
         return Collections.list(new StringTokenizer(text, "|")).stream()
                 .map(token -> (String) token)
                 .collect(Collectors.toList());
     }
 
-   static Movie parseMovie(String text) {
+   public static Movie parseMovie(String text) {
       String[] tokens = text.split("\\:\\:");
       String id = tokens[0];
       String title = tokens[1];
@@ -75,7 +80,7 @@ public class Parser {
    }
 
 
-   static JsonObject toJson(Movie movie) {
+   public static JsonObject toJson(Movie movie) {
       JsonBuilderFactory factory = Json.createBuilderFactory(null);
       return factory.createObjectBuilder()
               .add("movie_id", movie.getMovieId())
@@ -93,7 +98,17 @@ public class Parser {
               .build();
    }
 
-   static JsonArray toJsonArrayOfStrings(List<CharSequence> elements) {
+   public static JsonObject toJson(RatedMovie ratedMovie){
+      JsonBuilderFactory factory = Json.createBuilderFactory(null);
+      return factory.createObjectBuilder()
+          .add("movie_id", ratedMovie.getMovieId().toString())
+          .add("title",ratedMovie.getTitle().toString())
+          .add("release_year",ratedMovie.getReleaseYear())
+          .add("rating", ratedMovie.getRating().toString())
+          .build();
+   }
+   
+   static JsonArray toJsonArrayOfStrings(List<String> elements) {
        JsonArrayBuilder arrayBuilder = Json.createBuilderFactory(null).createArrayBuilder();
        for(CharSequence element : elements) {
           arrayBuilder.add(element.toString());

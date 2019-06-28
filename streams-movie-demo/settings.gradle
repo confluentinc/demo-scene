@@ -1,1 +1,1 @@
-include 'core', 'streams', 'loader', 'spring-streams', 'spring-web-loader'
+include 'core', 'streams', 'loader', 'spring-streams', 'spring-web-loader', 'streams-kubernetes', 'streams-kotlin'

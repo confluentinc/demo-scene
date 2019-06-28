@@ -2,7 +2,7 @@ package io.confluent.demo.fixture;
 
 public class MoviesAndRatingsData {
 
-  public static final String DUMMY_SR_CONFLUENT_CLOUD_8080 = "dummy.sr.confluent.cloud:8080";
+  public static final String DUMMY_SR_CONFLUENT_CLOUD_8080 = "http://dummy.sr.confluent.cloud:8080";
   public static final String DUMMY_KAFKA_CONFLUENT_CLOUD_9092 = "dummy.kafka.confluent.cloud:9092";
   public static final String
       LETHAL_WEAPON_MOVIE =

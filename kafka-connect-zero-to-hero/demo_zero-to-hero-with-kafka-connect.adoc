@@ -1,0 +1,226 @@
+= From Zero to Hero with Kafka Connect - demo script
+Robin Moffatt <robin@confluent.io>
+v1.10, June 17, 2019
+:toc:
+
+== Running the test rig
+
+1. Bring up the stack
++
+[source,bash]
+----
+git clone https://github.com/confluentinc/demo-scene.git
+cd kafka-connect-zero-to-hero
+docker-compose up -d
+----
++
+This brings up the stack ready for use. 
+
+2. Wait for Kafka Connect to be started
++
+[source,bash]
+----
+bash -c ' \
+echo -e "\n\n=============\nWaiting for Kafka Connect to start listening on localhost ⏳\n=============\n"
+while [ $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) -eq 000 ] ; do 
+  echo -e "\t" $(date) " Kafka Connect listener HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) " (waiting for 200)"
+  sleep 10 
+done
+echo -e $(date) "\n\n--------------\n\o/ Kafka Connect is ready! Listener HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) "\n--------------\n"
+docker-compose logs -f kafka-connect-01
+'
+----
+
+3. Make sure that the Elasticsearch, Debezium, and Neo4j connectors are available: 
++
+[source,bash]
+----
+curl -s localhost:8083/connector-plugins|jq '.[].class'
+----
++
+Expect: 
++
+[source,bash]
+----
+[…]
+"io.confluent.connect.elasticsearch.ElasticsearchSinkConnector"
+"io.debezium.connector.mysql.MySqlConnector"
+"streams.kafka.connect.sink.Neo4jSinkConnector"
+[…]
+----
+
+3. Get a MySQL prompt
++
+[source,bash]
+----
+docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD demo'
+----
+
+
+== Demo 1 - Kafka Connect pipelines
+
+A MySQL database stores orders placed by an application. 
+
+* Kafka Connect - Debezium MySQL connector streams them into Kafka topic
+* Kafka Connect - Elasticsearch connector to stream orders from Kafka topic to both Elasticsearch and Neo4j
+
+=== Ingest data from a database
+
+==== Look at the DB
+
+[source,sql]
+----
+SELECT * FROM ORDERS ORDER BY CREATE_TS DESC LIMIT 1\G
+----
+
+Trigger the MySQL data generator with: 
+
+[source,bash]
+----
+docker-compose exec mysql /data/02_populate_more_orders.sh
+----
+
+Look at the new rows!
+
+[source,bash]
+----
+watch -n 2 -x docker-compose exec mysql bash -c 'echo "SELECT * FROM ORDERS ORDER BY CREATE_TS DESC LIMIT 1 \G" | mysql -u root -p$MYSQL_ROOT_PASSWORD demo'
+----
+
+==== Create the connector
+
+[source,bash]
+----
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -d '{
+      "name": "source-debezium-orders-00",
+      "config": {
+            "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+            "database.hostname": "mysql",
+            "database.port": "3306",
+            "database.user": "debezium",
+            "database.password": "dbz",
+            "database.server.id": "42",
+            "database.server.name": "asgard",
+            "table.whitelist": "demo.orders",
+            "database.history.kafka.bootstrap.servers": "kafka:29092",
+            "database.history.kafka.topic": "dbhistory.demo" ,
+            "decimal.handling.mode": "double",
+            "include.schema.changes": "true",
+            "transforms": "unwrap,addTopicPrefix",
+            "transforms.unwrap.type": "io.debezium.transforms.UnwrapFromEnvelope",
+            "transforms.addTopicPrefix.type":"org.apache.kafka.connect.transforms.RegexRouter",
+            "transforms.addTopicPrefix.regex":"(.*)",
+            "transforms.addTopicPrefix.replacement":"mysql-debezium-$1"
+       }
+    }'
+----
+
+Check the status of the connector
+
+[source,bash]
+----
+curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+----
+
+Output should be
+
+[source,bash]
+----
+source-debezium-orders-00  |  RUNNING  |  RUNNING
+----
+
+http://localhost:9021/management/topics[View the topic in Confluent Control Center] or from the CLI: 
+
+[source,bash]
+----
+docker-compose exec -T kafka-connect-01 \
+            kafka-avro-console-consumer \
+            --bootstrap-server kafka:29092 \
+            --property schema.registry.url=http://schema-registry:8081 \
+            --topic mysql-debezium-asgard.demo.ORDERS | jq '.'
+----
+
+Show Kafka Consumer and MySQL side by side. 
+
+
+=== Stream data from Kafka to Elasticsearch
+
+[source,bash]
+----
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -d '{
+      "name": "sink-elastic-orders-00",
+      "config": {
+        "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+        "topics": "mysql-debezium-asgard.demo.ORDERS",
+        "connection.url": "http://elasticsearch:9200",
+        "type.name": "type.name=kafkaconnect",
+        "key.ignore": "true",
+        "schema.ignore": "true"
+      }
+    }'
+----
+
+Force Kibana to refresh its field list: 
+
+[source,bash]
+----
+curl -s 'http://localhost:5601/api/saved_objects/_bulk_get' \
+  -H 'kbn-xsrf: nevergonnagiveyouup' \
+  -H 'Content-Type: application/json' \
+  -d '[{"id":"mysql-debezium-asgard.demo.orders","type":"index-pattern"}]'
+----
+
+=== Stream to Neo4j
+
+[source,bash]
+----
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -d '{
+          "name": "sink-neo4j-orders-00",
+          "config": {
+            "connector.class": "streams.kafka.connect.sink.Neo4jSinkConnector",
+            "topics": "mysql-debezium-asgard.demo.ORDERS",
+            "neo4j.server.uri": "bolt://neo4j:7687",
+            "neo4j.authentication.basic.username": "neo4j",
+            "neo4j.authentication.basic.password": "connect",
+            "neo4j.topic.cypher.mysql-debezium-asgard.demo.ORDERS": "MERGE (city:city{city: event.delivery_city}) MERGE (customer:customer{id: event.customer_id, delivery_address: event.delivery_address, delivery_city: event.delivery_city, delivery_company: event.delivery_company}) MERGE (vehicle:vehicle{make: event.make, model:event.model}) MERGE (city)<-[:LIVES_IN]-(customer)-[:BOUGHT{order_total_usd:event.order_total_usd,order_id:event.order_id}]->(vehicle)"
+          }
+        } '
+----
+
+=== View in Elasticsearch
+
+
+http://localhost:5601/app/kibana#/discover?_g=(refreshInterval:(pause:!f,value:5000),time:(from:now-15m,mode:quick,to:now))&_a=(columns:!(order_id,customer_id,delivery_address,delivery_city,delivery_company,make,model,order_total_usd),index:mysql-debezium-asgard.demo.orders,interval:auto,query:(language:lucene,query:''),sort:!(CREATE_TS,desc))[Inspect the data in Kibana] or from CLI: 
+
+[source,bash]
+----
+curl -s http://localhost:9200/mysql-debezium-asgard.demo.orders/_search \
+  -H 'content-type: application/json' \
+  -d '{ "size": 1, "sort": [ { "CREATE_TS": { "order": "desc" } } ] }' |\
+  jq '.'
+----
+
+[NOTE]
+====
+If you want to set the Elasticsearch document id to match the key of the source database record use the following: 
+
+[source,bash]
+----
+"key.ignore": "true",
+…
+"transforms": "extractKey",
+"transforms.extractKey.type":"org.apache.kafka.connect.transforms.ExtractField$Key",
+"transforms.extractKey.field":"id"
+----
+====
+
+=== View in Neo4j
+
+View in http://localhost:7474/browser/[Neo4j browser]
+

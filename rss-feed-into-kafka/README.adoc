@@ -1,0 +1,57 @@
+= Streaming RSS into Kafka
+
+== Introduction
+
+Using the https://www.confluent.io/connector/kafka-connect-rss-source/[Kafka Connect RSS] connector you can stream the contents of an RSS feed into a Kafka topic. 
+
+This demo includes several sources: 
+
+* U.S. Securities and Exchange Commission feed
+* BBC News feed
+* HackerNews new posts
+
+== Running
+
+[source,bash]
+----
+docker-compose up -d
+----
+
+== KSQL statements
+
+* You can use Control Center (http://localhost:9021) or launch KSQL CLI: 
++
+[source,bash]
+----
+docker-compose exec ksql-cli bash -c 'echo -e "\n\n⏳ Waiting for KSQL to be available before launching CLI\n"; while [ $(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/) -eq 000 ] ; do echo -e $(date) "KSQL Server HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/) " (waiting for 200)" ; sleep 5 ; done; ksql http://ksql-server:8088'
+----
+
+* Create streams
++
+[source,bash]
+----
+CREATE STREAM BBC_NEWS_UK WITH (KAFKA_TOPIC='bbc-news-uk',VALUE_FORMAT='AVRO');
+CREATE STREAM MUTUAL_FUND_FILINGS WITH (KAFKA_TOPIC='xbrl-rr',VALUE_FORMAT='AVRO');
+CREATE STREAM HACKERNEWS WITH (KAFKA_TOPIC='hackernews',VALUE_FORMAT='AVRO');
+----
+
+* Query
++
+[source,sql]
+----
+SELECT FEED->TITLE,
+       DATE,
+       TITLE,
+       CONTENT, 
+       LINK
+  FROM BBC_NEWS_UK
+ LIMIT 5;
+----
++
+[source,sql]
+----
+BBC News - UK | 2019-05-17T14:47:10Z | Labour-Tory Brexit talks end without deal | Jeremy Corbyn says discussions "have gone as far as they can", while Theresa May calls them "difficult".
+BBC News - UK | 2019-05-17T15:33:15Z | London Bridge inquest: Nurse killed as she helped other victim | Kirsty Boden said "I have to go help", but was stabbed as she knelt over a dying victim, an inquest hears.
+BBC News - UK | 2019-05-17T15:18:53Z | Foreign Office warns against Iran travel for British-Iranians | British-Iranian nationals are advised against going to Iran because of an "intolerable risk" of mistreatment.
+----
+

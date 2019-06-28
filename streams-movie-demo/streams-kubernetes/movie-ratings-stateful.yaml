@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "streaming-movie-ratings"
+  labels:
+    app: "streaming-movie-ratings"
+spec:
+  clusterIP: None
+  selector:
+    app: "streaming-movie-ratings"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "streaming-movie-ratings"
+spec:
+  serviceName: "streaming-movie-ratings"
+  replicas: 2
+  podManagementPolicy: "Parallel"
+  selector:
+    matchLabels:
+      app: "streaming-movie-ratings"
+  template:
+    metadata:
+      labels:
+        app: "streaming-movie-ratings"
+    spec:
+      containers:
+        - name: "streaming-movie-ratings"
+          image: gcr.io/cloud-private-dev/gamussa/streaming-movie-ratings:latest
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: -DLOGLEVEL=INFO
+          volumeMounts:
+            - name: rocksdb
+              mountPath: /var/lib/kafka-streams
+  volumeClaimTemplates:
+    - metadata:
+        name: rocksdb
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi

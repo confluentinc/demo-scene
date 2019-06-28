@@ -8,6 +8,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
 
 ## Contents
 
+
 - Data pipelines (Database + KSQL + Elasticsearch)
 
   - [MySQL / Debezium CDC / KSQL / Elasticsearch](mysql-debezium-ksql-elasticsearch)
@@ -38,6 +39,9 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - [Hacky export/import between Kafka clusters](export-import-with-kafkacat) using `kafkacat`
   - Docker Compose for just the [community licensed components of Confluent Platform](cos)
   - [Topic Tailer](topic-tailer), stream topics to the browser using websockets
+  - [KPay payment processing example](scalable-payment-processing)
+  - [Industry themes (e.g. banking Next Best Offer)](industry-themes)
+
 
 ## Feedback & Questions
 

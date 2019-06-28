@@ -27,7 +27,7 @@ import static org.junit.Assert.assertNotNull;
 @Slf4j
 public class MoviesTopologyTest {
 
-  TopologyTestDriver td;
+  private TopologyTestDriver td;
 
   @Before
   public void setUp() {
