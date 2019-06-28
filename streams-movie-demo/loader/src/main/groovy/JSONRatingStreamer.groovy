@@ -43,7 +43,7 @@ class JSONRatingStreamer {
             def pr = new ProducerRecord('ratings', rating.movieId, Parser.toJson(rating).toString())
             producer.send(pr)
             recordsProduced++
-            Thread.sleep(250);
+            //Thread.sleep(250);
          }
       }
       finally {
