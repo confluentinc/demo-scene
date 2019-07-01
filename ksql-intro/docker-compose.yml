@@ -15,14 +15,14 @@ services:
       - zookeeper
     ports:
     # "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-
-    # An important note about accessing Kafka from clients on other machines: 
+    # An important note about accessing Kafka from clients on other machines:
     # -----------------------------------------------------------------------
     #
     # The config used here exposes port 9092 for _external_ connections to the broker
     # i.e. those from _outside_ the docker network. This could be from the host machine
-    # running docker, or maybe further afield if you've got a more complicated setup. 
-    # If the latter is true, you will need to change the value 'localhost' in 
-    # KAFKA_ADVERTISED_LISTENERS to one that is resolvable to the docker host from those 
+    # running docker, or maybe further afield if you've got a more complicated setup.
+    # If the latter is true, you will need to change the value 'localhost' in
+    # KAFKA_ADVERTISED_LISTENERS to one that is resolvable to the docker host from those
     # remote clients
     #
     # For connections _internal_ to the docker network, such as from other services
@@ -92,9 +92,9 @@ services:
     entrypoint: /bin/sh
     tty: true
 
-  kafka-connect:
+  kafka-connect-01:
     image: confluentinc/cp-kafka-connect:5.2.2
-    container_name: kafka-connect
+    container_name: kafka-connect-01
     depends_on:
       - zookeeper
       - kafka
@@ -114,7 +114,7 @@ services:
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-01"
       CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
       CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
@@ -129,9 +129,9 @@ services:
       - /Users/Robin/git/kafka-connect-datagen/target/components/packages/:/packages
       - $PWD:/data
     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
-    command: 
-      - bash 
-      - -c 
+    command:
+      - bash
+      - -c
       - |
         echo "Installing datagen connector"
         # confluent-hub install --no-prompt /packages/confluentinc-kafka-connect-datagen-0.2.0-SNAPSHOT.zip
@@ -143,19 +143,17 @@ services:
         fi
         #
         echo "Launching Kafka Connect worker"
-        /etc/confluent/docker/run & 
+        /etc/confluent/docker/run &
         #
         echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -eq 000 ] ; do 
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -ne 200 ] ; do
           echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) " (waiting for 200)"
-          sleep 5 
+          sleep 5
         done
         #
         echo "Creating connector"
-        curl -s -X POST -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+        curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/source-datagen-item_details_01/config \
             -d '{
-          "name": "source-datagen-item_details_01",
-          "config": {
             "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
             "key.converter": "org.apache.kafka.connect.storage.StringConverter",
             "kafka.topic": "item_details_01",
@@ -164,29 +162,23 @@ services:
             "schema.filename": "/data/item_details.avsc",
             "schema.keyfield": "id",
             "tasks.max": "1"
-          }
-        }'
-        curl -s -X POST -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+          }'
+        curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/source-datagen-orders-us/config \
             -d '{
-          "name": "source-datagen-orders-us",
-          "config": {
             "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
             "kafka.topic": "orders",
             "schema.filename": "/data/orders_us.avsc",
             "schema.keyfield": "orderid",
             "tasks.max": "1"
-          }
+
         }'
-        curl -s -X POST -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+        curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/source-datagen-orders-uk/config \
             -d '{
-          "name": "source-datagen-orders-uk",
-          "config": {
             "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
             "kafka.topic": "orders_uk",
             "schema.filename": "/data/orders_uk.avsc",
             "schema.keyfield": "orderid",
             "tasks.max": "1"
-          }
         }'
         sleep infinity
 
@@ -197,14 +189,14 @@ services:
       - zookeeper
       - kafka
       - schema-registry
-      - kafka-connect
+      - kafka-connect-01
       - ksql-server
     ports:
       - "9021:9021"
     environment:
       CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
       CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      CONTROL_CENTER_CONNECT_CLUSTER: 'kafka-connect:8083'
+      CONTROL_CENTER_CONNECT_CLUSTER: 'kafka-connect-01:8083'
       CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       # The advertised URL needs to be the URL on which the browser
       #  can access the KSQL server (e.g. http://localhost:8088/info)
@@ -223,9 +215,44 @@ services:
       CONTROL_CENTER_STREAMS_CACHE_MAX_BYTES_BUFFERING: 104857600
     command:
       - bash
-      - -c 
+      - -c
       - |
-        echo "Waiting two minutes for Kafka brokers to start and 
+        echo "Waiting two minutes for Kafka brokers to start and
                necessary topics to be available"
-        sleep 120  
+        sleep 120
         /etc/confluent/docker/run
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.7.0
+    container_name: elasticsearch
+    ports:
+      - 9200:9200
+    environment:
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+      discovery.type: "single-node"
+    command:
+      - bash
+      - -c
+      - |
+        /usr/local/bin/docker-entrypoint.sh &
+        echo "Waiting for Elasticsearch to start ⏳"
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://localhost:9200/) -ne 200 ] ; do
+          echo -e $$(date) " Elasticsearch listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://localhost:9200/) " (waiting for 200)"
+          sleep 5
+        done
+        echo -e "\n--\n+> Creating Elasticsearch dynamic mapping"
+        curl -XPUT "http://localhost:9200/_template/kafkaconnect/" -H 'Content-Type: application/json' -d' { "index_patterns": "*", "settings": { "number_of_shards": 1, "number_of_replicas": 0 }, "mappings": { "_default_": { "dynamic_templates": [ { "dates": { "match": "*TIMESTAMP", "mapping": { "type": "date" } } }, { "non_analysed_string_template": { "match": "*", "match_mapping_type": "string", "mapping": { "type": "keyword" } } } ] } } }'
+        sleep infinity
+
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.7.0
+    container_name: kibana
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5601:5601
+    environment:
+      xpack.security.enabled: "false"
+      discovery.type: "single-node"
