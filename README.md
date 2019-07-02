@@ -19,6 +19,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - [Building data pipelines with Confluent Cloud and GCP (BigQuery, GCS, etc)](gcp-pipeline)
 
 - KSQL
+  - [An introduction to KSQL](ksql-intro)
   - [Live-Coding KSQL scripts](live-coding-ksql)
   - [KSQL UDF Advanced Example](ksql-udf-advanced-example)
   - [KSQL Troubleshooting](ksql-troubleshooting)
