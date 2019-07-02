@@ -19,7 +19,7 @@ cd ksql-intro
 docker-compose up -d
 ----
 
-3. Launch the KSQL CLI
+3. Launch the KSQL CLI in *TWO* terminal windows (you'll need both)
 +
 [source,bash]
 ----
@@ -37,7 +37,9 @@ SHOW TOPICS;
 
 PRINT 'orders';
 
-CREATE STREAM ORDERS WITH (VALUE_FORMAT='AVRO', KAFKA_TOPIC='orders');
+CREATE STREAM ORDERS WITH 
+  (VALUE_FORMAT='AVRO', 
+   KAFKA_TOPIC ='orders');
 
 SHOW STREAMS;
 
@@ -72,18 +74,18 @@ Open a second terminal and run KSQL CLI
 docker exec -it ksql-cli ksql http://ksql-server:8088
 ----
 
-Print the new topic:
-
-[source,sql]
-----
-PRINT 'ORDERS_NY';
-----
-
 In the original window show the source messages: 
 
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS TS, ORDERID, ADDRESS->CITY, ADDRESS->STATE FROM ORDERS;
+PRINT 'orders';
+----
+
+Print the new topic in the second window:
+
+[source,sql]
+----
+PRINT 'ORDERS_NY';
 ----
 
 Optionally, use the terminal software's Find function to highlight all `New York` text in the source stream, and show that only these messages are written to the new topic.
@@ -216,6 +218,26 @@ curl -i -X PUT -H "Accept:application/json" \
     }'
 ----
 
+Check that the connector is `RUNNING`
+
+[source,bash]
+----
+curl -s "http://localhost:8083/connectors"| \
+  jq '.[]'| \
+  xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| \
+  jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| \
+  column -s : -t| sed 's/\"//g'| sort
+----
+
+[source,bash]
+----
+sink-elastic-orders-01          |  RUNNING  |  RUNNING
+source-datagen-item_details_01  |  RUNNING  |  FAILED
+source-datagen-orders-uk        |  RUNNING  |  RUNNING
+source-datagen-orders-us        |  RUNNING  |  RUNNING
+----
+
+
 View in http://localhost:5601/app/kibana#/management/kibana/index?_g=()[Kibana]
 
 ## Aggregates 
@@ -226,7 +248,8 @@ View in http://localhost:5601/app/kibana#/management/kibana/index?_g=()[Kibana]
 ----
 SELECT MAKE, COUNT(*) AS ORDER_COUNT
   FROM ORDERS_ENRICHED 
-  GROUP BY MAKE;
+  GROUP BY MAKE 
+  LIMIT 5;
 ----
 
 ### Total order value per hour, by manufacturer
@@ -266,6 +289,8 @@ Add the second stream, containing UK orders:
 
 [source,sql]
 ----
+SHOW TOPICS;
+
 CREATE STREAM ORDERS_UK WITH (VALUE_FORMAT='AVRO', KAFKA_TOPIC='orders_uk');
 
 SELECT * FROM ORDERS_UK LIMIT 5;
@@ -282,7 +307,8 @@ CREATE STREAM ORDERS_COMBINED AS
          ITEMID, 
          ORDERUNITS, 
          ADDRESS 
-    FROM ORDERS;
+    FROM ORDERS
+    PARTITION BY ORDERID;
 ----
 
 Add the source of UK order data: 
@@ -296,14 +322,15 @@ INSERT INTO ORDERS_COMBINED
          ITEMID, 
          ORDERUNITS, 
          ADDRESS 
-    FROM ORDERS_UK;
+    FROM ORDERS_UK
+    PARTITION BY ORDERID;
 ----
 
 [source,sql]
 ----
 SET 'auto.offset.reset' = 'latest';
 
-SELECT * FROM ORDERS_COMBINED LIMIT 50;
+SELECT * FROM ORDERS_COMBINED LIMIT 20;
 ----
 
 N.B. in KSQL 5.3 the above should be changed to a CREATE STREAM and two INSERT INTO, instead of a CSAS. 
