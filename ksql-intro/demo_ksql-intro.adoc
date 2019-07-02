@@ -1,3 +1,7 @@
+# An introduction to KSQL 
+Robin Moffatt <robin@confluent.io>
+v1.00, July 2, 2019
+
 ## Setup
 
 1. Clone the repository
@@ -92,7 +96,10 @@ SELECT ORDERTIME, ORDERID, ITEMID, ORDERUNITS
   FROM ORDERS;
 
 CREATE STREAM ORDERS_NO_ADDRESS_DATA AS 
-  SELECT ORDERTIME, ORDERID, ITEMID, ORDERUNITS 
+  SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS ORDER_TIMESTAMP, 
+         ORDERID, 
+         ITEMID, 
+         ORDERUNITS 
     FROM ORDERS;
 ----
 
@@ -100,7 +107,7 @@ Observe that new schema has no address fields:
 
 [source,sql]
 ----
-DESCRIBE EXTENDED ORDERS_NO_ADDRESS;
+DESCRIBE EXTENDED ORDERS_NO_ADDRESS_DATA;
 ----
 
 In second window, print the new topic:
@@ -133,6 +140,12 @@ CREATE STREAM ORDERS_FLAT AS
     FROM ORDERS;
 ----
 
+[source,sql]
+----
+PRINT 'ORDERS_FLAT';
+----
+
+
 
 ### Reserialise to CSV
 
@@ -150,7 +163,7 @@ PRINT 'orders_csv';
 ### Join to items reference
 [source,sql]
 ----
-PRINT 'item_details_01';
+PRINT 'item_details_01' LIMIT 10;
 
 CREATE TABLE ITEM_REFERENCE_01 WITH (VALUE_FORMAT='AVRO', 
                                      KAFKA_TOPIC='item_details_01', 
@@ -211,7 +224,7 @@ View in http://localhost:5601/app/kibana#/management/kibana/index?_g=()[Kibana]
 
 [source,sql]
 ----
-SELECT MAKE, COUNT(*) 
+SELECT MAKE, COUNT(*) AS ORDER_COUNT
   FROM ORDERS_ENRICHED 
   GROUP BY MAKE;
 ----
@@ -241,6 +254,81 @@ SELECT TIMESTAMPTOSTRING(WINDOWSTART(),'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS
          WINDOW TUMBLING (SIZE 1 HOUR) 
 GROUP BY MAKE 
 HAVING SUM(TOTAL_ORDER_VALUE) > 10000;
+----
+
+## Merging and Splitting Streams
+
+### Merging streams with INSERT INTO
+
+Imagine you have two inbound streams of orders, from separate geographies (e.g. UK and US). You want to combine these into a single stream for use by consumers. 
+
+Add the second stream, containing UK orders: 
+
+[source,sql]
+----
+CREATE STREAM ORDERS_UK WITH (VALUE_FORMAT='AVRO', KAFKA_TOPIC='orders_uk');
+
+SELECT * FROM ORDERS_UK LIMIT 5;
+----
+
+Create the new combined stream, populated first by all US orders (the original `ORDERS` stream): 
+
+[source,sql]
+----
+CREATE STREAM ORDERS_COMBINED AS 
+  SELECT 'US' AS SOURCE, 
+         'US-'+CAST(ORDERID AS VARCHAR) AS ORDERID, 
+         ORDERTIME, 
+         ITEMID, 
+         ORDERUNITS, 
+         ADDRESS 
+    FROM ORDERS;
+----
+
+Add the source of UK order data: 
+
+[source,sql]
+----
+INSERT INTO ORDERS_COMBINED 
+  SELECT 'UK' AS SOURCE, 
+         'UK-'+CAST(ORDERID AS VARCHAR) AS ORDERID, 
+         ORDERTIME, 
+         ITEMID, 
+         ORDERUNITS, 
+         ADDRESS 
+    FROM ORDERS_UK;
+----
+
+[source,sql]
+----
+SET 'auto.offset.reset' = 'latest';
+
+SELECT * FROM ORDERS_COMBINED LIMIT 50;
+----
+
+N.B. in KSQL 5.3 the above should be changed to a CREATE STREAM and two INSERT INTO, instead of a CSAS. 
+
+### Splitting streams
+
+Imagine you have only the single source of `ORDERS_COMBINED` and you want two separate streams of US and UK order data : 
+
+[source,sql]
+----
+CREATE STREAM ORDER_SPLIT_US AS 
+  SELECT * 
+    FROM ORDERS_COMBINED 
+   WHERE SOURCE ='US';
+
+CREATE STREAM ORDER_SPLIT_UK AS 
+  SELECT * 
+    FROM ORDERS_COMBINED 
+   WHERE SOURCE ='UK';
+
+CREATE STREAM ORDER_SPLIT_OTHER AS 
+  SELECT * 
+    FROM ORDERS_COMBINED 
+   WHERE SOURCE !='US' 
+     AND SOURCE !='UK';
 ----
 
 ## Time handling
@@ -347,7 +435,7 @@ GROUP BY ITEMID;
 2019-06-09 23:00:00 | Item_42 | 2
 ----
 
-## CASE
+## Analytics - pivoting & bucketing metrics
 
 * Using `CASE` to bucket metrics:
 +
@@ -418,42 +506,3 @@ LIMIT 5;
 2019-07-01 11:00:00 | Corkery-Rath | 59 | 14 | 12 | 31
 ----
 
-## INSERT INTO
-
-[source,sql]
-----
-CREATE STREAM ORDERS_UK WITH (VALUE_FORMAT='AVRO', KAFKA_TOPIC='orders_uk');
-
-SELECT * FROM ORDERS_UK;
-----
-
-[source,sql]
-----
-CREATE STREAM ORDERS_COMBINED AS 
-  SELECT 'US' AS SOURCE, 
-         'US-'+CAST(ORDERID AS VARCHAR) AS ORDERID, 
-         ORDERTIME, 
-         ITEMID, 
-         ORDERUNITS, 
-         ADDRESS 
-    FROM ORDERS;
-----
-
-[source,sql]
-----
-INSERT INTO ORDERS_COMBINED 
-  SELECT 'UK' AS SOURCE, 
-         'UK-'+CAST(ORDERID AS VARCHAR) AS ORDERID, 
-         ORDERTIME, 
-         ITEMID, 
-         ORDERUNITS, 
-         ADDRESS 
-    FROM ORDERS_UK;
-----
-
-[source,sql]
-----
-SET 'auto.offset.reset' = 'latest';
-
-SELECT * FROM ORDERS_COMBINED LIMIT 50;
-----
