@@ -1,6 +1,7 @@
 # An introduction to KSQL 
 Robin Moffatt <robin@confluent.io>
 v1.00, July 2, 2019
+:toc:
 
 ## Setup
 
@@ -48,7 +49,9 @@ DESCRIBE ORDERS;
 SELECT * FROM ORDERS LIMIT 10;
 ----
 
-### Filter for given state
+## Filter for given state
+
+image::images/filter01.png[]
 
 [source,sql]
 ----
@@ -90,7 +93,9 @@ PRINT 'ORDERS_NY';
 
 Optionally, use the terminal software's Find function to highlight all `New York` text in the source stream, and show that only these messages are written to the new topic.
 
-### Drop field
+## Schema manipulation - Drop field
+
+image::images/schema01.png[]
 
 [source,sql]
 ----
@@ -126,7 +131,9 @@ In the original window show the source messages:
 PRINT 'orders';
 ----
 
-### Flatten schema & derive new columns
+## Schema manipulation - Flatten schema & derive new columns
+
+image::images/schema02.png[]
 
 [source,sql]
 ----
@@ -151,6 +158,8 @@ PRINT 'ORDERS_FLAT';
 
 ### Reserialise to CSV
 
+image::images/reserialise01.png[]
+
 [source,sql]
 ----
 CREATE STREAM ORDERS_FLAT_CSV WITH (VALUE_FORMAT='DELIMITED', 
@@ -163,6 +172,9 @@ PRINT 'orders_csv';
 ## Joins
 
 ### Join to items reference
+
+image::images/join01.png[]
+
 [source,sql]
 ----
 PRINT 'item_details_01' LIMIT 10;
@@ -204,6 +216,8 @@ SELECT O.ROWTIME AS ORDER_TIMESTAMP,
 
 Land to Elasticsearch
 
+image::images/connect01.png[]
+
 [source,bash]
 ----
 curl -i -X PUT -H "Accept:application/json" \
@@ -244,6 +258,8 @@ View in http://localhost:5601/app/kibana#/management/kibana/index?_g=()[Kibana]
 
 ### Orders count by manufacturer
 
+image::images/agg01.png[]
+
 [source,sql]
 ----
 SELECT MAKE, COUNT(*) AS ORDER_COUNT
@@ -282,6 +298,8 @@ HAVING SUM(TOTAL_ORDER_VALUE) > 10000;
 ## Merging and Splitting Streams
 
 ### Merging streams with INSERT INTO
+
+image::images/merge01.png[]
 
 Imagine you have two inbound streams of orders, from separate geographies (e.g. UK and US). You want to combine these into a single stream for use by consumers. 
 
@@ -337,6 +355,8 @@ N.B. in KSQL 5.3 the above should be changed to a CREATE STREAM and two INSERT I
 
 ### Splitting streams
 
+image::images/split01.png[]
+
 Imagine you have only the single source of `ORDERS_COMBINED` and you want two separate streams of US and UK order data : 
 
 [source,sql]
@@ -356,6 +376,14 @@ CREATE STREAM ORDER_SPLIT_OTHER AS
     FROM ORDERS_COMBINED 
    WHERE SOURCE !='US' 
      AND SOURCE !='UK';
+
+SELECT SOURCE, COUNT(*) AS ORDER_COUNT
+  FROM ORDER_SPLIT_US 
+GROUP BY SOURCE;
+
+SELECT SOURCE, COUNT(*) AS ORDER_COUNT
+  FROM ORDER_SPLIT_UK 
+GROUP BY SOURCE;
 ----
 
 ## Time handling
