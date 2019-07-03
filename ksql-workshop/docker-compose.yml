@@ -255,3 +255,18 @@ services:
     environment:
       xpack.security.enabled: "false"
       discovery.type: "single-node"
+
+  websockets:
+    image: ksql-workshop-websockets
+    container_name: websockets
+    build: ./websockets
+  
+  nginx:
+    image: nginx:1.15-alpine
+    container_name: nginx
+    depends_on:
+      - websockets
+    ports:
+      - 8080:8080
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
