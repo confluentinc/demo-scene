@@ -225,8 +225,8 @@ services:
     environment:
       CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
       CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      # CONTROL_CENTER_CONNECT_DEBEZIUM-SOURCE_CLUSTER: 'connect-debezium:8083'
-      CONTROL_CENTER_CONNECT_CLUSTER: 'kafka-connect:8083'
+      # CONTROL_CENTER_CONNECT_DEBEZIUM-SOURCE_CLUSTER: 'http://connect-debezium:8083'
+      CONTROL_CENTER_CONNECT_CLUSTER: 'http://kafka-connect:8083'
       CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       # The advertised URL needs to be the URL on which the browser
       #  can access the KSQL server (e.g. http://localhost:8088/info)

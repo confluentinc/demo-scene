@@ -453,7 +453,7 @@ services:
       CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       # Multiple connect clusters here
       CONTROL_CENTER_CONNECT_PLUTO_CLUSTER: 'http://kafka-connect-pluto-01:8083,http://kafka-connect-pluto-02:8083'
-      CONTROL_CENTER_CONNECT_MERCURY_CLUSTER: 'kafka-connect-mercury-01:8083'
+      CONTROL_CENTER_CONNECT_MERCURY_CLUSTER: 'http://kafka-connect-mercury-01:8083'
       # Multiple KSQL clusters here
       CONTROL_CENTER_KSQL_ASGARD_URL: "http://ksql-server-asgard-01:8088,http://ksql-server-asgard-02:8088"
       # The advertised URL needs to be the URL on which the browser can access the KSQL server (e.g. http://localhost:8088/info)

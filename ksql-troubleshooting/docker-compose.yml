@@ -93,7 +93,7 @@ services:
     environment:
       CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
       CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      CONTROL_CENTER_CONNECT_CLUSTER: 'kafka-connect:8083'
+      CONTROL_CENTER_CONNECT_CLUSTER: 'http://kafka-connect:8083'
       CONTROL_CENTER_KSQL_URL: "http://ksql-server:8088"
       CONTROL_CENTER_KSQL_ADVERTISED_URL: "http://localhost:8088"
       CONTROL_CENTER_REPLICATION_FACTOR: 1
