@@ -255,6 +255,7 @@ services:
       # Interceptor config
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      CONNECT_CONSUMER_MAX_POLL_INTERVAL_MS: 30000000
       CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.1.jar
       # Offset configuration
       CONNECT_CONSUMER_AUTO_OFFSET_RESET: "earliest"
@@ -346,7 +347,7 @@ services:
         sleep infinity
 
   control-center:
-    image: confluentinc/cp-enterprise-control-center:5.2.1
+    image: confluentinc/cp-enterprise-control-center:5.2.2
     container_name: control-center
     depends_on:
       - zookeeper
@@ -447,3 +448,22 @@ services:
     depends_on:
       - kafka
     entrypoint: sleep infinity
+
+  postgres:
+    # *-----------------------------*
+    # To connect to the DB: 
+    #   docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+    # *-----------------------------*
+    image: postgres:11
+    environment:
+     - POSTGRES_USER=postgres
+     - POSTGRES_PASSWORD=postgres
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+     - 18080:80
+    environment:
+     - PGADMIN_DEFAULT_EMAIL=postgres@example.com
+     - PGADMIN_DEFAULT_PASSWORD=postgres
+     - PGADMIN_LIST_PORT=18080
