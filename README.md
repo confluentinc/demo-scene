@@ -11,6 +11,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
 
 - Data pipelines (Database + KSQL + Elasticsearch)
 
+  - [Rail data streaming pipeline](rail-data-streaming-pipeline)
   - [MySQL / Debezium CDC / KSQL / Elasticsearch](mysql-debezium-ksql-elasticsearch)
   - [Oracle CDC / KSQL / Elasticsearch](oracle-ksql-elasticsearch)
   - [Postgres / Debezium CDC / KSQL / Elasticsearch](postgres-debezium-ksql-elasticsearch)
