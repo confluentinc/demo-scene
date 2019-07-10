@@ -2,14 +2,14 @@
 version: '2'
 services:
   zookeeper:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-zookeeper:5.3.x-107
+    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-zookeeper:5.3.x-118
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-enterprise-kafka:5.3.x-107
+    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-enterprise-kafka:5.3.x-118
     container_name: kafka
     depends_on:
       - zookeeper
@@ -49,7 +49,7 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-schema-registry:5.3.x-107
+    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-schema-registry:5.3.x-118
     container_name: schema-registry
     ports:
       - "8081:8081"
@@ -61,7 +61,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   kafka-connect-01:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-kafka-connect:5.3.x-107
+    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-kafka-connect:5.3.x-118
     container_name: kafka-connect-01
     depends_on:
       - zookeeper
@@ -73,9 +73,9 @@ services:
       CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
       CONNECT_REST_PORT: 8083
       CONNECT_GROUP_ID: kafka-connect
-      CONNECT_CONFIG_STORAGE_TOPIC: docker-kafka-connect-configs
-      CONNECT_OFFSET_STORAGE_TOPIC: docker-kafka-connect-offsets
-      CONNECT_STATUS_STORAGE_TOPIC: docker-kafka-connect-status
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-status
       CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
@@ -92,61 +92,61 @@ services:
       # Interceptor config
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.x-107.jar
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.0-SNAPSHOT.jar
     volumes:
       - /Users/Robin/cp/kafka-connect-zero-to-hero__jars:/usr/share/confluent-hub-components/local
     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
 
-  # kafka-connect-02:
-  #   image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-kafka-connect:5.3.x-107
-  #   container_name: kafka-connect-02
-  #   depends_on:
-  #     - zookeeper
-  #     - kafka
-  #     - schema-registry
-  #   ports:
-  #     - 18083:8083
-  #   environment:
-  #     CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
-  #     CONNECT_REST_PORT: 8083
-  #     CONNECT_GROUP_ID: kafka-connect
-  #     CONNECT_CONFIG_STORAGE_TOPIC: docker-kafka-connect-configs
-  #     CONNECT_OFFSET_STORAGE_TOPIC: docker-kafka-connect-offsets
-  #     CONNECT_STATUS_STORAGE_TOPIC: docker-kafka-connect-status
-  #     CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
-  #     CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-  #     CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
-  #     CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-  #     CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-  #     CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-  #     CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-02"
-  #     CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
-  #     CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
-  #     CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
-  #     CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
-  #     CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
-  #     CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components
-  #     # Interceptor config
-  #     CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
-  #     CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-  #     CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.x-107.jar
-  #   # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
-  #   command:
-  #     - bash
-  #     - -c
-  #     - |
-  #       echo "Installing Connector"
-  #       confluent-hub install --no-prompt debezium/debezium-connector-mysql:0.9.4
-  #       confluent-hub install --no-prompt jcustenborder/kafka-connect-spooldir:1.0.37
-  #       confluent-hub install --no-prompt neo4j/kafka-connect-neo4j:1.0.0
-  #       #
-  #       echo "Launching Kafka Connect worker"
-  #       /etc/confluent/docker/run &
-  #       #
-  #       sleep infinity
+  kafka-connect-02:
+    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-kafka-connect:5.3.x-118
+    container_name: kafka-connect-02
+    depends_on:
+      - zookeeper
+      - kafka
+      - schema-registry
+    ports:
+      - 18083:8083
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: kafka-connect
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-status
+      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-02"
+      CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
+      CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components
+      # Interceptor config
+      CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.x-118.jar
+    # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
+    command:
+      - bash
+      - -c
+      - |
+        echo "Installing Connector"
+        confluent-hub install --no-prompt debezium/debezium-connector-mysql:0.9.4
+        confluent-hub install --no-prompt jcustenborder/kafka-connect-spooldir:1.0.37
+        confluent-hub install --no-prompt neo4j/kafka-connect-neo4j:1.0.0
+        #
+        echo "Launching Kafka Connect worker"
+        /etc/confluent/docker/run &
+        #
+        sleep infinity
 
   ksql-server:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-server:5.3.x-107
+    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-server:5.3.x-118
     container_name: ksql-server
     ports:
       - 8088:8088
@@ -170,38 +170,38 @@ services:
       KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
 
   ksql-cli:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-cli:5.3.x-107
+    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-cli:5.3.x-118
     container_name: ksql-cli
     depends_on:
       - ksql-server
     entrypoint: /bin/sh
     tty: true
 
-  # # Runs the Kafka KSQL data generator for ratings
-  # datagen-ratings:
-  #   image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/ksql-examples:5.1.2
-  #   container_name: datagen-ratings
-  #   depends_on:
-  #     - kafka
-  #     - schema-registry
-  #   command: "bash -c 'echo Waiting for Kafka to be ready... && \
-  #                      cub kafka-ready -b kafka:29092 1 300 && \
-  #                      echo Waiting for Confluent Schema Registry to be ready... && \
-  #                      cub sr-ready schema-registry 8081 300 && \
-  #                      echo Waiting a few seconds for topic creation to finish... && \
-  #                      sleep 20 && \
-  #                      ksql-datagen \
-  #                         quickstart=ratings \
-  #                         format=avro \
-  #                         topic=ratings \
-  #                         maxInterval=1000 \
-  #                         bootstrap-server=kafka:29092 \
-  #                         schemaRegistryUrl=http://schema-registry:8081 \
-  #                         propertiesFile=/etc/ksql/datagen.properties'"
+  # Runs the Kafka KSQL data generator for ratings
+  datagen-ratings:
+    image: confluentinc/ksql-examples:5.1.2
+    container_name: datagen-ratings
+    depends_on:
+      - kafka
+      - schema-registry
+    command: "bash -c 'echo Waiting for Kafka to be ready... && \
+                       cub kafka-ready -b kafka:29092 1 300 && \
+                       echo Waiting for Confluent Schema Registry to be ready... && \
+                       cub sr-ready schema-registry 8081 300 && \
+                       echo Waiting a few seconds for topic creation to finish... && \
+                       sleep 20 && \
+                       ksql-datagen \
+                          quickstart=ratings \
+                          format=avro \
+                          topic=ratings \
+                          maxInterval=1000 \
+                          bootstrap-server=kafka:29092 \
+                          schemaRegistryUrl=http://schema-registry:8081 \
+                          propertiesFile=/etc/ksql/datagen.properties'"
 
 
   control-center:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-enterprise-control-center:5.3.x-107
+    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-enterprise-control-center:5.3.x-118
     container_name: control-center
     depends_on:
       - zookeeper
@@ -214,7 +214,7 @@ services:
     environment:
       CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
       CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      CONTROL_CENTER_CONNECT_CLUSTER: 'kafka-connect-01:8083'
+      CONTROL_CENTER_CONNECT_CLUSTER: 'http://kafka-connect-01:8083,http://kafka-connect-02:28083'
       CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       CONTROL_CENTER_KSQL_URL: "http://ksql-server:8088"
       CONTROL_CENTER_KSQL_ADVERTISED_URL: "http://localhost:8088"
