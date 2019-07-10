@@ -1,0 +1,5 @@
+--SELECT * FROM TIPLOC_FLAT_KEYED LIMIT 1;
+
+CREATE TABLE TIPLOC WITH (KAFKA_TOPIC='TIPLOC_FLAT_KEYED',
+                          VALUE_FORMAT='AVRO', 
+                          KEY='TIPLOC_CODE');
