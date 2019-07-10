@@ -14,10 +14,8 @@ curl -X POST -H  "Content-Type:application/json" http://localhost:28083/connecto
   }
 }'
 
-curl -X POST -H  "Content-Type:application/json" http://localhost:28083/connectors/ \
+curl -X PUT -H  "Content-Type:application/json" http://localhost:28083/connectors/sink-elastic-train_movements_activations_schedule_00-v01/config \
     -d '{
-  "name": "sink-elastic-train_movements_activations_schedule_00-v01",
-  "config": {
     "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
     "topics": "TRAIN_MOVEMENTS_ACTIVATIONS_SCHEDULE_00",
     "connection.url": "http://elasticsearch:9200",
@@ -25,7 +23,6 @@ curl -X POST -H  "Content-Type:application/json" http://localhost:28083/connecto
     "key.ignore": "false",
     "schema.ignore": "true",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter"
-  }
 }'
 
 curl -X PUT -H  "Content-Type:application/json" http://localhost:28083/connectors/sink-elastic-train_cancellations_activations_schedule_00-v01/config \
