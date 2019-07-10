@@ -6,10 +6,22 @@ v1.10, July 9, 2019
 
 A PoC showing what can be done with streaming and batch sources of data, Apache Kafka and KSQL, and various data stores and tools. 
 
+image::images/overview.png[]
+
+== What can it do? 
+
 image::images/es_dashboard_01.png[]
+image::images/telegram01.png[]
 image::images/graph01.jpg[]
 image::images/pgadmin.jpg[]
 
+== Slides? 
+
+Yes!
+
+http://rmoff.dev/kafka-trains-slides
+
+image::images/slides.png[]
 == Setup
 
 * Register for an account at https://datafeeds.networkrail.co.uk/
@@ -21,8 +33,15 @@ image::images/pgadmin.jpg[]
 /data/set_credentials_env.sh
 ----
 
+== Detailed pipeline view
+
+https://docs.google.com/drawings/d/1xL5E1Zfj6YZcjbSI9aexBIZO_8wNVMsYhis96dTiJE4/edit?usp=sharing[Source]
+
+image::images/pipeline.png[]
 
 == Data ingest
+
+N.B. A lot of the code is complete, but not documented below. The canonical version is the code; the docs below may or may not be accurate and/or complete. The code is sensibly named and laid out though so should be easy to follow. 
 
 === Streams
 
@@ -269,10 +288,6 @@ SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') as ACTUAL_TIMESTAMP,
 2019-05-24 11:54:00 | ARRIVAL | BEN RHYDDING | Platform 1 | ON TIME | ON TIME | Arriva Trains Northern | 172V26MJ24 | 11819020
 ----
 
-==== Activations
-
-TODO
-
 ==== Cancellations
 
 TODO
@@ -280,4 +295,10 @@ TODO
 
 == TODO
 
-* Find way to explode/process SCHEDULE_SEGMENT_LOCATION so that for a given train id we can show start/end stations and ideally list of stops in between
+* Automate ingest & monitoring
+** currently cron, replace with Apache Airflow?
+* Ad-hoc visual analysis
+** Superset? Google Data Studio? AWS Quicksight?
+* Handle schedule nested array to be able to show for each train movement its planned route 
+* Proper partitioning of topics (current partitions=1 🙄)
+* Finish this README
