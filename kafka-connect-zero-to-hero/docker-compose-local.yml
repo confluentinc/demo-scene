@@ -129,21 +129,9 @@ services:
       # Interceptor config
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.x-118.jar
-    # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
-    command:
-      - bash
-      - -c
-      - |
-        echo "Installing Connector"
-        confluent-hub install --no-prompt debezium/debezium-connector-mysql:0.9.4
-        confluent-hub install --no-prompt jcustenborder/kafka-connect-spooldir:1.0.37
-        confluent-hub install --no-prompt neo4j/kafka-connect-neo4j:1.0.0
-        #
-        echo "Launching Kafka Connect worker"
-        /etc/confluent/docker/run &
-        #
-        sleep infinity
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.0-SNAPSHOT.jar
+    volumes:
+      - /Users/Robin/cp/kafka-connect-zero-to-hero__jars:/usr/share/confluent-hub-components/local
 
   ksql-server:
     image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-server:5.3.x-118
