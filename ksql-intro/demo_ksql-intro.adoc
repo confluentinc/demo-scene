@@ -10,6 +10,7 @@ v1.00, July 2, 2019
 [source,bash]
 ----
 git clone https://github.com/confluentinc/demo-scene.git
+cd demo-scene
 ----
 
 2. Start up the environment
