@@ -1,0 +1,66 @@
+-- https://wiki.openraildata.com/index.php?title=Train_Activation
+-- 
+-- Per above webpage, note re. schedule_type	: 
+--    There is a bug that causes this field to be populated incorrectly. 
+--    The value O should be P and P should be O.
+
+SET 'auto.offset.reset' = 'earliest';
+CREATE STREAM TRAIN_ACTIVATIONS_00 
+  WITH (VALUE_FORMAT='AVRO') AS 
+  SELECT HEADER, 
+        EXTRACTJSONFIELD(body,'$.schedule_source') AS schedule_source,
+        EXTRACTJSONFIELD(body,'$.tp_origin_timestamp') AS tp_origin_timestamp,
+        CASE WHEN EXTRACTJSONFIELD(body,'$.schedule_type') = 'O' THEN 'P'
+             WHEN EXTRACTJSONFIELD(body,'$.schedule_type') = 'P' THEN 'O'
+             ELSE EXTRACTJSONFIELD(body,'$.schedule_type') 
+          END AS schedule_type,
+        EXTRACTJSONFIELD(body,'$.creation_timestamp') AS creation_timestamp,
+        EXTRACTJSONFIELD(body,'$.origin_dep_timestamp') AS origin_dep_timestamp,
+        EXTRACTJSONFIELD(body,'$.toc_id') AS toc_id,
+        EXTRACTJSONFIELD(body,'$.d1266_record_number') AS d1266_record_number,
+        EXTRACTJSONFIELD(body,'$.train_service_code') AS train_service_code,
+        EXTRACTJSONFIELD(body,'$.sched_origin_stanox') AS sched_origin_stanox,
+        EXTRACTJSONFIELD(body,'$.train_uid') AS train_uid,
+        EXTRACTJSONFIELD(body,'$.train_call_mode') AS train_call_mode,
+        EXTRACTJSONFIELD(body,'$.schedule_start_date') AS schedule_start_date,
+        EXTRACTJSONFIELD(body,'$.tp_origin_stanox') AS tp_origin_stanox,
+        EXTRACTJSONFIELD(body,'$.schedule_wtt_id') AS schedule_wtt_id,
+        EXTRACTJSONFIELD(body,'$.train_call_type') AS train_call_type,
+        EXTRACTJSONFIELD(body,'$.schedule_end_date') AS schedule_end_date,
+        EXTRACTJSONFIELD(body,'$.train_id') AS train_id,
+        EXTRACTJSONFIELD(body,'$.train_uid')  + '/' +
+            EXTRACTJSONFIELD(body,'$.schedule_start_date') + '/' +
+            CASE WHEN EXTRACTJSONFIELD(body,'$.schedule_type') = 'O' THEN 'P'
+             WHEN EXTRACTJSONFIELD(body,'$.schedule_type') = 'P' THEN 'O'
+             ELSE EXTRACTJSONFIELD(body,'$.schedule_type') 
+          END AS schedule_key
+    FROM networkrail_TRAIN_MVT_X 
+  WHERE header->msg_type = '0001' 
+  PARTITION BY TRAIN_ID;
+
+SET 'auto.offset.reset' = 'earliest';
+CREATE STREAM TRAIN_ACTIVATIONS_01 AS
+  SELECT TA.HEADER AS HEADER,
+          TA.SCHEDULE_SOURCE AS SCHEDULE_SOURCE,
+          TA.TP_ORIGIN_TIMESTAMP AS TP_ORIGIN_TIMESTAMP,
+          TA.SCHEDULE_TYPE AS SCHEDULE_TYPE,
+          TA.CREATION_TIMESTAMP AS CREATION_TIMESTAMP,
+          TA.ORIGIN_DEP_TIMESTAMP AS ORIGIN_DEP_TIMESTAMP,
+          TA.TOC_ID AS TOC_ID,
+          TA.D1266_RECORD_NUMBER AS D1266_RECORD_NUMBER,
+          TA.TRAIN_SERVICE_CODE AS TRAIN_SERVICE_CODE,
+          TA.SCHED_ORIGIN_STANOX AS SCHED_ORIGIN_STANOX,
+          TA.TRAIN_UID AS TRAIN_UID,
+          TA.TRAIN_CALL_MODE AS TRAIN_CALL_MODE,
+          TA.SCHEDULE_START_DATE AS SCHEDULE_START_DATE,
+          TA.TP_ORIGIN_STANOX AS TP_ORIGIN_STANOX,
+          TA.SCHEDULE_WTT_ID AS SCHEDULE_WTT_ID,
+          TA.TRAIN_CALL_TYPE AS TRAIN_CALL_TYPE,
+          TA.SCHEDULE_END_DATE AS SCHEDULE_END_DATE,
+          TA.TRAIN_ID AS TRAIN_ID,
+          TA.SCHEDULE_KEY AS SCHEDULE_KEY,
+          S.NLCDESC AS SCHED_ORIGIN_DESC 
+  FROM   TRAIN_ACTIVATIONS_00 TA
+         LEFT JOIN STANOX S
+         ON TA.sched_origin_stanox = S.STANOX
+PARTITION BY TRAIN_ID;

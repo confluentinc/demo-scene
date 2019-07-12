@@ -1,0 +1,72 @@
+-- https://wiki.openraildata.com/index.php?title=Train_Cancellation
+-- 
+
+SET 'auto.offset.reset' = 'earliest';
+CREATE STREAM TRAIN_CANCELLATIONS_00 
+  WITH (VALUE_FORMAT='AVRO') AS 
+  SELECT HEADER, 
+          EXTRACTJSONFIELD(body,'$.train_file_address') AS train_file_address,
+          EXTRACTJSONFIELD(body,'$.train_service_code') AS train_service_code,
+          EXTRACTJSONFIELD(body,'$.orig_loc_stanox') AS orig_loc_stanox,
+          EXTRACTJSONFIELD(body,'$.toc_id') AS toc_id,
+          CAST(EXTRACTJSONFIELD(body,'$.dep_timestamp') AS BIGINT) AS dep_timestamp,
+          EXTRACTJSONFIELD(body,'$.division_code') AS division_code,
+          EXTRACTJSONFIELD(body,'$.loc_stanox') AS loc_stanox,
+          EXTRACTJSONFIELD(body,'$.canx_timestamp') AS canx_timestamp,
+          EXTRACTJSONFIELD(body,'$.canx_reason_code') AS canx_reason_code,
+          EXTRACTJSONFIELD(body,'$.train_id') AS train_id,
+          EXTRACTJSONFIELD(body,'$.orig_loc_timestamp') AS orig_loc_timestamp,
+          EXTRACTJSONFIELD(body,'$.canx_type') AS canx_type
+    FROM networkrail_TRAIN_MVT_X 
+  WHERE header->msg_type = '0002' 
+  PARTITION BY TRAIN_ID;
+
+SET 'auto.offset.reset' = 'earliest';
+CREATE STREAM TRAIN_CANCELLATIONS_01 
+  WITH (TIMESTAMP='DEP_TIMESTAMP') AS
+  SELECT TC.HEADER AS HEADER,
+          TC.TRAIN_FILE_ADDRESS AS TRAIN_FILE_ADDRESS,
+          TC.TRAIN_SERVICE_CODE AS TRAIN_SERVICE_CODE,
+          TC.ORIG_LOC_STANOX AS ORIG_LOC_STANOX,
+          TC.TOC_ID AS TOC_ID,
+          CASE WHEN TC.TOC_ID = '20' THEN 'TransPennine Express'
+               WHEN TC.TOC_ID = '23' THEN 'Arriva Trains Northern'
+               WHEN TC.TOC_ID = '28' THEN 'East Midlands Trains'
+               WHEN TC.TOC_ID = '61' THEN 'London North Eastern Railway'
+              ELSE '<unknown TOC code: ' + TC.TOC_ID + '>'
+          END AS TOC,
+          TC.DEP_TIMESTAMP AS DEP_TIMESTAMP,
+          TC.DIVISION_CODE AS DIVISION_CODE,
+          TC.LOC_STANOX AS LOC_STANOX,
+          TC.CANX_TIMESTAMP AS CANX_TIMESTAMP,
+          TC.CANX_REASON_CODE AS CANX_REASON_CODE,
+          TC.TRAIN_ID AS TRAIN_ID,
+          TC.ORIG_LOC_TIMESTAMP AS ORIG_LOC_TIMESTAMP,
+          TC.CANX_TYPE AS CANX_TYPE,
+          S.NLCDESC AS CANCELLATION_LOCATION 
+  FROM   TRAIN_CANCELLATIONS_00 TC
+         LEFT JOIN STANOX S
+         ON TC.LOC_STANOX = S.STANOX;
+
+SET 'auto.offset.reset' = 'earliest';
+CREATE STREAM TRAIN_CANCELLATIONS_02 AS
+  SELECT TC.HEADER AS HEADER,
+          TC.TRAIN_FILE_ADDRESS AS TRAIN_FILE_ADDRESS,
+          TC.TRAIN_SERVICE_CODE AS TRAIN_SERVICE_CODE,
+          TC.ORIG_LOC_STANOX AS ORIG_LOC_STANOX,
+          TC.TOC_ID AS TOC_ID,
+          TC.TOC AS TOC,
+          TC.DEP_TIMESTAMP AS DEP_TIMESTAMP,
+          TC.DIVISION_CODE AS DIVISION_CODE,
+          TC.LOC_STANOX AS LOC_STANOX,
+          TC.CANX_TIMESTAMP AS CANX_TIMESTAMP,
+          TC.CANX_REASON_CODE AS CANX_REASON_CODE,
+          C.CANX_REASON AS CANX_REASON,
+          TC.TRAIN_ID AS TRAIN_ID,
+          TC.ORIG_LOC_TIMESTAMP AS ORIG_LOC_TIMESTAMP,
+          TC.CANX_TYPE AS CANX_TYPE,
+          TC.CANCELLATION_LOCATION AS CANCELLATION_LOCATION
+   FROM   TRAIN_CANCELLATIONS_01 TC
+         LEFT JOIN CANX_REASON C
+         ON TC.CANX_REASON_CODE = C.CANX_REASON_CODE
+PARTITION BY TRAIN_ID;

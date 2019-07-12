@@ -1,0 +1,9 @@
+CREATE TABLE TOC_VARIATION_STATS_DAILY AS 
+SELECT  TIMESTAMPTOSTRING(WINDOWSTART(),'yyyy-MM-dd') AS WINDOW_START_TS, 
+        VARIATION_STATUS,
+        SUM(CASE WHEN TOC = 'Arriva Trains Northern'       THEN 1 ELSE 0 END) AS Arriva_CT, 
+        SUM(CASE WHEN TOC = 'East Midlands Trains'         THEN 1 ELSE 0 END) AS EastMidlands_CT, 
+        SUM(CASE WHEN TOC = 'London North Eastern Railway' THEN 1 ELSE 0 END) AS LNER_CT, 
+        SUM(CASE WHEN TOC = 'TransPennine Express'         THEN 1 ELSE 0 END) AS TransPennineExpress_CT
+ FROM  TRAIN_MOVEMENTS_01 WINDOW TUMBLING (SIZE 1 DAY)
+GROUP BY VARIATION_STATUS;

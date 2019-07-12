@@ -126,8 +126,8 @@ services:
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
       CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.x-107.jar
     volumes:
-      - /Users/Robin/git/kafka-connect-datagen/target/components/packages/:/packages
-      - $PWD:/data
+#      - /Users/Robin/git/kafka-connect-datagen/target/components/packages/:/packages
+      - ${PWD}:/data
     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
     command:
       - bash

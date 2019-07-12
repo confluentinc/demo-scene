@@ -1,0 +1,37 @@
+CREATE STREAM SCHEDULE_RAW (
+      JsonScheduleV1 STRUCT<CIF_bank_holiday_running VARCHAR,
+                              CIF_stp_indicator VARCHAR,
+                              CIF_train_uid VARCHAR,
+                              applicable_timetable VARCHAR,
+                              atoc_code VARCHAR,
+                              new_schedule_segment STRUCT< traction_class VARCHAR, uic_code  VARCHAR >, 
+                              schedule_days_runs VARCHAR,
+                              schedule_end_date VARCHAR,
+                              schedule_segment STRUCT< signalling_id VARCHAR, CIF_train_category VARCHAR, CIF_headcode VARCHAR, CIF_course_indicator VARCHAR, CIF_train_service_code VARCHAR, CIF_business_sector VARCHAR, CIF_power_type VARCHAR, CIF_timing_load VARCHAR, CIF_speed VARCHAR, CIF_operating_characteristics VARCHAR, CIF_train_class VARCHAR, CIF_sleepers VARCHAR, CIF_reservations VARCHAR, CIF_connection_indicator VARCHAR, CIF_catering_code VARCHAR, CIF_service_branding VARCHAR, schedule_location ARRAY<VARCHAR> >, 
+                              schedule_start_date VARCHAR,
+                              train_status VARCHAR,
+                              transaction_type VARCHAR>,
+      TiplocV1       STRUCT<transaction_type VARCHAR, 
+                              tiploc_code VARCHAR, 
+                              NALCO VARCHAR, 
+                              STANOX VARCHAR, 
+                              crs_code VARCHAR, 
+                              description VARCHAR, 
+                              tps_description VARCHAR>)
+  WITH (KAFKA_TOPIC='CIF_FULL_DAILY',
+        VALUE_FORMAT='JSON');
+
+
+SET 'auto.offset.reset' = 'earliest';
+CREATE STREAM TIPLOC_FLAT_KEYED 
+      WITH (VALUE_FORMAT='AVRO') AS 
+SELECT  TiplocV1->TRANSACTION_TYPE  AS TRANSACTION_TYPE ,
+        TiplocV1->TIPLOC_CODE       AS TIPLOC_CODE ,
+        TiplocV1->NALCO             AS NALCO ,
+        TiplocV1->STANOX            AS STANOX ,
+        TiplocV1->CRS_CODE          AS CRS_CODE ,
+        TiplocV1->DESCRIPTION       AS DESCRIPTION ,
+        TiplocV1->TPS_DESCRIPTION   AS TPS_DESCRIPTION
+FROM    SCHEDULE_RAW 
+WHERE   TiplocV1 IS NOT NULL
+PARTITION BY TIPLOC_CODE;
