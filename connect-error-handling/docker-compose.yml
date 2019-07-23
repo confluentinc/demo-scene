@@ -244,7 +244,7 @@ services:
         echo -e $$(date) ": \o/ Got the flag that Kafka is up!"
         echo "Waiting for Schema Registry to be available ⏳"
         while [ $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081/) -eq 000 ] ; do 
-          echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081/) " (waiting for 200)"
+          echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081/) " (waiting for != 000)"
           sleep 5 
         done
         rm /tmp/foo
