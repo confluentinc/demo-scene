@@ -2,14 +2,14 @@
 version: '2'
 services:
   zookeeper:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-zookeeper:5.3.x-118
+    image: confluentinc/cp-zookeeper:5.3.0
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-enterprise-kafka:5.3.x-118
+    image: confluentinc/cp-enterprise-kafka:5.3.0
     container_name: kafka
     depends_on:
       - zookeeper
@@ -49,7 +49,7 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-schema-registry:5.3.x-118
+    image: confluentinc/cp-schema-registry:5.3.0
     container_name: schema-registry
     ports:
       - "8081:8081"
@@ -61,7 +61,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   kafka-connect-01:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-kafka-connect:5.3.x-118
+    image: confluentinc/cp-kafka-connect:5.3.0
     container_name: kafka-connect-01
     depends_on:
       - zookeeper
@@ -98,7 +98,7 @@ services:
     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
 
   kafka-connect-02:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-kafka-connect:5.3.x-118
+    image: confluentinc/cp-kafka-connect:5.3.0
     container_name: kafka-connect-02
     depends_on:
       - zookeeper
@@ -134,7 +134,7 @@ services:
       - /Users/Robin/cp/kafka-connect-zero-to-hero__jars:/usr/share/confluent-hub-components/local
 
   ksql-server:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-server:5.3.x-118
+    image: confluentinc/cp-ksql-server:5.3.0
     container_name: ksql-server
     ports:
       - 8088:8088
@@ -158,7 +158,7 @@ services:
       KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
 
   ksql-cli:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-cli:5.3.x-118
+    image: confluentinc/cp-ksql-cli:5.3.0
     container_name: ksql-cli
     depends_on:
       - ksql-server
@@ -189,7 +189,7 @@ services:
 
 
   control-center:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-enterprise-control-center:5.3.x-118
+    image: confluentinc/cp-enterprise-control-center:5.3.0
     container_name: control-center
     depends_on:
       - zookeeper
