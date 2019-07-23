@@ -15,14 +15,14 @@ services:
       - zookeeper
     ports:
     # "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-
-    # An important note about accessing Kafka from clients on other machines: 
+    # An important note about accessing Kafka from clients on other machines:
     # -----------------------------------------------------------------------
     #
     # The config used here exposes port 9092 for _external_ connections to the broker
     # i.e. those from _outside_ the docker network. This could be from the host machine
-    # running docker, or maybe further afield if you've got a more complicated setup. 
-    # If the latter is true, you will need to change the value 'localhost' in 
-    # KAFKA_ADVERTISED_LISTENERS to one that is resolvable to the docker host from those 
+    # running docker, or maybe further afield if you've got a more complicated setup.
+    # If the latter is true, you will need to change the value 'localhost' in
+    # KAFKA_ADVERTISED_LISTENERS to one that is resolvable to the docker host from those
     # remote clients
     #
     # For connections _internal_ to the docker network, such as from other services
@@ -73,9 +73,9 @@ services:
       CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
       CONNECT_REST_PORT: 8083
       CONNECT_GROUP_ID: kafka-connect
-      CONNECT_CONFIG_STORAGE_TOPIC: docker-kafka-connect-configs
-      CONNECT_OFFSET_STORAGE_TOPIC: docker-kafka-connect-offsets
-      CONNECT_STATUS_STORAGE_TOPIC: docker-kafka-connect-status
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-status
       CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
@@ -92,21 +92,10 @@ services:
       # Interceptor config
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.0.jar
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.0-SNAPSHOT.jar
+    volumes:
+      - /Users/Robin/cp/kafka-connect-zero-to-hero__jars:/usr/share/confluent-hub-components/local
     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
-    command: 
-      - bash 
-      - -c 
-      - |
-        echo "Installing Connector"
-        confluent-hub install --no-prompt debezium/debezium-connector-mysql:0.9.4
-        confluent-hub install --no-prompt jcustenborder/kafka-connect-spooldir:1.0.37
-        confluent-hub install --no-prompt neo4j/kafka-connect-neo4j:1.0.0
-        #
-        echo "Launching Kafka Connect worker"
-        /etc/confluent/docker/run & 
-        #
-        sleep infinity
 
   kafka-connect-02:
     image: confluentinc/cp-kafka-connect:5.3.0
@@ -121,9 +110,9 @@ services:
       CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
       CONNECT_REST_PORT: 8083
       CONNECT_GROUP_ID: kafka-connect
-      CONNECT_CONFIG_STORAGE_TOPIC: docker-kafka-connect-configs
-      CONNECT_OFFSET_STORAGE_TOPIC: docker-kafka-connect-offsets
-      CONNECT_STATUS_STORAGE_TOPIC: docker-kafka-connect-status
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-status
       CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
@@ -140,21 +129,9 @@ services:
       # Interceptor config
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.0.jar
-    # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
-    command: 
-      - bash 
-      - -c 
-      - |
-        echo "Installing Connector"
-        confluent-hub install --no-prompt debezium/debezium-connector-mysql:0.9.4
-        confluent-hub install --no-prompt jcustenborder/kafka-connect-spooldir:1.0.37
-        confluent-hub install --no-prompt neo4j/kafka-connect-neo4j:1.0.0
-        #
-        echo "Launching Kafka Connect worker"
-        /etc/confluent/docker/run & 
-        #
-        sleep infinity
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.0-SNAPSHOT.jar
+    volumes:
+      - /Users/Robin/cp/kafka-connect-zero-to-hero__jars:/usr/share/confluent-hub-components/local
 
   ksql-server:
     image: confluentinc/cp-ksql-server:5.3.0
@@ -218,22 +195,17 @@ services:
       - zookeeper
       - kafka
       - schema-registry
-      - kafka-connect
+      - kafka-connect-01
       - ksql-server
     ports:
       - "9021:9021"
     environment:
       CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
       CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      # CONTROL_CENTER_CONNECT_DEBEZIUM-SOURCE_CLUSTER: 'http://connect-debezium:8083'
-      CONTROL_CENTER_CONNECT_CLUSTER: 'http://kafka-connect:8083'
+      CONTROL_CENTER_CONNECT-A_CONNECT_CLUSTER: 'http://kafka-connect-01:8083,http://kafka-connect-02:28083'
       CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-      # The advertised URL needs to be the URL on which the browser
-      #  can access the KSQL server (e.g. http://localhost:8088/info)
-      CONTROL_CENTER_KSQL_URL: "http://ksql-server:8088"
-      CONTROL_CENTER_KSQL_ADVERTISED_URL: "http://localhost:8088"
-      # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
-      # Useful settings for development/laptop use - modify as needed for Prod
+      CONTROL_CENTER_KSQL-A_KSQL_URL: "http://ksql-server:8088"
+      CONTROL_CENTER_KSQL-A_KSQL_ADVERTISED_URL: "http://localhost:8088"
       CONFLUENT_METRICS_TOPIC_REPLICATION: 1
       CONTROL_CENTER_REPLICATION_FACTOR: 1
       CONTROL_CENTER_COMMAND_TOPIC_REPLICATION: 1
@@ -245,17 +217,17 @@ services:
       CONTROL_CENTER_STREAMS_CACHE_MAX_BYTES_BUFFERING: 104857600
     command:
       - bash
-      - -c 
+      - -c
       - |
-        echo "Waiting two minutes for Kafka brokers to start and 
+        echo "Waiting two minutes for Kafka brokers to start and
                necessary topics to be available"
-        sleep 120  
+        sleep 120
         /etc/confluent/docker/run
 
 # Other systems
   mysql:
     # *-----------------------------*
-    # To connect to the DB: 
+    # To connect to the DB:
     #   docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD demo'
     # *-----------------------------*
     image: debezium/example-mysql:0.9
@@ -269,18 +241,18 @@ services:
     volumes:
      - ${PWD}/data/mysql:/docker-entrypoint-initdb.d
      - ${PWD}/data:/data
-        
-  postgres:
-    # *-----------------------------*
-    # To connect to the DB: 
-    #   docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
-    # *-----------------------------*
-    image: postgres:11
-    environment:
-     - POSTGRES_USER=postgres
-     - POSTGRES_PASSWORD=postgres
-    volumes:
-     - ./data/postgres:/docker-entrypoint-initdb.d/
+
+  # postgres:
+  #   # *-----------------------------*
+  #   # To connect to the DB:
+  #   #   docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+  #   # *-----------------------------*
+  #   image: postgres:11
+  #   environment:
+  #    - POSTGRES_USER=postgres
+  #    - POSTGRES_PASSWORD=postgres
+  #   volumes:
+  #    - ./data/postgres:/docker-entrypoint-initdb.d/
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.7.0
@@ -299,14 +271,14 @@ services:
       - elasticsearch
     ports:
       - 5601:5601
-    command: 
-      - bash 
-      - -c 
+    command:
+      - bash
+      - -c
       - |
         /usr/local/bin/kibana-docker &
         echo "Waiting for Kibana to be ready (checking http://localhost:5601/api/status) ⏳"
-        while [ $$(curl -s http://localhost:5601/api/status|grep --silent -e "\"status\":{\"overall\":{\"state\":\"green\"";echo $$?) -eq 1 ] ; do 
-        sleep 5 
+        while [ $$(curl -s http://localhost:5601/api/status|grep --silent -e "\"status\":{\"overall\":{\"state\":\"green\"";echo $$?) -eq 1 ] ; do
+        sleep 5
         done
         echo "Pre-creating index pattern"
         curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/mysql-debezium-asgard.demo.orders' \

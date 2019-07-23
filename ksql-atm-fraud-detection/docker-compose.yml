@@ -147,7 +147,7 @@ services:
         /etc/confluent/docker/run & 
         #
         echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -eq 000 ] ; do 
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -ne 200 ] ; do 
           echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) " (waiting for 200)"
           sleep 5 
         done
@@ -219,7 +219,7 @@ services:
         /usr/local/bin/docker-entrypoint.sh & 
         echo "Waiting for Elasticsearch to start ⏳"
         while [ $$(curl -s -o /dev/null -w %{http_code} http://localhost:9200/) -eq 000 ] ; do 
-          echo -e $$(date) " Elasticsearch listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://localhost:9200/) " (waiting for 200)"
+          echo -e $$(date) " Elasticsearch listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://localhost:9200/) " (waiting for != 000)"
           sleep 5 
         done
         echo -e "\n--\n+> Creating Elasticsearch dynamic mapping"
@@ -243,7 +243,7 @@ services:
         /usr/local/bin/kibana-docker & 
         echo "Waiting for Kibana to start ⏳"
         while [ $$(curl -s -o /dev/null -w %{http_code} http://localhost:5601/) -eq 000 ] ; do 
-          echo -e $$(date) " Kibana listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://localhost:5601/) " (waiting for 200)"
+          echo -e $$(date) " Kibana listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://localhost:5601/) " (waiting for != 000)"
           sleep 5 
         done
         echo "Waiting for Kibana API to be available ⏳"
@@ -292,13 +292,13 @@ services:
       - |
         /docker-entrypoint.sh start & 
         echo "Waiting for Kafka Connect to start listening on connect-debezium ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://connect-debezium:8083/connectors) -eq 000 ] ; do 
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://connect-debezium:8083/connectors) -ne 200 ] ; do 
           echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://connect-debezium:8083/connectors) " (waiting for 200)"
           sleep 5 
         done
         echo "Waiting for Schema Registry to start listening on schema-registry:8081 ⏳"
         while [ $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) -eq 000 ] ; do 
-          echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for 200)"
+          echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for != 000)"
           sleep 5 
         done
         echo -e "\n--\n+> Creating Kafka Connect Debezium source"

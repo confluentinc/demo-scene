@@ -2,14 +2,14 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.2.2
+    image: confluentinc/cp-zookeeper:5.3.0
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.2.2
+    image: confluentinc/cp-enterprise-kafka:5.3.0
     container_name: kafka
     depends_on:
       - zookeeper
@@ -49,7 +49,7 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.2.2
+    image: confluentinc/cp-schema-registry:5.3.0
     container_name: schema-registry
     depends_on:
       - zookeeper
@@ -59,7 +59,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect:5.2.2
+    image: confluentinc/cp-kafka-connect:5.3.0
     container_name: kafka-connect
     depends_on:
       - zookeeper
@@ -90,7 +90,7 @@ services:
       # # Interceptor config
       # CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       # CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-      # CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.2.jar
+      # CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.0.jar
     volumes:
       - $PWD/scripts:/scripts
     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
@@ -102,7 +102,7 @@ services:
         /etc/confluent/docker/run & 
         #
         echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -eq 000 ] ; do 
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -ne 200 ] ; do 
           echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) " (waiting for 200)"
           sleep 5 
         done
@@ -112,7 +112,7 @@ services:
         sleep infinity
 
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.2.2
+    image: confluentinc/cp-ksql-server:5.3.0
     container_name: ksql-server
     ports:
       - 8088:8088
@@ -137,7 +137,7 @@ services:
       KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
 
   ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.2.2
+    image: confluentinc/cp-ksql-cli:5.3.0
     container_name: ksql-cli
     depends_on:
       - ksql-server
@@ -153,7 +153,7 @@ services:
 
   # Runs the Kafka KSQL data generator for ratings
   datagen-ratings:
-    image: confluentinc/ksql-examples:5.1.2
+    image: confluentinc/ksql-examples:5.3.0
     container_name: datagen-ratings
     depends_on:
       - kafka
@@ -214,13 +214,13 @@ services:
       - |
         /docker-entrypoint.sh start & 
         echo "Waiting for Kafka Connect to start listening on connect-debezium ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://connect-debezium:8083/connectors) -eq 000 ] ; do 
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://connect-debezium:8083/connectors) -ne 200 ] ; do 
           echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://connect-debezium:8083/connectors) " (waiting for 200)"
           sleep 5 
         done
         echo "Waiting for Schema Registry to start listening on schema-registry:8081 ⏳"
         while [ $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) -eq 000 ] ; do 
-          echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for 200)"
+          echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for != 000)"
           sleep 5 
         done
         echo -e "\n--\n+> Creating Kafka Connect Debezium source"
@@ -244,7 +244,7 @@ services:
         /usr/local/bin/docker-entrypoint.sh & 
         echo "Waiting for Elasticsearch to start ⏳"
         while [ $$(curl -s -o /dev/null -w %{http_code} http://localhost:9200/) -eq 000 ] ; do 
-          echo -e $$(date) " Elasticsearch listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://localhost:9200/) " (waiting for 200)"
+          echo -e $$(date) " Elasticsearch listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://localhost:9200/) " (waiting for != 000)"
           sleep 5 
         done
         echo -e "\n--\n+> Creating Elasticsearch dynamic mapping"
@@ -260,7 +260,7 @@ services:
                   "FULL_NAME": "Patti Rosten",
                   "CLUB_STATUS": "silver",
                   "EMAIL": "prosten7@ihg.com",
-                  "EXTRACT_TS": 15.2.22096460
+                  "EXTRACT_TS": 1
                 }'
         curl -XPOST "http://localhost:9200/unhappy_platinum_customers/type.name=kafkaconnect" -H 'Content-Type: application/json' -d'{
                   "FULL_NAME": "Laney Toopin",
@@ -290,7 +290,7 @@ services:
         /usr/local/bin/kibana-docker & 
         echo "Waiting for Kibana to start ⏳"
         while [ $$(curl -s -o /dev/null -w %{http_code} http://localhost:5601/) -eq 000 ] ; do 
-          echo -e $$(date) " Kibana listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://localhost:5601/) " (waiting for 200)"
+          echo -e $$(date) " Kibana listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://localhost:5601/) " (waiting for != 000)"
           sleep 5 
         done
         echo "Waiting for Kibana API to be available ⏳"

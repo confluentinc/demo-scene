@@ -1,6 +1,6 @@
 = From Zero to Hero with Kafka Connect - demo script
 Robin Moffatt <robin@confluent.io>
-v1.10, June 17, 2019
+v1.11, 11 Jul 2019
 :toc:
 
 == Running the test rig
@@ -35,18 +35,16 @@ docker-compose logs -f kafka-connect-01
 +
 [source,bash]
 ----
-curl -s localhost:8083/connector-plugins|jq '.[].class'
+curl -s localhost:8083/connector-plugins|jq '.[].class'|egrep 'Neo4jSinkConnector|MySqlConnector|ElasticsearchSinkConnector'
 ----
 +
 Expect: 
 +
 [source,bash]
 ----
-[…]
 "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector"
 "io.debezium.connector.mysql.MySqlConnector"
 "streams.kafka.connect.sink.Neo4jSinkConnector"
-[…]
 ----
 
 3. Get a MySQL prompt
@@ -91,11 +89,9 @@ watch -n 2 -x docker-compose exec mysql bash -c 'echo "SELECT * FROM ORDERS ORDE
 
 [source,bash]
 ----
-curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+curl -i -X PUT -H  "Content-Type:application/json" \
+    http://localhost:8083/connectors/source-debezium-orders-00/config \
     -d '{
-      "name": "source-debezium-orders-00",
-      "config": {
             "connector.class": "io.debezium.connector.mysql.MySqlConnector",
             "database.hostname": "mysql",
             "database.port": "3306",
@@ -113,7 +109,6 @@ curl -i -X POST -H "Accept:application/json" \
             "transforms.addTopicPrefix.type":"org.apache.kafka.connect.transforms.RegexRouter",
             "transforms.addTopicPrefix.regex":"(.*)",
             "transforms.addTopicPrefix.replacement":"mysql-debezium-$1"
-       }
     }'
 ----
 
@@ -121,6 +116,17 @@ Check the status of the connector
 
 [source,bash]
 ----
+# Apache Kafka >=2.3
+curl -s "http://localhost:8083/connectors?expand=info&expand=status" | \
+       jq '. | to_entries[] | [ .value.info.type, .key, .value.status.connector.state,.value.status.tasks[].state,.value.info.config."connector.class"]|join(":|:")' | \
+       column -s : -t| sed 's/\"//g'| sort
+----
+
+[source,bash]
+----
+# Apache Kafka <=2.2
+curl -s "http://localhost:8083/connectors?expand=info&expand=status"|jq '. | to_entries[] | [ .value.info.type, .key, .value.status.connector.state,.value.status.tasks[].state,.value.info.config."connector.class"]|join(":|:")' | \
+       column -s : -t| sed 's/\"//g'| sort
 curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
 ----
 
@@ -131,7 +137,7 @@ Output should be
 source-debezium-orders-00  |  RUNNING  |  RUNNING
 ----
 
-http://localhost:9021/management/topics[View the topic in Confluent Control Center] or from the CLI: 
+http://localhost:9021/[View the topic in Confluent Control Center] or from the CLI: 
 
 [source,bash]
 ----
@@ -149,18 +155,15 @@ Show Kafka Consumer and MySQL side by side.
 
 [source,bash]
 ----
-curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+curl -i -X PUT -H  "Content-Type:application/json" \
+    http://localhost:8083/connectors/sink-elastic-orders-00/config \
     -d '{
-      "name": "sink-elastic-orders-00",
-      "config": {
         "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
         "topics": "mysql-debezium-asgard.demo.ORDERS",
         "connection.url": "http://elasticsearch:9200",
         "type.name": "type.name=kafkaconnect",
         "key.ignore": "true",
         "schema.ignore": "true"
-      }
     }'
 ----
 
@@ -178,18 +181,15 @@ curl -s 'http://localhost:5601/api/saved_objects/_bulk_get' \
 
 [source,bash]
 ----
-curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+curl -i -X PUT -H  "Content-Type:application/json" \
+    http://localhost:8083/connectors/sink-neo4j-orders-00/config \
     -d '{
-          "name": "sink-neo4j-orders-00",
-          "config": {
             "connector.class": "streams.kafka.connect.sink.Neo4jSinkConnector",
             "topics": "mysql-debezium-asgard.demo.ORDERS",
             "neo4j.server.uri": "bolt://neo4j:7687",
             "neo4j.authentication.basic.username": "neo4j",
             "neo4j.authentication.basic.password": "connect",
             "neo4j.topic.cypher.mysql-debezium-asgard.demo.ORDERS": "MERGE (city:city{city: event.delivery_city}) MERGE (customer:customer{id: event.customer_id, delivery_address: event.delivery_address, delivery_city: event.delivery_city, delivery_company: event.delivery_company}) MERGE (vehicle:vehicle{make: event.make, model:event.model}) MERGE (city)<-[:LIVES_IN]-(customer)-[:BOUGHT{order_total_usd:event.order_total_usd,order_id:event.order_id}]->(vehicle)"
-          }
         } '
 ----
 

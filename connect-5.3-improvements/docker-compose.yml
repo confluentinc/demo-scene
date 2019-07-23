@@ -93,7 +93,8 @@ services:
     tty: true
 
   kafka-connect-01:
-    image: confluentinc/cp-kafka-connect:5.3.0
+    image: cp-connect-base-local:latest
+#    image: confluentinc/cp-kafka-connect:5.3.0
     container_name: kafka-connect-01
     depends_on:
       - zookeeper
@@ -108,6 +109,7 @@ services:
       CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
       CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
       CONNECT_STATUS_STORAGE_TOPIC: _connect-status
+      CONNECT_CONNECTOR_CLIENT_CONFIG_OVERRIDE_POLICY: 'All'
       CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
@@ -117,6 +119,7 @@ services:
       CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-01"
       CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
       CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
@@ -126,7 +129,6 @@ services:
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
       CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.0.jar
     volumes:
-#      - /Users/Robin/git/kafka-connect-datagen/target/components/packages/:/packages
       - ${PWD}:/data
     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
     command:
@@ -134,7 +136,6 @@ services:
       - -c
       - |
         echo "Installing datagen connector"
-        # confluent-hub install --no-prompt /packages/confluentinc-kafka-connect-datagen-0.2.0-SNAPSHOT.zip
         confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.1.2
         #
         if [[ $$? -ne 0 ]]; then
@@ -144,83 +145,59 @@ services:
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run &
-        #
-        echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -ne 200 ] ; do
-          echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) " (waiting for 200)"
-          sleep 5
-        done
-        #
-        echo "Creating connector"
-        curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/source-datagen-item_details_01/config \
-            -d '{
-            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
-            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-            "kafka.topic": "item_details_01",
-            "max.interval":1,
-            "iterations":1000,
-            "schema.filename": "/data/item_details.avsc",
-            "schema.keyfield": "id",
-            "tasks.max": "1"
-          }'
-        curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/source-datagen-orders-us/config \
-            -d '{
-            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
-            "kafka.topic": "orders",
-            "schema.filename": "/data/orders_us.avsc",
-            "schema.keyfield": "orderid",
-            "tasks.max": "1"
-
-        }'
-        curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/source-datagen-orders-uk/config \
-            -d '{
-            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
-            "kafka.topic": "orders_uk",
-            "schema.filename": "/data/orders_uk.avsc",
-            "schema.keyfield": "orderid",
-            "tasks.max": "1"
-        }'
         sleep infinity
 
-  control-center:
-    image: confluentinc/cp-enterprise-control-center:5.3.0
-    container_name: control-center
+  kafka-connect-v2.2:
+    image: confluentinc/cp-kafka-connect:5.2.2
+    container_name: kafka-connect-v2.2
     depends_on:
       - zookeeper
       - kafka
       - schema-registry
-      - kafka-connect-01
-      - ksql-server
     ports:
-      - "9021:9021"
+      - 18083:18083
     environment:
-      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
-      CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      CONTROL_CENTER_CONNECT_CLUSTER: 'http://kafka-connect-01:8083'
-      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-      # The advertised URL needs to be the URL on which the browser
-      #  can access the KSQL server (e.g. http://localhost:8088/info)
-      CONTROL_CENTER_KSQL_URL: "http://ksql-server:8088"
-      CONTROL_CENTER_KSQL_ADVERTISED_URL: "http://localhost:8088"
-      # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
-      # Useful settings for development/laptop use - modify as needed for Prod
-      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
-      CONTROL_CENTER_REPLICATION_FACTOR: 1
-      CONTROL_CENTER_COMMAND_TOPIC_REPLICATION: 1
-      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_REPLICATION: 1
-      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
-      CONTROL_CENTER_INTERNAL_TOPICS_REPLICATION: 1
-      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
-      CONTROL_CENTER_STREAMS_NUM_STREAM_THREADS: 1
-      CONTROL_CENTER_STREAMS_CACHE_MAX_BYTES_BUFFERING: 104857600
+      CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
+      CONNECT_REST_PORT: 18083
+      CONNECT_GROUP_ID: compose-connect-group-v2.2
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-v2.2-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-v2.2-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-v2.2-status
+      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-v2.2"
+      CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
+      CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/'
+      # Interceptor config
+      CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.2.jar
+    volumes:
+      - ${PWD}:/data
+    # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
     command:
       - bash
       - -c
       - |
-        echo "Waiting two minutes for Kafka brokers to start and
-               necessary topics to be available"
-        sleep 120
-        /etc/confluent/docker/run
+        echo "Installing datagen connector"
+        confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.1.2
+        #
+        if [[ $$? -ne 0 ]]; then
+            echo -e '\n\n\t--> Connector installation failed. Aborting. <--\n\n'
+            exit 1
+        fi
+        #
+        echo "Launching Kafka Connect worker"
+        /etc/confluent/docker/run &
+        sleep infinity
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.7.0
@@ -245,7 +222,6 @@ services:
         curl -XPUT "http://localhost:9200/_template/kafkaconnect/" -H 'Content-Type: application/json' -d' { "index_patterns": "*", "settings": { "number_of_shards": 1, "number_of_replicas": 0 }, "mappings": { "_default_": { "dynamic_templates": [ { "dates": { "match": "*TIMESTAMP", "mapping": { "type": "date" } } }, { "non_analysed_string_template": { "match": "*", "match_mapping_type": "string", "mapping": { "type": "keyword" } } } ] } } }'
         sleep infinity
 
-
   kibana:
     image: docker.elastic.co/kibana/kibana:6.7.0
     container_name: kibana
@@ -256,3 +232,15 @@ services:
     environment:
       xpack.security.enabled: "false"
       discovery.type: "single-node"
+
+  postgres:
+    # *-----------------------------*
+    # To connect to the DB:
+    #   docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+    # *-----------------------------*
+    image: postgres:11
+    environment:
+     - POSTGRES_USER=postgres
+     - POSTGRES_PASSWORD=postgres
+    volumes:
+     - ./data/postgres:/docker-entrypoint-initdb.d/
