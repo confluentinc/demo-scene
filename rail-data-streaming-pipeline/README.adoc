@@ -105,7 +105,6 @@ kafkacat -b localhost:9092 -t networkrail_TRAIN_MVT_X -C -c1
 [source,bash]
 ----
 source ./data/set_credentials_env.sh
-./data/ingest/corpus_location/00_ingest_corpus.sh
 ./data/ingest/movements/01_load_canx_reason_code.sh
 ./data/ingest/cif_schedule/00_ingest_schedule.sh
 ----
@@ -121,59 +120,14 @@ $ kafkacat -b localhost:9092 -t CIF_FULL_DAILY -C -c1
 
 == KSQL
 
-=== CORPUS (location data)
-
-[source,sql]
-----
-run script '/data/ksql/corpus_location/01_corpus.ksql';
-run script '/data/ksql/corpus_location/02_stanox.ksql';
-----
-
-[source,sql]
-----
-ksql> show streams;
-
- Stream Name              | Kafka Topic              | Format
------------------------------------------------------------------
- CORPUS_RAW               | corpus                   | JSON
- CORPUS_BY_STANOX         | CORPUS_BY_STANOX         | AVRO
- […]
-----
-
-[source,sql]
-----
-ksql> show tables;
-
- Table Name                   | Kafka Topic                  | Format | Windowed
----------------------------------------------------------------------------------
- STANOX                       | CORPUS_BY_STANOX             | AVRO   | false
- […]
-----
-
-[source,sql]
-----
-SET 'auto.offset.reset' = 'earliest';
-
-SELECT STANOX, NLCDESC
-  FROM STANOX
- WHERE NLCDESC='ILKLEY' 
- LIMIT 1;
-----
-
-[source,sql]
-----
-17055 | ILKLEY
-Limit Reached
-Query terminated
-----
-
 === CIF (schedule / train attribute data & location data)
 
 [source,sql]
 ----
-run script '/data/ksql/cif_schedule/01_schedule_raw.ksql';
-run script '/data/ksql/cif_schedule/02_tiploc.ksql';
-run script '/data/ksql/cif_schedule/03_schedule.ksql';
+run script '/data/ksql/02_cif_schedule/01_schedule_raw.ksql';
+run script '/data/ksql/02_cif_schedule/02_tiploc.ksql';
+run script '/data/ksql/02_cif_schedule/03_schedule.ksql';
+run script '/data/ksql/02_cif_schedule/04_schedule_table.ksql';
 ----
 
 If you get `Avro schema for message values on topic TIPLOC_FLAT_KEYED does not exist in the Schema Registry.` after running `02_tiploc.ksql` then wait a few moments and then re-run it; the topic on which it's built is created and populated by the preceeding step, and it may not have kicked in yet. 
@@ -215,9 +169,12 @@ Query terminated
 ----
 ksql> SHOW TABLES;
 
- Table Name                   | Kafka Topic                  | Format | Windowed
----------------------------------------------------------------------------------
- TIPLOC                       | TIPLOC_FLAT_KEYED            | AVRO   | false
+ Table Name    | Kafka Topic       | Format | Windowed
+-------------------------------------------------------
+ TIPLOC        | TIPLOC_FLAT_KEYED | AVRO   | false
+ STANOX        | STANOX_FLAT_KEYED | AVRO   | false
+ SCHEDULE_01_T | SCHEDULE_01       | AVRO   | false
+ SCHEDULE_0T_T | SCHEDULE_01       | AVRO   | false
  […]
 ----
 
@@ -247,16 +204,16 @@ Query terminated
 
 [source,sql]
 ----
-RUN SCRIPT '/data/ksql/movements/01_canx_reason.ksql';
-RUN SCRIPT '/data/ksql/movements/01_movement_raw.ksql';
-RUN SCRIPT '/data/ksql/movements/02_activations.ksql';
-RUN SCRIPT '/data/ksql/movements/02_cancellations.ksql';
-RUN SCRIPT '/data/ksql/movements/02_movements.ksql';
-RUN SCRIPT '/data/ksql/movements/03_activations_table.ksql';
-RUN SCRIPT '/data/ksql/movements/04_cancellations_activations.ksql';
-RUN SCRIPT '/data/ksql/movements/04_movements_activations.ksql';
-RUN SCRIPT '/data/ksql/movements/05_cancellations_activations_schedules.ksql';
-RUN SCRIPT '/data/ksql/movements/05_movements_activations_schedules.ksql';
+RUN SCRIPT '/data/ksql/03_movements/01_canx_reason.ksql';
+RUN SCRIPT '/data/ksql/03_movements/01_movement_raw.ksql';
+RUN SCRIPT '/data/ksql/03_movements/02_activations.ksql';
+RUN SCRIPT '/data/ksql/03_movements/02_cancellations.ksql';
+RUN SCRIPT '/data/ksql/03_movements/02_movements.ksql';
+RUN SCRIPT '/data/ksql/03_movements/03_activations_table.ksql';
+RUN SCRIPT '/data/ksql/03_movements/04_cancellations_activations.ksql';
+RUN SCRIPT '/data/ksql/03_movements/04_movements_activations.ksql';
+RUN SCRIPT '/data/ksql/03_movements/05_cancellations_activations_schedules.ksql';
+RUN SCRIPT '/data/ksql/03_movements/05_movements_activations_schedules.ksql';
 ----
 
 ==== Movements
@@ -292,6 +249,11 @@ SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') as ACTUAL_TIMESTAMP,
 
 TODO
 
+== Topic config
+
+Once all pipelines are up and running, execute `/data/configure_topics.sh` to set the retention period to 26 weeks on each topic. 
+
+
 
 == TODO
 
@@ -299,6 +261,4 @@ TODO
 ** currently cron, replace with Apache Airflow?
 * Ad-hoc visual analysis
 ** Superset? Google Data Studio? AWS Quicksight?
-* Handle schedule nested array to be able to show for each train movement its planned route 
-* Proper partitioning of topics (current partitions=1 🙄)
 * Finish this README

@@ -23,6 +23,43 @@ curl -s -L -u "$NROD_USERNAME:$NROD_PASSWORD" "https://datafeeds.networkrail.co.
   gunzip | \
   kafkacat -b localhost -P -t CIF_FULL_DAILY
 
+#kafkacat -b localhost:9092 -e -t CIF_FULL_DAILY -o beginning | \
+kafkacat -b localhost:9092 -e -u -G 00_ingest_schedule.sh CIF_FULL_DAILY | \
+  jq -c '.|select(.JsonScheduleV1) | .JsonScheduleV1 + {last_schedule_segment:.JsonScheduleV1.schedule_segment.schedule_location[-1:][]}' | \
+  kafkacat -b localhost:9092 -t JsonScheduleV1 -T -P
+
+# NB above will throw `jq: error (at <stdin>:30): Cannot iterate over null (null)` for records like this: 
+# {
+#   "JsonScheduleV1": {
+#     "CIF_bank_holiday_running": null,
+#     "CIF_stp_indicator": "C",
+#     "CIF_train_uid": "Y64223",
+#     "schedule_days_runs": "0000010",
+#     "schedule_end_date": "2019-12-14",
+#     "schedule_segment": {
+#       "signalling_id": "    ",
+#       "CIF_train_category": "",
+#       "CIF_headcode": "",
+#       "CIF_course_indicator": 1,
+#       "CIF_train_service_code": "        ",
+#       "CIF_business_sector": "??",
+#       "CIF_power_type": null,
+#       "CIF_timing_load": null,
+#       "CIF_speed": null,
+#       "CIF_operating_characteristics": null,
+#       "CIF_train_class": null,
+#       "CIF_sleepers": null,
+#       "CIF_reservations": null,
+#       "CIF_connection_indicator": null,
+#       "CIF_catering_code": null,
+#       "CIF_service_branding": ""
+#     },
+#     "schedule_start_date": "2019-12-14",
+#     "train_status": " ",
+#     "transaction_type": "Create"
+#   }
+# }
+
 # curl -s -L -u "$NROD_USERNAME:$NROD_PASSWORD" "https://datafeeds.networkrail.co.uk/ntrod/CifFileAuthenticate?type=CIF_EA_TOC_FULL_DAILY&day=toc-full" | \
 #   gunzip >  CIF_FULL_DAILY.json
 # curl -s -L -u "$NROD_USERNAME:$NROD_PASSWORD" "https://datafeeds.networkrail.co.uk/ntrod/CifFileAuthenticate?type=CIF_ED_TOC_FULL_DAILY&day=toc-full" | \

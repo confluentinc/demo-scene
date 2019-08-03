@@ -473,11 +473,11 @@ services:
 
   kafkacat:
     #image: confluentinc/cp-kafkacat:latest
-    image: edenhill/kafkacat:sr-wip
+    image: edenhill/kafkacat:20190711
     container_name: kafkacat
     depends_on:
       - kafka
-    entrypoint: sleep infinity
+    entrypoint: tail -f /dev/null
 
   postgres:
     # *-----------------------------*

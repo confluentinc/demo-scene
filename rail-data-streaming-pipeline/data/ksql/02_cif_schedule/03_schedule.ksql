@@ -1,109 +1,112 @@
 SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM SCHEDULE_00 
    WITH (VALUE_FORMAT='AVRO') AS 
-SELECT JsonScheduleV1->CIF_train_uid AS CIF_train_uid,
-       JsonScheduleV1->schedule_start_date AS schedule_start_date,
-       JsonScheduleV1->CIF_stp_indicator AS CIF_stp_indicator,
-       JsonScheduleV1->CIF_train_uid + '/' + JsonScheduleV1->schedule_start_date + '/' + JsonScheduleV1->CIF_stp_indicator AS SCHEDULE_KEY,
-       JsonScheduleV1->atoc_code AS atoc_code,
+SELECT CIF_train_uid,
+       schedule_start_date,
+       CIF_stp_indicator,
+       CIF_train_uid + '/' + schedule_start_date + '/' + CIF_stp_indicator AS SCHEDULE_KEY,
+       atoc_code,
        CASE
-            WHEN JsonScheduleV1->train_status ='B' THEN 'Bus (Permanent)'
-            WHEN JsonScheduleV1->train_status ='F' THEN 'Freight (Permanent - WTT)'
-            WHEN JsonScheduleV1->train_status ='P' THEN 'Passenger & Parcels (Permanent - WTT)'
-            WHEN JsonScheduleV1->train_status ='S' THEN 'Ship (Permanent)'
-            WHEN JsonScheduleV1->train_status ='T' THEN 'Trip (Permanent)'
-            WHEN JsonScheduleV1->train_status ='1' THEN 'STP Passenger & Parcels'
-            WHEN JsonScheduleV1->train_status ='2' THEN 'STP Freight'
-            WHEN JsonScheduleV1->train_status ='3' THEN 'STP Trip'
-            WHEN JsonScheduleV1->train_status ='4' THEN 'STP Ship'
-            WHEN JsonScheduleV1->train_status ='5' THEN 'STP Bus'
+            WHEN train_status ='B' THEN 'Bus (Permanent)'
+            WHEN train_status ='F' THEN 'Freight (Permanent - WTT)'
+            WHEN train_status ='P' THEN 'Passenger & Parcels (Permanent - WTT)'
+            WHEN train_status ='S' THEN 'Ship (Permanent)'
+            WHEN train_status ='T' THEN 'Trip (Permanent)'
+            WHEN train_status ='1' THEN 'STP Passenger & Parcels'
+            WHEN train_status ='2' THEN 'STP Freight'
+            WHEN train_status ='3' THEN 'STP Trip'
+            WHEN train_status ='4' THEN 'STP Ship'
+            WHEN train_status ='5' THEN 'STP Bus'
           END AS TRAIN_STATUS,
        CASE 
-            WHEN JsonScheduleV1->schedule_segment->CIF_power_type = 'D' THEN 'Diesel'
-            WHEN JsonScheduleV1->schedule_segment->CIF_power_type = 'DEM' THEN 'Diesel Electric Multiple Unit'
-            WHEN JsonScheduleV1->schedule_segment->CIF_power_type = 'DMU' THEN 'Diesel Mechanical Multiple Unit'
-            WHEN JsonScheduleV1->schedule_segment->CIF_power_type = 'E' THEN 'Electric'
-            WHEN JsonScheduleV1->schedule_segment->CIF_power_type = 'ED' THEN 'Electro-Diesel'
-            WHEN JsonScheduleV1->schedule_segment->CIF_power_type = 'EML' THEN 'EMU plus D, E, ED locomotive'
-            WHEN JsonScheduleV1->schedule_segment->CIF_power_type = 'EMU' THEN 'Electric Multiple Unit'
-            WHEN JsonScheduleV1->schedule_segment->CIF_power_type = 'HST' THEN 'High Speed Train'
+            WHEN schedule_segment->CIF_power_type = 'D' THEN 'Diesel'
+            WHEN schedule_segment->CIF_power_type = 'DEM' THEN 'Diesel Electric Multiple Unit'
+            WHEN schedule_segment->CIF_power_type = 'DMU' THEN 'Diesel Mechanical Multiple Unit'
+            WHEN schedule_segment->CIF_power_type = 'E' THEN 'Electric'
+            WHEN schedule_segment->CIF_power_type = 'ED' THEN 'Electro-Diesel'
+            WHEN schedule_segment->CIF_power_type = 'EML' THEN 'EMU plus D, E, ED locomotive'
+            WHEN schedule_segment->CIF_power_type = 'EMU' THEN 'Electric Multiple Unit'
+            WHEN schedule_segment->CIF_power_type = 'HST' THEN 'High Speed Train'
           END AS POWER_TYPE,
        CASE 
-            WHEN JsonScheduleV1->schedule_segment->CIF_train_class = 'B' OR JsonScheduleV1->schedule_segment->CIF_train_class = '' THEN 'First and standard' 
-            WHEN JsonScheduleV1->schedule_segment->CIF_train_class = 'S'  THEN 'Standard only' 
+            WHEN schedule_segment->CIF_train_class = 'B' OR schedule_segment->CIF_train_class = '' THEN 'First and standard' 
+            WHEN schedule_segment->CIF_train_class = 'S'  THEN 'Standard only' 
           END AS SEATING_CLASSES,
        CASE 
-          WHEN JsonScheduleV1->schedule_segment->CIF_reservations =  'A' THEN 'Reservations compulsory'
-          WHEN JsonScheduleV1->schedule_segment->CIF_reservations =  'E' THEN 'Reservations for bicycles essential'
-          WHEN JsonScheduleV1->schedule_segment->CIF_reservations =  'R' THEN 'Reservations recommended'
-          WHEN JsonScheduleV1->schedule_segment->CIF_reservations =  'S' THEN 'Reservations possible from any station'
+          WHEN schedule_segment->CIF_reservations =  'A' THEN 'Reservations compulsory'
+          WHEN schedule_segment->CIF_reservations =  'E' THEN 'Reservations for bicycles essential'
+          WHEN schedule_segment->CIF_reservations =  'R' THEN 'Reservations recommended'
+          WHEN schedule_segment->CIF_reservations =  'S' THEN 'Reservations possible from any station'
         END AS RESERVATIONS,
        CASE 
-          WHEN JsonScheduleV1->schedule_segment->CIF_sleepers =   'B' THEN 'First and standard class'
-          WHEN JsonScheduleV1->schedule_segment->CIF_sleepers =   'F' THEN 'First Class only'
-          WHEN JsonScheduleV1->schedule_segment->CIF_sleepers =   'S' THEN 'Standard class only'
+          WHEN schedule_segment->CIF_sleepers =   'B' THEN 'First and standard class'
+          WHEN schedule_segment->CIF_sleepers =   'F' THEN 'First Class only'
+          WHEN schedule_segment->CIF_sleepers =   'S' THEN 'Standard class only'
         END AS SLEEPING_ACCOMODATION,
        CASE 
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'OL' THEN 'Ordinary Passenger Trains: London Underground/Metro Service'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'OU' THEN 'Ordinary Passenger Trains: Unadvertised Ordinary Passenger'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'OO' THEN 'Ordinary Passenger Trains: Ordinary Passenger'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'OS' THEN 'Ordinary Passenger Trains: Staff Train'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'OW' THEN 'Ordinary Passenger Trains: Mixed'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'XC' THEN 'Express Passenger Trains: Channel Tunnel'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'XD' THEN 'Express Passenger Trains: Sleeper (Europe Night Services)'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'XI' THEN 'Express Passenger Trains: International'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'XR' THEN 'Express Passenger Trains: Motorail'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'XU' THEN 'Express Passenger Trains: Unadvertised Express'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'XX' THEN 'Express Passenger Trains: Express Passenger'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'XZ' THEN 'Express Passenger Trains: Sleeper (Domestic)'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'BR' THEN 'Buses & Ships: Bus – Replacement due to engineering work'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'BS' THEN 'Buses & Ships: Bus – WTT Service'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'SS' THEN 'Buses & Ships: Ship'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'EE' THEN 'Empty Coaching Stock Trains: Empty Coaching Stock (ECS)'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'EL' THEN 'Empty Coaching Stock Trains: ECS, London Underground/Metro Service'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'ES' THEN 'Empty Coaching Stock Trains: ECS & Staff'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'JJ' THEN 'Parcels and Postal Trains: Postal'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'PM' THEN 'Parcels and Postal Trains: Post Office Controlled Parcels'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'PP' THEN 'Parcels and Postal Trains: Parcels'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'PV' THEN 'Parcels and Postal Trains: Empty NPCCS'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'DD' THEN 'Departmental Trains: Departmental'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'DH' THEN 'Departmental Trains: Civil Engineer'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'DI' THEN 'Departmental Trains: Mechanical & Electrical Engineer'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'DQ' THEN 'Departmental Trains: Stores'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'DT' THEN 'Departmental Trains: Test'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'DY' THEN 'Departmental Trains: Signal & Telecommunications Engineer'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'ZB' THEN 'Light Locomotives: Locomotive & Brake Van'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'ZZ' THEN 'Light Locomotives: Light Locomotive'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'J2' THEN 'Railfreight Distribution: RfD Automotive (Components)'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'H2' THEN 'Railfreight Distribution: RfD Automotive (Vehicles)'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'J3' THEN 'Railfreight Distribution: RfD Edible Products (UK Contracts)'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'J4' THEN 'Railfreight Distribution: RfD Industrial Minerals (UK Contracts)'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'J5' THEN 'Railfreight Distribution: RfD Chemicals (UK Contracts)'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'J6' THEN 'Railfreight Distribution: RfD Building Materials (UK Contracts)'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'J8' THEN 'Railfreight Distribution: RfD General Merchandise (UK Contracts)'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'H8' THEN 'Railfreight Distribution: RfD European'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'J9' THEN 'Railfreight Distribution: RfD Freightliner (Contracts)'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'H9' THEN 'Railfreight Distribution: RfD Freightliner (Other)'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'A0' THEN 'Trainload Freight: Coal (Distributive)'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'E0' THEN 'Trainload Freight: Coal (Electricity) MGR'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'B0' THEN 'Trainload Freight: Coal (Other) and Nuclear'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'B1' THEN 'Trainload Freight: Metals'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'B4' THEN 'Trainload Freight: Aggregates'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'B5' THEN 'Trainload Freight: Domestic and Industrial Waste'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'B6' THEN 'Trainload Freight: Building Materials (TLF)'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'B7' THEN 'Trainload Freight: Petroleum Products'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'H0' THEN 'Railfreight Distribution (Channel Tunnel): RfD European Channel Tunnel (Mixed Business)'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'H1' THEN 'Railfreight Distribution (Channel Tunnel): RfD European Channel Tunnel Intermodal'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'H3' THEN 'Railfreight Distribution (Channel Tunnel): RfD European Channel Tunnel Automotive'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'H4' THEN 'Railfreight Distribution (Channel Tunnel): RfD European Channel Tunnel Contract Services'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'H5' THEN 'Railfreight Distribution (Channel Tunnel): RfD European Channel Tunnel Haulmark'
-          WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'H6' THEN 'Railfreight Distribution (Channel Tunnel): RfD European Channel Tunnel Joint Venture'
+          WHEN schedule_segment->CIF_train_category =  'OL' THEN 'Ordinary Passenger Trains: London Underground/Metro Service'
+          WHEN schedule_segment->CIF_train_category =  'OU' THEN 'Ordinary Passenger Trains: Unadvertised Ordinary Passenger'
+          WHEN schedule_segment->CIF_train_category =  'OO' THEN 'Ordinary Passenger Trains: Ordinary Passenger'
+          WHEN schedule_segment->CIF_train_category =  'OS' THEN 'Ordinary Passenger Trains: Staff Train'
+          WHEN schedule_segment->CIF_train_category =  'OW' THEN 'Ordinary Passenger Trains: Mixed'
+          WHEN schedule_segment->CIF_train_category =  'XC' THEN 'Express Passenger Trains: Channel Tunnel'
+          WHEN schedule_segment->CIF_train_category =  'XD' THEN 'Express Passenger Trains: Sleeper (Europe Night Services)'
+          WHEN schedule_segment->CIF_train_category =  'XI' THEN 'Express Passenger Trains: International'
+          WHEN schedule_segment->CIF_train_category =  'XR' THEN 'Express Passenger Trains: Motorail'
+          WHEN schedule_segment->CIF_train_category =  'XU' THEN 'Express Passenger Trains: Unadvertised Express'
+          WHEN schedule_segment->CIF_train_category =  'XX' THEN 'Express Passenger Trains: Express Passenger'
+          WHEN schedule_segment->CIF_train_category =  'XZ' THEN 'Express Passenger Trains: Sleeper (Domestic)'
+          WHEN schedule_segment->CIF_train_category =  'BR' THEN 'Buses & Ships: Bus – Replacement due to engineering work'
+          WHEN schedule_segment->CIF_train_category =  'BS' THEN 'Buses & Ships: Bus – WTT Service'
+          WHEN schedule_segment->CIF_train_category =  'SS' THEN 'Buses & Ships: Ship'
+          WHEN schedule_segment->CIF_train_category =  'EE' THEN 'Empty Coaching Stock Trains: Empty Coaching Stock (ECS)'
+          WHEN schedule_segment->CIF_train_category =  'EL' THEN 'Empty Coaching Stock Trains: ECS, London Underground/Metro Service'
+          WHEN schedule_segment->CIF_train_category =  'ES' THEN 'Empty Coaching Stock Trains: ECS & Staff'
+          WHEN schedule_segment->CIF_train_category =  'JJ' THEN 'Parcels and Postal Trains: Postal'
+          WHEN schedule_segment->CIF_train_category =  'PM' THEN 'Parcels and Postal Trains: Post Office Controlled Parcels'
+          WHEN schedule_segment->CIF_train_category =  'PP' THEN 'Parcels and Postal Trains: Parcels'
+          WHEN schedule_segment->CIF_train_category =  'PV' THEN 'Parcels and Postal Trains: Empty NPCCS'
+          WHEN schedule_segment->CIF_train_category =  'DD' THEN 'Departmental Trains: Departmental'
+          WHEN schedule_segment->CIF_train_category =  'DH' THEN 'Departmental Trains: Civil Engineer'
+          WHEN schedule_segment->CIF_train_category =  'DI' THEN 'Departmental Trains: Mechanical & Electrical Engineer'
+          WHEN schedule_segment->CIF_train_category =  'DQ' THEN 'Departmental Trains: Stores'
+          WHEN schedule_segment->CIF_train_category =  'DT' THEN 'Departmental Trains: Test'
+          WHEN schedule_segment->CIF_train_category =  'DY' THEN 'Departmental Trains: Signal & Telecommunications Engineer'
+          WHEN schedule_segment->CIF_train_category =  'ZB' THEN 'Light Locomotives: Locomotive & Brake Van'
+          WHEN schedule_segment->CIF_train_category =  'ZZ' THEN 'Light Locomotives: Light Locomotive'
+          WHEN schedule_segment->CIF_train_category =  'J2' THEN 'Railfreight Distribution: RfD Automotive (Components)'
+          WHEN schedule_segment->CIF_train_category =  'H2' THEN 'Railfreight Distribution: RfD Automotive (Vehicles)'
+          WHEN schedule_segment->CIF_train_category =  'J3' THEN 'Railfreight Distribution: RfD Edible Products (UK Contracts)'
+          WHEN schedule_segment->CIF_train_category =  'J4' THEN 'Railfreight Distribution: RfD Industrial Minerals (UK Contracts)'
+          WHEN schedule_segment->CIF_train_category =  'J5' THEN 'Railfreight Distribution: RfD Chemicals (UK Contracts)'
+          WHEN schedule_segment->CIF_train_category =  'J6' THEN 'Railfreight Distribution: RfD Building Materials (UK Contracts)'
+          WHEN schedule_segment->CIF_train_category =  'J8' THEN 'Railfreight Distribution: RfD General Merchandise (UK Contracts)'
+          WHEN schedule_segment->CIF_train_category =  'H8' THEN 'Railfreight Distribution: RfD European'
+          WHEN schedule_segment->CIF_train_category =  'J9' THEN 'Railfreight Distribution: RfD Freightliner (Contracts)'
+          WHEN schedule_segment->CIF_train_category =  'H9' THEN 'Railfreight Distribution: RfD Freightliner (Other)'
+          WHEN schedule_segment->CIF_train_category =  'A0' THEN 'Trainload Freight: Coal (Distributive)'
+          WHEN schedule_segment->CIF_train_category =  'E0' THEN 'Trainload Freight: Coal (Electricity) MGR'
+          WHEN schedule_segment->CIF_train_category =  'B0' THEN 'Trainload Freight: Coal (Other) and Nuclear'
+          WHEN schedule_segment->CIF_train_category =  'B1' THEN 'Trainload Freight: Metals'
+          WHEN schedule_segment->CIF_train_category =  'B4' THEN 'Trainload Freight: Aggregates'
+          WHEN schedule_segment->CIF_train_category =  'B5' THEN 'Trainload Freight: Domestic and Industrial Waste'
+          WHEN schedule_segment->CIF_train_category =  'B6' THEN 'Trainload Freight: Building Materials (TLF)'
+          WHEN schedule_segment->CIF_train_category =  'B7' THEN 'Trainload Freight: Petroleum Products'
+          WHEN schedule_segment->CIF_train_category =  'H0' THEN 'Railfreight Distribution (Channel Tunnel): RfD European Channel Tunnel (Mixed Business)'
+          WHEN schedule_segment->CIF_train_category =  'H1' THEN 'Railfreight Distribution (Channel Tunnel): RfD European Channel Tunnel Intermodal'
+          WHEN schedule_segment->CIF_train_category =  'H3' THEN 'Railfreight Distribution (Channel Tunnel): RfD European Channel Tunnel Automotive'
+          WHEN schedule_segment->CIF_train_category =  'H4' THEN 'Railfreight Distribution (Channel Tunnel): RfD European Channel Tunnel Contract Services'
+          WHEN schedule_segment->CIF_train_category =  'H5' THEN 'Railfreight Distribution (Channel Tunnel): RfD European Channel Tunnel Haulmark'
+          WHEN schedule_segment->CIF_train_category =  'H6' THEN 'Railfreight Distribution (Channel Tunnel): RfD European Channel Tunnel Joint Venture'
           END AS TRAIN_CATEGORY,
-          extractjsonfield(JsonScheduleV1->schedule_segment->schedule_location[0],'$.tiploc_code') as schedule_segment_zero_tiploc,
-           JsonScheduleV1->schedule_segment->schedule_location AS  schedule_segment_location
-FROM SCHEDULE_RAW
-WHERE JsonScheduleV1 IS NOT NULL;
-
+          extractjsonfield(schedule_segment->schedule_location[0],'$.tiploc_code') as departure_tiploc,
+          extractjsonfield(schedule_segment->schedule_location[0],'$.public_departure') as departure_public_departure_time,
+          extractjsonfield(schedule_segment->schedule_location[0],'$.platform') as departure_platform,
+          extractjsonfield(last_schedule_segment,'$.tiploc_code') as arrival_tiploc,
+          extractjsonfield(last_schedule_segment,'$.public_arrival') as arrival_public_arrival_time,
+          extractjsonfield(last_schedule_segment,'$.platform') as arrival_platform,
+          schedule_segment->schedule_location AS  schedule_segment_location
+FROM JsonScheduleV1;
 
 SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM SCHEDULE_01 AS 
@@ -117,11 +120,40 @@ CREATE STREAM SCHEDULE_01 AS
             S.SEATING_CLASSES AS SEATING_CLASSES,
             S.RESERVATIONS AS RESERVATIONS,
             S.SLEEPING_ACCOMODATION AS SLEEPING_ACCOMODATION,
-            S.TRAIN_CATEGORY AS TRAIN_CATEGORY,
-            T.DESCRIPTION AS ORIGINATING_LOCATION ,
-            S.SCHEDULE_SEGMENT_ZERO_TIPLOC AS SCHEDULE_SEGMENT_ZERO_TIPLOC,
+            S.DEPARTURE_TIPLOC AS DEPARTURE_TIPLOC,
+            T.TPS_DESCRIPTION AS DEPARTURE_TPS_DESCRIPTION,
+            S.DEPARTURE_PUBLIC_DEPARTURE_TIME AS DEPARTURE_PUBLIC_DEPARTURE_TIME,
+            S.DEPARTURE_PLATFORM AS DEPARTURE_PLATFORM,
+            S.ARRIVAL_TIPLOC AS ARRIVAL_TIPLOC,
+            S.ARRIVAL_PUBLIC_ARRIVAL_TIME AS ARRIVAL_PUBLIC_ARRIVAL_TIME,
+            S.ARRIVAL_PLATFORM AS ARRIVAL_PLATFORM,
             S.SCHEDULE_SEGMENT_LOCATION AS SCHEDULE_SEGMENT_LOCATION
    FROM SCHEDULE_00 S 
          LEFT JOIN TIPLOC T 
-         ON S.SCHEDULE_SEGMENT_ZERO_TIPLOC = T.TIPLOC_CODE
+         ON S.DEPARTURE_TIPLOC = T.TIPLOC_CODE
 PARTITION BY SCHEDULE_KEY;
+
+SET 'auto.offset.reset' = 'earliest';
+CREATE STREAM SCHEDULE_02 AS 
+   SELECT   S.CIF_TRAIN_UID AS CIF_TRAIN_UID,
+            S.SCHEDULE_START_DATE AS SCHEDULE_START_DATE,
+            S.CIF_STP_INDICATOR AS CIF_STP_INDICATOR,
+            S.SCHEDULE_KEY AS SCHEDULE_KEY,
+            S.ATOC_CODE AS ATOC_CODE,
+            S.TRAIN_STATUS AS TRAIN_STATUS,
+            S.POWER_TYPE AS POWER_TYPE,
+            S.SEATING_CLASSES AS SEATING_CLASSES,
+            S.RESERVATIONS AS RESERVATIONS,
+            S.SLEEPING_ACCOMODATION AS SLEEPING_ACCOMODATION,
+            S.DEPARTURE_TIPLOC AS DEPARTURE_TIPLOC,
+            S.DEPARTURE_TPS_DESCRIPTION AS DEPARTURE_TPS_DESCRIPTION,
+            S.DEPARTURE_PUBLIC_DEPARTURE_TIME AS DEPARTURE_PUBLIC_DEPARTURE_TIME,
+            S.DEPARTURE_PLATFORM AS DEPARTURE_PLATFORM,
+            S.ARRIVAL_TIPLOC AS ARRIVAL_TIPLOC,
+            T.TPS_DESCRIPTION AS ARRIVAL_TPS_DESCRIPTION,
+            S.ARRIVAL_PUBLIC_ARRIVAL_TIME AS ARRIVAL_PUBLIC_ARRIVAL_TIME,
+            S.ARRIVAL_PLATFORM AS ARRIVAL_PLATFORM,
+            S.SCHEDULE_SEGMENT_LOCATION AS SCHEDULE_SEGMENT_LOCATION
+   FROM SCHEDULE_01 S 
+         LEFT JOIN TIPLOC T 
+         ON S.ARRIVAL_TIPLOC = T.TIPLOC_CODE;
