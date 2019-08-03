@@ -2,14 +2,14 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.2.1
+    image: confluentinc/cp-zookeeper:5.3.0
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.2.1
+    image: confluentinc/cp-enterprise-kafka:5.3.0
     container_name: kafka
     depends_on:
       - zookeeper
@@ -52,7 +52,7 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.2.1
+    image: confluentinc/cp-schema-registry:5.3.0
     ports:
       - 8081:8081
     container_name: schema-registry
@@ -64,7 +64,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:29092
 
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.2.1
+    image: confluentinc/cp-ksql-server:5.3.0
     container_name: ksql-server
     ports:
       - 8088:8088
@@ -88,7 +88,7 @@ services:
       KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
 
   ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.2.1
+    image: confluentinc/cp-ksql-cli:5.3.0
     container_name: ksql-cli
     depends_on:
       - ksql-server
@@ -98,7 +98,7 @@ services:
       - ./data:/data
 
   kafka-connect-01:
-    image: confluentinc/cp-kafka-connect:5.2.1
+    image: confluentinc/cp-kafka-connect:5.3.0
     container_name: kafka-connect-01
     depends_on:
       - zookeeper
@@ -133,7 +133,7 @@ services:
       # Interceptor config
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.1.jar
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.0.jar
     volumes:
       - ./data:/data
       - /Users/Robin/cp/confluent-5.2.0-SNAPSHOT/share/java/kafka-connect-replicator/:/usr/share/confluent-hub-components/kafka-connect-replicator
@@ -143,7 +143,7 @@ services:
       - -c 
       - |
         echo "Installing connector plugins"
-        confluent-hub install --no-prompt confluentinc/kafka-connect-activemq:5.2.1
+        confluent-hub install --no-prompt confluentinc/kafka-connect-activemq:5.3.0
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 
@@ -158,8 +158,38 @@ services:
         #
         sleep infinity
 
+  replicator:
+    image: confluentinc/cp-enterprise-replicator:5.3.0
+    container_name: replicator
+    depends_on:
+      - zookeeper
+      - kafka
+      - schema-registry
+    ports:
+      - 58083:58083
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: 'kafka:29092'
+      CONNECT_REST_ADVERTISED_HOST_NAME: 'replicator'
+      CONNECT_REST_PORT: 58083
+      CONNECT_GROUP_ID: compose-replicator
+      CONNECT_CONFIG_STORAGE_TOPIC: replicator-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: replicator-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: replicator-status
+      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
+      CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/'
+
   kafka-connect-02:
-    image: confluentinc/cp-kafka-connect:5.2.1
+    image: confluentinc/cp-kafka-connect:5.3.0
     container_name: kafka-connect-02
     depends_on:
       - zookeeper
@@ -194,7 +224,7 @@ services:
       # Interceptor config
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.1.jar
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.0.jar
     volumes:
       - ./data:/data
       - ./data/aws_credentials:/root/.aws/credentials
@@ -220,7 +250,7 @@ services:
         sleep infinity
 
   kafka-connect-03:
-    image: confluentinc/cp-kafka-connect:5.2.1
+    image: confluentinc/cp-kafka-connect:5.3.0
     container_name: kafka-connect-03
     depends_on:
       - zookeeper
@@ -256,7 +286,7 @@ services:
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
       CONNECT_CONSUMER_MAX_POLL_INTERVAL_MS: 30000000
-      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.1.jar
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.0.jar
       # Offset configuration
       CONNECT_CONSUMER_AUTO_OFFSET_RESET: "earliest"
     volumes:
@@ -285,7 +315,7 @@ services:
         sleep infinity
 
   kafka-connect-04:
-    image: confluentinc/cp-kafka-connect:5.2.1
+    image: confluentinc/cp-kafka-connect:5.3.0
     container_name: kafka-connect-04
     depends_on:
       - zookeeper
@@ -320,7 +350,7 @@ services:
       # Interceptor config
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.1.jar
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.0.jar
       # Offset configuration
       CONNECT_CONSUMER_AUTO_OFFSET_RESET: "earliest"
     volumes:
@@ -347,7 +377,7 @@ services:
         sleep infinity
 
   control-center:
-    image: confluentinc/cp-enterprise-control-center:5.2.2
+    image: confluentinc/cp-enterprise-control-center:5.3.0
     container_name: control-center
     depends_on:
       - zookeeper
