@@ -1,6 +1,6 @@
 = Building a Streaming Data Pipeline with Rail Data
 Robin Moffatt <robin@confluent.io>
-v1.10, July 9, 2019
+v1.20, 7 August 2019
 
 == What is it?
 
@@ -22,6 +22,7 @@ Yes!
 http://rmoff.dev/kafka-trains-slides
 
 image::images/slides.png[]
+
 == Setup
 
 * Register for an account at https://datafeeds.networkrail.co.uk/
@@ -107,15 +108,16 @@ kafkacat -b localhost:9092 -t networkrail_TRAIN_MVT_X -C -c1
 source ./data/set_credentials_env.sh
 ./data/ingest/movements/01_load_canx_reason_code.sh
 ./data/ingest/cif_schedule/00_ingest_schedule.sh
+./data/ingest/cif_schedule/01_process_schedule.sh
 ----
 
 [source,bash]
 ----
-$ kafkacat -b localhost:9092 -t corpus -C -c1
-{"NLCDESC":"MERSEYRAIL ELECTRICS-HQ INPUT","NLC":"000800","TIPLOC":" ","3ALPHA":" ","STANOX":" ","NLCDESC16":"MPTE HQ INPUT","UIC":" "}
-
 $ kafkacat -b localhost:9092 -t CIF_FULL_DAILY -C -c1
 {"JsonTimetableV1":{"classification":"public","timestamp":1558653193,"owner":"Network Rail","Sender":{"organisation":"Rockshore","application":"NTROD","component":"SCHEDULE"},"Metadata":{"type":"full","sequence":2535}}}
+
+$ kafkacat -b localhost:9092 -t JsonScheduleV1 -C -c1
+{"CIF_bank_holiday_running":null,"CIF_stp_indicator":"P","CIF_train_uid":"C02207","applicable_timetable":"Y","atoc_code":"NT","new_schedule_segment":{"traction_class":"","uic_code":""},"schedule_days_runs":"0000010","schedule_end_date":"2019-12-14","schedule_segment":{"signalling_id":"5A99","CIF_train_category":"EE","CIF_headcode":"5102","CIF_course_indicator":1,"CIF_train_service_code":"21791000","CIF_business_sector":"??","CIF_power_type":"DMU","CIF_timing_load":"A","CIF_speed":"075","CIF_operating_characteristics":null,"CIF_train_class":null,"CIF_sleepers":null,"CIF_reservations":null,"CIF_connection_indicator":null,"CIF_catering_code":null,"CIF_service_branding":"","schedule_location":[{"location_type":"LO","record_identity":"LO","tiploc_code":"DLTN","tiploc_instance":null,"departure":"2319","public_departure":null,"platform":"1","line":null,"engineering_allowance":null,"pathing_allowance":null,"performance_allowance":null},{"location_type":"LI","record_identity":"LI","tiploc_code":"FYHLSJN","tiploc_instance":null,"arrival":null,"departure":null,"pass":"2331","public_arrival":null,"public_departure":null,"platform":null,"line":null,"path":null,"engineering_allowance":null,"pathing_allowance":null,"performance_allowance":null},{"location_type":"LI","record_identity":"LI","tiploc_code":"TURSDLJ","tiploc_instance":null,"arrival":null,"departure":null,"pass":"2333","public_arrival":null,"public_departure":null,"platform":null,"line":null,"path":null,"engineering_allowance":null,"pathing_allowance":null,"performance_allowance":null},{"location_type":"LI","record_identity":"LI","tiploc_code":"DRHM","tiploc_instance":null,"arrival":null,"departure":null,"pass":"2339","public_arrival":null,"public_departure":null,"platform":"DM","line":null,"path":null,"engineering_allowance":"1","pathing_allowance":null,"performance_allowance":null},{"location_type":"LI","record_identity":"LI","tiploc_code":"BRTLYJN","tiploc_instance":null,"arrival":null,"departure":null,"pass":"2347","public_arrival":null,"public_departure":null,"platform":null,"line":null,"path":null,"engineering_allowance":null,"pathing_allowance":null,"performance_allowance":null},{"location_type":"LI","record_identity":"LI","tiploc_code":"KEBGSJN","tiploc_instance":null,"arrival":null,"departure":null,"pass":"2350H","public_arrival":null,"public_departure":null,"platform":null,"line":null,"path":null,"engineering_allowance":null,"pathing_allowance":null,"performance_allowance":null},{"location_type":"LT","record_identity":"LT","tiploc_code":"NWCSTLE","tiploc_instance":null,"arrival":"2353","public_arrival":null,"platform":"6","path":null}]},"schedule_start_date":"2019-05-25","train_status":"P","transaction_type":"Create","last_schedule_segment":{"location_type":"LT","record_identity":"LT","tiploc_code":"NWCSTLE","tiploc_instance":null,"arrival":"2353","public_arrival":null,"platform":"6","path":null}}
 ----
 
 == KSQL
@@ -136,12 +138,15 @@ If you get `Avro schema for message values on topic TIPLOC_FLAT_KEYED does not e
 ----
 ksql> SHOW STREAMS;
 
- Stream Name              | Kafka Topic              | Format
------------------------------------------------------------------
- TIPLOC_FLAT_KEYED        | TIPLOC_FLAT_KEYED        | AVRO
- SCHEDULE_RAW             | CIF_FULL_DAILY           | JSON
- SCHEDULE_00              | SCHEDULE_00              | AVRO
- SCHEDULE_01              | SCHEDULE_01              | AVRO
+ Stream Name       | Kafka Topic       | Format
+------------------------------------------------
+ STANOX_FLAT_KEYED | STANOX_FLAT_KEYED | AVRO
+ JSONSCHEDULEV1    | JsonScheduleV1    | JSON
+ TIPLOC_FLAT_KEYED | TIPLOC_FLAT_KEYED | AVRO
+ SCHEDULE_RAW      | CIF_FULL_DAILY    | JSON
+ SCHEDULE_02       | SCHEDULE_02       | AVRO
+ SCHEDULE_00       | SCHEDULE_00       | AVRO
+ SCHEDULE_01       | SCHEDULE_01       | AVRO
  […]
 ----
 
@@ -152,30 +157,30 @@ SELECT SCHEDULE_KEY,
        TRAIN_STATUS,
        POWER_TYPE,
        SEATING_CLASSES,
-       TRAIN_CATEGORY 
-  FROM SCHEDULE_01 
- WHERE ORIGINATING_LOCATION='ILKLEY' 
+       DEPARTURE_TPS_DESCRIPTION, DEPARTURE_PUBLIC_DEPARTURE_TIME,
+       ARRIVAL_TPS_DESCRIPTION, ARRIVAL_PUBLIC_ARRIVAL_TIME 
+  FROM SCHEDULE_02_T
+ WHERE DEPARTURE_PUBLIC_DEPARTURE_TIME IS NOT NULL
  LIMIT 1;
 ----
 
 [source,sql]
 ----
-Y61618/2019-05-20/P | Passenger & Parcels (Permanent - WTT) | Electric Multiple Unit | Standard only | Ordinary Passenger Trains: Ordinary Passenger
+Y62982/2019-09-03/O | Passenger & Parcels (Permanent - WTT) | Electric Multiple Unit | Standard only | BRADFORD FORSTER SQUARE | 1841 | SKIPTON | 1922
 Limit Reached
 Query terminated
 ----
 
 [source,sql]
 ----
-ksql> SHOW TABLES;
+ksql> show tables;
 
  Table Name    | Kafka Topic       | Format | Windowed
 -------------------------------------------------------
  TIPLOC        | TIPLOC_FLAT_KEYED | AVRO   | false
  STANOX        | STANOX_FLAT_KEYED | AVRO   | false
- SCHEDULE_01_T | SCHEDULE_01       | AVRO   | false
- SCHEDULE_0T_T | SCHEDULE_01       | AVRO   | false
- […]
+ SCHEDULE_02_T | SCHEDULE_02       | AVRO   | false
+-------------------------------------------------------
 ----
 
 [source,sql]
@@ -222,18 +227,18 @@ RUN SCRIPT '/data/ksql/03_movements/05_movements_activations_schedules.ksql';
 ----
 SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') as ACTUAL_TIMESTAMP,
        EVENT_TYPE,
-       LOC_NLCDESC,
-       CASE WHEN LEN(PLATFORM)> 0 THEN 'Platform' + PLATFORM ELSE '' END AS PLATFORM,
+       DEPARTURE_TPS_DESCRIPTION,
+       ARRIVAL_TPS_DESCRIPTION,
+       PLATFORM,
        CASE WHEN VARIATION_STATUS = 'ON TIME' THEN 'ON TIME' 
-            WHEN VARIATION_STATUS = 'LATE' THEN TIMETABLE_VARIATION + ' MINS LATE' 
-            WHEN VARIATION_STATUS='EARLY' THEN TIMETABLE_VARIATION + ' MINS EARLY' 
+            WHEN VARIATION_STATUS = 'LATE' THEN CAST(TIMETABLE_VARIATION AS VARCHAR) + ' MINS LATE' 
+            WHEN VARIATION_STATUS='EARLY' THEN CAST(TIMETABLE_VARIATION AS VARCHAR) + ' MINS EARLY' 
          END AS VARIATION ,
        VARIATION_STATUS,
        TOC,
-       TRAIN_ID,
-       TRAIN_SERVICE_CODE
-  FROM TRAIN_MOVEMENTS_01 
-  WHERE LOC_NLCDESC = 'BEN RHYDDING';
+       TRAIN_ID, SCHEDULE_KEY
+  FROM TRAIN_MOVEMENTS_ACTIVATIONS_SCHEDULE_00 ;
+  WHERE DEPARTURE_TPS_DESCRIPTION = 'BEN RHYDDING';
 ----
 
 [source,sql]
