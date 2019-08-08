@@ -1,0 +1,21 @@
+= KSQL Dump
+Utility to write into a file the definitions of streams and tables of a given KSQL Server.
+
+== Building
+This utility was written in Go, therefore you need to have it installed in your machine to build a native executable. You can download Go here link:here[https://golang.org/dl/]. To build a new native executable, execute the following command:
+[source,bash]
+----
+go build -o ksqldump ksqldump.go
+----
+
+== Using
+You might want to put the utility in your PATH so you don't need to keep specifying where the file resides. Once you have done this, just execute the utility as shown below:
+[source,bash]
+----
+ksqldump -s <KSQL_SERVER> -f <FILENAME>
+----
+If the KSQL Server has BasicAuth enabled, you are going to need to provide credentials in order to the utility to work. To provide credentials, execute the utility as shown below:
+[source,bash]
+----
+ksqldump -s <KSQL_SERVER> -f <FILENAME> -u <USERNAME> -p <PASSWORD>
+----
