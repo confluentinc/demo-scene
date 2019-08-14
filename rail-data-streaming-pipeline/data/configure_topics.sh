@@ -4,6 +4,8 @@
 # 15724800000 = 26 weeks
 # 15811200000 = 183 days
 
+# Movement data
+docker exec kafka /usr/bin/kafka-topics --zookeeper zookeeper:2181 --create --topic networkrail_TRAIN_MVT_X --replication-factor 1 --partitions 10
 
 # Cancellation reasons
 docker exec kafka /usr/bin/kafka-configs --zookeeper zookeeper:2181 --alter --entity-type topics --entity-name canx_reason_code --add-config retention.ms=15724800000
