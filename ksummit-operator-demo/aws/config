@@ -1,0 +1,7 @@
+bootstrap.servers=kafka.platformops.aws.devel.cpdev.cloud:9092
+security.protocol=SSL
+ssl.keystore.location=/tmp/aws/keystore.jks
+ssl.keystore.password=mystorepassword
+ssl.key.password=mykeypassword
+ssl.truststore.location=/tmp/aws/truststore.jks
+ssl.truststore.password=mystorepassword

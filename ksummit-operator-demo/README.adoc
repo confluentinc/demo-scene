@@ -1,0 +1,210 @@
+= Kafka Summit NYC: Confluent Operator Demo aka Escape from EKS
+Viktor Gamov <viktor@confluent.io>, © 2019 Confluent, Inc.
+2019-08-28
+:revdate: 2019-08-28 18:16:12 -0600
+:linkattrs:
+:ast: &ast;
+:y: &#10003;
+:n: &#10008;
+:y: icon:check-sign[role="green"]
+:n: icon:check-minus[role="red"]
+:c: icon:file-text-alt[role="blue"]
+:toc: auto
+:toc-placement: auto
+:toc-position: auto
+:toc-title: Table of content
+:toclevels: 3
+:idprefix:
+:idseparator: -
+:sectanchors:
+:icons: font
+:source-highlighter: highlight.js
+:highlightjs-theme: idea
+:experimental:
+
+A demo from Kafka Summit NYC  https://speaking.gamov.io/eZuDRU/kafka-on-kubernetes-does-it-really-have-to-be-the-hard-way
+
+toc::[]
+
+== Prerequisites
+
+. GCP cluster name: `demo-test`
+. AWS cluster: `eks-test`
+
+=== Install AWS IAM Authenticator
+
+. Download https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/0.4.0-alpha.1/aws-iam-authenticator_0.4.0-alpha.1_darwin_amd64
+. Move `mv  <Download_path>/aws-iam-authenticator_0.4.0-alpha.1_darwin_amd64 aws-iam-authenticator
+. configure below on the `.kube/config` path
++
+
+`aws eks --region us-west-2 update-kubeconfig --name eks-test`
+
+=== Install external DNS GCP
+
+https://github.com/kubernetes-incubator/external-dns/blob/master/docs/tutorials/gke.md
+
+----
+export VALUE_PATH=/Users/viktor/workspace/k-demo
+helm install  -f ${VALUE_PATH}/gcp/gcp.yaml --name external-dns --namespace kube-system --set externaldns.enabled=true --set global.externaldns.user=platform-semaphore@platform-eng-204922.iam.gserviceaccount.com ./confluent-operator
+----
+
+== Install external DNS EKS (Route 53)
+
+Create IAM Policy:
+
+[source,yaml]
+----
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "route53:ListHostedZones",
+                "route53:ListResourceRecordSets"
+            ],
+            "Resource": ["_"]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "route53:ChangeResourceRecordSets"
+            ],
+            "Resource": ["_"]
+        }
+    ]
+}
+----
+
+[source, bash]
+----
+export VALUE_PATH=/Users/viktor/projects/k-demo
+
+helm install -f $\{VALUE_PATH}/aws/aws.yaml --name external-dns --namespace kube-system --set externaldns.enabled=true ./confluent-operator
+
+----
+
+=== Create certificate (this is require, one time-thing)
+
+[source,shell]
+----
+./client gcp
+./client aws
+----
+
+=== Validate DNS is setup
+
+Check Route54 or GCP DNS, if configurations are not there delete the external-dns pod running on the kubesystem (sometime it takes more time)
+
+=== Install CP
+
+[source,bash]
+.add location of demo Helm values files `$PATH` 
+----
+export VALUE_PATH=/Users/viktor/projects/k-demo
+----
+
+
+[source, shell]
+---- 
+
+# AWS:
+    scripts/deployCP.sh -c operator -p aws -f $\{VALUE_PATH}/aws/aws.yaml --debug
+    scripts/deployCP.sh -c zookeeper -p aws -f $\{VALUE_PATH}/aws/aws.yaml  --debug
+    scripts/deployCP.sh -c kafka -p aws -f $\{VALUE_PATH}/aws/aws.yaml  --debug
+    scripts/deployCP.sh -c controlcenter -p aws -f $\{VALUE_PATH}/aws/aws.yaml  --debug
+
+# GCP:
+
+ scripts/deployCP.sh -c zookeeper -p gcp -f ${VALUE_PATH}/gcp/gcp.yaml  --debug
+ scripts/deployCP.sh -c kafka -p gcp -f ${VALUE_PATH}/gcp/gcp.yaml  --debug
+ scripts/deployCP.sh -c replicator -p gcp -f ${VALUE_PATH}/gcp/gcp.yaml --debug
+ scripts/deployCP.sh -c controlcenter -p gcp -f ${VALUE_PATH}/gcp/gcp.yaml  --debug
+ ## scripts/deployCP.sh -c all -p gcp -f ${VALUE_PATH}/gcp/gcp.yaml  --debug
+----
+
+=== Validate Kafka DNS Endpoints
+
+[source,shell]
+----
+$\{VALUE_PATH}/k-demo/scripts/validateKafkaCluster.sh operator kafka    #<1>
+----
+<1> use dig command to validate if the DNS is resolved (during demo, you should deploy before hand otherwise the resolve will take time.)
+
+==== AWS
+
+[source]
+----
+kafka-broker-api-versions --command-config aws/kafka.properties --bootstrap-server kafka.platformops.aws.devel.cpdev.cloud:9092
+----
+
+==== GCP
+
+[source]
+----
+kafka-broker-api-versions --command-config gcp/kafka.properties --bootstrap-server kafka-nyc.platformops.dev.gcp.devel.cpdev.cloud:9092`
+----
+
+
+== Applications
+
+=== Create topics
+
+* GCP
++
+`ccloud -c gcp/ topic create example --replication-factor 3`
+* AWS
++
+`ccloud -c aws/ topic create example --replication-factor 3`
+
+=== Produce
+
+* GCP:
++
+`ccloud -c gcp/ produce -t example`
+* AWS:
++
+`ccloud -c aws/ produce -t example`
+
+=== Consume
+
+* GCP
++
+`ccloud -c gcp/ consume -t example -b`
+* AWS
++
+`ccloud -c aws/ consume -t example -b`
+
+=== Run standard script to bulk produce
+
+* GCP
++
+`seq 10000 | kafka-console-producer --topic example --broker-list kafka.platformops.dev.gcp.devel.cpdev.cloud:9092 --producer.config gcp/kafka.properties`
+
+* AWS
++
+
+`seq 10000 | kafka-console-producer --topic example --broker-list kafka.platformops.aws.devel.cpdev.cloud:9092 --producer.config aws/kafka.properties`
+
+=== Run standard script to bulk consume
+
+* GCP:
++
+`kafka-console-consumer --from-beginning --topic example --bootstrap-server kafka.platformops.dev.gcp.devel.cpdev.cloud:9092 -consumer.config gcp/kafka.properties`
+* AWS:
++
+`kafka-console-consumer --from-beginning --topic example --bootstrap-server kafka.platformops.aws.devel.cpdev.cloud:9092 -consumer.config aws/consumer.properties`
+
+=== Replicator
+
+[source,bash]
+----
+kubectl port-forward replicator-0 8083:8083
+
+kpf replicator-0 8083:8083
+
+curl -s -XGET http://localhost:8083/connector-plugins| jq '.[].class'
+
+curl -XPOST -H "Content-Type: application/json" --data @replicator.json http://localhost:8083/connectors
+----
