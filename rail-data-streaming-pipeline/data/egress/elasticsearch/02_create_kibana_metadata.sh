@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 echo "Create index patterns"
 curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/train_cancellations_activations_schedule_00' \
     -H 'kbn-xsrf: nevergonnagiveyouup' \
@@ -18,6 +20,11 @@ curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/train_movemen
     -H 'kbn-xsrf: nevergonnagiveyouup' \
     -H 'Content-Type: application/json' \
     -d '{"attributes":{"title":"train_movements_01","timeFieldName":"ACTUAL_TIMESTAMP"}}'
+
+curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/schedule_02' \
+    -H 'kbn-xsrf: nevergonnagiveyouup' \
+    -H 'Content-Type: application/json' \
+    -d '{"attributes":{"title":"schedule_02"}}'
 
 echo "Setting the index pattern as default"
 curl -XPOST 'http://localhost:5601/api/kibana/settings' \

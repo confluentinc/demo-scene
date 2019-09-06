@@ -50,6 +50,20 @@ curl -X POST -H  "Content-Type:application/json" http://localhost:28083/connecto
   }
 }'
 
+curl -X POST -H  "Content-Type:application/json" http://localhost:28083/connectors/ \
+    -d '{
+  "name": "sink-elastic-schedule_02-v01",
+  "config": {
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "topics": "SCHEDULE_02",
+    "connection.url": "http://elasticsearch:9200",
+    "type.name": "type.name=kafkaconnect",
+    "key.ignore": "false",
+    "schema.ignore": "true",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter"
+  }
+}'
+
 # curl -X POST -H "Accept:application/json" \
 #     -H  "Content-Type:application/json" http://localhost:28083/connectors/ \
 #     -d '{

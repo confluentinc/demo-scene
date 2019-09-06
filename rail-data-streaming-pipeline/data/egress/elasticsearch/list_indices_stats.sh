@@ -7,7 +7,7 @@ curl -s "http://localhost:28083/connectors"| jq '.[]'| xargs -I{connector_name} 
 echo ' '
 echo 'Indices and doc count'
 echo '---------------------'
-curl -s "http://localhost:9200/_cat/indices/train*?h=i,dc"
+curl -s "http://localhost:9200/_cat/indices/train*,sched*?h=i,dc"
 
 echo ' '
 
