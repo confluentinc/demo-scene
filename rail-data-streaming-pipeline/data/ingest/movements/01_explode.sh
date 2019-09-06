@@ -14,4 +14,4 @@
 
 kafkacat -b localhost:9092 -u -G tm_explode networkrail_TRAIN_MVT  | \
  jq -c '.text|fromjson[]' | \
- kafkacat -b localhost:9092 -t networkrail_TRAIN_MVT_X -P
+ kafkacat -b localhost:9092 -t networkrail_TRAIN_MVT_X -P -T
