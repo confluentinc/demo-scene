@@ -21,6 +21,22 @@ curl -XPUT "http://localhost:9200/_template/kafkaconnect/" -H 'Content-Type: app
           }
         },
         {
+          "geo01": {
+            "match": "GEOHASH",
+            "mapping": {
+              "type": "geo_point"
+            }
+          }
+        },
+        {
+          "geo02": {
+            "match": "GEO_LATLON",
+            "mapping": {
+              "type": "geo_point"
+            }
+          }
+        },
+        {
           "numbers": {
             "match": "TIMETABLE_VARIATION",
             "mapping": {
