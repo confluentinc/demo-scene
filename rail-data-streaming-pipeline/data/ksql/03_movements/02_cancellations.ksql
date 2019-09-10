@@ -12,7 +12,7 @@ CREATE STREAM TRAIN_CANCELLATIONS_00
           CAST(EXTRACTJSONFIELD(body,'$.dep_timestamp') AS BIGINT) AS dep_timestamp,
           EXTRACTJSONFIELD(body,'$.division_code') AS division_code,
           EXTRACTJSONFIELD(body,'$.loc_stanox') AS loc_stanox,
-          EXTRACTJSONFIELD(body,'$.canx_timestamp') AS canx_timestamp,
+          CAST(EXTRACTJSONFIELD(body,'$.canx_timestamp') AS BIGINT) AS canx_timestamp,
           EXTRACTJSONFIELD(body,'$.canx_reason_code') AS canx_reason_code,
           EXTRACTJSONFIELD(body,'$.train_id') AS train_id,
           EXTRACTJSONFIELD(body,'$.orig_loc_timestamp') AS orig_loc_timestamp,
