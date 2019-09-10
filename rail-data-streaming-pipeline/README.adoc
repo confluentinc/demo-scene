@@ -10,7 +10,7 @@ image::images/overview.png[]
 
 == What can it do? 
 
-image::images/es_dashboard_01.png[]
+image::images/trains_dashboard.png[]
 image::images/telegram01.png[]
 image::images/graph01.jpg[]
 image::images/pgadmin.jpg[]
