@@ -1,22 +1,5 @@
 [
   {
-    "_id": "42a4bb30-d413-11e9-889e-991f240bee57",
-    "_type": "visualization",
-    "_source": {
-      "title": "Map",
-      "visState": "{\"title\":\"Map\",\"type\":\"tile_map\",\"params\":{\"colorSchema\":\"Yellow to Red\",\"mapType\":\"Scaled Circle Markers\",\"isDesaturated\":true,\"addTooltip\":true,\"heatClusterSize\":1.5,\"legendPosition\":\"bottomright\",\"mapZoom\":2,\"mapCenter\":[0,0],\"wms\":{\"enabled\":false,\"options\":{\"format\":\"image/png\",\"transparent\":true},\"selectedTmsLayer\":{\"origin\":\"elastic_maps_service\",\"id\":\"road_map\",\"minZoom\":0,\"maxZoom\":18,\"attribution\":\"<p>&#169; <a href=\\\"https://www.openstreetmap.org/copyright\\\">OpenStreetMap contributors</a>|<a href=\\\"https://openmaptiles.org\\\">OpenMapTiles</a>|<a href=\\\"https://www.maptiler.com\\\">MapTiler</a>|<a href=\\\"https://www.elastic.co/elastic-maps-service\\\">Elastic Maps Service</a></p>&#10;\"}}},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"geohash_grid\",\"schema\":\"segment\",\"params\":{\"field\":\"GEO_LATLON\",\"autoPrecision\":true,\"isFilteredByCollar\":true,\"useGeocentroid\":true,\"mapZoom\":6,\"mapCenter\":{\"lon\":-3.405023273080588,\"lat\":53.936804456826565},\"mapBounds\":{\"bottom_right\":{\"lat\":48.56024979174329,\"lon\":10.195312500000004},\"top_left\":{\"lat\":58.7111891496366,\"lon\":-16.984863281250004}},\"precision\":4}}]}",
-      "uiStateJSON": "{\"mapZoom\":7,\"mapCenter\":[53.39623460446824,-1.233700728043914]}",
-      "description": "",
-      "version": 1,
-      "kibanaSavedObjectMeta": {
-        "searchSourceJSON": "{\"index\":\"train_movements_01\",\"query\":{\"query\":\"\",\"language\":\"lucene\"},\"filter\":[]}"
-      }
-    },
-    "_meta": {
-      "savedObjectVersion": 2
-    }
-  },
-  {
     "_id": "a380b8a0-d413-11e9-889e-991f240bee57",
     "_type": "search",
     "_source": {
@@ -60,13 +43,47 @@
     }
   },
   {
+    "_id": "42a4bb30-d413-11e9-889e-991f240bee57",
+    "_type": "visualization",
+    "_source": {
+      "title": "Frequency map",
+      "visState": "{\"title\":\"Frequency map\",\"type\":\"tile_map\",\"params\":{\"colorSchema\":\"Yellow to Red\",\"mapType\":\"Scaled Circle Markers\",\"isDesaturated\":true,\"addTooltip\":true,\"heatClusterSize\":1.5,\"legendPosition\":\"bottomright\",\"mapZoom\":2,\"mapCenter\":[0,0],\"wms\":{\"enabled\":false,\"options\":{\"format\":\"image/png\",\"transparent\":true},\"selectedTmsLayer\":{\"origin\":\"elastic_maps_service\",\"id\":\"road_map\",\"minZoom\":0,\"maxZoom\":18,\"attribution\":\"<p>&#169; <a href=\\\"https://www.openstreetmap.org/copyright\\\">OpenStreetMap contributors</a>|<a href=\\\"https://openmaptiles.org\\\">OpenMapTiles</a>|<a href=\\\"https://www.maptiler.com\\\">MapTiler</a>|<a href=\\\"https://www.elastic.co/elastic-maps-service\\\">Elastic Maps Service</a></p>&#10;\"}}},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"geohash_grid\",\"schema\":\"segment\",\"params\":{\"field\":\"GEO_LATLON\",\"autoPrecision\":true,\"isFilteredByCollar\":true,\"useGeocentroid\":true,\"mapZoom\":6,\"mapCenter\":{\"lon\":-3.405023273080588,\"lat\":53.936804456826565},\"mapBounds\":{\"bottom_right\":{\"lat\":48.56024979174329,\"lon\":10.195312500000004},\"top_left\":{\"lat\":58.7111891496366,\"lon\":-16.984863281250004}},\"precision\":4}}]}",
+      "uiStateJSON": "{\"mapZoom\":7,\"mapCenter\":[53.39623460446824,-1.233700728043914]}",
+      "description": "",
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"index\":\"train_movements_01\",\"query\":{\"query\":\"\",\"language\":\"lucene\"},\"filter\":[]}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
+    "_id": "308d3980-d473-11e9-889e-991f240bee57",
+    "_type": "visualization",
+    "_source": {
+      "title": "Delay map",
+      "visState": "{\"title\":\"Delay map\",\"type\":\"tile_map\",\"params\":{\"colorSchema\":\"Reds\",\"mapType\":\"Heatmap\",\"isDesaturated\":true,\"addTooltip\":true,\"heatClusterSize\":1,\"legendPosition\":\"bottomright\",\"mapZoom\":2,\"mapCenter\":[0,0],\"wms\":{\"enabled\":false,\"options\":{\"format\":\"image/png\",\"transparent\":true},\"selectedTmsLayer\":{\"origin\":\"elastic_maps_service\",\"id\":\"road_map\",\"minZoom\":0,\"maxZoom\":18,\"attribution\":\"<p>&#169; <a href=\\\"https://www.openstreetmap.org/copyright\\\">OpenStreetMap contributors</a>|<a href=\\\"https://openmaptiles.org\\\">OpenMapTiles</a>|<a href=\\\"https://www.maptiler.com\\\">MapTiler</a>|<a href=\\\"https://www.elastic.co/elastic-maps-service\\\">Elastic Maps Service</a></p>&#10;\"}}},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"TIMETABLE_VARIATION\"}},{\"id\":\"2\",\"enabled\":true,\"type\":\"geohash_grid\",\"schema\":\"segment\",\"params\":{\"field\":\"GEO_LATLON\",\"autoPrecision\":true,\"isFilteredByCollar\":true,\"useGeocentroid\":true,\"mapZoom\":7,\"mapCenter\":{\"lon\":-1.2359619140625,\"lat\":53.396432127095984},\"mapBounds\":{\"bottom_right\":{\"lat\":50.75035931136963,\"lon\":5.559082031250002},\"top_left\":{\"lat\":55.88763544617004,\"lon\":-8.031005859375002}},\"precision\":4}}]}",
+      "uiStateJSON": "{\"mapZoom\":7,\"mapCenter\":[53.39623460446824,-1.233700728043914]}",
+      "description": "",
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"index\":\"train_movements_01\",\"query\":{\"query\":\"\",\"language\":\"lucene\"},\"filter\":[]}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
     "_id": "f8158da0-d413-11e9-889e-991f240bee57",
     "_type": "dashboard",
     "_source": {
       "title": "Trains",
       "hits": 0,
       "description": "",
-      "panelsJSON": "[{\"embeddableConfig\":{\"mapZoom\":8,\"mapCenter\":[53.55662600482464,-1.4282226562500002]},\"gridData\":{\"x\":0,\"y\":7,\"w\":24,\"h\":21,\"i\":\"1\"},\"id\":\"42a4bb30-d413-11e9-889e-991f240bee57\",\"panelIndex\":\"1\",\"type\":\"visualization\",\"version\":\"6.7.0\"},{\"embeddableConfig\":{\"columns\":[\"EVENT_TYPE\",\"LOC_NLCDESC\",\"TOC\",\"VARIATION\",\"PLATFORM\"]},\"gridData\":{\"x\":24,\"y\":7,\"w\":24,\"h\":21,\"i\":\"2\"},\"id\":\"a380b8a0-d413-11e9-889e-991f240bee57\",\"panelIndex\":\"2\",\"type\":\"search\",\"version\":\"6.7.0\"},{\"gridData\":{\"x\":0,\"y\":0,\"w\":48,\"h\":7,\"i\":\"3\"},\"version\":\"6.7.0\",\"panelIndex\":\"3\",\"type\":\"visualization\",\"id\":\"cd4e5200-d413-11e9-889e-991f240bee57\",\"embeddableConfig\":{}}]",
+      "panelsJSON": "[{\"embeddableConfig\":{\"mapCenter\":[53.83400192537351,-3.2204152923077354],\"mapZoom\":6},\"gridData\":{\"x\":0,\"y\":7,\"w\":13,\"h\":21,\"i\":\"1\"},\"id\":\"42a4bb30-d413-11e9-889e-991f240bee57\",\"panelIndex\":\"1\",\"type\":\"visualization\",\"version\":\"6.7.0\"},{\"embeddableConfig\":{\"columns\":[\"EVENT_TYPE\",\"LOC_NLCDESC\",\"TOC\",\"VARIATION\",\"PLATFORM\",\"GEOHASH\"],\"sort\":[\"ACTUAL_TIMESTAMP\",\"desc\"]},\"gridData\":{\"x\":26,\"y\":7,\"w\":22,\"h\":21,\"i\":\"2\"},\"id\":\"a380b8a0-d413-11e9-889e-991f240bee57\",\"panelIndex\":\"2\",\"type\":\"search\",\"version\":\"6.7.0\"},{\"embeddableConfig\":{},\"gridData\":{\"x\":0,\"y\":0,\"w\":48,\"h\":7,\"i\":\"3\"},\"id\":\"cd4e5200-d413-11e9-889e-991f240bee57\",\"panelIndex\":\"3\",\"type\":\"visualization\",\"version\":\"6.7.0\"},{\"gridData\":{\"x\":13,\"y\":7,\"w\":13,\"h\":21,\"i\":\"4\"},\"version\":\"6.7.0\",\"panelIndex\":\"4\",\"type\":\"visualization\",\"id\":\"308d3980-d473-11e9-889e-991f240bee57\",\"embeddableConfig\":{\"mapZoom\":6,\"mapCenter\":[53.56172560853001,-3.177526602521539]}}]",
       "optionsJSON": "{\"darkTheme\":false,\"hidePanelTitles\":false,\"useMargins\":true}",
       "version": 1,
       "timeRestore": false,
