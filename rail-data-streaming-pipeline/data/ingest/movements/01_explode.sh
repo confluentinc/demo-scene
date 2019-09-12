@@ -12,6 +12,6 @@
 #
 # The simplest way is to use kafkacat piping into itself via jq
 
-kafkacat -b localhost:9092 -G tm_explode networkrail_TRAIN_MVT | \
+kafkacat -b localhost:9092 -u -G tm_explode networkrail_TRAIN_MVT  | \
  jq -c '.text|fromjson[]' | \
- kafkacat -b localhost:9092 -t networkrail_TRAIN_MVT_X -T -P
+ kafkacat -b localhost:9092 -t networkrail_TRAIN_MVT_X -P -T

@@ -12,7 +12,7 @@ CREATE STREAM TRAIN_CANCELLATIONS_00
           CAST(EXTRACTJSONFIELD(body,'$.dep_timestamp') AS BIGINT) AS dep_timestamp,
           EXTRACTJSONFIELD(body,'$.division_code') AS division_code,
           EXTRACTJSONFIELD(body,'$.loc_stanox') AS loc_stanox,
-          EXTRACTJSONFIELD(body,'$.canx_timestamp') AS canx_timestamp,
+          CAST(EXTRACTJSONFIELD(body,'$.canx_timestamp') AS BIGINT) AS canx_timestamp,
           EXTRACTJSONFIELD(body,'$.canx_reason_code') AS canx_reason_code,
           EXTRACTJSONFIELD(body,'$.train_id') AS train_id,
           EXTRACTJSONFIELD(body,'$.orig_loc_timestamp') AS orig_loc_timestamp,
@@ -23,7 +23,7 @@ CREATE STREAM TRAIN_CANCELLATIONS_00
 
 SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM TRAIN_CANCELLATIONS_01 
-  WITH (TIMESTAMP='DEP_TIMESTAMP') AS
+  WITH (TIMESTAMP='CANX_TIMESTAMP') AS
   SELECT TC.HEADER AS HEADER,
           TC.TRAIN_FILE_ADDRESS AS TRAIN_FILE_ADDRESS,
           TC.TRAIN_SERVICE_CODE AS TRAIN_SERVICE_CODE,
@@ -43,7 +43,7 @@ CREATE STREAM TRAIN_CANCELLATIONS_01
           TC.TRAIN_ID AS TRAIN_ID,
           TC.ORIG_LOC_TIMESTAMP AS ORIG_LOC_TIMESTAMP,
           TC.CANX_TYPE AS CANX_TYPE,
-          S.NLCDESC AS CANCELLATION_LOCATION 
+          S.TPS_DESCRIPTION AS CANCELLATION_LOCATION 
   FROM   TRAIN_CANCELLATIONS_00 TC
          LEFT JOIN STANOX S
          ON TC.LOC_STANOX = S.STANOX;

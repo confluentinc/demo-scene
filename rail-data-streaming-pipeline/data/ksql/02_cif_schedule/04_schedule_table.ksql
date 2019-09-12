@@ -1,3 +1,0 @@
-CREATE TABLE SCHEDULE_01_T WITH (KAFKA_TOPIC='SCHEDULE_01',
-                               VALUE_FORMAT='AVRO', 
-                               KEY='SCHEDULE_KEY');

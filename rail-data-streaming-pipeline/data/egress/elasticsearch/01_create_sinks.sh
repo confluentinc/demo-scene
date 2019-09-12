@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 
-curl -X POST -H  "Content-Type:application/json" http://localhost:28083/connectors/ \
+curl -X PUT -H  "Content-Type:application/json" http://localhost:28083/connectors/sink-elastic-train_movements_01-v01/config \
     -d '{
-  "name": "sink-elastic-train_movements_01-v01",
-  "config": {
     "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
     "topics": "TRAIN_MOVEMENTS_01",
     "connection.url": "http://elasticsearch:9200",
@@ -11,7 +9,6 @@ curl -X POST -H  "Content-Type:application/json" http://localhost:28083/connecto
     "key.ignore": "false",
     "schema.ignore": "true",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter"
-  }
 }'
 
 curl -X PUT -H  "Content-Type:application/json" http://localhost:28083/connectors/sink-elastic-train_movements_activations_schedule_00-v01/config \
@@ -36,10 +33,8 @@ curl -X PUT -H  "Content-Type:application/json" http://localhost:28083/connector
     "key.converter": "org.apache.kafka.connect.storage.StringConverter"
 }'
 
-curl -X POST -H  "Content-Type:application/json" http://localhost:28083/connectors/ \
+curl -X PUT -H  "Content-Type:application/json" http://localhost:28083/connectors/sink-elastic-train_cancellations_02-v01/config \
     -d '{
-  "name": "sink-elastic-train_cancellations_02-v01",
-  "config": {
     "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
     "topics": "TRAIN_CANCELLATIONS_02",
     "connection.url": "http://elasticsearch:9200",
@@ -47,7 +42,28 @@ curl -X POST -H  "Content-Type:application/json" http://localhost:28083/connecto
     "key.ignore": "false",
     "schema.ignore": "true",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter"
-  }
+}'
+
+curl -X PUT -H  "Content-Type:application/json" http://localhost:28083/connectors/sink-elastic-schedule_02-v01/config \
+    -d '{
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "topics": "SCHEDULE_02",
+    "connection.url": "http://elasticsearch:9200",
+    "type.name": "type.name=kafkaconnect",
+    "key.ignore": "false",
+    "schema.ignore": "true",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter"
+}'
+
+curl -X PUT -H  "Content-Type:application/json" http://localhost:28083/connectors/sink-elastic-stanox-v01/config \
+    -d '{
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "topics": "STANOX_FLAT_KEYED",
+    "connection.url": "http://elasticsearch:9200",
+    "type.name": "type.name=kafkaconnect",
+    "key.ignore": "false",
+    "schema.ignore": "true",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter"
 }'
 
 # curl -X POST -H "Accept:application/json" \
