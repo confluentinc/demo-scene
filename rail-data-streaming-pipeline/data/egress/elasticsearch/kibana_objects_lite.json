@@ -1,37 +1,11 @@
 [
   {
-    "_id": "a380b8a0-d413-11e9-889e-991f240bee57",
-    "_type": "search",
-    "_source": {
-      "title": "Trains",
-      "description": "",
-      "hits": 0,
-      "columns": [
-        "EVENT_TYPE",
-        "LOC_NLCDESC",
-        "TOC",
-        "VARIATION"
-      ],
-      "sort": [
-        "_score",
-        "desc"
-      ],
-      "version": 1,
-      "kibanaSavedObjectMeta": {
-        "searchSourceJSON": "{\"index\":\"train_movements_01\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"
-      }
-    },
-    "_meta": {
-      "savedObjectVersion": 2
-    }
-  },
-  {
-    "_id": "cd4e5200-d413-11e9-889e-991f240bee57",
+    "_id": "308d3980-d473-11e9-889e-991f240bee57",
     "_type": "visualization",
     "_source": {
-      "title": "Train count over time",
-      "visState": "{\"title\":\"Train count over time\",\"type\":\"histogram\",\"params\":{\"type\":\"histogram\",\"grid\":{\"categoryLines\":false,\"style\":{\"color\":\"#eee\"}},\"categoryAxes\":[{\"id\":\"CategoryAxis-1\",\"type\":\"category\",\"position\":\"bottom\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\"},\"labels\":{\"show\":true,\"truncate\":100},\"title\":{}}],\"valueAxes\":[{\"id\":\"ValueAxis-1\",\"name\":\"LeftAxis-1\",\"type\":\"value\",\"position\":\"left\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\",\"mode\":\"normal\"},\"labels\":{\"show\":true,\"rotate\":0,\"filter\":false,\"truncate\":100},\"title\":{\"text\":\"Count\"}}],\"seriesParams\":[{\"show\":\"true\",\"type\":\"histogram\",\"mode\":\"stacked\",\"data\":{\"label\":\"Count\",\"id\":\"1\"},\"valueAxis\":\"ValueAxis-1\",\"drawLinesBetweenPoints\":true,\"showCircles\":true}],\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"times\":[],\"addTimeMarker\":false},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"date_histogram\",\"schema\":\"segment\",\"params\":{\"field\":\"ACTUAL_TIMESTAMP\",\"useNormalizedEsInterval\":true,\"interval\":\"auto\",\"time_zone\":\"Europe/London\",\"drop_partials\":false,\"customInterval\":\"2h\",\"min_doc_count\":1,\"extended_bounds\":{}}},{\"id\":\"3\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"group\",\"params\":{\"field\":\"VARIATION_STATUS\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\"}}]}",
-      "uiStateJSON": "{}",
+      "title": "Delay map",
+      "visState": "{\"title\":\"Delay map\",\"type\":\"tile_map\",\"params\":{\"colorSchema\":\"Green to Red\",\"mapType\":\"Shaded Circle Markers\",\"isDesaturated\":true,\"addTooltip\":true,\"heatClusterSize\":1,\"legendPosition\":\"bottomright\",\"mapZoom\":2,\"mapCenter\":[0,0],\"wms\":{\"enabled\":false,\"options\":{\"format\":\"image/png\",\"transparent\":true},\"selectedTmsLayer\":{\"origin\":\"elastic_maps_service\",\"id\":\"road_map\",\"minZoom\":0,\"maxZoom\":18,\"attribution\":\"<p>&#169; <a href=\\\"https://www.openstreetmap.org/copyright\\\">OpenStreetMap contributors</a>|<a href=\\\"https://openmaptiles.org\\\">OpenMapTiles</a>|<a href=\\\"https://www.maptiler.com\\\">MapTiler</a>|<a href=\\\"https://www.elastic.co/elastic-maps-service\\\">Elastic Maps Service</a></p>&#10;\"}}},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"TIMETABLE_VARIATION\"}},{\"id\":\"2\",\"enabled\":true,\"type\":\"geohash_grid\",\"schema\":\"segment\",\"params\":{\"field\":\"GEO_LATLON\",\"autoPrecision\":true,\"isFilteredByCollar\":true,\"useGeocentroid\":true,\"mapZoom\":7,\"mapCenter\":{\"lon\":-1.2359619140625,\"lat\":53.396432127095984},\"mapBounds\":{\"bottom_right\":{\"lat\":50.93766174471314,\"lon\":4.72412109375},\"top_left\":{\"lat\":55.72092280778698,\"lon\":-7.196044921875}},\"precision\":4}}]}",
+      "uiStateJSON": "{\"mapZoom\":7,\"mapCenter\":[53.39623460446824,-1.233700728043914]}",
       "description": "",
       "version": 1,
       "kibanaSavedObjectMeta": {
@@ -60,12 +34,31 @@
     }
   },
   {
-    "_id": "308d3980-d473-11e9-889e-991f240bee57",
+    "_id": "f8158da0-d413-11e9-889e-991f240bee57",
+    "_type": "dashboard",
+    "_source": {
+      "title": "Trains",
+      "hits": 0,
+      "description": "",
+      "panelsJSON": "[{\"embeddableConfig\":{\"mapCenter\":[53.902720016840476,-1.7045974731445315],\"mapZoom\":11},\"gridData\":{\"x\":0,\"y\":17,\"w\":13,\"h\":21,\"i\":\"1\"},\"id\":\"42a4bb30-d413-11e9-889e-991f240bee57\",\"panelIndex\":\"1\",\"type\":\"visualization\",\"version\":\"6.7.0\"},{\"embeddableConfig\":{},\"gridData\":{\"x\":0,\"y\":0,\"w\":48,\"h\":6,\"i\":\"3\"},\"id\":\"cd4e5200-d413-11e9-889e-991f240bee57\",\"panelIndex\":\"3\",\"type\":\"visualization\",\"version\":\"6.7.0\"},{\"embeddableConfig\":{\"mapCenter\":[53.92572204716774,-1.8244493007659914],\"mapZoom\":10},\"gridData\":{\"x\":13,\"y\":17,\"w\":35,\"h\":21,\"i\":\"4\"},\"id\":\"308d3980-d473-11e9-889e-991f240bee57\",\"panelIndex\":\"4\",\"type\":\"visualization\",\"version\":\"6.7.0\"},{\"gridData\":{\"x\":0,\"y\":6,\"w\":48,\"h\":11,\"i\":\"5\"},\"version\":\"6.7.0\",\"panelIndex\":\"5\",\"type\":\"search\",\"id\":\"a380b8a0-d413-11e9-889e-991f240bee57\",\"embeddableConfig\":{\"columns\":[\"EVENT_TYPE\",\"LOC_NLCDESC\",\"PLATFORM\",\"VARIATION\",\"TOC\",\"TRAIN_ID\"],\"sort\":[\"ACTUAL_TIMESTAMP\",\"desc\"]}}]",
+      "optionsJSON": "{\"darkTheme\":false,\"hidePanelTitles\":false,\"useMargins\":true}",
+      "version": 1,
+      "timeRestore": false,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[{\"$state\":{\"store\":\"appState\"},\"meta\":{\"alias\":null,\"disabled\":true,\"index\":\"train_movements_01\",\"key\":\"TRAIN_ID\",\"negate\":false,\"params\":{\"query\":\"172V28MK11\",\"type\":\"phrase\"},\"type\":\"phrase\",\"value\":\"172V28MK11\"},\"query\":{\"match\":{\"TRAIN_ID\":{\"query\":\"172V28MK11\",\"type\":\"phrase\"}}}},{\"$state\":{\"store\":\"appState\"},\"meta\":{\"alias\":null,\"disabled\":true,\"index\":\"train_movements_01\",\"key\":\"EVENT_TYPE\",\"negate\":false,\"params\":{\"query\":\"ARRIVAL\",\"type\":\"phrase\"},\"type\":\"phrase\",\"value\":\"ARRIVAL\"},\"query\":{\"match\":{\"EVENT_TYPE\":{\"query\":\"ARRIVAL\",\"type\":\"phrase\"}}}}]}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
+    "_id": "cd4e5200-d413-11e9-889e-991f240bee57",
     "_type": "visualization",
     "_source": {
-      "title": "Delay map",
-      "visState": "{\"title\":\"Delay map\",\"type\":\"tile_map\",\"params\":{\"colorSchema\":\"Reds\",\"mapType\":\"Heatmap\",\"isDesaturated\":true,\"addTooltip\":true,\"heatClusterSize\":1,\"legendPosition\":\"bottomright\",\"mapZoom\":2,\"mapCenter\":[0,0],\"wms\":{\"enabled\":false,\"options\":{\"format\":\"image/png\",\"transparent\":true},\"selectedTmsLayer\":{\"origin\":\"elastic_maps_service\",\"id\":\"road_map\",\"minZoom\":0,\"maxZoom\":18,\"attribution\":\"<p>&#169; <a href=\\\"https://www.openstreetmap.org/copyright\\\">OpenStreetMap contributors</a>|<a href=\\\"https://openmaptiles.org\\\">OpenMapTiles</a>|<a href=\\\"https://www.maptiler.com\\\">MapTiler</a>|<a href=\\\"https://www.elastic.co/elastic-maps-service\\\">Elastic Maps Service</a></p>&#10;\"}}},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"TIMETABLE_VARIATION\"}},{\"id\":\"2\",\"enabled\":true,\"type\":\"geohash_grid\",\"schema\":\"segment\",\"params\":{\"field\":\"GEO_LATLON\",\"autoPrecision\":true,\"isFilteredByCollar\":true,\"useGeocentroid\":true,\"mapZoom\":7,\"mapCenter\":{\"lon\":-1.2359619140625,\"lat\":53.396432127095984},\"mapBounds\":{\"bottom_right\":{\"lat\":50.75035931136963,\"lon\":5.559082031250002},\"top_left\":{\"lat\":55.88763544617004,\"lon\":-8.031005859375002}},\"precision\":4}}]}",
-      "uiStateJSON": "{\"mapZoom\":7,\"mapCenter\":[53.39623460446824,-1.233700728043914]}",
+      "title": "Train count over time",
+      "visState": "{\"title\":\"Train count over time\",\"type\":\"histogram\",\"params\":{\"type\":\"histogram\",\"grid\":{\"categoryLines\":false,\"style\":{\"color\":\"#eee\"}},\"categoryAxes\":[{\"id\":\"CategoryAxis-1\",\"type\":\"category\",\"position\":\"bottom\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\"},\"labels\":{\"show\":true,\"truncate\":100},\"title\":{}}],\"valueAxes\":[{\"id\":\"ValueAxis-1\",\"name\":\"LeftAxis-1\",\"type\":\"value\",\"position\":\"left\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\",\"mode\":\"normal\"},\"labels\":{\"show\":true,\"rotate\":0,\"filter\":false,\"truncate\":100},\"title\":{\"text\":\"Count\"}}],\"seriesParams\":[{\"show\":\"true\",\"type\":\"histogram\",\"mode\":\"stacked\",\"data\":{\"label\":\"Count\",\"id\":\"1\"},\"valueAxis\":\"ValueAxis-1\",\"drawLinesBetweenPoints\":true,\"showCircles\":true}],\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"times\":[],\"addTimeMarker\":false},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"date_histogram\",\"schema\":\"segment\",\"params\":{\"field\":\"ACTUAL_TIMESTAMP\",\"useNormalizedEsInterval\":true,\"interval\":\"auto\",\"time_zone\":\"Europe/London\",\"drop_partials\":false,\"customInterval\":\"2h\",\"min_doc_count\":1,\"extended_bounds\":{}}},{\"id\":\"3\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"group\",\"params\":{\"field\":\"VARIATION_STATUS\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\"}}]}",
+      "uiStateJSON": "{}",
       "description": "",
       "version": 1,
       "kibanaSavedObjectMeta": {
@@ -77,18 +70,74 @@
     }
   },
   {
-    "_id": "f8158da0-d413-11e9-889e-991f240bee57",
-    "_type": "dashboard",
+    "_id": "a380b8a0-d413-11e9-889e-991f240bee57",
+    "_type": "search",
     "_source": {
       "title": "Trains",
-      "hits": 0,
       "description": "",
-      "panelsJSON": "[{\"embeddableConfig\":{\"mapCenter\":[53.83400192537351,-3.2204152923077354],\"mapZoom\":6},\"gridData\":{\"x\":0,\"y\":7,\"w\":13,\"h\":21,\"i\":\"1\"},\"id\":\"42a4bb30-d413-11e9-889e-991f240bee57\",\"panelIndex\":\"1\",\"type\":\"visualization\",\"version\":\"6.7.0\"},{\"embeddableConfig\":{\"columns\":[\"EVENT_TYPE\",\"LOC_NLCDESC\",\"TOC\",\"VARIATION\",\"PLATFORM\",\"GEOHASH\"],\"sort\":[\"ACTUAL_TIMESTAMP\",\"desc\"]},\"gridData\":{\"x\":26,\"y\":7,\"w\":22,\"h\":21,\"i\":\"2\"},\"id\":\"a380b8a0-d413-11e9-889e-991f240bee57\",\"panelIndex\":\"2\",\"type\":\"search\",\"version\":\"6.7.0\"},{\"embeddableConfig\":{},\"gridData\":{\"x\":0,\"y\":0,\"w\":48,\"h\":7,\"i\":\"3\"},\"id\":\"cd4e5200-d413-11e9-889e-991f240bee57\",\"panelIndex\":\"3\",\"type\":\"visualization\",\"version\":\"6.7.0\"},{\"gridData\":{\"x\":13,\"y\":7,\"w\":13,\"h\":21,\"i\":\"4\"},\"version\":\"6.7.0\",\"panelIndex\":\"4\",\"type\":\"visualization\",\"id\":\"308d3980-d473-11e9-889e-991f240bee57\",\"embeddableConfig\":{\"mapZoom\":6,\"mapCenter\":[53.56172560853001,-3.177526602521539]}}]",
-      "optionsJSON": "{\"darkTheme\":false,\"hidePanelTitles\":false,\"useMargins\":true}",
+      "hits": 0,
+      "columns": [
+        "EVENT_TYPE",
+        "LOC_NLCDESC",
+        "TOC",
+        "VARIATION",
+        "PLATFORM",
+        "TRAIN_ID"
+      ],
+      "sort": [
+        "_score",
+        "desc"
+      ],
       "version": 1,
-      "timeRestore": false,
       "kibanaSavedObjectMeta": {
-        "searchSourceJSON": "{\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"
+        "searchSourceJSON": "{\"index\":\"train_movements_01\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
+    "_id": "79acf9f0-d4b1-11e9-a258-057870bba7d6",
+    "_type": "search",
+    "_source": {
+      "title": "Train detail",
+      "description": "",
+      "hits": 0,
+      "columns": [
+        "EVENT_TYPE",
+        "LOC_NLCDESC",
+        "VARIATION",
+        "PLATFORM",
+        "TRAIN_ID",
+        "ORIGIN_TPS_DESCRIPTION",
+        "DESTINATION_TPS_DESCRIPTION",
+        "TRAIN_CATEGORY"
+      ],
+      "sort": [
+        "ACTUAL_TIMESTAMP",
+        "desc"
+      ],
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"index\":\"train_movements_activations_schedule_00\",\"highlightAll\":true,\"version\":true,\"query\":{\"query\":\"\",\"language\":\"lucene\"},\"filter\":[]}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
+    "_id": "4a8c1da0-d4b0-11e9-a258-057870bba7d6",
+    "_type": "visualization",
+    "_source": {
+      "title": "Train category",
+      "visState": "{\"title\":\"Train category\",\"type\":\"area\",\"params\":{\"type\":\"area\",\"grid\":{\"categoryLines\":false,\"style\":{\"color\":\"#eee\"}},\"categoryAxes\":[{\"id\":\"CategoryAxis-1\",\"type\":\"category\",\"position\":\"bottom\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\"},\"labels\":{\"show\":true,\"truncate\":100},\"title\":{}}],\"valueAxes\":[{\"id\":\"ValueAxis-1\",\"name\":\"LeftAxis-1\",\"type\":\"value\",\"position\":\"left\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\",\"mode\":\"normal\"},\"labels\":{\"show\":true,\"rotate\":0,\"filter\":false,\"truncate\":100},\"title\":{\"text\":\"Count\"}}],\"seriesParams\":[{\"show\":\"true\",\"type\":\"histogram\",\"mode\":\"stacked\",\"data\":{\"label\":\"Count\",\"id\":\"1\"},\"drawLinesBetweenPoints\":true,\"showCircles\":true,\"interpolate\":\"linear\",\"valueAxis\":\"ValueAxis-1\"}],\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"times\":[],\"addTimeMarker\":false},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"date_histogram\",\"schema\":\"segment\",\"params\":{\"field\":\"ACTUAL_TIMESTAMP\",\"timeRange\":{\"from\":\"now/d\",\"to\":\"now/d\",\"mode\":\"quick\"},\"useNormalizedEsInterval\":true,\"interval\":\"auto\",\"time_zone\":\"Europe/London\",\"drop_partials\":false,\"customInterval\":\"2h\",\"min_doc_count\":1,\"extended_bounds\":{}}},{\"id\":\"3\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"group\",\"params\":{\"field\":\"TRAIN_CATEGORY\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\"}}]}",
+      "uiStateJSON": "{}",
+      "description": "",
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"index\":\"train_movements_activations_schedule_00\",\"query\":{\"query\":\"\",\"language\":\"lucene\"},\"filter\":[]}"
       }
     },
     "_meta": {
