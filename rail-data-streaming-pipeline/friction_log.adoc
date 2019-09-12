@@ -83,3 +83,15 @@ When I do SHOW STREAMS I really want to know:
 
 - When was the last message received? -> which streams are stale (not popualted) or dead (problem with the source query, e.g. seriallisation of source records)
 - How many messages are there on it? -> is the number going up? Does it match my mental model of how much data there should be?
+
+== Issue 06 - What's the current status of my KSQL queries? 
+
+I did `docker-compose stop` and then `docker-compose start` and I'm not seeing any new data. I *think* my KSQL queries are dead, but I have no way to see. We should add this info to `SHOW QUERIES`
+
+https://github.com/confluentinc/ksql/issues/3208
+https://github.com/confluentinc/ksql/issues/2357
+
+== Issue 07 - What queries do I have running? 
+
+`SHOW QUERIES` shows all my queries *and the query text*. For anything except the smallest query this results in *screenfuls* of text, making it pretty unusable. We should have `SHOW QUERIES` to show just the query id, Kafka topic, the beginning of the query string (truncated at one line), _and add_ query status and ideally source/sink object names
+
