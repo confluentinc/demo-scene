@@ -260,7 +260,12 @@ UPDATE CUSTOMERS SET CLUB_STATUS = 'platinum' where ID=42;
 Here's the table - the latest value for a given key
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TS, ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS 
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS TS, 
+       ID, 
+       FIRST_NAME, 
+       LAST_NAME, 
+       EMAIL, 
+       CLUB_STATUS 
   FROM CUSTOMERS WHERE ID=42;
 ----
 
@@ -276,8 +281,14 @@ Here's the stream - every event, which in this context is every change event on 
 
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TS, ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS TS, 
+       ID, 
+       FIRST_NAME, 
+       LAST_NAME, 
+       EMAIL, 
+       CLUB_STATUS 
   FROM CUSTOMERS_STREAM WHERE ID=42;
+
 ----
 
 [source,sql]
@@ -360,7 +371,10 @@ CUSTOMERS is a KSQL _table_, which means that we have the latest value for a giv
 Check out the ratings for customer id 2 only:
 [source,sql]
 ----
-ksql> SELECT FULL_NAME, CLUB_STATUS, STARS, MESSAGE, CHANNEL FROM RATINGS_WITH_CUSTOMER_DATA WHERE ID=2;
+ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS TS, 
+             FULL_NAME, CLUB_STATUS, STARS, MESSAGE, CHANNEL 
+        FROM RATINGS_WITH_CUSTOMER_DATA 
+       WHERE ID=2;
 ----
 
 In mysql, make a change to ID 2
