@@ -6,7 +6,7 @@
     <groupId>io.confluent.devx.util</groupId>
     <artifactId>distributed-tracing</artifactId>
     <version>1.0</version>
-    <name>build</name>
+    <name>springbootapp</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -91,7 +91,21 @@
             <artifactId>log4j-api</artifactId>
             <version>2.8.2</version>
         </dependency>
+        
+        <!-- tracking support -->
+        <dependency>
+            <groupId>com.github.riferrei</groupId>
+            <artifactId>kafka-tracing-support</artifactId>
+            <version>master-SNAPSHOT</version>
+        </dependency>
     </dependencies>
+    
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
 
     <build>
         <plugins>

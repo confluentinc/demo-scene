@@ -7,3 +7,5 @@ target/
 .settings/**/*.*
 .vscode/**/*.*
 .settings/**/*.*
+
+!.mvn/wrapper/maven-wrapper.jar
