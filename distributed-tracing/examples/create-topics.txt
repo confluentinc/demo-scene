@@ -1,0 +1,3 @@
+######## Set Hostname to IP Address ########
+
+kafka-topics --zookeeper localhost:2181 --create --topic STAGE1 --partitions 4 --replication-factor 1
