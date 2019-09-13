@@ -1,9 +1,5 @@
 package io.confluent.devx.util;
 
-import java.util.Random;
-
-import com.google.gson.JsonObject;
-
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,36 +8,53 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.Random;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+
+import static java.lang.System.out;
+
 @Service
 public class ServiceProcessor {
 
-    private static final String STAGE1 = "STAGE1";
-    private static final Random RANDOM = new Random();
+  final private static String STAGE1 = "STAGE1";
+  final private static Random RANDOM = new Random();
 
-    @Autowired
-    private KafkaTemplate<String, String> kafkaTemplate;
+  final private KafkaTemplate<String, Model> kafkaTemplate;
 
-    @Scheduled(fixedRate = 1000)
-    public void createData() {
+  @Autowired
+  public ServiceProcessor(final KafkaTemplate<String, Model> kafkaTemplate) {
+    this.kafkaTemplate = kafkaTemplate;
+  }
 
-        JsonObject root = new JsonObject();
-        root.addProperty("x", RANDOM.nextInt(100));
-        root.addProperty("y", RANDOM.nextInt(100));
-        String payload = root.toString();
+  @Scheduled(fixedRate = 1000)
+  public void publish() {
+    kafkaTemplate.send(new ProducerRecord<>(STAGE1,
+                                            new Model(RANDOM.nextInt(100), RANDOM.nextInt(100))));
+  }
 
-        ProducerRecord<String, String> record =
-            new ProducerRecord<String, String>(STAGE1,
-                payload);
+  @KafkaListener(topics = STAGE1)
+  public void consume(ConsumerRecord<String, Model> record) {
+    out.println(record.value());
+  }
 
-        kafkaTemplate.send(record);
+}
 
-    }
+@Data
+@RequiredArgsConstructor
+@AllArgsConstructor
+class Model {
 
-    @KafkaListener(topics = STAGE1)
-    public void consume(ConsumerRecord<String, String> record) {
+  private int x;
+  private int y;
 
-        System.out.println(record.value());
+  @Override
+  public String toString() {
 
-    }
-
+    return "{" + "x=" + x
+           + ", y=" + y
+           + '}';
+  }
 }
