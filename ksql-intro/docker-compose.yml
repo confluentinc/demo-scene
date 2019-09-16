@@ -2,14 +2,14 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.3.0
+    image: confluentinc/cp-zookeeper:5.4.0-beta1
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.3.0
+    image: confluentinc/cp-enterprise-kafka:5.4.0-beta1
     container_name: kafka
     depends_on:
       - zookeeper
@@ -49,7 +49,7 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.3.0
+    image: confluentinc/cp-schema-registry:5.4.0-beta1
     container_name: schema-registry
     ports:
       - 8081:8081
@@ -92,9 +92,9 @@ services:
     entrypoint: /bin/sh
     tty: true
 
-  kafka-connect-01:
-    image: confluentinc/cp-kafka-connect:5.3.0
-    container_name: kafka-connect-01
+  kafka-connect-datagen:
+    image: cnfldemos/kafka-connect-datagen:0.1.3-5.3.1
+    container_name: kafka-connect-datagen
     depends_on:
       - zookeeper
       - kafka
@@ -114,7 +114,7 @@ services:
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-01"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-datagen"
       CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
       CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
@@ -124,31 +124,27 @@ services:
       # Interceptor config
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.0.jar
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.4.0-beta1.jar
+    # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
     volumes:
 #      - /Users/Robin/git/kafka-connect-datagen/target/components/packages/:/packages
       - ${PWD}:/data
-    # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
     command:
       - bash
       - -c
       - |
-        echo "Installing datagen connector"
-        # confluent-hub install --no-prompt /packages/confluentinc-kafka-connect-datagen-0.2.0-SNAPSHOT.zip
-        confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.1.2
-        #
-        if [[ $$? -ne 0 ]]; then
-            echo -e '\n\n\t--> Connector installation failed. Aborting. <--\n\n'
-            exit 1
-        fi
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run &
         #
         echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -ne 200 ] ; do
-          echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) " (waiting for 200)"
-          sleep 5
+        while : ; do
+          curl_status=$$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors)
+          echo -e $$(date) " Kafka Connect listener HTTP state: " $$curl_status " (waiting for 200)"
+          if [ $$curl_status -eq 200 ] ; then
+            break
+          fi
+          sleep 5 
         done
         #
         echo "Creating connector"
@@ -170,7 +166,6 @@ services:
             "schema.filename": "/data/orders_us.avsc",
             "schema.keyfield": "orderid",
             "tasks.max": "1"
-
         }'
         curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/source-datagen-orders-uk/config \
             -d '{
@@ -182,21 +177,111 @@ services:
         }'
         sleep infinity
 
+#   kafka-connect-datagen:
+#     image: confluentinc/cp-kafka-connect:5.4.0-beta1
+#     container_name: kafka-connect-datagen
+#     depends_on:
+#       - zookeeper
+#       - kafka
+#       - schema-registry
+#     ports:
+#       - 8083:8083
+#     environment:
+#       CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
+#       CONNECT_REST_PORT: 8083
+#       CONNECT_GROUP_ID: compose-connect-group
+#       CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
+#       CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
+#       CONNECT_STATUS_STORAGE_TOPIC: _connect-status
+#       CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+#       CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+#       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+#       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+#       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+#       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+#       CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-datagen"
+#       CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
+#       CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+#       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+#       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+#       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+#       CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/'
+#       # Interceptor config
+#       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+#       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+#       CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.4.0-beta1.jar
+#     volumes:
+# #      - /Users/Robin/git/kafka-connect-datagen/target/components/packages/:/packages
+#       - ${PWD}:/data
+#     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
+#     command:
+#       - bash
+#       - -c
+#       - |
+#         echo "Installing datagen connector"
+#         # confluent-hub install --no-prompt /packages/confluentinc-kafka-connect-datagen-0.2.0-SNAPSHOT.zip
+#         confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.1.3
+#         #
+#         if [[ $$? -ne 0 ]]; then
+#             echo -e '\n\n\t--> Connector installation failed. Aborting. <--\n\n'
+#             exit 1
+#         fi
+#         #
+#         echo "Launching Kafka Connect worker"
+#         /etc/confluent/docker/run &
+#         #
+#         echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
+#         while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -ne 200 ] ; do
+#           echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) " (waiting for 200)"
+#           sleep 5
+#         done
+#         #
+#         echo "Creating connector"
+#         curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/source-datagen-item_details_01/config \
+#             -d '{
+#             "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+#             "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+#             "kafka.topic": "item_details_01",
+#             "max.interval":1,
+#             "iterations":1000,
+#             "schema.filename": "/data/item_details.avsc",
+#             "schema.keyfield": "id",
+#             "tasks.max": "1"
+#           }'
+#         curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/source-datagen-orders-us/config \
+#             -d '{
+#             "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+#             "kafka.topic": "orders",
+#             "schema.filename": "/data/orders_us.avsc",
+#             "schema.keyfield": "orderid",
+#             "tasks.max": "1"
+
+#         }'
+#         curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/source-datagen-orders-uk/config \
+#             -d '{
+#             "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+#             "kafka.topic": "orders_uk",
+#             "schema.filename": "/data/orders_uk.avsc",
+#             "schema.keyfield": "orderid",
+#             "tasks.max": "1"
+#         }'
+#         sleep infinity
+
   control-center:
-    image: confluentinc/cp-enterprise-control-center:5.3.0
+    image: confluentinc/cp-enterprise-control-center:5.4.0-beta1
     container_name: control-center
     depends_on:
       - zookeeper
       - kafka
       - schema-registry
-      - kafka-connect-01
+      - kafka-connect-datagen
       - ksql-server
     ports:
       - "9021:9021"
     environment:
       CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
       CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      CONTROL_CENTER_CONNECT_CLUSTER: 'http://kafka-connect-01:8083'
+      CONTROL_CENTER_CONNECT_CLUSTER: 'http://kafka-connect-datagen:8083'
       CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       # The advertised URL needs to be the URL on which the browser
       #  can access the KSQL server (e.g. http://localhost:8088/info)

@@ -27,7 +27,7 @@ docker-compose up -d
 +
 [source,bash]
 ----
-docker exec -it ksql-cli bash -c 'echo -e "\n\n⏳ Waiting for KSQL to be available before launching CLI\n"; while [ $(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/info) -ne 200 ] ; do echo -e $(date) "KSQL Server HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/info) " (waiting for 200)" ; sleep 1 ; done; ksql http://ksql-server:8088'
+docker exec -it ksql-cli bash -c 'echo -e "\n\n⏳ Waiting for KSQL to be available before launching CLI\n"; while : ; do curl_status=$(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/info) ; echo -e $(date) " KSQL server listener HTTP state: " $curl_status " (waiting for 200)" ; if [ $curl_status -eq 200 ] ; then  break ; fi ; sleep 5 ; done ; ksql http://ksql-server:8088'
 ----
 
 
@@ -239,19 +239,17 @@ Check that the connector is `RUNNING`
 
 [source,bash]
 ----
-curl -s "http://localhost:8083/connectors"| \
-  jq '.[]'| \
-  xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| \
-  jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| \
-  column -s : -t| sed 's/\"//g'| sort
+curl -s "http://localhost:8083/connectors?expand=info&expand=status" | \
+         jq '. | to_entries[] | [ .value.info.type, .key, .value.status.connector.state,.value.status.tasks[].state,.value.info.config."connector.class"]|join(":|:")' | \
+         column -s : -t| sed 's/\"//g'| sort
 ----
 
 [source,bash]
 ----
-sink-elastic-orders-01          |  RUNNING  |  RUNNING
-source-datagen-item_details_01  |  RUNNING  |  FAILED
-source-datagen-orders-uk        |  RUNNING  |  RUNNING
-source-datagen-orders-us        |  RUNNING  |  RUNNING
+sink    |  sink-elastic-orders-01          |  RUNNING  |  RUNNING  |  io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
+source  |  source-datagen-item_details_01  |  RUNNING  |  FAILED   |  io.confluent.kafka.connect.datagen.DatagenConnector
+source  |  source-datagen-orders-uk        |  RUNNING  |  RUNNING  |  io.confluent.kafka.connect.datagen.DatagenConnector
+source  |  source-datagen-orders-us        |  RUNNING  |  RUNNING  |  io.confluent.kafka.connect.datagen.DatagenConnector
 ----
 
 
