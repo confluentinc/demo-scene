@@ -257,7 +257,6 @@ services:
       discovery.type: "single-node"
 
   websockets:
-    image: ksql-workshop-websockets
     container_name: websockets
     build: ./websockets
   
