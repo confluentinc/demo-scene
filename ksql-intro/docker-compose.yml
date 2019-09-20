@@ -127,7 +127,6 @@ services:
       CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.4.0-beta1.jar
     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
     volumes:
-#      - /Users/Robin/git/kafka-connect-datagen/target/components/packages/:/packages
       - ${PWD}:/data
     command:
       - bash

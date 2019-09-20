@@ -1,6 +1,6 @@
 # An introduction to KSQL 
 Robin Moffatt <robin@confluent.io>
-v1.00, July 2, 2019
+v1.10, 17 September 2019
 :toc:
 
 ## Setup
@@ -50,6 +50,8 @@ SHOW STREAMS;
 DESCRIBE ORDERS;
 
 SELECT * FROM ORDERS LIMIT 10;
+
+SELECT ORDERID, ADDRESS FROM ORDERS LIMIT 10;
 ----
 
 ## Filter for given state
@@ -134,44 +136,6 @@ In the original window show the source messages:
 PRINT 'orders';
 ----
 
-## Schema manipulation - Flatten schema & derive new columns
-
-image::images/schema02.png[]
-
-[source,sql]
-----
-CREATE STREAM ORDERS_FLAT AS 
-  SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS ORDER_TIMESTAMP, 
-         ORDERTIME AS ORDERTIME_EPOCH, 
-         ORDERID, 
-         ITEMID, 
-         ORDERUNITS, 
-         ADDRESS->STREET AS ADDRESS_STREET, 
-         ADDRESS->CITY AS ADDRESS_CITY, 
-         ADDRESS->STATE AS ADDRESS_STATE
-    FROM ORDERS;
-----
-
-[source,sql]
-----
-PRINT 'ORDERS_FLAT';
-----
-
-
-
-### Reserialise to CSV
-
-image::images/reserialise01.png[]
-
-[source,sql]
-----
-CREATE STREAM ORDERS_FLAT_CSV WITH (VALUE_FORMAT='DELIMITED', 
-                                    KAFKA_TOPIC='orders_csv') AS 
-  SELECT * FROM ORDERS_FLAT;
-
-PRINT 'orders_csv';
-----
-
 ## Joins
 
 ### Join to items reference
@@ -254,6 +218,50 @@ source  |  source-datagen-orders-us        |  RUNNING  |  RUNNING  |  io.conflue
 
 
 View in http://localhost:5601/app/kibana#/management/kibana/index?_g=()[Kibana]
+
+''''
+
+NOTE: 40 minute talk ends here
+
+''''
+
+## Schema manipulation - Flatten schema & derive new columns
+
+image::images/schema02.png[]
+
+[source,sql]
+----
+CREATE STREAM ORDERS_FLAT AS 
+  SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS ORDER_TIMESTAMP, 
+         ORDERTIME AS ORDERTIME_EPOCH, 
+         ORDERID, 
+         ITEMID, 
+         ORDERUNITS, 
+         ADDRESS->STREET AS ADDRESS_STREET, 
+         ADDRESS->CITY AS ADDRESS_CITY, 
+         ADDRESS->STATE AS ADDRESS_STATE
+    FROM ORDERS;
+----
+
+[source,sql]
+----
+PRINT 'ORDERS_FLAT';
+----
+
+
+
+### Reserialise to CSV
+
+image::images/reserialise01.png[]
+
+[source,sql]
+----
+CREATE STREAM ORDERS_FLAT_CSV WITH (VALUE_FORMAT='DELIMITED', 
+                                    KAFKA_TOPIC='orders_csv') AS 
+  SELECT * FROM ORDERS_FLAT;
+
+PRINT 'orders_csv';
+----
 
 ## Aggregates 
 
