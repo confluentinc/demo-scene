@@ -1,4 +1,4 @@
-SET 'auto.offset.reset' = 'earliest';
+SET 'auto.offset.reset' = 'latest';
 
 SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') as actual_timestamp, 
        EVENT_TYPE, 

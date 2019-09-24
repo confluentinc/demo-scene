@@ -349,7 +349,7 @@ RUN SCRIPT '/data/ksql/03_movements/01_movement_raw.ksql';
 RUN SCRIPT '/data/ksql/03_movements/02_activations.ksql';
 RUN SCRIPT '/data/ksql/03_movements/02_cancellations.ksql';
 RUN SCRIPT '/data/ksql/03_movements/02_movements.ksql';
-PRINT 'TRAIN_ACTIVATIONS_01' FROM BEGINNING LIMIT 1;
+PRINT 'TRAIN_ACTIVATIONS_01_T' FROM BEGINNING LIMIT 1;
 RUN SCRIPT '/data/ksql/03_movements/03_activations_table.ksql';
 RUN SCRIPT '/data/ksql/03_movements/04_cancellations_activations.ksql';
 RUN SCRIPT '/data/ksql/03_movements/04_movements_activations.ksql';
@@ -461,6 +461,13 @@ $ docker-compose exec postgres bash -c 'echo "select count(*) from \"TRAIN_MOVEM
 -------
    450
 (1 row)
+----
+
+
+[source,sql]
+----
+SELECT "ACTUAL_TIMESTAMP", to_timestamp("ACTUAL_TIMESTAMP"/1000) FROM "TRAIN_MOVEMENTS_ACTIVATIONS_SCHEDULE_00" ORDER BY "ACTUAL_TIMESTAMP" DESC LIMIT 5;
+ 
 ----
 
 
