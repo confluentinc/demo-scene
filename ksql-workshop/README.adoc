@@ -1,0 +1,11 @@
+= Overview
+
+This KSQL ratings demo showcases Apache Kafka® stream processing using KSQL. 
+
+'''
+
+*You can follow the link:ksql-workshop.adoc[step-by-step guide] workshop instructions here.*
+
+'''
+
+image:images/ksql_workshop_01.png[image]
