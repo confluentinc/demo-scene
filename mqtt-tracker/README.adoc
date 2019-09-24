@@ -1,0 +1,85 @@
+= MQTT Kafka tracker
+
+**Built based on https://github.com/saubury/race-mapper[Simon Aubury's excellent example], all credit and thanks to Simon for this.**
+
+* Install Owntracks on your phone
+* Owntracks sends https://owntracks.org/booklet/tech/json/#_typelocation[data] to MQTT server
+* Kafka Connect ingests MQTT into Kafka topic
+* KSQL parses and transforms the data for analysis
+* Kafka Connect streams the data to Elasticsearch
+* Kibana does nice visualisation of the data
+
+== Setup
+
+=== MQTT 
+
+1. You'll need an MQTT server; https://www.cloudmqtt.com is very easy to setup and no credit card required for entry-level tier. From your MQTT server you need: 
+** Hostname
+** Port
+** Username
+** Password
+
+Tip: https://mqtt-explorer.com/[MQTT Explorer] is a useful tool. 
+
+=== OwnTracks
+
+1. Download Owntracks to your phone. Click the ℹ️ icon in the top left and configure the MQTT settings. 
+
+2. On your MQTT server (e.g. CloudMQTT's `WebSocket UI` view) you should see messages arriving
+
+=== Confluent Platform stack
+
+1. Install Docker and Docker Compose
+2. Allocate >=8GB to Docker
+3. `docker-compose up -d`
+4. Configure KSQL
+** Run KSQL CLI
++
+[source,bash]
+----
+docker exec -it ksql-cli bash -c 'echo -e "\n\n⏳ Waiting for KSQL to be available before launching CLI\n"; while : ; do curl_status=$(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/info) ; echo -e $(date) " KSQL server listener HTTP state: " $curl_status " (waiting for 200)" ; if [ $curl_status -eq 200 ] ; then  break ; fi ; sleep 5 ; done ; ksql http://ksql-server:8088'
+----
+** Run script
++
+[source,sql]
+----
+RUN SCRIPT '/data/mqtt.ksql'; 
+----
+
+5. Configure Elasticsearch sink
++
+[source,bash]
+----
+curl -i -X PUT -H  "Content-Type:application/json" \
+      http://localhost:8083/connectors/sink-elastic-runner_status-00/config \
+      -d '{
+            "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+            "connection.url": "http://elasticsearch:9200",
+            "type.name": "type.name=kafkaconnect",
+            "behavior.on.malformed.documents": "warn",
+            "topics": "RUNNER_STATUS",
+            "key.ignore": "false",
+            "schema.ignore": "true",
+            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+            "transforms": "addTS",
+            "transforms.addTS.type": "org.apache.kafka.connect.transforms.InsertField$Value",
+            "transforms.addTS.timestamp.field": "EVENT_TS"
+            }'
+
+curl -i -X PUT -H  "Content-Type:application/json" \
+      http://localhost:8083/connectors/sink-elastic-runner_location-00/config \
+      -d '{
+            "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+            "connection.url": "http://elasticsearch:9200",
+            "type.name": "type.name=kafkaconnect",
+            "behavior.on.malformed.documents": "warn",
+            "topics": "RUNNER_LOCATION",
+            "key.ignore": "true",
+            "schema.ignore": "true",
+            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+            "transforms": "addTS",
+            "transforms.addTS.type": "org.apache.kafka.connect.transforms.InsertField$Value",
+            "transforms.addTS.timestamp.field": "EVENT_TS"
+            }'
+----
+
