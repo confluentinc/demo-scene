@@ -2,6 +2,8 @@
 :doctype: book
 :toc:
 :sectnums:
+:experimental:
+:icon: font
 Robin Moffatt <@rmoff>
 v1.35, April 10, 2019
 
@@ -11,10 +13,12 @@ v1.35, April 10, 2019
 
 [quote]
 ____
-KSQL is the streaming SQL engine for Apache Kafka. Using just SQL it is possible for developers to build powerful stream processing applications. This workshop will show practical examples of KSQL:
+KSQL is the streaming SQL engine for Apache Kafka.
+Using just SQL, it is possible for developers to build powerful stream processing applications.
+This workshop will show practical examples of KSQL:
 
 * Filtering streams of data
-* Joining live events with reference data (e.g. from a database)
+* Joining live events with reference data (e.g., from a database)
 * Stateful aggregations
 * Convert streams from JSON to AVRO
 ____
@@ -27,7 +31,7 @@ The slides that go with it https://speakerdeck.com/rmoff/javazone-workshop-apach
 
 NOTE: For Windows instructions, please see link:ksql-workshop-windows.adoc[]
 
-Don't forget to check out the #ksql channel on our https://slackpass.io/confluentcommunity[Community Slack group]
+Don't forget to check out the `#ksql` channel on our https://slackpass.io/confluentcommunity[Community Slack group]
 
 ——_Robin Moffatt https://twitter.com/rmoff/[@rmoff]_
 
@@ -39,7 +43,7 @@ Please see link:pre-requisites.adoc[]
 
 == Start Confluent Platform
 
-_NOTE: Make sure that Docker has at least 8GB of memory available (check with `docker system info | grep Memory`)_
+NOTE: Make sure that Docker has at least 8GB of memory available (check with `docker system info | grep Memory`)
 
 NOTE: For Windows instructions, please see link:ksql-workshop-windows.adoc[]
 
@@ -50,7 +54,7 @@ Change the working directory:
 cd demo-scene/ksql-workshop
 ----
 
-Start Confluent Platform: 
+Start Confluent Platform:
 
 [source,bash]
 ----
@@ -58,15 +62,15 @@ docker-compose up -d
 docker-compose logs -f kafka|grep "INFO Kafka version"
 ----
 
-Once you see output then it means Kafka is running and you can proceed
+Once you see output, then it means Kafka is running and you can proceed
 
 [source,bash]
 ----
 $ docker-compose logs -f kafka|grep "INFO Kafka version"
-kafka_1             | [2019-03-15 16:04:53,441] INFO Kafka version : 2.1.1-cp1 (org.apache.kafka.common.utils.AppInfoParser)
+kafka               | [2019-09-20 17:54:24,968] INFO Kafka version: 5.3.1-ccs (org.apache.kafka.common.utils.AppInfoParser)
 ----
 
-Press Ctrl-C twice to exit the `docker-compose logs` command
+Press btn:[Ctrl-C] twice to exit the `docker-compose logs` command
 
 Run `docker-compose ps` to confirm that all components are running:
 
@@ -92,15 +96,16 @@ websockets         docker-entrypoint.sh bash  ...   Up      3000/tcp
 zookeeper          /etc/confluent/docker/run        Up      2181/tcp, 2888/tcp, 3888/tcp
 ----
 
-IMPORTANT: If any components do not show "Up" under the `State` column (e.g. they say "Exit") then you must rectify this before continuing. As a first solution, try re-issuing the `docker-compose up -d` command.
+IMPORTANT: If any components do not show "Up" under the `State` column (e.g., they say "Exit") then you must rectify this before continuing.
+As a first solution, try re-issuing the `docker-compose up -d` command.
 
 <<<
 
 == KSQL
 
-KSQL can be used via the command line interface (CLI), a graphical UI built into Confluent Control Center, or the documented https://docs.confluent.io/current/ksql/docs/api.html[REST API].
+KSQL can be used via the command-line interface (CLI), a graphical UI built into Confluent Control Center, or the documented https://docs.confluent.io/current/ksql/docs/api.html[REST API].
 
-In this workshop we will use the CLI, which if you have used Oracle's sql*plus, MySQL CLI, and so on will feel very familiar to you.
+In this workshop, we will use the CLI, which if you have used Oracle's `sql*plus`, MySQL CLI, and so on will feel very familiar to you.
 
 Launch the CLI:
 
@@ -133,7 +138,7 @@ Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
 ksql>
 ----
 
-==== See available Kafka topics
+=== See available Kafka topics
 
 KSQL can be used to view the topic metadata on a Kafka cluster (`SHOW TOPICS;`), as well as inspect the messages in a topic (`PRINT <topic>;`).
 
@@ -151,11 +156,12 @@ ksql> SHOW TOPICS;
 ksql>
 ----
 
-==== Inspect a topic contents - Ratings
+=== Inspect a topic contents - Ratings
 
 The event stream driving this example is a simulated stream of events purporting to show the ratings left by users on a website, with data elements including the device type that they used, the star rating, and a message associated with the rating.
 
-Using the `PRINT` command we can easily see column names and values within a topic's messages. Kafka messages consist of a timestamp, key, and message (payload), which are all shown in the `PRINT` output.
+Using the `PRINT` command we can easily see column names and values within a topic's messages.
+Kafka messages consist of a timestamp, key, and message (payload), which are all shown in the `PRINT` output.
 
 [TIP]
 ====
@@ -170,11 +176,11 @@ Format:AVRO
 22/02/18 12:55:05 GMT, 5313, {"rating_id": 5313, "user_id": 3, "stars": 4, "route_id": 6975, "rating_time": 1519304105213, "channel": "web", "message": "why is it so difficult to keep the bathrooms clean ?"}
 ----
 
-Press Ctrl-C to cancel and return to the KSQL prompt. 
+Press Ctrl-C to cancel and return to the KSQL prompt.
 
 [NOTE]
 ====
-*Optional*: You can also inspect the Kafka topic with a tool such as https://github.com/edenhill/kafkacat/[`kafkacat`]. Just like KSQL this shows the Kafka messages, but it also includes detailed metadata. 
+*Optional*: You can also inspect the Kafka topic with a tool such as https://github.com/edenhill/kafkacat/[`kafkacat`]. Just like KSQL this shows the Kafka messages, but it also includes detailed metadata.
 
 [source,bash]
 ----
@@ -192,7 +198,8 @@ Press Ctrl-C to cancel and return to the command prompt.
 <<<
 == Querying and filtering streams of data
 
-Having inspected the topics and contents of them, let's get into some SQL now. The first step in KSQL is to register the source topic with KSQL.
+Having inspected the topics and contents of them, let's get into some SQL now.
+The first step in KSQL is to register the source topic with KSQL.
 
 === Register the ratings topic
 
@@ -210,11 +217,14 @@ ksql> CREATE STREAM ratings WITH (KAFKA_TOPIC='ratings', VALUE_FORMAT='AVRO');
 ---------------
 ----
 
-NOTE: Here we're using data in Avro format, but you can also read and write JSON or CSV data with KSQL. If you use JSON or CSV you have to specify the schema when you create the stream. 
+NOTE: Here we're using data in Avro format, but you can also read and write JSON or CSV data with KSQL.
+If you use JSON or CSV you have to specify the schema when you create the stream.
 
 === Describe ratings stream
 
-You'll notice that in the above `CREATE STREAM` statement we didn't specify any of the column names. That's because the data is in Avro format, and the Confluent Schema Registry supplies the actual schema details. You can use `DESCRIBE` to examine an object's columns:
+You'll notice that in the above `CREATE STREAM` statement we didn't specify any of the column names.
+That's because the data is in Avro format, and the Confluent Schema Registry supplies the actual schema details.
+You can use `DESCRIBE` to examine an object's columns:
 
 [source,sql]
 ----
@@ -240,7 +250,9 @@ Note the presence of a couple of `(system)` columns here. `ROWTIME` is the times
 
 === Querying data in KSQL
 
-Let's run our first SQL. As anyone familar with SQL knows, `SELECT *` will return all columns from a given object. So let's try it!
+Let's run our first SQL.
+As anyone familar with SQL knows, `SELECT *` will return all columns from a given object.
+So let's try it!
 
 [source,sql]
 ----
@@ -251,11 +263,14 @@ ksql> SELECT * FROM ratings;
 […]
 ----
 
-You'll notice that the data keeps on coming. That is because KSQL is fundamentally a _streaming engine_, and the queries that you run are _continuous queries_. Having previously set the offset to `earliest` KSQL is showing us the *past* (data from the beginning of the topic), the *present* (data now arriving in the topic), and the *future* (all new data that arrives in the topic from now on).
+You'll notice that the data keeps on coming.
+That is because KSQL is fundamentally a _streaming engine_, and the queries that you run are _continuous queries_.
+Having previously set the offset to `earliest` KSQL is showing us the *past* (data from the beginning of the topic), the *present* (data now arriving in the topic), and the *future* (all new data that arrives in the topic from now on).
 
 Press Ctrl-C to cancel the query and return to the KSQL command prompt.
 
-To inspect a finite set of data, you can use the `LIMIT` clause. Try it out now:
+To inspect a finite set of data, you can use the `LIMIT` clause.
+Try it out now:
 
 [source,sql]
 ----
@@ -292,7 +307,7 @@ Since Apache Kafka persists data, it is possible to use KSQL to query and proces
 
 To tell KSQL to process from beginning of topic run `SET 'auto.offset.reset' = 'earliest';`
 
-Run this now, so that future processing includes all existing data. 
+Run this now, so that future processing includes all existing data.
 
 [source,sql]
 ----
@@ -325,7 +340,9 @@ What this does is set a KSQL continuous query running that processes messages on
 * selects just the specified columns
 ** If you wanted to take all columns from the source stream, you would simply use `SELECT *`
 
-Each processed message is written to a new Kafka topic. Remember, this is a _continuous query_, so every single source message—past, present, and future—will be processed with low-latency in this way. If we only want to process _new_ messages and not existing ones, we would configure `SET 'auto.offset.reset' = 'latest';`.
+Each processed message is written to a new Kafka topic.
+Remember, this is a _continuous query_, so every single source message—past, present, and future—will be processed with low-latency in this way.
+If we only want to process _new_ messages and not existing ones, we would configure `SET 'auto.offset.reset' = 'latest';`.
 
 _This method of creating derived topics is frequently referred to by the acronym of the statement—`CSAS` (-> `CREATE STREAM … AS SELECT`)._
 
@@ -393,7 +410,8 @@ messages-per-sec:     10.04   total-messages:       998     last-message: 6/20/1
 ksql>
 ----
 
-Note the *runtime statistics* above. If you re-run the `DESCRIBE EXTENDED` command you'll see these values increasing.
+Note the *runtime statistics* above.
+If you re-run the `DESCRIBE EXTENDED` command you'll see these values increasing.
 
 ----
 Local runtime statistics
@@ -404,11 +422,13 @@ messages-per-sec:      0.33   total-messages:      1857     last-message: 6/20/1
 ----
 
 
-_N.B. you can use the up arrow on your keyboard to cycle through KSQL command history for easy access and replay of previous commands. Ctrl-R also works for searching command history._
+_N.B. you can use the up arrow on your keyboard to cycle through KSQL command history for easy access and replay of previous commands.
+Ctrl-R also works for searching command history._
 
 === Web Application for the derived stream
 
-We now have the derived data in a Kafka topic. A team in our organization is interested in building an application to view this derived data in a web application.
+We now have the derived data in a Kafka topic.
+A team in our organization is interested in building an application to view this derived data in a web application.
 
 A sample NodeJS websockets application has been built from the code in link:websockets[].  You can view the application at http://localhost:8080.
 
@@ -416,7 +436,8 @@ image::images/websockets.png[]
 
 === Query the stream
 
-The derived stream that we've created is just another stream that we can interact with in KSQL as any other. If you run a `SELECT` against the stream you'll see new messages arriving based on those coming from the source `ratings` topic:
+The derived stream that we've created is just another stream that we can interact with in KSQL as any other.
+If you run a `SELECT` against the stream you'll see new messages arriving based on those coming from the source `ratings` topic:
 
 [source,sql]
 ----
@@ -459,7 +480,10 @@ Format:AVRO
 
 === Optional step: Alternative serialisation methods
 
-By default KSQL will write to the target stream using the same serialisation as the source. So if it's reading Avro data, it'll write Avro data. You can override this behaviour using the `WITH (VALUE_FORMAT='xx')` syntax. For example, if for some terrible reason you wanted to write data to CSV in a topic, you would run: 
+By default KSQL will write to the target stream using the same serialisation as the source.
+So if it's reading Avro data, it'll write Avro data.
+You can override this behaviour using the `WITH (VALUE_FORMAT='xx')` syntax.
+For example, if for some terrible reason you wanted to write data to CSV in a topic, you would run:
 
 [source,sql]
 ----
@@ -467,7 +491,7 @@ CREATE STREAM POOR_RATINGS_CSV WITH (VALUE_FORMAT='DELIMITED') AS
   SELECT * FROM ratings WHERE STARS <3 AND CHANNEL='iOS';
 ----
 
-You can use a similar syntax to change the name and partitions of the target Kafka topic: 
+You can use a similar syntax to change the name and partitions of the target Kafka topic:
 
 [source,sql]
 ----
@@ -477,7 +501,11 @@ CREATE STREAM POOR_RATINGS_JSON WITH (VALUE_FORMAT='JSON', PARTITIONS=2) AS
 
 [NOTE]
 ====
-Re-serialising data this way can be a powerful use of KSQL in itself. Consider a source topic being written to in CSV format, and this topic is to be used by multiple consumers. One option is each consumer has to know the schema of the CSV. Another option is to declare the schema in KSQL once, and then reserialise the data into a better format such as Avro. Now each consumer can use the data without being tightly-coupled to the original system. 
+Re-serialising data this way can be a powerful use of KSQL in itself.
+Consider a source topic being written to in CSV format, and this topic is to be used by multiple consumers.
+One option is each consumer has to know the schema of the CSV.
+Another option is to declare the schema in KSQL once, and then reserialise the data into a better format such as Avro.
+Now each consumer can use the data without being tightly-coupled to the original system.
 
 _The SQL code would look like this - the source topic doesn't exist in your workshop environment so you won't be able to actually run it._
 
@@ -503,56 +531,61 @@ CREATE STREAM USER_LOGON WITH (VALUE_FORMAT='AVRO') AS
 
 This shows how to ingest the Customers data from a database using https://www.confluent.io/blog/no-more-silos-how-to-integrate-your-databases-with-apache-kafka-and-cdc[Kafka Connect and CDC].
 
-Check that Kafka Connect with Debezium's connector has started: 
+Check that Kafka Connect with Debezium's connector has started:
 
 [source,bash]
 ----
 docker-compose logs -f connect-debezium|grep "Kafka Connect started"
 ----
 
-Wait for the output: 
+Wait for the output:
 
 [source,bash]
 ----
 connect-debezium_1  | 2018-09-04 11:33:04,639 INFO   ||  Kafka Connect started   [org.apache.kafka.connect.runtime.Connect]
 ----
 
-Press Ctrl-C to return to the command prompt. 
+Press Ctrl-C to return to the command prompt.
 
-We'll now create _two_ Kafka Connect connectors. Both stream events from MySQL into Kafka using Debezium, but differ in how they handle the message structure. 
+We'll now create _two_ Kafka Connect connectors.
+Both stream events from MySQL into Kafka using Debezium, but differ in how they handle the message structure.
 
 [source,bash]
 ----
 docker-compose exec connect-debezium bash -c '/scripts/create-mysql-source.sh'
 ----
 
-You should see `HTTP/1.1 201 Created`, twice. 
+You should see `HTTP/1.1 201 Created`, twice.
 
 [NOTE]
 ====
-*Optional*: If you are interested you can inspect the script file (`scripts/create-mysql-source.sh` in the workshop folder) that includes the configuration payload in JSON. 
+*Optional*: If you are interested you can inspect the script file (`scripts/create-mysql-source.sh` in the workshop folder) that includes the configuration payload in JSON.
 
-1. The connector called `mysql-source-demo-customers` flattens the before/after record state data, along with the nested metadata, into a single flat structure. This is what we use during the rest of the workshop. 
-+ 
-The flattening is done using a *Single Message Transform* from Debezium, called `io.debezium.transforms.UnwrapFromEnvelope`. 
-+ 
-The connector also uses two Single Message Transforms to illustrate how metadata can be added to ingested data. The `InsertField` transformation adds the topic name into a field called `messagetopic`, and some fixed text into the `messagesource` field. 
+1. The connector called `mysql-source-demo-customers` flattens the before/after record state data, along with the nested metadata, into a single flat structure.
+This is what we use during the rest of the workshop.
++
+The flattening is done using a *Single Message Transform* from Debezium, called `io.debezium.transforms.UnwrapFromEnvelope`.
++
+The connector also uses two Single Message Transforms to illustrate how metadata can be added to ingested data.
+The `InsertField` transformation adds the topic name into a field called `messagetopic`, and some fixed text into the `messagesource` field.
 
 2. The connector `mysql-source-demo-customers-raw` retains the nested structure of the before/after record data.
 +
-A Single Message Transform is used to route the messages to a different topic. By default Debezium will use the format `server.schema.table` when streaming a table's data to a Kafka topic. We use the `RegexRouter` to redirect the messages to a topic with a `-raw` suffix. 
+A Single Message Transform is used to route the messages to a different topic.
+By default Debezium will use the format `server.schema.table` when streaming a table's data to a Kafka topic.
+We use the `RegexRouter` to redirect the messages to a topic with a `-raw` suffix.
 ====
 
 === Exploring CDC change records
 
-Start a MySQL command prompt: 
+Start a MySQL command prompt:
 
 [source,bash]
 ----
 docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
 ----
 
-Now in a separate terminal window run the following, to stream the contents of the customers topic and any changes to stdout: 
+Now in a separate terminal window run the following, to stream the contents of the customers topic and any changes to stdout:
 
 [source,bash]
 ----
@@ -568,7 +601,7 @@ docker-compose exec -T kafka-connect \
 
 Note the customer data shown, and the structure of it, with `before`, `after`, and `source` data.
 
-From the MySQL command prompt, make some changes to the data: 
+From the MySQL command prompt, make some changes to the data:
 
 [source,sql]
 ----
@@ -576,11 +609,14 @@ INSERT INTO CUSTOMERS (ID,FIRST_NAME,LAST_NAME) VALUES (42,'Rick','Astley');
 UPDATE CUSTOMERS SET FIRST_NAME = 'Thomas', LAST_NAME ='Smith' WHERE ID=2;
 ----
 
-You should see each DML cause an almost-instantaneous update on the Kafka topic. For each change, inspect the output of the Kafka topic. Observe the difference between an `INSERT` and `UPDATE`. 
+You should see each DML cause an almost-instantaneous update on the Kafka topic.
+For each change, inspect the output of the Kafka topic.
+Observe the difference between an `INSERT` and `UPDATE`.
 
 === Inspect a topic contents with KSQL - Customers
 
-Let's look at the customer data from the KSQL prompt. This is pretty much the same as using `kafka-avro-console-consumer` as we did above.
+Let's look at the customer data from the KSQL prompt.
+This is pretty much the same as using `kafka-avro-console-consumer` as we did above.
 
 Here we use the `FROM BEGINNING` argument, which tells KSQL to go back to the _beginning_ of the topic and show all data from there
 
@@ -592,19 +628,20 @@ Format:AVRO
 3/4/19 5:50:42 PM UTC, Struct{id=2}, {"id": 2, "first_name": "Ruthie", "last_name": "Brockherst", "email": "rbrockherst1@ow.ly", "gender": "Female", "club_status": "platinum", "comments": "Reverse-engineered tangible interface", "create_ts": "2019-03-04T17:48:20Z", "update_ts": "2019-03-04T17:48:20Z", "messagetopic": "asgard.demo.CUSTOMERS", "messagesource": "Debezium CDC from MySQL on asgard"}
 ----
 
-Press Ctrl-C to cancel and return to the KSQL command prompt. 
+Press Ctrl-C to cancel and return to the KSQL command prompt.
 
 <<<
 
 === Re-Key Topics with KSQL
 
-Since we're going to eventually join the customer data to the ratings, the customer Kafka messages _must be keyed on the field on which we are performing the join_. If this is not the case the join will fail and we'll get `NULL` values in the result.
+Since we're going to eventually join the customer data to the ratings, the customer Kafka messages _must be keyed on the field on which we are performing the join_.
+If this is not the case the join will fail and we'll get `NULL` values in the result.
 
 Our source customer messages are currently keyed using the Primary Key of the source table, but using a key serialisation that KSQL https://github.com/confluentinc/ksql/issues/824[does not yet support]—and thus in effect is not useful as a key in KSQL at all.
 
 To re-key a topic in Kafka we can use KSQL!
 
-First we will register the customer topic. 
+First we will register the customer topic.
 
 [source,sql]
 ----
@@ -617,11 +654,13 @@ ksql> CREATE STREAM CUSTOMERS_SRC WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VAL
 ksql>
 ----
 
-With the stream registered, we can now re-key the topic, using a KSQL `CSAS` and the `PARTITION BY` clause. Note that we're also changing the number of partitions from that of the source (4) to match that of the `ratings` topic (1):
+With the stream registered, we can now re-key the topic, using a KSQL `CSAS` and the `PARTITION BY` clause.
+Note that we're also changing the number of partitions from that of the source (4) to match that of the `ratings` topic (1):
 
 [IMPORTANT]
 ====
-By changing the partition key, data may move between partitions, and thus its ordering change. Kafka's strict ordering guarantee only applies within a partition. 
+By changing the partition key, data may move between partitions, and thus its ordering change.
+Kafka's strict ordering guarantee only applies within a partition.
 
 In our example this doesn't matter, but be aware of this if you rely on this re-keying technique in other KSQL queries.
 ====
@@ -652,7 +691,7 @@ To inspect the key for a given stream/table, you can use the `ROWKEY` system col
 
 Here we compare it to the join column (`ID`); for the join to succeed they must be equal.
 
-In the source stream, the `ROWKEY` reflects the key of the underlying Kafka messages as set by the producer (read by KSQL as a String): 
+In the source stream, the `ROWKEY` reflects the key of the underlying Kafka messages as set by the producer (read by KSQL as a String):
 
 [source,sql]
 ----
@@ -682,9 +721,11 @@ ksql>
 
 == The Stream/Table duality
 
-We're now going to model the Customers topic as a **KSQL Table**. This is a semantic construct that enables us to work with the data in the topic as key/value pairs, with a single value for each key. You can read more about https://docs.confluent.io/current/streams/concepts.html#duality-of-streams-and-tables[this here].
+We're now going to model the Customers topic as a **KSQL Table**. This is a semantic construct that enables us to work with the data in the topic as key/value pairs, with a single value for each key.
+You can read more about https://docs.confluent.io/current/streams/concepts.html#duality-of-streams-and-tables[this here].
 
-Register a `TABLE` over the new re-keyed Kafka topic. Why's it a table? Because *for each key* (user id), we want to know *its current value* (name, status, etc)
+Register a `TABLE` over the new re-keyed Kafka topic.
+Why's it a table? Because *for each key* (user id), we want to know *its current value* (name, status, etc)
 
 [source,sql]
 ----
@@ -722,7 +763,9 @@ messages-per-sec:      0.10   total-messages:        10     last-message: 6/28/1
  failed-messages:         0 failed-messages-per-sec:         0      last-failed:       n/a
 ----
 +
-** If no 'messages-per-sec' is shown, the next step is to verify that you ran `SET 'auto.offset.reset' = 'earliest';` earlier. You can run it again to be certain. If it says `Successfully changed local property 'auto.offset.reset' from 'null' to 'earliest'` then the `null` shows that it wasn't previously set.
+** If no 'messages-per-sec' is shown, the next step is to verify that you ran `SET 'auto.offset.reset' = 'earliest';` earlier.
+You can run it again to be certain.
+If it says `Successfully changed local property 'auto.offset.reset' from 'null' to 'earliest'` then the `null` shows that it wasn't previously set.
 ** If this was the case, then you need to drop and recreate the stream in order to process the customer data:
 +
 [source,sql]
@@ -731,7 +774,8 @@ TERMINATE QUERY CSAS_CUSTOMERS_SRC_REKEY_0;
 DROP STREAM CUSTOMERS_SRC_REKEY;
 ----
 +
-Then re-run the `CREATE STREAM CUSTOMERS_SRC_REKEY[…]` from above. Use `SHOW QUERIES;` to list the queries running if the name differs from that shown in the `TERMINATE` statement.
+Then re-run the `CREATE STREAM CUSTOMERS_SRC_REKEY[…]` from above.
+Use `SHOW QUERIES;` to list the queries running if the name differs from that shown in the `TERMINATE` statement.
 ====
 
 Query the table:
@@ -746,7 +790,8 @@ Limit Reached
 Query terminated
 ----
 
-Both `CUSTOMER` (table) and `CUSTOMER_SRC_REKEY` (stream) are driven from the same Kafka topic. You can examine the stream/table duality by running two KSQL sessions side-by-side, each querying one for a given key: 
+Both `CUSTOMER` (table) and `CUSTOMER_SRC_REKEY` (stream) are driven from the same Kafka topic.
+You can examine the stream/table duality by running two KSQL sessions side-by-side, each querying one for a given key:
 
 [source,sql]
 ----
@@ -765,14 +810,14 @@ ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS_SRC_RE
 2 | Thomas | Smith | rbrockherst1@ow.ly | platinum
 ----
 
-Leave each query running, and in a third window bring up a MySQL session 
+Leave each query running, and in a third window bring up a MySQL session
 
 [source,bash]
 ----
 docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
 ----
 
-In MySQL make changes (one at a time) to the record for the ID being queried: 
+In MySQL make changes (one at a time) to the record for the ID being queried:
 
 [source,sql]
 ----
@@ -780,14 +825,15 @@ UPDATE CUSTOMERS SET EMAIL='foo@bar.com' WHERE ID=2;
 UPDATE CUSTOMERS SET EMAIL='example@bork.bork.bork.com' WHERE ID=2;
 ----
 
-When you make the change on MySQL you should see the two KSQL queries emit the new values almost immediately. Then, _cancel and re-run_ the two KSQL queries (against table and stream respectively). Each time you should note that the stream contains *every* event related to the source table record, whilst the table hold the *current* state. 
+When you make the change on MySQL you should see the two KSQL queries emit the new values almost immediately.
+Then, _cancel and re-run_ the two KSQL queries (against table and stream respectively). Each time you should note that the stream contains *every* event related to the source table record, whilst the table hold the *current* state.
 
 <<< 
 == Joining Data in KSQL
 
 image::images/ksql_workshop_03.png[Joining data with KSQL]
 
-Let's use the customer data (`CUSTOMERS`) and use it to enrich the inbound stream of ratings data (`RATINGS`) to show against each rating who the customer is, and their club status ('platinum','gold', etc). 
+Let's use the customer data (`CUSTOMERS`) and use it to enrich the inbound stream of ratings data (`RATINGS`) to show against each rating who the customer is, and their club status ('platinum','gold', etc).
 
 Run the following SQL:
 
@@ -836,7 +882,7 @@ ON R.USER_ID = C.ID;
 2018-06-20 13:03:51 | 6 | 2 | 6902 | web | Surprisingly good, maybe you are getting your mojo back at long last! | Gianina | Mixhel | gold
 ----
 
-Press Ctrl-C to cancel the output. 
+Press Ctrl-C to cancel the output.
 
 <<<
 ==== Populating a Kafka topic with the results of a Stream-Table join
@@ -877,7 +923,9 @@ WHERE CLUB_STATUS='platinum'
 [source,sql]
 ----
 aarent0@cpanel.net | 2 | thank you for the most friendly, helpful experience today at your new lounge
-mdoughartie1@dedecms.com | 1 | worst. flight. ever. #neveragain
+mdoughartie1@dedecms.com | 1 | worst.
+flight.
+ever. #neveragain
 ----
 
 <<<
@@ -908,7 +956,8 @@ ksql>
 
 ==== Query the new stream
 
-Now we can query the derived stream to easily identify important customers who are not happy. Since this is backed by a Kafka topic being continually popuated by KSQL we can also drive other applications with this data, as well as land it to datastores down-stream for visualisation.
+Now we can query the derived stream to easily identify important customers who are not happy.
+Since this is backed by a Kafka topic being continually popuated by KSQL we can also drive other applications with this data, as well as land it to datastores down-stream for visualisation.
 
 [source,sql]
 ----
@@ -920,15 +969,18 @@ ksql> SELECT STARS, MESSAGE, EMAIL FROM UNHAPPY_PLATINUM_CUSTOMERS;
 
 == Streaming Aggregates
 
-KSQL can create aggregations of event data, either over all events to date (and continuing to update with new data), or based on a time window. The time window types supported are:
+KSQL can create aggregations of event data, either over all events to date (and continuing to update with new data), or based on a time window.
+The time window types supported are:
 
 * Tumbling (e.g. every 5 minutes : 00:00, 00:05, 00:10)
 * Hopping (e.g. every 5 minutes, advancing 1 minute: 00:00-00:05, 00:01-00:06)
 * Session (Sets a timeout for the given key, after which any new data is treated as a new session)
 
-To understand more about these time windows, you can read the related https://docs.confluent.io/current/streams/developer-guide/dsl-api.html#windowing[Kafka Streams documentation]. Since KSQL is built on Kafka Streams, the concepts are the same. The https://docs.confluent.io/current/ksql/docs/tutorials/examples.html#aggregating-windowing-and-sessionization[KSQL-specific documentation] is also useful. 
+To understand more about these time windows, you can read the related https://docs.confluent.io/current/streams/developer-guide/dsl-api.html#windowing[Kafka Streams documentation]. Since KSQL is built on Kafka Streams, the concepts are the same.
+The https://docs.confluent.io/current/ksql/docs/tutorials/examples.html#aggregating-windowing-and-sessionization[KSQL-specific documentation] is also useful.
 
-NOTE: KSQL will _re-emit_ aggregates as they are updated by incoming events. This means that you will see multiple rows of output for a given window/key.
+NOTE: KSQL will _re-emit_ aggregates as they are updated by incoming events.
+This means that you will see multiple rows of output for a given window/key.
 
 image::images/ksql_workshop_05.png[Aggregating data with KSQL]
 
@@ -953,9 +1005,10 @@ gold | 12
 bronze | 13
 ----
 
-The time window itself is exposed in the results using the function `WindowStart()`, which is then cast from epoch to human-readable form with the `TIMESTAMPTOSTRING` function. 
+The time window itself is exposed in the results using the function `WindowStart()`, which is then cast from epoch to human-readable form with the `TIMESTAMPTOSTRING` function.
 
-Aggregates can be persisted too. Instead of `CREATE STREAM` as we did above, we're going to instead persist with a `CREATE TABLE`, since aggregates are always a table (key + value). Just as before though, a Kafka topic is continually populated with the results of the query:
+Aggregates can be persisted too.
+Instead of `CREATE STREAM` as we did above, we're going to instead persist with a `CREATE TABLE`, since aggregates are always a table (key + value). Just as before though, a Kafka topic is continually populated with the results of the query:
 
 [source,sql]
 ----
@@ -975,7 +1028,8 @@ GROUP BY CLUB_STATUS;
 ksql>
 ----
 
-This table that we've created is just a first class object in KSQL, updated in real time with the results from the aggregate query. Because it's just another object in KSQL, we can query and filter it as any other:
+This table that we've created is just a first class object in KSQL, updated in real time with the results from the aggregate query.
+Because it's just another object in KSQL, we can query and filter it as any other:
 
 [source,sql]
 ----
@@ -994,7 +1048,9 @@ WHERE CLUB_STATUS='bronze';
 2019-03-04 17:42:00 | bronze | 10
 ----
 
-If you let the `SELECT` output continue to run, you'll see all of the past time window aggregate values—but also the current one. Note that the _current_ time window's aggregate value will continue to update, because new events are being continually processed and reflected in the value. If you were to send an event to the source `ratings` topic with a timestamp in the past, the corresponding time window's aggregate would be re-emitted.
+If you let the `SELECT` output continue to run, you'll see all of the past time window aggregate values—but also the current one.
+Note that the _current_ time window's aggregate value will continue to update, because new events are being continually processed and reflected in the value.
+If you were to send an event to the source `ratings` topic with a timestamp in the past, the corresponding time window's aggregate would be re-emitted.
 
 == Optional: Stream data to Elasticsearch
 
@@ -1067,7 +1123,7 @@ curl -X "POST" "http://localhost:18083/connectors/" \
 
 _Note that the above sets `"key.ignore": "false"` , and thus aggregates will be updated in-place._
 
-If you have `jq` on your machine you can run this to check that the connector is `RUNNING`: 
+If you have `jq` on your machine you can run this to check that the connector is `RUNNING`:
 
 [source,bash]
 ----
@@ -1135,6 +1191,8 @@ _If you want to preserve the state of all containers, run `docker-compose stop` 
 
 With the enriched and filtered data being populated into Kafka topics from KSQL you can use it to :
 
-* Feed event-driven applications. For example, notify the ops team if a VIP user leaves a poor review.
-* Stream to analytics platforms. For example, use Kafka Connect to stream the enriched data stream to Elasticsearch and visualise the real time with Kibana.
+* Feed event-driven applications.
+For example, notify the ops team if a VIP user leaves a poor review.
+* Stream to analytics platforms.
+For example, use Kafka Connect to stream the enriched data stream to Elasticsearch and visualise the real time with Kibana.
 
