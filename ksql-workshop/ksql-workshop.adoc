@@ -293,12 +293,8 @@ Since KSQL is heavily based on SQL, you can do many of the standard SQL things y
 ----
 ksql> SELECT USER_ID, STARS, CHANNEL, MESSAGE FROM ratings WHERE STARS <3 AND CHANNEL='iOS' LIMIT 3;
 3 | 2 | iOS | your team here rocks!
-2 | 1 | iOS | worst.
-flight.
-ever. #neveragain
-15 | 2 | iOS | worst.
-flight.
-ever. #neveragain
+2 | 1 | iOS | worst. flight. ever. #neveragain
+15 | 2 | iOS | worst. flight. ever. #neveragain
 Limit Reached
 Query terminated
 ksql>
@@ -446,9 +442,7 @@ If you run a `SELECT` against the stream you'll see new messages arriving based 
 [source,sql]
 ----
 ksql> SELECT STARS, CHANNEL, MESSAGE FROM POOR_RATINGS;
-1 | iOS | worst.
-flight.
-ever. #neveragain
+1 | iOS | worst. flight. ever. #neveragain
 2 | iOS | Surprisingly good, maybe you are getting your mojo back at long last!
 2 | iOS | thank you for the most friendly, helpful experience today at your new lounge
 ----
