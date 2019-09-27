@@ -1,4 +1,9 @@
 = MQTT Kafka tracker
+Robin Moffatt <robin@confluent.io>
+v1.00, 27 September 2019
+
+:toc:
+:sectnums:
 
 **Built based on https://github.com/saubury/race-mapper[Simon Aubury's excellent example], all credit and thanks to Simon for this.**
 
@@ -11,7 +16,7 @@ image::images/mqtt_kafka_01.png[]
 * Kafka Connect streams the data to Elasticsearch
 * Kibana does nice visualisation of the data
 
-== Setup
+== Pre-requisites
 
 === MQTT 
 
@@ -29,25 +34,97 @@ Tip: https://mqtt-explorer.com/[MQTT Explorer] is a useful tool.
 
 2. On your MQTT server (e.g. CloudMQTT's `WebSocket UI` view) you should see messages arriving
 
-=== Confluent Platform stack
+=== Option 1 : Cloud
 
-1. Install Docker and Docker Compose
-2. Allocate >=8GB to Docker
-3. `docker-compose up -d`
+In this approach you use Confluent Cloud and Elastic Cloud as fully managed services. The only thing you have to run is a Kafka Connect worker, which is shown here done under Docker, but there are also link::ec2_notes.adoc[notes here on deploying it on EC2]. 
+
+* Sign up for https://confluent.cloud/[Confluent Cloud], and provision a Schema Registry and KSQL instance. 
+* Sign up for https://elastic.co/cloud/[Elastic Cloud] - use version 6, not 7.
+
+Create a local `.env` file and enter into it your details from Confluent Cloud along with your details of your MQTT server and Elasticsearch instance. 
+
+[source,bash]
+----
+CCLOUD_BROKER_HOST=
+CCLOUD_API_KEY=
+CCLOUD_API_SECRET=
+CCLOUD_SCHEMA_REGISTRY_URL=
+CCLOUD_SCHEMA_REGISTRY_API_KEY=
+CCLOUD_SCHEMA_REGISTRY_API_SECRET=
+
+ELASTIC_URL=
+ELASTIC_USERNAME=
+ELASTIC_PASSWORD=
+
+CONFLUENTPLATFORM_VERSION=5.4.0-beta1
+
+MQTT_USERNAME=
+MQTT_PASSWORD=
+MQTT_URL=
+----
+
+Make sure you've got Docker/Docker Compose and then run: 
+
+`docker-compose -f docker-compose_ccloud.yml up -d`
+
+=== Option 2 : Local
+
+In this approach you run the full Confluent Platform and Elastic stack locally, through Docker. 
+
+Create a local `.env` file and enter into it your details of your MQTT server. You can leave the Elasticsearch details as they are. 
+
+[source,bash]
+----
+CONFLUENTPLATFORM_VERSION=5.4.0-beta1
+
+ELASTIC_URL=http://localhost:9200
+ELASTIC_USERNAME=dummy
+ELASTIC_PASSWORD=dummy
+
+MQTT_USERNAME=
+MQTT_PASSWORD=
+MQTT_URL=
+----
+
+Make sure you've got Docker/Docker Compose and then run: 
+
+`docker-compose -f up -d`
+
+== Configuration 
 
 === Kafka Connect MQTT Source
 
-This is deployed automagically as part of the Docker Compose. 
+Depending on whether you are sending data up to Confluent Cloud or to a local Kafka broker run : 
+
+* Confluent Cloud
++
+[source,bash]
+----
+./create_mqtt_source_ccloud.sh
+----
+
+
+* Local
++
+[source,bash]
+----
+./create_mqtt_source_local.sh
+----
+
 
 === KSQL
 
-* Run KSQL CLI
+With data flowing in, now it's time to build your stream processing apps! The KSQL applications apply a schema to the data, set the data types, and extract fields such as the device/sender ID. 
+
+* Confluent Cloud - launch the KSQL page, and paste in the contents of the `mqtt.ksql` file. 
+* Local
+** Run KSQL CLI
 +
 [source,bash]
 ----
 docker exec -it ksql-cli bash -c 'echo -e "\n\n⏳ Waiting for KSQL to be available before launching CLI\n"; while : ; do curl_status=$(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/info) ; echo -e $(date) " KSQL server listener HTTP state: " $curl_status " (waiting for 200)" ; if [ $curl_status -eq 200 ] ; then  break ; fi ; sleep 5 ; done ; ksql http://ksql-server:8088'
 ----
-* Run script
+** Run script
 +
 [source,sql]
 ----
@@ -56,41 +133,38 @@ RUN SCRIPT '/data/mqtt.ksql';
 
 === Kafka Connect Elasticsearch sink
 
-NOTE: The Docker Compose automagically deploys Elasticsearch dynamic mapping template so that geopoint fields and dates are correctly picked up.  
+Depending on whether you are sending data up to Confluent Cloud or to a local Kafka broker run : 
 
+* Confluent Cloud
++
 [source,bash]
 ----
-curl -i -X PUT -H  "Content-Type:application/json" \
-      http://localhost:8083/connectors/sink-elastic-runner_status-00/config \
-      -d '{
-            "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
-            "connection.url": "http://elasticsearch:9200",
-            "type.name": "type.name=kafkaconnect",
-            "behavior.on.malformed.documents": "warn",
-            "topics": "RUNNER_STATUS",
-            "key.ignore": "false",
-            "schema.ignore": "true",
-            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-            "transforms": "addTS",
-            "transforms.addTS.type": "org.apache.kafka.connect.transforms.InsertField$Value",
-            "transforms.addTS.timestamp.field": "EVENT_TS"
-            }'
+./create_mqtt_source_ccloud.sh
+----
 
-curl -i -X PUT -H  "Content-Type:application/json" \
-      http://localhost:8083/connectors/sink-elastic-runner_location-00/config \
-      -d '{
-            "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
-            "connection.url": "http://elasticsearch:9200",
-            "type.name": "type.name=kafkaconnect",
-            "behavior.on.malformed.documents": "warn",
-            "topics": "RUNNER_LOCATION",
-            "key.ignore": "true",
-            "schema.ignore": "true",
-            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-            "transforms": "addTS",
-            "transforms.addTS.type": "org.apache.kafka.connect.transforms.InsertField$Value",
-            "transforms.addTS.timestamp.field": "EVENT_TS"
-            }'
+
+* Local
++
+[source,bash]
+----
+./create_mqtt_source_local.sh
+----
+
+
+=== Kafka Connect Elasticsearch sink
+
+1. You need to create an Elasticsearch dynamic mapping template so that geopoint fields and dates are correctly picked up. Run : 
++
+[source,bash]
+----
+./create_es_dynamic_mapping.sh
+----
+
+2. Create the sink connectors. There are two because the `key.ignore` value is different between them (otherwise they could be combined into one and use a `topics` list or `topics.regex`): 
++
+[source,bash]
+----
+./create_es_sink.sh
 ----
 
 Check connector status: 
@@ -108,3 +182,27 @@ sink    |  sink-elastic-runner_location-00  |  RUNNING  |  RUNNING  |  io.conflu
 sink    |  sink-elastic-runner_status-00    |  RUNNING  |  RUNNING  |  io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
 source  |  source-mqtt-01                   |  RUNNING  |  RUNNING  |  io.confluent.connect.mqtt.MqttSourceConnector
 ---
+
+Check data is arriving in Elasticsearch: 
+
+[source,bash]
+----
+$ curl "http://localhost:9200/_cat/indices/runn*?h=idx,docsCount"
+runner_status     0
+runner_location 237
+----
+
+(For Elastic Cloud just add `-u user:password` to the `curl` call before the URL)
+
+== Footnote - Sync data from Confluent Cloud to local Kafka brokers
+
+You can use Confluent Replicator to stream the contents of a topic (or topics) between Kafka clusters, including between on-premises Kafka and Confluent Cloud. This could be useful if you wanted a copy of the data on a local environment to use whilst not connected to Confluent Cloud (e.g. whilst on ✈️)
+
+In the `docker-compose.yml` is a container for `replicator`. Make sure that this is running, and then run 
+
+[source,bash]
+----
+./create_replicator_source.sh
+----
+
+This runs on the local stack and pulls down messages from the Confluent Cloud topic(s) specified. Note that three brokers are run as part of the `docker-compose.yml` because Replicator creates topics with the same config as on the source (and Confluent Cloud has replication factor=3)
