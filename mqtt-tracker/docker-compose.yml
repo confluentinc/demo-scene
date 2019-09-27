@@ -96,7 +96,6 @@ services:
       - ./data:/data
 
   kafka-connect-01:
-  # Ingest
     image: confluentinc/cp-kafka-connect:${CONFLUENTPLATFORM_VERSION}
     container_name: kafka-connect-01
     depends_on:
@@ -106,21 +105,22 @@ services:
     ports:
       - 8083:8083
     environment:
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
       CONNECT_CUB_KAFKA_TIMEOUT: 300
-      CONNECT_BOOTSTRAP_SERVERS: 'kafka:29092'
+      CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
       CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect-01'
       CONNECT_REST_PORT: 8083
-      CONNECT_GROUP_ID: compose-connect-group
-      CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
-      CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-offsets
-      CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
+      CONNECT_GROUP_ID: kafka-connect-group-01
+      CONNECT_CONFIG_STORAGE_TOPIC: _kafka-connect-group-01-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _kafka-connect-group-01-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _kafka-connect-group-01-status
       CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
-      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
-      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
       CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
-      CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
+      CONNECT_LOG4J_ROOT_LOGLEVEL: 'TRACE'
       CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
@@ -194,44 +194,44 @@ services:
           sleep 5 
         done
         echo -e "\n--\n+> Creating Elasticsearch dynamic mapping"
-        curl -XPUT "http://localhost:9200/_template/kafkaconnect/" -H 'Content-Type: application/json' -d'
+        curl -XPUT "http://localhost:9200/_template/kafkaconnect/?include_type_name=true" -H 'Content-Type: application/json' -d'
         {
-          "template": "*",
-          "settings": {
-            "number_of_shards": 1,
-            "number_of_replicas": 0
-          },
-          "mappings": {
-            "_default_": {
-              "dynamic_templates": [
-                {
-                  "dates": {
-                    "match": "*_TS",
-                    "mapping": {
-                      "type": "date"
+                    "template": "*",
+                    "settings": {
+                        "number_of_shards": 1,
+                        "number_of_replicas": 0
+                    },
+                    "mappings": {
+                      "_default_" : {
+                        "dynamic_templates": [
+                            {
+                                "dates": {
+                                    "match": "*_TS",
+                                    "mapping": {
+                                        "type": "date"
+                                    }
+                                }
+                            },
+                            {
+                                "heights": {
+                                    "match": "HEIGHT",
+                                    "mapping": {
+                                        "type": "float"
+                                    }
+                                }
+                            },
+                            {
+                                "locations": {
+                                    "match": "LOCATION",
+                                    "mapping": {
+                                        "type": "geo_point"
+                                    }
+                                }
+                            }
+                        ]
+                      }
                     }
-                  }
-                },
-                {
-                  "heights": {
-                    "match": "HEIGHT",
-                    "mapping": {
-                      "type": "float"
-                    }
-                  }
-                },
-                {
-                  "locations": {
-                    "match": "LOCATION",
-                    "mapping": {
-                      "type": "geo_point"
-                    }
-                  }
-                }
-              ]
-            }
-          }
-        }'
+                }'
         sleep infinity
 
 
@@ -299,14 +299,18 @@ services:
 
         sleep infinity
 
-  kafkacat:
-    image: edenhill/kafkacat:1.5.0
-    container_name: kafkacat
-    depends_on:
-      - kafka
-    command: 
-      - bash 
-      - -c 
-      - |
-        echo '{"batt":100,"lon":-1.8029050435887677,"acc":30,"p":98.641334533691406,"bs":1,"vel":0,"vac":12,"lat":53.925261804884229,"t":"t","conn":"w","tst":1569319041,"alt":97,"_type":"location","tid":"FF"}' | \
-          kafkacat -b kafka:29092 -P -t data_mqtt
+  # kafkacat:
+  #   image: edenhill/kafkacat:1.5.0
+  #   container_name: kafkacat
+  #   # depends_on:
+  #   #   - kafka
+  #   command: 
+  #     - bash 
+  #     - -c 
+  #     - |
+  #       echo '{"batt":100,"lon":-1.8029050435887677,"acc":30,"p":98.641334533691406,"bs":1,"vel":0,"vac":12,"lat":53.925261804884229,"t":"t","conn":"w","tst":1569319041,"alt":97,"_type":"location","tid":"FF"}' | \
+  #         kafkacat -b ${CCLOUD_BROKER_HOST} 
+  #                 -X security.protocol=SASL_SSL -X sasl.mechanisms=PLAIN \
+  #                 -X sasl.username="${CCLOUD_API_KEY}" -X sasl.password="${CCLOUD_API_SECRET}" \
+  #                 -X ssl.ca.location=/usr/local/etc/openssl/cert.pem -X api.version.request=true
+  #                 -P -t data_mqtt

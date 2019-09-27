@@ -2,6 +2,8 @@
 
 **Built based on https://github.com/saubury/race-mapper[Simon Aubury's excellent example], all credit and thanks to Simon for this.**
 
+image::images/mqtt_kafka_01.png[]
+
 * Install Owntracks on your phone
 * Owntracks sends https://owntracks.org/booklet/tech/json/#_typelocation[data] to MQTT server
 * Kafka Connect ingests MQTT into Kafka topic
@@ -32,22 +34,30 @@ Tip: https://mqtt-explorer.com/[MQTT Explorer] is a useful tool.
 1. Install Docker and Docker Compose
 2. Allocate >=8GB to Docker
 3. `docker-compose up -d`
-4. Configure KSQL
-** Run KSQL CLI
+
+=== Kafka Connect MQTT Source
+
+This is deployed automagically as part of the Docker Compose. 
+
+=== KSQL
+
+* Run KSQL CLI
 +
 [source,bash]
 ----
 docker exec -it ksql-cli bash -c 'echo -e "\n\n⏳ Waiting for KSQL to be available before launching CLI\n"; while : ; do curl_status=$(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/info) ; echo -e $(date) " KSQL server listener HTTP state: " $curl_status " (waiting for 200)" ; if [ $curl_status -eq 200 ] ; then  break ; fi ; sleep 5 ; done ; ksql http://ksql-server:8088'
 ----
-** Run script
+* Run script
 +
 [source,sql]
 ----
 RUN SCRIPT '/data/mqtt.ksql'; 
 ----
 
-5. Configure Elasticsearch sink
-+
+=== Kafka Connect Elasticsearch sink
+
+NOTE: The Docker Compose automagically deploys Elasticsearch dynamic mapping template so that geopoint fields and dates are correctly picked up.  
+
 [source,bash]
 ----
 curl -i -X PUT -H  "Content-Type:application/json" \
@@ -83,3 +93,18 @@ curl -i -X PUT -H  "Content-Type:application/json" \
             }'
 ----
 
+Check connector status: 
+
+[source,bash]
+----
+curl -s "http://localhost:8083/connectors?expand=info&expand=status" | \
+           jq '. | to_entries[] | [ .value.info.type, .key, .value.status.connector.state,.value.status.tasks[].state,.value.info.config."connector.class"]|join(":|:")' | \
+           column -s : -t| sed 's/\"//g'| sort
+----
+
+[source,bash]
+----
+sink    |  sink-elastic-runner_location-00  |  RUNNING  |  RUNNING  |  io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
+sink    |  sink-elastic-runner_status-00    |  RUNNING  |  RUNNING  |  io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
+source  |  source-mqtt-01                   |  RUNNING  |  RUNNING  |  io.confluent.connect.mqtt.MqttSourceConnector
+---
