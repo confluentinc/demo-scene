@@ -37,7 +37,8 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
 
 - Confluent Cloud
 
-  - [Confluent Cloud "The Cube" Demo](ccloud-cube-demo)
+  - [Pac-Man Demo](pacman-ccloud)
+  - ["The Cube" Demo](ccloud-cube-demo)
 
 - Misc
   - [Hacky export/import between Kafka clusters](export-import-with-kafkacat) using `kafkacat`
