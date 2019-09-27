@@ -1,0 +1,17 @@
+.vscode/**/*.*
+
+terraform/aws/cert.pem
+terraform/aws/ccloud.auto.tfvars
+terraform/aws/cloud.auto.tfvars
+terraform/aws/.terraform
+terraform/aws/terraform.tfstate
+terraform/aws/terraform.tfstate.backup
+terraform/aws/.terraform.tfstate.lock.info
+
+terraform/gcp/ccloud.auto.tfvars
+terraform/gcp/cloud.auto.tfvars
+terraform/gcp/credentials.json
+terraform/gcp/.terraform
+terraform/gcp/terraform.tfstate
+terraform/gcp/terraform.tfstate.backup
+terraform/gcp/.terraform.tfstate.lock.info
