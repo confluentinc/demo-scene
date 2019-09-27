@@ -2,7 +2,7 @@
 
 :imagesdir: images/
 
-*Pac-Man with Confluent Cloud* is the funniest application that you ever see while applying principles of stream processing using https://kafka.apache.org[Apache Kafka]. Built around the infamous Pac-Man game, this application allows you to capture and store events from the game into Kafka topics, as well as process them in near real-time using https://www.confluent.io/product/ksql/[KSQL]. In order to keep you focused on the fun and interesting part, the application is based on clusters running on https://www.confluent.io/confluent-cloud/[Confluent Cloud] -- a fully managed service that offers Apache Kafka as a serverless application.
+*Pac-Man with Confluent Cloud* is the funniest application that you ever see while applying principles of stream processing using https://kafka.apache.org[Apache Kafka]. Built around the famous Pac-Man game, this application allows you to capture and store events from the game into Kafka topics, as well as process them in near real-time using https://www.confluent.io/product/ksql/[KSQL]. In order to keep you focused on the fun and interesting part, the application is based on clusters running on https://www.confluent.io/confluent-cloud/[Confluent Cloud] -- a fully managed service that offers Apache Kafka as a serverless application.
 
 image::pacman-game.png[]
 
