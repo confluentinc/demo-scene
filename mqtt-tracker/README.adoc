@@ -77,7 +77,7 @@ Create a local `.env` file and enter into it your details of your MQTT server. Y
 ----
 CONFLUENTPLATFORM_VERSION=5.4.0-beta1
 
-ELASTIC_URL=http://localhost:9200
+ELASTIC_URL=http://elasticsearch:9200
 ELASTIC_USERNAME=dummy
 ELASTIC_PASSWORD=dummy
 
@@ -166,32 +166,31 @@ Depending on whether you are sending data up to Confluent Cloud or to a local Ka
 ----
 ./create_es_sink.sh
 ----
-
++
 Check connector status: 
-
++
 [source,bash]
 ----
 curl -s "http://localhost:8083/connectors?expand=info&expand=status" | \
            jq '. | to_entries[] | [ .value.info.type, .key, .value.status.connector.state,.value.status.tasks[].state,.value.info.config."connector.class"]|join(":|:")' | \
            column -s : -t| sed 's/\"//g'| sort
 ----
-
++
 [source,bash]
 ----
 sink    |  sink-elastic-runner_location-00  |  RUNNING  |  RUNNING  |  io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
 sink    |  sink-elastic-runner_status-00    |  RUNNING  |  RUNNING  |  io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
 source  |  source-mqtt-01                   |  RUNNING  |  RUNNING  |  io.confluent.connect.mqtt.MqttSourceConnector
----
-
-Check data is arriving in Elasticsearch: 
-
+----
+3. Check data is arriving in Elasticsearch: 
++
 [source,bash]
 ----
 $ curl "http://localhost:9200/_cat/indices/runn*?h=idx,docsCount"
 runner_status     0
 runner_location 237
 ----
-
++
 (For Elastic Cloud just add `-u user:password` to the `curl` call before the URL)
 
 == Footnote - Sync data from Confluent Cloud to local Kafka brokers
@@ -206,3 +205,17 @@ In the `docker-compose.yml` is a container for `replicator`. Make sure that this
 ----
 
 This runs on the local stack and pulls down messages from the Confluent Cloud topic(s) specified. Note that three brokers are run as part of the `docker-compose.yml` because Replicator creates topics with the same config as on the source (and Confluent Cloud has replication factor=3)
+
+Check the status: 
+
+[source,bash]
+----
+curl -s "http://localhost:58083/connectors?expand=info&expand=status" | \
+         jq '. | to_entries[] | [ .value.info.type, .key, .value.status.connector.state,.value.status.tasks[].state,.value.info.config."connector.class"]|join(":|:")' | \
+         column -s : -t| sed 's/\"//g'| sort
+----
+
+[source,bash]
+----
+source  |  replicator-source   |  RUNNING  |  RUNNING  |  io.confluent.connect.replicator.ReplicatorSourceConnector
+----
