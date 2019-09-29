@@ -75,128 +75,18 @@ services:
         #
         sleep infinity
 
-  # elasticsearch:
-  #   image: docker.elastic.co/elasticsearch/elasticsearch:6.7.0
-  #   container_name: elasticsearch
-  #   ports:
-  #     - 9200:9200
-  #   environment:
-  #     xpack.security.enabled: "false"
-  #     ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+
+  # kafkacat:
+  #   image: edenhill/kafkacat:1.5.0
+  #   container_name: kafkacat
+  #  
   #   command: 
   #     - bash 
   #     - -c 
   #     - |
-  #       /usr/local/bin/docker-entrypoint.sh & 
-  #       echo "Waiting for Elasticsearch to start ⏳"
-  #       while : ; do
-  #         curl_status=$$(curl -s -o /dev/null -w %{http_code} http://localhost:9200/)
-  #         echo -e $$(date) " Elasticsearch listener HTTP state: " $$curl_status " (waiting for 200)"
-  #         if [ $$curl_status -eq 200 ] ; then
-  #           break
-  #         fi
-  #         sleep 5 
-  #       done
-  #       echo -e "\n--\n+> Creating Elasticsearch dynamic mapping"
-  #       curl -XPUT "http://localhost:9200/_template/kafkaconnect/" -H 'Content-Type: application/json' -d'
-  #       {
-  #           "index_patterns": "*",
-  #           "settings": {
-  #               "number_of_shards": 1,
-  #               "number_of_replicas": 0
-  #           },
-  #           "mappings": {
-  #               "dynamic_templates": [
-  #                   {
-  #                       "dates": {
-  #                           "match": "*_TS",
-  #                           "mapping": {
-  #                               "type": "date"
-  #                           }
-  #                       }
-  #                   },
-  #                   {
-  #                       "heights": {
-  #                           "match": "HEIGHT",
-  #                           "mapping": {
-  #                               "type": "float"
-  #                           }
-  #                       }
-  #                   },
-  #                   {
-  #                       "locations": {
-  #                           "match": "LOCATION",
-  #                           "mapping": {
-  #                               "type": "geo_point"
-  #                           }
-  #                       }
-  #                   }
-  #               ]
-  #           }
-  #       }'
-  #       sleep infinity
-
-
-
-  # kibana:
-  #   image: docker.elastic.co/kibana/kibana:6.7.0
-  #   container_name: kibana
-  #   depends_on:
-  #     - elasticsearch
-  #   ports:
-  #     - 5601:5601
-  #   environment:
-  #     xpack.security.enabled: "false"
-  #     discovery.type: "single-node"
-  #   command: 
-  #     - bash 
-  #     - -c 
-  #     - |
-  #       /usr/local/bin/kibana-docker & 
-  #       #
-  #       echo "Waiting for Kibana to start ⏳"
-  #       while : ; do
-  #         curl_status=$$(curl -s -o /dev/null -w %{http_code} http://localhost:5601/api/kibana/settings)
-  #         echo -e $$(date) " Kibana listener HTTP state: " $$curl_status " (waiting for 200)"
-  #         if [ $$curl_status -eq 200 ] ; then
-  #           break
-  #         fi
-  #         sleep 5 
-  #       done
-  #       #
-  #       echo "Waiting for Kibana API to be available ⏳"
-  #       while : ; do
-  #         kibana_status=$$(curl -s 'http://localhost:5601/api/kibana/settings')
-  #         echo -e $$(date) " Kibana API response: " $$kibana_status
-  #         if [ $$kibana_status != "Kibana server is not ready yet" ] ; then
-  #           break
-  #         fi
-  #         sleep 5 
-  #       done
-  #       #
-  #       sleep 60 
-  #       echo -e "\n--\n+> Setup Kibana objects"
-
-  #       echo -e "\n--\n+> Opt out of Kibana telemetry"
-  #       curl 'http://localhost:5601/api/telemetry/v1/optIn' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'content-type: application/json' -H 'accept: application/json' --data-binary '{"enabled":false}' --compressed
-
-  #       echo -e "\n--\n+> Create Kibana index patterns"
-  #       curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/runner_location_idx' \
-  #           -H 'kbn-xsrf: nevergonnagiveyouup' \
-  #           -H 'Content-Type: application/json' \
-  #           -d '{"attributes":{"title":"runner_location","timeFieldName":"EVENT_TS"}}'
-
-  #       curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/runner_status_idx' \
-  #           -H 'kbn-xsrf: nevergonnagiveyouup' \
-  #           -H 'Content-Type: application/json' \
-  #           -d '{"attributes":{"title":"runner_status","timeFieldName":"EVENT_TS"}}'
-
-  #       echo -e "\n--\n+> Set default Kibana index"
-  #       curl -XPOST 'http://localhost:5601/api/kibana/settings' \
-  #           -H 'kbn-xsrf: nevergonnagiveyouup' \
-  #           -H 'content-type: application/json' \
-  #           -d '{"changes":{"defaultIndex":"runner_status_idx"}}'
-
-  #       echo -e "\n--\n+> Import Kibana objects"
-
-  #       sleep infinity
+  #       f
+  #         kafkacat -b ${CCLOUD_BROKER_HOST} 
+  #                 -X security.protocol=SASL_SSL -X sasl.mechanisms=PLAIN \
+  #                 -X sasl.username="${CCLOUD_API_KEY}" -X sasl.password="${CCLOUD_API_SECRET}" \
+  #                 -X ssl.ca.location=/usr/local/etc/openssl/cert.pem -X api.version.request=true
+  #                 -P -t data_mqtt

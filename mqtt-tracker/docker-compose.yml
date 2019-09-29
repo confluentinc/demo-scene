@@ -282,18 +282,21 @@ services:
 
         sleep infinity
 
-  # kafkacat:
-  #   image: edenhill/kafkacat:1.5.0
-  #   container_name: kafkacat
-  #   # depends_on:
-  #   #   - kafka
-  #   command: 
-  #     - bash 
-  #     - -c 
-  #     - |
-  #       echo '{"batt":100,"lon":-1.8029050435887677,"acc":30,"p":98.641334533691406,"bs":1,"vel":0,"vac":12,"lat":53.925261804884229,"t":"t","conn":"w","tst":1569319041,"alt":97,"_type":"location","tid":"FF"}' | \
-  #         kafkacat -b ${CCLOUD_BROKER_HOST} 
-  #                 -X security.protocol=SASL_SSL -X sasl.mechanisms=PLAIN \
-  #                 -X sasl.username="${CCLOUD_API_KEY}" -X sasl.password="${CCLOUD_API_SECRET}" \
-  #                 -X ssl.ca.location=/usr/local/etc/openssl/cert.pem -X api.version.request=true
-  #                 -P -t data_mqtt
+  kafkacat:
+    image: edenhill/kafkacat:1.5.0
+    container_name: kafkacat
+    volumes: 
+      - ./data:/data
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+    command: 
+      - -b 
+      - kafka-1:39092,kafka-2:49092,kafka-3:59092
+      - -t 
+      - "data_mqtt_sample" 
+      - "-K:"
+      - -P 
+      - -l 
+      - "/data/mqtt_data.kcat"
