@@ -26,6 +26,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - [KSQL Troubleshooting](ksql-troubleshooting)
   - [ATM Fraud detection with Kafka and KSQL](ksql-atm-fraud-detection)
   - [Kafka Streams/KSQL Movie Demo](streams-movie-demo)
+  - [KSQL MQTT demo](mqtt-tracker)
   - [KSQL Dump Utility](ksql-dump)
 
 - Kafka Connect
