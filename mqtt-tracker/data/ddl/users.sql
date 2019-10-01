@@ -20,7 +20,7 @@ INSERT INTO USERS (USERID, EMAIL, SHARE_LOCATION_OPTIN, PRIVACY_LOCATION_LAT, PR
            VALUES ('rmoff','robin@rmoff.net', TRUE, 52.924651779196246,-1.7996157809808713, 1);
 
 INSERT INTO USERS (USERID, EMAIL, SHARE_LOCATION_OPTIN) 
-           VALUES ('tom','tom@example.com', FALSE);
+           VALUES ('hugh','hugh@example.com', FALSE);
 
 INSERT INTO USERS (USERID, EMAIL, SHARE_LOCATION_OPTIN) 
-           VALUES ('isla','isla@example.com', FALSE);
+           VALUES ('ivor','ivor@example.com', FALSE);

@@ -85,6 +85,12 @@ kafkacat -b localhost:9092,localhost:19092,localhost:29092 \
     -K: -P 
 ----
 
+Check there's data on the topic: 
+
+[source,bash]
+----
+kafkacat -b localhost:9092 -t data_mqtt-import -o beginning -C
+----
 
 == Demo
 
