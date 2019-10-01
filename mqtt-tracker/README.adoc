@@ -9,7 +9,7 @@ v1.00, 27 September 2019
 
 image::images/mqtt_kafka_01.png[]
 
-For demo script see link::mqtt_demo.adoc[]
+*For demo script see link:./mqtt_demo.adoc[here]*
 
 ''''
 
