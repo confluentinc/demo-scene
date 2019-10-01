@@ -9,6 +9,10 @@ v1.00, 27 September 2019
 
 image::images/mqtt_kafka_01.png[]
 
+For demo script see link::mqtt_demo.adoc[]
+
+''''
+
 * Install Owntracks on your phone
 * Owntracks sends https://owntracks.org/booklet/tech/json/#_typelocation[data] to MQTT server
 * Kafka Connect ingests MQTT into Kafka topic
