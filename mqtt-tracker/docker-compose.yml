@@ -7,9 +7,9 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    volumes: 
-      - ./data/container_data/zk-data:/var/lib/zookeeper/data
-      - ./data/container_data/zk-txn-logs:/var/lib/zookeeper/log
+    # volumes: 
+    #   - ./data/container_data/zk-data:/var/lib/zookeeper/data
+    #   - ./data/container_data/zk-txn-logs:/var/lib/zookeeper/log
 
   kafka-1:
     image: confluentinc/cp-enterprise-kafka:${CONFLUENTPLATFORM_VERSION}
@@ -26,8 +26,9 @@ services:
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:39092,HOST://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:39092,HOST://localhost:9092
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-    volumes: 
-      - ./data/container_data/kafka-1-data:/var/lib/kafka/data
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
+    # volumes: 
+    #   - ./data/container_data/kafka-1-data:/var/lib/kafka/data
 
   kafka-2:
     image: confluentinc/cp-enterprise-kafka:${CONFLUENTPLATFORM_VERSION}
@@ -44,8 +45,9 @@ services:
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:49092,HOST://0.0.0.0:19092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:49092,HOST://localhost:19092
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-    volumes: 
-      - ./data/container_data/kafka-2-data:/var/lib/kafka/data
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
+    # volumes: 
+    #   - ./data/container_data/kafka-2-data:/var/lib/kafka/data
 
   kafka-3:
     image: confluentinc/cp-enterprise-kafka:${CONFLUENTPLATFORM_VERSION}
@@ -62,8 +64,9 @@ services:
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:59092,HOST://0.0.0.0:29092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:59092,HOST://localhost:29092
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-    volumes: 
-      - ./data/container_data/kafka-3-data:/var/lib/kafka/data
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
+    # volumes: 
+    #   - ./data/container_data/kafka-3-data:/var/lib/kafka/data
 
   schema-registry:
     image: confluentinc/cp-schema-registry:${CONFLUENTPLATFORM_VERSION}
@@ -101,8 +104,6 @@ services:
       # KSQL_KSQL_SINK_PARTITIONS: 1
       KSQL_KSQL_CACHE_MAX_BYTES_BUFFERING: 10000000
       KSQL_KSQL_STREAMS_AUTO_OFFSET_RESET: earliest
-    volumes:
-      - ./data:/data
 
   ksql-cli:
     image: confluentinc/cp-ksql-cli:${CONFLUENTPLATFORM_VERSION}
@@ -122,6 +123,7 @@ services:
       - kafka-2
       - kafka-3
       - schema-registry
+      - mysql
     ports:
       - 8083:8083
     environment:
@@ -152,6 +154,7 @@ services:
       CONNECT_CONFIG_PROVIDERS_FILE_CLASS: 'org.apache.kafka.common.config.provider.FileConfigProvider'
     volumes:
       - ./data:/data
+      - /Users/rmoff/Downloads/debezium-connector-mysql:/usr/share/confluent-hub-components/debezium-connector-mysql
     command: 
       # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
       - bash 
@@ -173,6 +176,33 @@ services:
           sleep 5 
         done
         #
+        echo "Waiting for Schema Registry to start listening on schema-registry:8081 ⏳"
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) -eq 000 ] ; do 
+          echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for != 000)"
+          sleep 5 
+        done
+        #
+        curl -i -X PUT -H  "Content-Type:application/json" \
+            http://localhost:8083/connectors/source-debezium-mysql-users-00/config \
+            -d '{
+                    "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+                    "database.hostname": "mysql",
+                    "database.port": "3306",
+                    "database.user": "debezium",
+                    "database.password": "dbz",
+                    "database.server.id": "42",
+                    "database.server.name": "asgard",
+                    "table.whitelist": "demo.USERS",
+                    "database.history.kafka.bootstrap.servers": "kafka-1:39092",
+                    "database.history.kafka.topic": "dbhistory.demo" ,
+                    "decimal.handling.mode": "double",
+                    "include.schema.changes": "true",
+                    "transforms": "unwrap,addTopicPrefix",
+                    "transforms.unwrap.type": "io.debezium.transforms.UnwrapFromEnvelope",
+                    "transforms.addTopicPrefix.type":"org.apache.kafka.connect.transforms.RegexRouter",
+                    "transforms.addTopicPrefix.regex":"(.*)",
+                    "transforms.addTopicPrefix.replacement":"mysql-$$1"
+            }'        
         sleep infinity
 
   replicator:
@@ -190,9 +220,9 @@ services:
       CONNECT_REST_ADVERTISED_HOST_NAME: 'replicator'
       CONNECT_REST_PORT: 58083
       CONNECT_GROUP_ID: compose-replicator
-      CONNECT_CONFIG_STORAGE_TOPIC: replicator-configs
-      CONNECT_OFFSET_STORAGE_TOPIC: replicator-offsets
-      CONNECT_STATUS_STORAGE_TOPIC: replicator-status
+      CONNECT_CONFIG_STORAGE_TOPIC: _replicator-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _replicator-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _replicator-status
       CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
@@ -216,8 +246,8 @@ services:
     environment:
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: "-Xms1g -Xmx1g"
-    volumes: 
-      - ./data/container_data/elasticserarch:/usr/share/elasticsearch/data
+    # volumes: 
+    #   - ./data/container_data/elasticserarch:/usr/share/elasticsearch/data
 
   kibana:
     image: docker.elastic.co/kibana/kibana:6.7.0
@@ -229,74 +259,121 @@ services:
     environment:
       xpack.security.enabled: "false"
       discovery.type: "single-node"
-    command: 
-      - bash 
-      - -c 
-      - |
-        /usr/local/bin/kibana-docker & 
-        #
-        echo "Waiting for Kibana to start ⏳"
-        while : ; do
-          curl_status=$$(curl -s -o /dev/null -w %{http_code} http://localhost:5601/api/kibana/settings)
-          echo -e $$(date) " Kibana listener HTTP state: " $$curl_status " (waiting for 200)"
-          if [ $$curl_status -eq 200 ] ; then
-            break
-          fi
-          sleep 5 
-        done
-        #
-        echo "Waiting for Kibana API to be available ⏳"
-        while : ; do
-          kibana_status=$$(curl -s 'http://localhost:5601/api/kibana/settings')
-          echo -e $$(date) " Kibana API response: " $$kibana_status
-          if [ $$kibana_status != "Kibana server is not ready yet" ] ; then
-            break
-          fi
-          sleep 5 
-        done
-        #
-        sleep 60 
-        echo -e "\n--\n+> Setup Kibana objects"
+    # command: 
+    #   - bash 
+    #   - -c 
+    #   - |
+    #     /usr/local/bin/kibana-docker & 
+    #     #
+    #     echo "Waiting for Kibana to start ⏳"
+    #     while : ; do
+    #       curl_status=$$(curl -s -o /dev/null -w %{http_code} http://localhost:5601/api/kibana/settings)
+    #       echo -e $$(date) " Kibana listener HTTP state: " $$curl_status " (waiting for 200)"
+    #       if [ $$curl_status -eq 200 ] ; then
+    #         break
+    #       fi
+    #       sleep 5 
+    #     done
+    #     #
+    #     echo "Waiting for Kibana API to be available ⏳"
+    #     while : ; do
+    #       kibana_status=$$(curl -s 'http://localhost:5601/api/kibana/settings')
+    #       echo -e $$(date) " Kibana API response: " $$kibana_status
+    #       if [ $$kibana_status != "Kibana server is not ready yet" ] ; then
+    #         break
+    #       fi
+    #       sleep 5 
+    #     done
+    #     #
+    #     sleep 60 
+    #     echo -e "\n--\n+> Setup Kibana objects"
 
-        echo -e "\n--\n+> Opt out of Kibana telemetry"
-        curl 'http://localhost:5601/api/telemetry/v1/optIn' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'content-type: application/json' -H 'accept: application/json' --data-binary '{"enabled":false}' --compressed
+    #     echo -e "\n--\n+> Opt out of Kibana telemetry"
+    #     curl 'http://localhost:5601/api/telemetry/v1/optIn' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'content-type: application/json' -H 'accept: application/json' --data-binary '{"enabled":false}' --compressed
 
-        echo -e "\n--\n+> Create Kibana index patterns"
-        curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/runner_location_idx' \
-            -H 'kbn-xsrf: nevergonnagiveyouup' \
-            -H 'Content-Type: application/json' \
-            -d '{"attributes":{"title":"runner_location","timeFieldName":"EVENT_TS"}}'
+    #     echo -e "\n--\n+> Create Kibana index patterns"
+    #     curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/runner_location_idx' \
+    #         -H 'kbn-xsrf: nevergonnagiveyouup' \
+    #         -H 'Content-Type: application/json' \
+    #         -d '{"attributes":{"title":"runner_location","timeFieldName":"EVENT_TS"}}'
 
-        curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/runner_status_idx' \
-            -H 'kbn-xsrf: nevergonnagiveyouup' \
-            -H 'Content-Type: application/json' \
-            -d '{"attributes":{"title":"runner_status","timeFieldName":"EVENT_TS"}}'
+    #     curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/runner_status_idx' \
+    #         -H 'kbn-xsrf: nevergonnagiveyouup' \
+    #         -H 'Content-Type: application/json' \
+    #         -d '{"attributes":{"title":"runner_status","timeFieldName":"EVENT_TS"}}'
 
-        echo -e "\n--\n+> Set default Kibana index"
-        curl -XPOST 'http://localhost:5601/api/kibana/settings' \
-            -H 'kbn-xsrf: nevergonnagiveyouup' \
-            -H 'content-type: application/json' \
-            -d '{"changes":{"defaultIndex":"runner_status_idx"}}'
+    #     echo -e "\n--\n+> Set default Kibana index"
+    #     curl -XPOST 'http://localhost:5601/api/kibana/settings' \
+    #         -H 'kbn-xsrf: nevergonnagiveyouup' \
+    #         -H 'content-type: application/json' \
+    #         -d '{"changes":{"defaultIndex":"runner_status_idx"}}'
 
-        echo -e "\n--\n+> Import Kibana objects"
+    #     echo -e "\n--\n+> Import Kibana objects"
 
-        sleep infinity
+    #     sleep infinity
 
-  kafkacat:
-    image: edenhill/kafkacat:1.5.0
-    container_name: kafkacat
-    volumes: 
-      - ./data:/data
-    depends_on:
-      - kafka-1
-      - kafka-2
-      - kafka-3
-    command: 
-      - -b 
-      - kafka-1:39092,kafka-2:49092,kafka-3:59092
-      - -t 
-      - "data_mqtt_sample" 
-      - "-K:"
-      - -P 
-      - -l 
-      - "/data/mqtt_data.kcat"
+  # sample_data:
+  #   image: edenhill/kafkacat:1.5.0
+  #   container_name: kafkacat
+  #   volumes: 
+  #     - ./data:/data
+  #   depends_on:
+  #     - kafka-1
+  #     - kafka-2
+  #     - kafka-3
+  #   command: 
+  #     - -b 
+  #     - kafka-1:39092,kafka-2:49092,kafka-3:59092
+  #     - -t 
+  #     - "data_mqtt-import" 
+  #     - "-K:"
+  #     - -P 
+  #     - -l 
+  #     - "data/export_20190929.kcat"
+  #    # - "/data/mqtt_data.kcat"
+
+  # datagen:
+  #   image: confluentinc/cp-kafkacat:latest
+  #   depends_on:
+  #     - kafka-1
+  #     - kafka-2
+  #     - kafka-3
+  #   volumes: 
+  #     - ./data:/data
+  #   command: 
+  #     - bash 
+  #     - -c 
+  #     - |
+  #       while [ 1 -eq 1 ]
+  #         do awk '{print $$0;system("sleep 0.5");}' /data/dummy_data.kcat | \
+  #             kafkacat -b kafka-1:39092 -P -t data_mqtt-import -K:
+  #         done
+
+  # Other systems
+  mysql:
+    # *-----------------------------*
+    # To connect to the DB: 
+    #   docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
+    # *-----------------------------*
+    image: debezium/example-mysql:0.9
+    container_name: mysql
+    ports:
+      - 3306:3306
+    environment:
+     - MYSQL_ROOT_PASSWORD=debezium
+     - MYSQL_USER=mysqluser
+     - MYSQL_PASSWORD=mysqlpw
+    volumes:
+      - ./data/ddl/users.sql:/docker-entrypoint-initdb.d/z99_dump.sql
+
+  # postgres:
+  #   # *-----------------------------*
+  #   # To connect to the DB:
+  #   #   docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+  #   # *-----------------------------*
+  #   image: postgres:11
+  #   environment:
+  #    - POSTGRES_USER=postgres
+  #    - POSTGRES_PASSWORD=postgres
+  #   volumes:
+  #    - ./data/postgres:/docker-entrypoint-initdb.d/
