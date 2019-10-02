@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: twitter-connector-deploy
+spec:
+  ttlSecondsAfterFinished: 5
+  template:
+    spec:
+      volumes:
+      - name: twitter-connector-json
+        secret:
+          secretName: twitter-connector.json
+      containers:
+      - name: clicks-datagen-connector-deploy
+        image: cnfldemos/alpine-curl:3.10.2_7.65.1
+        args: [ 
+          "-s",
+          "-X", "POST",
+          "-H", "Content-Type: application/json",
+          "--data", "@/etc/config/connector/twitter-connector.json",
+          "http://connectors:8083/connectors"
+        ]
+        volumeMounts:
+          - name: twitter-connector-json
+            mountPath: /etc/config/connector
+      restartPolicy: Never
+  backoffLimit: 1
