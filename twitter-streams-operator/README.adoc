@@ -1,6 +1,6 @@
 == Overview
 
-This example contains demo showcasing various uses cases leveraging https://docs.confluent.io/current/installation/operator/index.html[Confluent Operator] to deploy and manage Confluent Platform.
+This example contains a demo showcasing various uses cases using https://docs.confluent.io/current/installation/operator/index.html[Confluent Operator] to deploy and manage Confluent Platform.
 
 = Demo List
 
@@ -12,8 +12,8 @@ This example contains demo showcasing various uses cases leveraging https://docs
 
 = Documentation
 
-See each individual use case above for detailed documentation on running the demos.
+See each individual use case above for detailed documentation on how to run each demo.
 
-For further details on Confluent Operator, see the official https://docs.confluent.io/current/installation/operator/co-deployment.html[Operator Documentation].
+For further details on Confluent Operator, please visit the official https://docs.confluent.io/current/installation/operator/co-deployment.html[Operator Documentation].
 
-For more details on Kubernetes, see the official https://kubernetes.io/docs/home/[Kubernetes Docs].
+For more details on Kubernetes, please visit the official https://kubernetes.io/docs/home/[Kubernetes Docs].
