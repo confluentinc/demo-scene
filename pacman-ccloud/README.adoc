@@ -196,7 +196,7 @@ terraform destroy -auto-approve
 
 === Option: Deploying the Application on Azure
 
-1. Enter the folder that contains the AWS code
+1. Enter the folder that contains the Azure code
 +
 [source,bash]
 ----
