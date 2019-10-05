@@ -2,14 +2,6 @@ locals {
   region = split(".", var.bootstrap_server)[1]
 }
 
-resource "azurerm_resource_group" "azure_resource_group" {
-    name     = var.global_prefix
-    location = local.region
-    tags = {
-        environment = var.global_prefix
-    }
-}
-
 variable "instance_count" {
   type = map(string)
   default = {

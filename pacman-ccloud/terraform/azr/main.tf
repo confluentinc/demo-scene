@@ -9,6 +9,14 @@ provider "azurerm" {
     tenant_id = var.azure_tenant_id
 }
 
+resource "azurerm_resource_group" "azure_resource_group" {
+    name     = var.global_prefix
+    location = local.region
+    tags = {
+        environment = var.global_prefix
+    }
+}
+
 variable "azure_subscription_id" {
 }
 

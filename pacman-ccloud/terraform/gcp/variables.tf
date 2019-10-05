@@ -2,10 +2,6 @@ locals {
   region = split(".", var.bootstrap_server)[1]
 }
 
-data "google_compute_zones" "available" {
-  status = "UP"
-}
-
 variable "instance_count" {
   type = map(string)
   default = {

@@ -8,6 +8,10 @@ provider "google" {
   region      = local.region
 }
 
+data "google_compute_zones" "available" {
+  status = "UP"
+}
+
 variable "gcp_credentials" {
 }
 
