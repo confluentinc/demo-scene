@@ -2,7 +2,7 @@
 
 source .env
 
-curl -u $ELASTIC_USERNAME:$ELASTIC_PASSWORD -XPUT "$ELASTIC_URL/_template/kafkaconnect/?include_type_name=true" -H 'Content-Type: application/json' -d'
+curl -u $ELASTIC_USERNAME:$ELASTIC_PASSWORD -XPUT "$ELASTIC_URL/_template/kafkaconnect" -H 'Content-Type: application/json' -d'
 {
             "template": "*",
             "settings": {
@@ -10,7 +10,6 @@ curl -u $ELASTIC_USERNAME:$ELASTIC_PASSWORD -XPUT "$ELASTIC_URL/_template/kafkac
                 "number_of_replicas": 0
             },
             "mappings": {
-                "_default_" : {
                 "dynamic_templates": [
                     {
                         "dates": {
@@ -37,6 +36,5 @@ curl -u $ELASTIC_USERNAME:$ELASTIC_PASSWORD -XPUT "$ELASTIC_URL/_template/kafkac
                         }
                     }
                 ]
-                }
             }
         }'

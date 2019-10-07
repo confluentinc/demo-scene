@@ -9,7 +9,7 @@ curl -i -X PUT -H  "Content-Type:application/json" \
             "connection.url": "'$ELASTIC_URL'",
             "connection.username": "'$ELASTIC_USERNAME'",
             "connection.password": "'$ELASTIC_PASSWORD'",
-            "type.name": "type.name=kafkaconnect",
+            "type.name": "",
             "behavior.on.malformed.documents": "warn",
             "errors.tolerance": "all",
             "errors.log.enable":true,
