@@ -7,69 +7,56 @@ resource "random_string" "random_string" {
   special = false
   upper = false
   lower = true
-  number = false
+  number = true
 }
 
-data "template_file" "bucket_name" {
+data "template_file" "storage_account_name" {
   template = "pacmanccloud${random_string.random_string.result}"
 }
 
-resource "aws_s3_bucket" "pacman" {
-
-  bucket = data.template_file.bucket_name.rendered
-  acl    = "public-read"
-
-  cors_rule {
-    allowed_headers = ["*"]
-    allowed_methods = ["GET", "POST"]
-    allowed_origins = ["*"]
-  }
-
-  policy = <<EOF
-{
-    "Version": "2008-10-17",
-    "Statement": [
-        {
-            "Sid": "PublicReadGetObject",
-            "Effect": "Allow",
-            "Principal": "*",
-            "Action": "s3:GetObject",
-            "Resource": "arn:aws:s3:::${data.template_file.bucket_name.rendered}/*"
-        }
-    ]
+resource "azurerm_storage_account" "pacman" {
+  name = data.template_file.storage_account_name.rendered
+  resource_group_name = azurerm_resource_group.azure_resource_group.name
+  location = local.region
+  account_tier = "Standard"
+  account_replication_type = "GRS"
+  account_kind = "StorageV2"
 }
-    
-EOF
 
-  website {
-    index_document = "index.html"
-    error_document = "error.html"
-  }
-
+module "staticweb" {
+  source = "StefanSchoof/static-website/azurerm"
+  storage_account_name = azurerm_storage_account.pacman.name
+  notfound_document = "error.html"
 }
 
 ###########################################
 ################## HTML ###################
 ###########################################
 
-resource "aws_s3_bucket_object" "index" {
-  bucket = aws_s3_bucket.pacman.bucket
-  key = "index.html"
+resource "azurerm_storage_blob" "index" {
+  name = "index.html"
   content_type = "text/html"
+  storage_account_name = azurerm_storage_account.pacman.name
+  storage_container_name = "$web"
+  type = "Block"
   source = "../../pacman/index.html"
 }
 
-resource "aws_s3_bucket_object" "error" {
-  bucket = aws_s3_bucket.pacman.bucket
-  key = "error.html"
+resource "azurerm_storage_blob" "error" {
+  name = "error.html"
   content_type = "text/html"
+  storage_account_name = azurerm_storage_account.pacman.name
+  storage_container_name = "$web"
+  type = "Block"
   source = "../../pacman/error.html"
 }
 
-resource "aws_s3_bucket_object" "start" {
-  bucket = aws_s3_bucket.pacman.bucket
-  key = "start.html"
+resource "azurerm_storage_blob" "start" {
+  name = "start.html"
   content_type = "text/html"
+  storage_account_name = azurerm_storage_account.pacman.name
+  storage_container_name = "$web"
+  type = "Block"
   source = "../../pacman/start.html"
 }
 
@@ -86,11 +73,13 @@ variable "css_files" {
   ]
 }
 
-resource "aws_s3_bucket_object" "css_files" {
+resource "azurerm_storage_blob" "css_files" {
   count = length(var.css_files)
-  bucket = aws_s3_bucket.pacman.bucket
-  key = "${var.css_files[count.index]}"
+  name = var.css_files[count.index]
+  storage_account_name = azurerm_storage_account.pacman.name
+  storage_container_name = "$web"
   content_type = "text/css"
+  type = "Block"
   source = "../../pacman/${var.css_files[count.index]}"
 }
 
@@ -116,11 +105,13 @@ variable "img_files" {
   ]
 }
 
-resource "aws_s3_bucket_object" "img_files" {
+resource "azurerm_storage_blob" "img_files" {
   count = length(var.img_files)
-  bucket = aws_s3_bucket.pacman.bucket
-  key = "${var.img_files[count.index]}"
+  name = var.img_files[count.index]
+  storage_account_name = azurerm_storage_account.pacman.name
+  storage_container_name = "$web"
   content_type = "images/png"
+  type = "Block"
   source = "../../pacman/${var.img_files[count.index]}"
 }
 
@@ -146,26 +137,30 @@ variable "js_files" {
   ]
 }
 
-resource "aws_s3_bucket_object" "js_files" {
+resource "azurerm_storage_blob" "js_files" {
   count = length(var.js_files)
-  bucket = aws_s3_bucket.pacman.bucket
-  key = "${var.js_files[count.index]}"
+  name = var.js_files[count.index]
+  storage_account_name = azurerm_storage_account.pacman.name
+  storage_container_name = "$web"
   content_type = "text/javascript"
+  type = "Block"
   source = "../../pacman/${var.js_files[count.index]}"
 }
 
 data "template_file" "game_js" {
   template = file("../../pacman/game/js/game.js")
   vars = {
-    rest_proxy_endpoint = join(",", formatlist("http://%s", aws_alb.rest_proxy.*.dns_name))
+    rest_proxy_endpoint = "http://localhost:8081/test"
   }
 }
 
-resource "aws_s3_bucket_object" "game_js" {
-  bucket = aws_s3_bucket.pacman.bucket
-  key = "game/js/game.js"
+resource "azurerm_storage_blob" "game_js" {
+  name = "game/js/game.js"
+  storage_account_name = azurerm_storage_account.pacman.name
+  storage_container_name = "$web"
   content_type = "text/javascript"
-  content = data.template_file.game_js.rendered
+  type = "Block"
+  source_content = data.template_file.game_js.rendered
 }
 
 ###########################################
@@ -188,10 +183,12 @@ variable "snd_files" {
   ]
 }
 
-resource "aws_s3_bucket_object" "snd_files" {
+resource "azurerm_storage_blob" "snd_files" {
   count = length(var.snd_files)
-  bucket = aws_s3_bucket.pacman.bucket
-  key = "${var.snd_files[count.index]}"
+  name = var.snd_files[count.index]
+  storage_account_name = azurerm_storage_account.pacman.name
+  storage_container_name = "$web"
   content_type = "audio/mpeg"
+  type = "Block"
   source = "../../pacman/${var.snd_files[count.index]}"
 }

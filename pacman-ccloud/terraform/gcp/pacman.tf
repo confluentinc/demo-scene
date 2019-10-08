@@ -11,7 +11,7 @@ resource "random_string" "random_string" {
 }
 
 data "template_file" "bucket_name" {
-  template = "pacman-ccloud-${random_string.random_string.result}"
+  template = "pacmanccloud${random_string.random_string.result}"
 }
 
 resource "google_storage_bucket" "pacman" {
