@@ -5,8 +5,8 @@ locals {
 variable "instance_count" {
   type = map(string)
   default = {
-    "bastion_server" = 1
-    "rest_proxy"     = 1
+    "bastion_server" = 0
+    "rest_proxy"     = 0
     "ksql_server"    = 1
   }
 }
