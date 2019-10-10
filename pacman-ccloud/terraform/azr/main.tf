@@ -17,6 +17,33 @@ resource "azurerm_resource_group" "azure_resource_group" {
   }
 }
 
+resource "random_string" "random_string" {
+  length  = 8
+  special = false
+  upper = false
+  lower = true
+  number = true
+}
+
+data "template_file" "storage_account_pacman" {
+  template = "pacman${random_string.random_string.result}"
+}
+
+resource "azurerm_storage_account" "pacman" {
+  name = data.template_file.storage_account_pacman.rendered
+  resource_group_name = azurerm_resource_group.azure_resource_group.name
+  location = local.region
+  account_tier = "Standard"
+  account_replication_type = "GRS"
+  account_kind = "StorageV2"
+}
+
+module "staticweb" {
+  source = "StefanSchoof/static-website/azurerm"
+  storage_account_name = azurerm_storage_account.pacman.name
+  notfound_document = "error.html"
+}
+
 variable "azure_subscription_id" {
 }
 
