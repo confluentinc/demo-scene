@@ -30,7 +30,7 @@ resource "azurerm_subnet" "private_subnet" {
 resource "azurerm_public_ip" "rest_proxy" {
   name = "${var.global_prefix}-rest-proxy"
   location = local.region
-  domain_name_label = "pacman-ccloud-rest-${random_string.random_string.result}"
+  domain_name_label = "pacman${random_string.random_string.result}-rest"
   resource_group_name = azurerm_resource_group.azure_resource_group.name
   allocation_method = "Static"
 }
@@ -38,7 +38,7 @@ resource "azurerm_public_ip" "rest_proxy" {
 resource "azurerm_public_ip" "ksql_server" {
   name = "${var.global_prefix}-ksql-server"
   location = local.region
-  domain_name_label = "pacman-ccloud-ksql-${random_string.random_string.result}"
+  domain_name_label = "pacman${random_string.random_string.result}-ksql"
   resource_group_name = azurerm_resource_group.azure_resource_group.name
   allocation_method = "Static"
 }
@@ -46,7 +46,7 @@ resource "azurerm_public_ip" "ksql_server" {
 resource "azurerm_public_ip" "bastion_server" {
   name = "${var.global_prefix}-bastion-server"
   location = local.region
-  domain_name_label = "pacmanc-ccloud-ssh-${random_string.random_string.result}"
+  domain_name_label = "pacman${random_string.random_string.result}-ssh"
   resource_group_name = azurerm_resource_group.azure_resource_group.name
   allocation_method = "Static"
 }

@@ -3,6 +3,7 @@
 ###########################################
 
 resource "azurerm_storage_blob" "bastion_server_bootstrap" {
+  count = var.instance_count["bastion_server"]
   depends_on = ["module.staticweb"]
   name = "scripts/bootstrap/bastion-server.sh"
   content_type = "text/x-shellscript"
@@ -13,6 +14,7 @@ resource "azurerm_storage_blob" "bastion_server_bootstrap" {
 }
 
 resource "azurerm_storage_blob" "rest_proxy_bootstrap" {
+  count = var.instance_count["rest_proxy"]
   depends_on = ["module.staticweb"]
   name = "scripts/bootstrap/rest-proxy.sh"
   content_type = "text/x-shellscript"
@@ -23,6 +25,7 @@ resource "azurerm_storage_blob" "rest_proxy_bootstrap" {
 }
 
 resource "azurerm_storage_blob" "ksql_server_bootstrap" {
+  count = var.instance_count["ksql_server"]
   depends_on = ["module.staticweb"]
   name = "scripts/bootstrap/ksql-server.sh"
   content_type = "text/x-shellscript"
@@ -92,7 +95,7 @@ resource "azurerm_virtual_machine_extension" "rest_proxy" {
   type_handler_version = "2.0"
   settings = <<SETTINGS
     {
-      "fileUris": ["${azurerm_storage_account.pacman.primary_web_endpoint}${azurerm_storage_blob.rest_proxy_bootstrap.name}"],
+      "fileUris": ["${azurerm_storage_account.pacman.primary_web_endpoint}${azurerm_storage_blob.rest_proxy_bootstrap[0].name}"],
       "commandToExecute": "./rest-proxy.sh exit 0"
     }
 SETTINGS
@@ -158,7 +161,7 @@ resource "azurerm_virtual_machine_extension" "ksql_server" {
   type_handler_version = "2.0"
   settings = <<SETTINGS
     {
-      "fileUris": ["${azurerm_storage_account.pacman.primary_web_endpoint}${azurerm_storage_blob.ksql_server_bootstrap.name}"],
+      "fileUris": ["${azurerm_storage_account.pacman.primary_web_endpoint}${azurerm_storage_blob.ksql_server_bootstrap[0].name}"],
       "commandToExecute": "./ksql-server.sh exit 0"
     }
 SETTINGS
@@ -305,7 +308,7 @@ resource "azurerm_virtual_machine_extension" "bastion_server" {
   type_handler_version = "2.0"
   settings = <<SETTINGS
     {
-      "fileUris": ["${azurerm_storage_account.pacman.primary_web_endpoint}${azurerm_storage_blob.bastion_server_bootstrap.name}"],
+      "fileUris": ["${azurerm_storage_account.pacman.primary_web_endpoint}${azurerm_storage_blob.bastion_server_bootstrap[0].name}"],
       "commandToExecute": "./bastion-server.sh exit 0"
     }
 SETTINGS
