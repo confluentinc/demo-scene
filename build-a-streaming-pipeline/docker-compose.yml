@@ -116,7 +116,7 @@ services:
         sleep infinity
 
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.4.0-beta1
+    image: confluentinc/cp-ksql-server:5.4.0-dist-1
     container_name: ksql-server
     ports:
       - 8088:8088
@@ -141,7 +141,7 @@ services:
       KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
 
   ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.4.0-beta1
+    image: confluentinc/cp-ksql-cli:5.4.0-dist-1
     container_name: ksql-cli
     depends_on:
       - ksql-server

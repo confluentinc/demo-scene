@@ -83,7 +83,7 @@ CREATE STREAM RATINGS WITH (KAFKA_TOPIC='ratings',VALUE_FORMAT='AVRO');
 
 [source,sql]
 ----
-SELECT STARS, CHANNEL, MESSAGE FROM RATINGS;
+SELECT STARS, CHANNEL, MESSAGE FROM RATINGS EMIT CHANGES;
 ----
 
 
@@ -91,7 +91,7 @@ SELECT STARS, CHANNEL, MESSAGE FROM RATINGS;
 
 [source,sql]
 ----
-SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
+SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3 EMIT CHANGES;
 ----
 
 === Create a derived stream
@@ -101,7 +101,7 @@ SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
 CREATE STREAM POOR_RATINGS AS
 SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
 
-SELECT * FROM POOR_RATINGS LIMIT 5;
+SELECT * FROM POOR_RATINGS EMIT CHANGES LIMIT 5;
 
 DESCRIBE EXTENDED POOR_RATINGS;
 ----
@@ -112,20 +112,20 @@ Optionally, bring up a second KSQL prompt and show live ratings / live filtered 
 ----
 -- Live stream of ratings data
 SET 'auto.offset.reset' = 'latest';
-PRINT 'RATINGS';
+PRINT ratings;
 
 -- You can use SELECT too, but PRINT makes it clearer that it's coming from a topic
-SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TIMESTAMP, STARS, CHANNEL FROM RATINGS;
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TIMESTAMP, STARS, CHANNEL FROM RATINGS EMIT CHANGES;
 ----
 
 [source,sql]
 ----
 -- Just the ratings with star rating less than 3: 
 SET 'auto.offset.reset' = 'latest';
-PRINT 'POOR_RATINGS';
+PRINT POOR_RATINGS;
 
 -- You can use SELECT too, but PRINT makes it clearer that it's coming from a topic
-SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TIMESTAMP, STARS, CHANNEL FROM POOR_RATINGS;
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TIMESTAMP, STARS, CHANNEL FROM POOR_RATINGS EMIT CHANGES;
 ----
 
 ---
@@ -228,7 +228,7 @@ CREATE STREAM CUSTOMERS_STREAM WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_
 CREATE STREAM CUSTOMERS_REKEYED WITH (PARTITIONS=1) AS SELECT * FROM CUSTOMERS_STREAM PARTITION BY ID;
 -- This select statement is simply to make sure that we have time for the CUSTOMERS_REKEYED topic
 -- to be created before we define a table against it
-SELECT * FROM CUSTOMERS_REKEYED LIMIT 1;
+SELECT * FROM CUSTOMERS_REKEYED EMIT CHANGES LIMIT 1;
 CREATE TABLE CUSTOMERS WITH (KAFKA_TOPIC='CUSTOMERS_REKEYED',VALUE_FORMAT='AVRO',KEY='ID');
 ----
 
@@ -236,9 +236,8 @@ Query the KSQL table:
 
 [source,sql]
 ----
-SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS LIMIT 5;
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS EMIT CHANGES LIMIT 5;
 ----
-
 
 ==== Insert a row in MySQL, observe it in Kafka
 
@@ -266,7 +265,7 @@ SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS TS,
        LAST_NAME, 
        EMAIL, 
        CLUB_STATUS 
-  FROM CUSTOMERS WHERE ID=42;
+  FROM CUSTOMERS WHERE ID=42 EMIT CHANGES;
 ----
 
 [source,sql]
@@ -287,7 +286,7 @@ SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS TS,
        LAST_NAME, 
        EMAIL, 
        CLUB_STATUS 
-  FROM CUSTOMERS_STREAM WHERE ID=42;
+  FROM CUSTOMERS_STREAM WHERE ID=42 EMIT CHANGES;
 
 ----
 
@@ -331,7 +330,7 @@ SELECT R.RATING_ID, R.MESSAGE,
       FROM RATINGS R 
         LEFT JOIN CUSTOMERS C 
         ON R.USER_ID = C.ID 
-      WHERE C.FIRST_NAME IS NOT NULL;
+      WHERE C.FIRST_NAME IS NOT NULL EMIT CHANGES;
 ----
 
 [source,sql]
@@ -374,13 +373,13 @@ Check out the ratings for customer id 2 only:
 ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS TS, 
              FULL_NAME, CLUB_STATUS, STARS, MESSAGE, CHANNEL 
         FROM RATINGS_WITH_CUSTOMER_DATA 
-       WHERE ID=2;
+       WHERE ID=2 EMIT CHANGES;
 ----
 
 In mysql, make a change to ID 2
 [source,sql]
 ----
-mysql> UPDATE CUSTOMERS SET CLUB_STATUS = 'Platinum' WHERE ID=2;
+mysql> UPDATE CUSTOMERS SET CLUB_STATUS = 'bronze' WHERE ID=2;
 ----
 
 Observe in the continuous KSQL query that the customer name has now changed.
@@ -396,6 +395,62 @@ FROM   RATINGS_WITH_CUSTOMER_DATA
 WHERE  STARS < 3 
   AND  CLUB_STATUS = 'platinum';
 ----
+
+=== Create a table of number of ratings per customer and status, and use a pull query against it
+
+[source,sql]
+----
+CREATE TABLE RATINGS_BY_USER AS 
+  SELECT FULL_NAME, 
+         COUNT(*) AS NUM_RATINGS 
+  FROM   RATINGS_WITH_CUSTOMER_DATA 
+  GROUP BY FULL_NAME;
+
+CREATE TABLE RATINGS_BY_STATUS AS 
+  SELECT CLUB_STATUS, 
+         COUNT(*) AS NUM_RATINGS 
+  FROM   RATINGS_WITH_CUSTOMER_DATA 
+  GROUP BY CLUB_STATUS;
+----
+
+* Push query - each new event triggers the emission of the changed aggregate: 
++
+[source,sql]
+----
+ksql> SELECT CLUB_STATUS, NUM_RATINGS FROM RATINGS_BY_STATUS WHERE ROWKEY='platinum' EMIT CHANGES;
++--------------------------------------------------------------------+--------------------------------------------------------------------+
+|CLUB_STATUS                                                         |NUM_RATINGS                                                         |
++--------------------------------------------------------------------+--------------------------------------------------------------------+
+|platinum                                                            |8035                                                                |
+|platinum                                                            |8037                                                                |
+|platinum                                                            |8038                                                                |
+…
+Press CTRL-C to interrupt
+----
+
+* Pull query - what is the current state of the aggregate? 
++
+[source,sql]
+----
+ksql> SELECT CLUB_STATUS, NUM_RATINGS FROM RATINGS_BY_STATUS WHERE ROWKEY='platinum';
+
+ ROWKEY STRING KEY | CLUB_STATUS STRING | NUM_RATINGS BIGINT
+-------------------------------------------------------------
+ platinum          | platinum           | 7593
+------------------------------------------------------------- 
+----
+
+REST endpoint? Sure!
+
+[source,bash]
+----
+$ curl -s -X POST \
+      http://localhost:8088/ksql \
+      -H 'Content-Type: application/json' \
+      -d '{"ksql":"SELECT CLUB_STATUS, NUM_RATINGS FROM RATINGS_BY_STATUS WHERE ROWKEY=\'platinum\';"}'| jq '.[].rows[][2]'
+8185
+----
+
 
 == View in Elasticsearch and Kibana
 
@@ -431,8 +486,15 @@ Persist this and show the timestamp:
 
 [source,sql]
 ----
-CREATE TABLE RATINGS_PER_CUSTOMER_PER_MINUTE AS SELECT TIMESTAMPTOSTRING(WindowStart(), 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS,FULL_NAME,COUNT(*) AS RATINGS_COUNT FROM ratings_with_customer_data WINDOW TUMBLING (SIZE 1 MINUTE) GROUP BY FULL_NAME;
-SELECT WINDOW_START_TS , FULL_NAME, RATINGS_COUNT FROM RATINGS_PER_CUSTOMER_PER_MINUTE;
+CREATE TABLE RATINGS_PER_CUSTOMER_PER_MINUTE AS 
+  SELECT TIMESTAMPTOSTRING(WindowStart(), 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS,
+         FULL_NAME,
+         COUNT(*) AS RATINGS_COUNT 
+    FROM ratings_with_customer_data 
+            WINDOW TUMBLING (SIZE 1 MINUTE) 
+    GROUP BY FULL_NAME;
+
+SELECT WINDOW_START_TS , FULL_NAME, RATINGS_COUNT FROM RATINGS_PER_CUSTOMER_PER_MINUTE EMIT CHANGES;
 ----
 
 === Slack/PushBullet notifications
