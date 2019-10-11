@@ -222,6 +222,54 @@ schema_registry_url = "<SCHEMA_REGISTRY_URL>"
 schema_registry_basic_auth = "<SCHEMA_REGISTRY_BASIC_AUTH>"
 ----
 
+4. Create a variables file for Azure
++
+[source,bash]
+----
+mv cloud.auto.tfvars.example cloud.auto.tfvars
+----
+
+5. Provide the credentials on the 'cloud.auto.tfvars' file
++
+[source,bash]
+----
+azure_subscription_id = "<AZURE_SUBSCRIPTION_ID>"
+azure_client_id = "<AZURE_CLIENT_ID>"
+azure_client_secret = "<AZURE_CLIENT_SECRET>"
+azure_tenant_id = "<AZURE_TENANT_ID>"
+----
+
+6. Initialize the Terraform plugins
++
+[source,bash]
+----
+terraform init
+----
+
+7. Start the application deployment
++
+[source,bash]
+----
+terraform apply -auto-approve
+----
+
+8. Output with endpoints will be shown
++
+[source,bash]
+----
+Outputs:
+
+KSQL_Server = http://pacman0000000-ksql.region.cloudapp.azure.com
+Pacman = http://pacman0000000000000000000.z5.web.core.windows.net
+----
+
+*Note:* When you are done with the application, you can automatically destroy all the resources created by Terraform using the command below:
+
+[source,bash]
+----
+terraform destroy -auto-approve
+----
+
 == 3) Creating the Pipeline
 
 When users play with the Pac-Man game -- two types of events will be generated. The first one is called *User Game* and contains the data about the user's current game, such as their score, current level, and the number of lives. The second one is called *User Losses* and, as the name implies, contains data about the number of times the user loses the game. To build a scoreboard out of this, a stream processing pipeline need to be implemented to perform a series of computations on these two events and derive a table that will contain statistic data about each user's game.
