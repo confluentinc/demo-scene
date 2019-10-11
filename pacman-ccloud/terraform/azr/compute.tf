@@ -3,7 +3,7 @@
 ###########################################
 
 resource "azurerm_storage_blob" "bastion_server_bootstrap" {
-  count = var.instance_count["bastion_server"]
+  count = var.instance_count["bastion_server"] >= 1 ? 1 : 0
   depends_on = ["module.staticweb"]
   name = "scripts/bootstrap/bastion-server.sh"
   content_type = "text/x-shellscript"
@@ -14,7 +14,7 @@ resource "azurerm_storage_blob" "bastion_server_bootstrap" {
 }
 
 resource "azurerm_storage_blob" "rest_proxy_bootstrap" {
-  count = var.instance_count["rest_proxy"]
+  count = var.instance_count["rest_proxy"] >= 1 ? 1 : 0
   depends_on = ["module.staticweb"]
   name = "scripts/bootstrap/rest-proxy.sh"
   content_type = "text/x-shellscript"
@@ -25,7 +25,7 @@ resource "azurerm_storage_blob" "rest_proxy_bootstrap" {
 }
 
 resource "azurerm_storage_blob" "ksql_server_bootstrap" {
-  count = var.instance_count["ksql_server"]
+  count = var.instance_count["ksql_server"] >= 1 ? 1 : 0
   depends_on = ["module.staticweb"]
   name = "scripts/bootstrap/ksql-server.sh"
   content_type = "text/x-shellscript"
@@ -52,11 +52,21 @@ resource "azurerm_network_interface" "rest_proxy" {
   }
 }
 
+resource "azurerm_availability_set" "rest_proxy" {
+  name = "${var.global_prefix}-rest-proxy-avalset"
+  location = local.region
+  resource_group_name = azurerm_resource_group.azure_resource_group.name
+  platform_fault_domain_count = 2
+  platform_update_domain_count = 2
+  managed = true
+}
+
 resource "azurerm_virtual_machine" "rest_proxy" {
   count = var.instance_count["rest_proxy"]
   depends_on = [azurerm_storage_blob.rest_proxy_bootstrap]
   name = "${var.global_prefix}-rest-proxy-${count.index}"
   location = local.region
+  availability_set_id = azurerm_availability_set.rest_proxy.id
   resource_group_name = azurerm_resource_group.azure_resource_group.name
   network_interface_ids = [azurerm_network_interface.rest_proxy[count.index].id]
   vm_size = "Standard_DS4_v2"
@@ -67,7 +77,7 @@ resource "azurerm_virtual_machine" "rest_proxy" {
     version = "latest"
   }
   storage_os_disk {
-    name = "${var.global_prefix}-rest-proxy"
+    name = "${var.global_prefix}-rest-proxy-${count.index}"
     caching = "ReadWrite"
     create_option = "FromImage"
     managed_disk_type = "Standard_LRS"
@@ -118,11 +128,21 @@ resource "azurerm_network_interface" "ksql_server" {
   }
 }
 
+resource "azurerm_availability_set" "ksql_server" {
+  name = "${var.global_prefix}-ksql-server-avalset"
+  location = local.region
+  resource_group_name = azurerm_resource_group.azure_resource_group.name
+  platform_fault_domain_count = 2
+  platform_update_domain_count = 2
+  managed = true
+}
+
 resource "azurerm_virtual_machine" "ksql_server" {
   count = var.instance_count["ksql_server"]
   depends_on = [azurerm_storage_blob.ksql_server_bootstrap]
   name = "${var.global_prefix}-ksql-server-${count.index}"
   location = local.region
+  availability_set_id = azurerm_availability_set.ksql_server.id
   resource_group_name = azurerm_resource_group.azure_resource_group.name
   network_interface_ids = [azurerm_network_interface.ksql_server[count.index].id]
   vm_size = "Standard_DS4_v2"
@@ -133,7 +153,7 @@ resource "azurerm_virtual_machine" "ksql_server" {
     version = "latest"
   }
   storage_os_disk {
-    name = "${var.global_prefix}-ksql-server"
+    name = "${var.global_prefix}-ksql-server-${count.index}"
     caching = "ReadWrite"
     create_option = "FromImage"
     managed_disk_type = "Standard_LRS"
@@ -281,13 +301,13 @@ resource "azurerm_virtual_machine" "bastion_server" {
     version = "latest"
   }
   storage_os_disk {
-    name = "${var.global_prefix}-bastion-server-disk"
+    name = "${var.global_prefix}-bastion-server-${count.index}"
     caching = "ReadWrite"
     create_option = "FromImage"
     managed_disk_type = "Standard_LRS"
   }
   os_profile {
-    computer_name = "bastion-server"
+    computer_name = "bastion-server-${count.index}"
     admin_username = "azure"
     admin_password = "$enhA19001"
   }
