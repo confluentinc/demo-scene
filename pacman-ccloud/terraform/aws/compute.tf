@@ -181,12 +181,12 @@ resource "aws_alb_target_group_attachment" "ksql_server_attachment" {
 resource "aws_alb" "ksql_server" {
   depends_on = [aws_instance.ksql_server]
   count = var.instance_count["ksql_server"] >= 1 ? 1 : 0
-  name = "${var.global_prefix}-ksql-server"
+  name = "pacman${random_string.random_string.result}-ksql"
   subnets = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
   security_groups = [aws_security_group.load_balancer.id]
   internal = false
   tags = {
-    Name = "${var.global_prefix}-ksql-server"
+    Name = "pacman${random_string.random_string.result}-ksql"
   }
 }
 

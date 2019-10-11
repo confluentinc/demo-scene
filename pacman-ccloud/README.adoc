@@ -95,8 +95,8 @@ terraform apply -auto-approve
 ----
 Outputs:
 
-KSQL_Server = http://pacman-ccloud-ksql-server-00000.region.elb.amazonaws.com
-Pacman = http://pacman-ccloud-000000000000000.s3-website-region.amazonaws.com
+KSQL_Server = http://pacman00000-ksql-000000.region.elb.amazonaws.com
+Pacman = http://pacman000000000000000.s3-website-region.amazonaws.com
 ----
 
 *Note:* When you are done with the application, you can automatically destroy all the resources created by Terraform using the command below:
