@@ -1,11 +1,11 @@
 #!/bin/bash
 
-cat > /home/ec2-user/cert.pem <<- "EOF"
+cat > /home/${user}/cert.pem <<- "EOF"
 ${private_key_pem}
 EOF
 
-chmod 600 /home/ec2-user/cert.pem
-chown ec2-user:ec2-user /home/ec2-user/cert.pem
+chmod 600 /home/${user}/cert.pem
+chown ${user}:${user} /home/${user}/cert.pem
 
 cat > /etc/hosts <<- "EOF"
 ${rest_proxy_addresses} rest-proxy

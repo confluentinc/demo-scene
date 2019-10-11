@@ -2,24 +2,33 @@
 ################## HTML ###################
 ###########################################
 
-resource "aws_s3_bucket_object" "index" {
-  bucket = aws_s3_bucket.pacman.bucket
-  key = "index.html"
+resource "azurerm_storage_blob" "index" {
+  depends_on = ["module.staticweb"]
+  name = "index.html"
   content_type = "text/html"
+  storage_account_name = azurerm_storage_account.pacman.name
+  storage_container_name = "$web"
+  type = "Block"
   source = "../../pacman/index.html"
 }
 
-resource "aws_s3_bucket_object" "error" {
-  bucket = aws_s3_bucket.pacman.bucket
-  key = "error.html"
+resource "azurerm_storage_blob" "error" {
+  depends_on = ["module.staticweb"]
+  name = "error.html"
   content_type = "text/html"
+  storage_account_name = azurerm_storage_account.pacman.name
+  storage_container_name = "$web"
+  type = "Block"
   source = "../../pacman/error.html"
 }
 
-resource "aws_s3_bucket_object" "start" {
-  bucket = aws_s3_bucket.pacman.bucket
-  key = "start.html"
+resource "azurerm_storage_blob" "start" {
+  depends_on = ["module.staticweb"]
+  name = "start.html"
   content_type = "text/html"
+  storage_account_name = azurerm_storage_account.pacman.name
+  storage_container_name = "$web"
+  type = "Block"
   source = "../../pacman/start.html"
 }
 
@@ -36,11 +45,14 @@ variable "css_files" {
   ]
 }
 
-resource "aws_s3_bucket_object" "css_files" {
+resource "azurerm_storage_blob" "css_files" {
+  depends_on = ["module.staticweb"]
   count = length(var.css_files)
-  bucket = aws_s3_bucket.pacman.bucket
-  key = "${var.css_files[count.index]}"
+  name = var.css_files[count.index]
+  storage_account_name = azurerm_storage_account.pacman.name
+  storage_container_name = "$web"
   content_type = "text/css"
+  type = "Block"
   source = "../../pacman/${var.css_files[count.index]}"
 }
 
@@ -66,11 +78,14 @@ variable "img_files" {
   ]
 }
 
-resource "aws_s3_bucket_object" "img_files" {
+resource "azurerm_storage_blob" "img_files" {
+  depends_on = ["module.staticweb"]
   count = length(var.img_files)
-  bucket = aws_s3_bucket.pacman.bucket
-  key = "${var.img_files[count.index]}"
+  name = var.img_files[count.index]
+  storage_account_name = azurerm_storage_account.pacman.name
+  storage_container_name = "$web"
   content_type = "images/png"
+  type = "Block"
   source = "../../pacman/${var.img_files[count.index]}"
 }
 
@@ -96,26 +111,32 @@ variable "js_files" {
   ]
 }
 
-resource "aws_s3_bucket_object" "js_files" {
+resource "azurerm_storage_blob" "js_files" {
+  depends_on = ["module.staticweb"]
   count = length(var.js_files)
-  bucket = aws_s3_bucket.pacman.bucket
-  key = "${var.js_files[count.index]}"
+  name = var.js_files[count.index]
+  storage_account_name = azurerm_storage_account.pacman.name
+  storage_container_name = "$web"
   content_type = "text/javascript"
+  type = "Block"
   source = "../../pacman/${var.js_files[count.index]}"
 }
 
 data "template_file" "game_js" {
   template = file("../../pacman/game/js/game.js")
   vars = {
-    rest_proxy_endpoint = join(",", formatlist("http://%s", aws_alb.rest_proxy.*.dns_name))
+    rest_proxy_endpoint = "http://${azurerm_public_ip.rest_proxy[0].fqdn}"
   }
 }
 
-resource "aws_s3_bucket_object" "game_js" {
-  bucket = aws_s3_bucket.pacman.bucket
-  key = "game/js/game.js"
+resource "azurerm_storage_blob" "game_js" {
+  depends_on = ["module.staticweb"]
+  name = "game/js/game.js"
+  storage_account_name = azurerm_storage_account.pacman.name
+  storage_container_name = "$web"
   content_type = "text/javascript"
-  content = data.template_file.game_js.rendered
+  type = "Block"
+  source_content = data.template_file.game_js.rendered
 }
 
 ###########################################
@@ -138,10 +159,13 @@ variable "snd_files" {
   ]
 }
 
-resource "aws_s3_bucket_object" "snd_files" {
+resource "azurerm_storage_blob" "snd_files" {
+  depends_on = ["module.staticweb"]
   count = length(var.snd_files)
-  bucket = aws_s3_bucket.pacman.bucket
-  key = "${var.snd_files[count.index]}"
+  name = var.snd_files[count.index]
+  storage_account_name = azurerm_storage_account.pacman.name
+  storage_container_name = "$web"
   content_type = "audio/mpeg"
+  type = "Block"
   source = "../../pacman/${var.snd_files[count.index]}"
 }

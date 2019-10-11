@@ -1,82 +1,48 @@
 ###########################################
-################# Bucket ##################
-###########################################
-
-resource "random_string" "random_string" {
-  length  = 8
-  special = false
-  upper = false
-  lower = true
-  number = false
-}
-
-data "template_file" "bucket_name" {
-  template = "pacman-ccloud-${random_string.random_string.result}"
-}
-
-resource "google_storage_bucket" "pacman" {
-  depends_on = ["google_compute_global_address.rest_proxy"]
-  name = data.template_file.bucket_name.rendered
-  location = "us"
-  project = var.gcp_project
-  storage_class = "MULTI_REGIONAL"
-  website {
-      main_page_suffix = "index.html"
-      not_found_page = "error.html"
-  }
-}
-
-resource "google_storage_default_object_acl" "default_obj_acl" {
-  depends_on = ["google_storage_bucket.pacman"]
-  bucket = "${google_storage_bucket.pacman.name}"
-  role_entity = ["READER:AllUsers"]
-}
-
-###########################################
 ################## HTML ###################
 ###########################################
 
 resource "google_storage_bucket_object" "index" {
   depends_on = ["google_storage_bucket.pacman"]
-  bucket = data.template_file.bucket_name.rendered
-  name   = "index.html"
+  bucket = data.template_file.storage_bucket_pacman.rendered
+  name = "index.html"
   content_type = "text/html"
   source = "../../pacman/index.html"
 }
 
 resource "google_storage_object_acl" "index" {
   depends_on = ["google_storage_bucket_object.index"]
-  bucket = data.template_file.bucket_name.rendered
+  bucket = data.template_file.storage_bucket_pacman.rendered
   object = "${google_storage_bucket_object.index.output_name}"
   role_entity = ["READER:allUsers"]
 }
 
 resource "google_storage_bucket_object" "error" {
   depends_on = ["google_storage_bucket.pacman"]
-  bucket = data.template_file.bucket_name.rendered
-  name   = "error.html"
+  bucket = data.template_file.storage_bucket_pacman.rendered
+  name = "error.html"
   content_type = "text/html"
   source = "../../pacman/error.html"
 }
 
 resource "google_storage_object_acl" "error" {
   depends_on = ["google_storage_bucket_object.error"]
-  bucket = data.template_file.bucket_name.rendered
+  bucket = data.template_file.storage_bucket_pacman.rendered
   object = "${google_storage_bucket_object.error.output_name}"
   role_entity = ["READER:allUsers"]
 }
 
 resource "google_storage_bucket_object" "start" {
   depends_on = ["google_storage_bucket.pacman"]
-  bucket = data.template_file.bucket_name.rendered
-  name   = "start.html"
+  bucket = data.template_file.storage_bucket_pacman.rendered
+  name = "start.html"
   content_type = "text/html"
   source = "../../pacman/start.html"
 }
 
 resource "google_storage_object_acl" "start" {
   depends_on = ["google_storage_bucket_object.start"]
-  bucket = data.template_file.bucket_name.rendered
+  bucket = data.template_file.storage_bucket_pacman.rendered
   object = "${google_storage_bucket_object.start.output_name}"
   role_entity = ["READER:allUsers"]
 }
@@ -97,7 +63,7 @@ variable "css_files" {
 resource "google_storage_bucket_object" "css_files" {
   depends_on = ["google_storage_bucket.pacman"]
   count = length(var.css_files)
-  bucket = data.template_file.bucket_name.rendered
+  bucket = data.template_file.storage_bucket_pacman.rendered
   name = "${var.css_files[count.index]}"
   content_type = "text/css"
   source = "../../pacman/${var.css_files[count.index]}"
@@ -106,7 +72,7 @@ resource "google_storage_bucket_object" "css_files" {
 resource "google_storage_object_acl" "css_files" {
   depends_on = ["google_storage_bucket_object.css_files"]
   count = length(var.css_files)
-  bucket = data.template_file.bucket_name.rendered
+  bucket = data.template_file.storage_bucket_pacman.rendered
   object = "${var.css_files[count.index]}"
   role_entity = ["READER:allUsers"]
 }
@@ -136,7 +102,7 @@ variable "img_files" {
 resource "google_storage_bucket_object" "img_files" {
   depends_on = ["google_storage_bucket.pacman"]
   count = length(var.img_files)
-  bucket = data.template_file.bucket_name.rendered
+  bucket = data.template_file.storage_bucket_pacman.rendered
   name = "${var.img_files[count.index]}"
   content_type = "images/png"
   source = "../../pacman/${var.img_files[count.index]}"
@@ -145,7 +111,7 @@ resource "google_storage_bucket_object" "img_files" {
 resource "google_storage_object_acl" "img_files" {
   depends_on = ["google_storage_bucket_object.img_files"]
   count = length(var.img_files)
-  bucket = data.template_file.bucket_name.rendered
+  bucket = data.template_file.storage_bucket_pacman.rendered
   object = "${var.img_files[count.index]}"
   role_entity = ["READER:allUsers"]
 }
@@ -175,7 +141,7 @@ variable "js_files" {
 resource "google_storage_bucket_object" "js_files" {
   depends_on = ["google_storage_bucket.pacman"]
   count = length(var.js_files)
-  bucket = data.template_file.bucket_name.rendered
+  bucket = data.template_file.storage_bucket_pacman.rendered
   name = "${var.js_files[count.index]}"
   content_type = "text/javascript"
   source = "../../pacman/${var.js_files[count.index]}"
@@ -184,7 +150,7 @@ resource "google_storage_bucket_object" "js_files" {
 resource "google_storage_object_acl" "js_files" {
   depends_on = ["google_storage_bucket_object.js_files"]
   count = length(var.js_files)
-  bucket = data.template_file.bucket_name.rendered
+  bucket = data.template_file.storage_bucket_pacman.rendered
   object = "${var.js_files[count.index]}"
   role_entity = ["READER:allUsers"]
 }
@@ -198,7 +164,7 @@ data "template_file" "game_js" {
 
 resource "google_storage_bucket_object" "game_js" {
   depends_on = ["google_storage_bucket_object.js_files"]
-  bucket = data.template_file.bucket_name.rendered
+  bucket = data.template_file.storage_bucket_pacman.rendered
   name = "game/js/game.js"
   content_type = "text/javascript"
   content = data.template_file.game_js.rendered
@@ -206,7 +172,7 @@ resource "google_storage_bucket_object" "game_js" {
 
 resource "google_storage_object_acl" "game_js" {
   depends_on = ["google_storage_bucket_object.game_js"]
-  bucket = data.template_file.bucket_name.rendered
+  bucket = data.template_file.storage_bucket_pacman.rendered
   object = "${google_storage_bucket_object.game_js.output_name}"
   role_entity = ["READER:allUsers"]
 }
@@ -234,7 +200,7 @@ variable "snd_files" {
 resource "google_storage_bucket_object" "snd_files" {
   depends_on = ["google_storage_bucket.pacman"]
   count = length(var.snd_files)
-  bucket = data.template_file.bucket_name.rendered
+  bucket = data.template_file.storage_bucket_pacman.rendered
   name = "${var.snd_files[count.index]}"
   content_type = "audio/mpeg"
   source = "../../pacman/${var.snd_files[count.index]}"
@@ -243,7 +209,7 @@ resource "google_storage_bucket_object" "snd_files" {
 resource "google_storage_object_acl" "snd_files" {
   depends_on = ["google_storage_bucket_object.snd_files"]
   count = length(var.snd_files)
-  bucket = data.template_file.bucket_name.rendered
+  bucket = data.template_file.storage_bucket_pacman.rendered
   object = "${var.snd_files[count.index]}"
   role_entity = ["READER:allUsers"]
 }
@@ -257,24 +223,24 @@ resource "google_compute_global_address" "pacman" {
 }
 
 resource "google_compute_global_forwarding_rule" "pacman" {
-  name       = "global-forwarding-rule-${var.global_prefix}"
-  target     = google_compute_target_http_proxy.pacman.self_link
+  name = "${var.global_prefix}-global-forwarding-rule"
+  target = google_compute_target_http_proxy.pacman.self_link
   ip_address = google_compute_global_address.pacman.self_link
   port_range = "80"
 }
 
 resource "google_compute_target_http_proxy" "pacman" {
-  name    = "http-proxy-${var.global_prefix}"
+  name = "${var.global_prefix}-http-proxy"
   url_map = google_compute_url_map.pacman.self_link
 }
 
 resource "google_compute_url_map" "pacman" {
-  name            = "url-map-${var.global_prefix}"
+  name = "${var.global_prefix}-url-map"
   default_service = google_compute_backend_bucket.pacman.self_link
 }
 
 resource "google_compute_backend_bucket" "pacman" {
-  name        = "backend-bucket-${var.global_prefix}"
+  name = "${var.global_prefix}-backend-bucket"
   bucket_name = "${google_storage_bucket.pacman.name}"
-  enable_cdn  = true
+  enable_cdn = true
 }

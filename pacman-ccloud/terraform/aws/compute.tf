@@ -4,25 +4,25 @@
 
 resource "tls_private_key" "key_pair" {
   algorithm = "RSA"
-  rsa_bits  = 4096
+  rsa_bits = 4096
 }
 
 resource "aws_key_pair" "generated_key" {
-  key_name   = var.global_prefix
+  key_name = var.global_prefix
   public_key = tls_private_key.key_pair.public_key_openssh
 }
 
 resource "local_file" "private_key" {
-  content  = tls_private_key.key_pair.private_key_pem
+  content = tls_private_key.key_pair.private_key_pem
   filename = "cert.pem"
 }
 
 resource "null_resource" "private_key_permissions" {
   depends_on = [local_file.private_key]
   provisioner "local-exec" {
-    command     = "chmod 600 cert.pem"
+    command = "chmod 600 cert.pem"
     interpreter = ["bash", "-c"]
-    on_failure  = continue
+    on_failure = continue
   }
 }
 
@@ -35,11 +35,11 @@ resource "aws_instance" "rest_proxy" {
     aws_subnet.private_subnet,
     aws_nat_gateway.default,
   ]
-  count         = var.instance_count["rest_proxy"]
-  ami           = data.aws_ami.amazon_linux_2.id
+  count = var.instance_count["rest_proxy"]
+  ami = data.aws_ami.amazon_linux_2.id
   instance_type = "t3.2xlarge"
-  key_name      = aws_key_pair.generated_key.key_name
-  subnet_id              = element(aws_subnet.private_subnet.*.id, count.index)
+  key_name = aws_key_pair.generated_key.key_name
+  subnet_id = element(aws_subnet.private_subnet.*.id, count.index)
   vpc_security_group_ids = [aws_security_group.rest_proxy[0].id]
   user_data = data.template_file.rest_proxy_bootstrap.rendered
   root_block_device {
@@ -60,11 +60,11 @@ resource "aws_instance" "ksql_server" {
     aws_subnet.private_subnet,
     aws_nat_gateway.default,
   ]
-  count         = var.instance_count["ksql_server"]
-  ami           = data.aws_ami.amazon_linux_2.id
+  count = var.instance_count["ksql_server"]
+  ami = data.aws_ami.amazon_linux_2.id
   instance_type = "t3.2xlarge"
-  key_name      = aws_key_pair.generated_key.key_name
-  subnet_id              = element(aws_subnet.private_subnet.*.id, count.index)
+  key_name = aws_key_pair.generated_key.key_name
+  subnet_id = element(aws_subnet.private_subnet.*.id, count.index)
   vpc_security_group_ids = [aws_security_group.ksql_server[0].id]
   user_data = data.template_file.ksql_server_bootstrap.rendered
   root_block_device {
@@ -86,10 +86,10 @@ resource "aws_instance" "bastion_server" {
     aws_instance.ksql_server
   ]
   count = var.instance_count["bastion_server"] >= 1 ? 1 : 0
-  ami           = data.aws_ami.amazon_linux_2.id
+  ami = data.aws_ami.amazon_linux_2.id
   instance_type = "t2.micro"
-  key_name      = aws_key_pair.generated_key.key_name
-  subnet_id              = aws_subnet.bastion_server[0].id
+  key_name = aws_key_pair.generated_key.key_name
+  subnet_id = aws_subnet.bastion_server[0].id
   vpc_security_group_ids = [aws_security_group.bastion_server[0].id]
   user_data = data.template_file.bastion_server_bootstrap.rendered
   root_block_device {
@@ -107,34 +107,34 @@ resource "aws_instance" "bastion_server" {
 
 resource "aws_alb_target_group" "rest_proxy_target_group" {
   count = var.instance_count["rest_proxy"] >= 1 ? 1 : 0
-  name     = "${var.global_prefix}-rp-target-group"
-  port     = "8082"
+  name = "${var.global_prefix}-rp-target-group"
+  port = "8082"
   protocol = "HTTP"
-  vpc_id   = aws_vpc.default.id
+  vpc_id = aws_vpc.default.id
   health_check {
-    healthy_threshold   = 3
+    healthy_threshold = 3
     unhealthy_threshold = 3
-    timeout             = 3
-    interval            = 5
-    path                = "/"
-    port                = "8082"
+    timeout = 3
+    interval = 5
+    path = "/"
+    port = "8082"
   }
 }
 
 resource "aws_alb_target_group_attachment" "rest_proxy_attachment" {
   count = var.instance_count["rest_proxy"] >= 1 ? var.instance_count["rest_proxy"] : 0
   target_group_arn = aws_alb_target_group.rest_proxy_target_group[0].arn
-  target_id        = element(aws_instance.rest_proxy.*.id, count.index)
-  port             = 8082
+  target_id = element(aws_instance.rest_proxy.*.id, count.index)
+  port = 8082
 }
 
 resource "aws_alb" "rest_proxy" {
   depends_on = [aws_instance.rest_proxy]
-  count      = var.instance_count["rest_proxy"] >= 1 ? 1 : 0
-  name            = "${var.global_prefix}-rest-proxy"
-  subnets         = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
+  count = var.instance_count["rest_proxy"] >= 1 ? 1 : 0
+  name = "${var.global_prefix}-rest-proxy"
+  subnets = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
   security_groups = [aws_security_group.load_balancer.id]
-  internal        = false
+  internal = false
   tags = {
     Name = "${var.global_prefix}-rest-proxy"
   }
@@ -143,11 +143,11 @@ resource "aws_alb" "rest_proxy" {
 resource "aws_alb_listener" "rest_proxy_listener" {
   count = var.instance_count["rest_proxy"] >= 1 ? 1 : 0
   load_balancer_arn = aws_alb.rest_proxy[0].arn
-  protocol          = "HTTP"
-  port              = "80"
+  protocol = "HTTP"
+  port = "80"
   default_action {
     target_group_arn = aws_alb_target_group.rest_proxy_target_group[0].arn
-    type             = "forward"
+    type = "forward"
   }
 }
 
@@ -157,46 +157,46 @@ resource "aws_alb_listener" "rest_proxy_listener" {
 
 resource "aws_alb_target_group" "ksql_server_target_group" {
   count = var.instance_count["ksql_server"] >= 1 ? 1 : 0
-  name     = "${var.global_prefix}-ks-target-group"
-  port     = "8088"
+  name = "${var.global_prefix}-ks-target-group"
+  port = "8088"
   protocol = "HTTP"
-  vpc_id   = aws_vpc.default.id
+  vpc_id = aws_vpc.default.id
   health_check {
-    healthy_threshold   = 3
+    healthy_threshold = 3
     unhealthy_threshold = 3
-    timeout             = 3
-    interval            = 5
-    path                = "/info"
-    port                = "8088"
+    timeout = 3
+    interval = 5
+    path = "/info"
+    port = "8088"
   }
 }
 
 resource "aws_alb_target_group_attachment" "ksql_server_attachment" {
   count = var.instance_count["ksql_server"] >= 1 ? var.instance_count["ksql_server"] : 0
   target_group_arn = aws_alb_target_group.ksql_server_target_group[0].arn
-  target_id        = element(aws_instance.ksql_server.*.id, count.index)
-  port             = 8088
+  target_id = element(aws_instance.ksql_server.*.id, count.index)
+  port = 8088
 }
 
 resource "aws_alb" "ksql_server" {
   depends_on = [aws_instance.ksql_server]
-  count      = var.instance_count["ksql_server"] >= 1 ? 1 : 0
-  name            = "${var.global_prefix}-ksql-server"
-  subnets         = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
+  count = var.instance_count["ksql_server"] >= 1 ? 1 : 0
+  name = "pacman${random_string.random_string.result}-ksql"
+  subnets = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
   security_groups = [aws_security_group.load_balancer.id]
-  internal        = false
+  internal = false
   tags = {
-    Name = "${var.global_prefix}-ksql-server"
+    Name = "pacman${random_string.random_string.result}-ksql"
   }
 }
 
 resource "aws_alb_listener" "ksql_server_listener" {
   count = var.instance_count["ksql_server"] >= 1 ? 1 : 0
   load_balancer_arn = aws_alb.ksql_server[0].arn
-  protocol          = "HTTP"
-  port              = "80"
+  protocol = "HTTP"
+  port = "80"
   default_action {
     target_group_arn = aws_alb_target_group.ksql_server_target_group[0].arn
-    type             = "forward"
+    type = "forward"
   }
 }
