@@ -39,19 +39,6 @@ resource "azurerm_storage_blob" "ksql_server_bootstrap" {
 ############## REST Proxy #################
 ###########################################
 
-resource "azurerm_network_interface" "rest_proxy" {
-  count = var.instance_count["rest_proxy"]
-  name = "${var.global_prefix}-rest-proxy-${count.index}-nic"
-  location = local.region
-  resource_group_name = azurerm_resource_group.azure_resource_group.name
-  ip_configuration {
-    name = "${var.global_prefix}-rest-proxy-ip-config"
-    subnet_id = azurerm_subnet.private_subnet.id
-    private_ip_address_allocation = "dynamic"
-    load_balancer_backend_address_pools_ids = [azurerm_lb_backend_address_pool.rest_proxy.id]
-  }
-}
-
 resource "azurerm_availability_set" "rest_proxy" {
   name = "${var.global_prefix}-rest-proxy-avalset"
   location = local.region
@@ -59,6 +46,20 @@ resource "azurerm_availability_set" "rest_proxy" {
   platform_fault_domain_count = 2
   platform_update_domain_count = 2
   managed = true
+}
+
+resource "azurerm_network_interface" "rest_proxy" {
+  count = var.instance_count["rest_proxy"]
+  name = "${var.global_prefix}-rest-proxy-${count.index}-nic"
+  location = local.region
+  enable_accelerated_networking = true
+  resource_group_name = azurerm_resource_group.azure_resource_group.name
+  ip_configuration {
+    name = "${var.global_prefix}-rest-proxy-ip-config"
+    subnet_id = azurerm_subnet.private_subnet.id
+    private_ip_address_allocation = "dynamic"
+    load_balancer_backend_address_pools_ids = [azurerm_lb_backend_address_pool.rest_proxy.id]
+  }
 }
 
 resource "azurerm_virtual_machine" "rest_proxy" {
@@ -115,19 +116,6 @@ SETTINGS
 ############## KSQL Server ################
 ###########################################
 
-resource "azurerm_network_interface" "ksql_server" {
-  count = var.instance_count["ksql_server"]
-  name = "${var.global_prefix}-ksql-server-${count.index}-nic"
-  location = local.region
-  resource_group_name = azurerm_resource_group.azure_resource_group.name
-  ip_configuration {
-    name = "${var.global_prefix}-ksql-server-ip-config"
-    subnet_id = azurerm_subnet.private_subnet.id
-    private_ip_address_allocation = "dynamic"
-    load_balancer_backend_address_pools_ids = [azurerm_lb_backend_address_pool.ksql_server.id]
-  }
-}
-
 resource "azurerm_availability_set" "ksql_server" {
   name = "${var.global_prefix}-ksql-server-avalset"
   location = local.region
@@ -135,6 +123,20 @@ resource "azurerm_availability_set" "ksql_server" {
   platform_fault_domain_count = 2
   platform_update_domain_count = 2
   managed = true
+}
+
+resource "azurerm_network_interface" "ksql_server" {
+  count = var.instance_count["ksql_server"]
+  name = "${var.global_prefix}-ksql-server-${count.index}-nic"
+  location = local.region
+  enable_accelerated_networking = true
+  resource_group_name = azurerm_resource_group.azure_resource_group.name
+  ip_configuration {
+    name = "${var.global_prefix}-ksql-server-ip-config"
+    subnet_id = azurerm_subnet.private_subnet.id
+    private_ip_address_allocation = "dynamic"
+    load_balancer_backend_address_pools_ids = [azurerm_lb_backend_address_pool.ksql_server.id]
+  }
 }
 
 resource "azurerm_virtual_machine" "ksql_server" {
@@ -277,6 +279,7 @@ resource "azurerm_network_interface" "bastion_server" {
   count = var.instance_count["bastion_server"] >= 1 ? 1 : 0
   name = "${var.global_prefix}-bastion-server-nic"
   location = local.region
+  enable_accelerated_networking = true
   resource_group_name = azurerm_resource_group.azure_resource_group.name
   ip_configuration {
     name = "${var.global_prefix}-bastion-server-ip-config"

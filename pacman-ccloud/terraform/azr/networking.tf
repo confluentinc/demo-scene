@@ -56,45 +56,26 @@ resource "azurerm_public_ip" "bastion_server" {
 ###########################################
 
 resource "azurerm_network_security_group" "private_subnet" {
-  name = "${var.global_prefix}-private-subnet"
+  name = "${var.global_prefix}-security-group"
   location = local.region
   resource_group_name = azurerm_resource_group.azure_resource_group.name
-  security_rule {
-    name                       = "inbound-bastion-server"
-    priority                   = 1001
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "22"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-  security_rule {
-    name                       = "inbound-rest-proxy"
-    priority                   = 1002
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "8082"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-  security_rule {
-    name                       = "inbound-ksql-server"
-    priority                   = 1003
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "8088"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
 }
 
 resource "azurerm_subnet_network_security_group_association" "private_subnet" {
   subnet_id = azurerm_subnet.private_subnet.id
   network_security_group_id = azurerm_network_security_group.private_subnet.id
+}
+
+resource "azurerm_network_security_rule" "bastion_server" {
+  name = "bastion-server"
+  priority = 100
+  direction = "Inbound"
+  access = "Allow"
+  protocol = "Tcp"
+  source_port_range = "*"
+  destination_port_range= "22"
+  destination_address_prefix = "*"
+  source_address_prefix = "*"
+  resource_group_name = azurerm_resource_group.azure_resource_group.name
+  network_security_group_name = azurerm_network_security_group.private_subnet.name
 }
