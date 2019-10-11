@@ -5,7 +5,7 @@
 provider "aws" {
   access_key = var.aws_access_key
   secret_key = var.aws_secret_key
-  region     = local.region
+  region = local.region
 }
 
 data "aws_availability_zones" "available" {
@@ -14,19 +14,19 @@ data "aws_availability_zones" "available" {
 
 data "aws_ami" "amazon_linux_2" {
  most_recent = true
- owners      = ["amazon"]
+ owners = ["amazon"]
  filter {
-   name   = "owner-alias"
+   name = "owner-alias"
    values = ["amazon"]
  }
  filter {
-   name   = "name"
+   name = "name"
    values = ["amzn2-ami-hvm*"]
  }
 }
 
 resource "random_string" "random_string" {
-  length  = 8
+  length = 8
   special = false
   upper = false
   lower = true
@@ -39,7 +39,7 @@ data "template_file" "bucket_pacman" {
 
 resource "aws_s3_bucket" "pacman" {
   bucket = data.template_file.bucket_pacman.rendered
-  acl    = "public-read"
+  acl = "public-read"
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "POST"]
