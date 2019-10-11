@@ -5,7 +5,7 @@
 resource "google_storage_bucket_object" "index" {
   depends_on = ["google_storage_bucket.pacman"]
   bucket = data.template_file.storage_bucket_pacman.rendered
-  name   = "index.html"
+  name = "index.html"
   content_type = "text/html"
   source = "../../pacman/index.html"
 }
@@ -20,7 +20,7 @@ resource "google_storage_object_acl" "index" {
 resource "google_storage_bucket_object" "error" {
   depends_on = ["google_storage_bucket.pacman"]
   bucket = data.template_file.storage_bucket_pacman.rendered
-  name   = "error.html"
+  name = "error.html"
   content_type = "text/html"
   source = "../../pacman/error.html"
 }
@@ -35,7 +35,7 @@ resource "google_storage_object_acl" "error" {
 resource "google_storage_bucket_object" "start" {
   depends_on = ["google_storage_bucket.pacman"]
   bucket = data.template_file.storage_bucket_pacman.rendered
-  name   = "start.html"
+  name = "start.html"
   content_type = "text/html"
   source = "../../pacman/start.html"
 }
@@ -223,24 +223,24 @@ resource "google_compute_global_address" "pacman" {
 }
 
 resource "google_compute_global_forwarding_rule" "pacman" {
-  name       = "global-forwarding-rule-${var.global_prefix}"
-  target     = google_compute_target_http_proxy.pacman.self_link
+  name = "${var.global_prefix}-global-forwarding-rule"
+  target = google_compute_target_http_proxy.pacman.self_link
   ip_address = google_compute_global_address.pacman.self_link
   port_range = "80"
 }
 
 resource "google_compute_target_http_proxy" "pacman" {
-  name    = "http-proxy-${var.global_prefix}"
+  name = "${var.global_prefix}-http-proxy"
   url_map = google_compute_url_map.pacman.self_link
 }
 
 resource "google_compute_url_map" "pacman" {
-  name            = "url-map-${var.global_prefix}"
+  name = "${var.global_prefix}-url-map"
   default_service = google_compute_backend_bucket.pacman.self_link
 }
 
 resource "google_compute_backend_bucket" "pacman" {
-  name        = "backend-bucket-${var.global_prefix}"
+  name = "${var.global_prefix}-backend-bucket"
   bucket_name = "${google_storage_bucket.pacman.name}"
-  enable_cdn  = true
+  enable_cdn = true
 }
