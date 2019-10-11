@@ -1,4 +1,27 @@
 ###########################################
+################ Key Pair #################
+###########################################
+
+resource "tls_private_key" "key_pair" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "local_file" "private_key" {
+  content = tls_private_key.key_pair.private_key_pem
+  filename = "cert.pem"
+}
+
+resource "null_resource" "private_key_permissions" {
+  depends_on = [local_file.private_key]
+  provisioner "local-exec" {
+    command = "chmod 600 cert.pem"
+    interpreter = ["bash", "-c"]
+    on_failure = continue
+  }
+}
+
+###########################################
 ################ Bootstrap ################
 ###########################################
 
@@ -40,6 +63,7 @@ resource "azurerm_storage_blob" "ksql_server_bootstrap" {
 ###########################################
 
 resource "azurerm_availability_set" "rest_proxy" {
+  count = var.instance_count["rest_proxy"] >= 1 ? 1 : 0
   name = "${var.global_prefix}-rest-proxy-avalset"
   location = local.region
   resource_group_name = azurerm_resource_group.azure_resource_group.name
@@ -52,7 +76,6 @@ resource "azurerm_network_interface" "rest_proxy" {
   count = var.instance_count["rest_proxy"]
   name = "${var.global_prefix}-rest-proxy-${count.index}-nic"
   location = local.region
-  enable_accelerated_networking = true
   resource_group_name = azurerm_resource_group.azure_resource_group.name
   ip_configuration {
     name = "${var.global_prefix}-rest-proxy-ip-config"
@@ -67,7 +90,7 @@ resource "azurerm_virtual_machine" "rest_proxy" {
   depends_on = [azurerm_storage_blob.rest_proxy_bootstrap]
   name = "${var.global_prefix}-rest-proxy-${count.index}"
   location = local.region
-  availability_set_id = azurerm_availability_set.rest_proxy.id
+  availability_set_id = azurerm_availability_set.rest_proxy[0].id
   resource_group_name = azurerm_resource_group.azure_resource_group.name
   network_interface_ids = [azurerm_network_interface.rest_proxy[count.index].id]
   vm_size = "Standard_DS4_v2"
@@ -87,10 +110,14 @@ resource "azurerm_virtual_machine" "rest_proxy" {
   os_profile {
     computer_name  = "rest-proxy-${count.index}"
     admin_username = "azure"
-    admin_password = "$enhA19001"
+    admin_password = "welcome1"
   }
   os_profile_linux_config {
-    disable_password_authentication = false
+    disable_password_authentication = true
+    ssh_keys {
+      path = "/home/azure/.ssh/authorized_keys"
+      key_data = tls_private_key.key_pair.public_key_openssh
+    }
   }
 }
 
@@ -117,6 +144,7 @@ SETTINGS
 ###########################################
 
 resource "azurerm_availability_set" "ksql_server" {
+  count = var.instance_count["ksql_server"] >= 1 ? 1 : 0
   name = "${var.global_prefix}-ksql-server-avalset"
   location = local.region
   resource_group_name = azurerm_resource_group.azure_resource_group.name
@@ -129,7 +157,6 @@ resource "azurerm_network_interface" "ksql_server" {
   count = var.instance_count["ksql_server"]
   name = "${var.global_prefix}-ksql-server-${count.index}-nic"
   location = local.region
-  enable_accelerated_networking = true
   resource_group_name = azurerm_resource_group.azure_resource_group.name
   ip_configuration {
     name = "${var.global_prefix}-ksql-server-ip-config"
@@ -144,7 +171,7 @@ resource "azurerm_virtual_machine" "ksql_server" {
   depends_on = [azurerm_storage_blob.ksql_server_bootstrap]
   name = "${var.global_prefix}-ksql-server-${count.index}"
   location = local.region
-  availability_set_id = azurerm_availability_set.ksql_server.id
+  availability_set_id = azurerm_availability_set.ksql_server[0].id
   resource_group_name = azurerm_resource_group.azure_resource_group.name
   network_interface_ids = [azurerm_network_interface.ksql_server[count.index].id]
   vm_size = "Standard_DS4_v2"
@@ -164,10 +191,14 @@ resource "azurerm_virtual_machine" "ksql_server" {
   os_profile {
     computer_name  = "ksql-server-${count.index}"
     admin_username = "azure"
-    admin_password = "$enhA19001"
+    admin_password = "welcome1"
   }
   os_profile_linux_config {
-    disable_password_authentication = false
+    disable_password_authentication = true
+    ssh_keys {
+      path = "/home/azure/.ssh/authorized_keys"
+      key_data = tls_private_key.key_pair.public_key_openssh
+    }
   }
 }
 
@@ -199,7 +230,7 @@ resource "azurerm_lb" "rest_proxy" {
   resource_group_name = azurerm_resource_group.azure_resource_group.name
   frontend_ip_configuration {
     name = "${var.global_prefix}-rest-proxy"
-    public_ip_address_id = azurerm_public_ip.rest_proxy.id
+    public_ip_address_id = azurerm_public_ip.rest_proxy[0].id
   }
 }
 
@@ -240,7 +271,7 @@ resource "azurerm_lb" "ksql_server" {
   resource_group_name = azurerm_resource_group.azure_resource_group.name
   frontend_ip_configuration {
     name = "${var.global_prefix}-ksql-server"
-    public_ip_address_id = azurerm_public_ip.ksql_server.id
+    public_ip_address_id = azurerm_public_ip.ksql_server[0].id
   }
 }
 
@@ -279,13 +310,13 @@ resource "azurerm_network_interface" "bastion_server" {
   count = var.instance_count["bastion_server"] >= 1 ? 1 : 0
   name = "${var.global_prefix}-bastion-server-nic"
   location = local.region
-  enable_accelerated_networking = true
+  network_security_group_id = azurerm_network_security_group.bastion-server.id
   resource_group_name = azurerm_resource_group.azure_resource_group.name
   ip_configuration {
     name = "${var.global_prefix}-bastion-server-ip-config"
     subnet_id = azurerm_subnet.private_subnet.id
     private_ip_address_allocation = "dynamic"
-    public_ip_address_id = azurerm_public_ip.bastion_server.id
+    public_ip_address_id = azurerm_public_ip.bastion_server[0].id
   }
 }
 
@@ -312,10 +343,14 @@ resource "azurerm_virtual_machine" "bastion_server" {
   os_profile {
     computer_name = "bastion-server-${count.index}"
     admin_username = "azure"
-    admin_password = "$enhA19001"
+    admin_password = "welcome1"
   }
   os_profile_linux_config {
-    disable_password_authentication = false
+    disable_password_authentication = true
+    ssh_keys {
+      path = "/home/azure/.ssh/authorized_keys"
+      key_data = tls_private_key.key_pair.public_key_openssh
+    }
   }
 }
 

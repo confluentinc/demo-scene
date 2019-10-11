@@ -62,6 +62,8 @@ data "template_file" "ksql_server_bootstrap" {
 data "template_file" "bastion_server_bootstrap" {
   template = file("../util/bastion-server.sh")
   vars = {
+    user = "azure"
+    private_key_pem = tls_private_key.key_pair.private_key_pem
     rest_proxy_addresses = join(" ", formatlist("%s", azurerm_network_interface.rest_proxy.*.private_ip_address))
     ksql_server_addresses = join(" ", formatlist("%s", azurerm_network_interface.ksql_server.*.private_ip_address))
   }

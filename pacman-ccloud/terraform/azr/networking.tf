@@ -28,6 +28,7 @@ resource "azurerm_subnet" "private_subnet" {
 ###########################################
 
 resource "azurerm_public_ip" "rest_proxy" {
+  count = var.instance_count["rest_proxy"] >= 1 ? 1 : 0
   name = "${var.global_prefix}-rest-proxy"
   location = local.region
   domain_name_label = "pacman${random_string.random_string.result}-rest"
@@ -36,6 +37,7 @@ resource "azurerm_public_ip" "rest_proxy" {
 }
 
 resource "azurerm_public_ip" "ksql_server" {
+  count = var.instance_count["ksql_server"] >= 1 ? 1 : 0
   name = "${var.global_prefix}-ksql-server"
   location = local.region
   domain_name_label = "pacman${random_string.random_string.result}-ksql"
@@ -44,6 +46,7 @@ resource "azurerm_public_ip" "ksql_server" {
 }
 
 resource "azurerm_public_ip" "bastion_server" {
+  count = var.instance_count["bastion_server"] >= 1 ? 1 : 0
   name = "${var.global_prefix}-bastion-server"
   location = local.region
   domain_name_label = "pacman${random_string.random_string.result}-ssh"
@@ -55,27 +58,19 @@ resource "azurerm_public_ip" "bastion_server" {
 ############# Security Groups #############
 ###########################################
 
-resource "azurerm_network_security_group" "private_subnet" {
-  name = "${var.global_prefix}-security-group"
+resource "azurerm_network_security_group" "bastion-server" {
+  name = "${var.global_prefix}-bastion-server"
   location = local.region
   resource_group_name = azurerm_resource_group.azure_resource_group.name
-}
-
-resource "azurerm_subnet_network_security_group_association" "private_subnet" {
-  subnet_id = azurerm_subnet.private_subnet.id
-  network_security_group_id = azurerm_network_security_group.private_subnet.id
-}
-
-resource "azurerm_network_security_rule" "bastion_server" {
-  name = "bastion-server"
-  priority = 100
-  direction = "Inbound"
-  access = "Allow"
-  protocol = "Tcp"
-  source_port_range = "*"
-  destination_port_range= "22"
-  destination_address_prefix = "*"
-  source_address_prefix = "*"
-  resource_group_name = azurerm_resource_group.azure_resource_group.name
-  network_security_group_name = azurerm_network_security_group.private_subnet.name
+  security_rule {
+    name = "bastion-server"
+    priority = 100
+    direction = "Inbound"
+    access = "Allow"
+    protocol = "Tcp"
+    source_port_range = "*"
+    destination_port_range= "22"
+    destination_address_prefix = "*"
+    source_address_prefix = "*"
+  }
 }

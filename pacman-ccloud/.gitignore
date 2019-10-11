@@ -16,6 +16,7 @@ terraform/gcp/terraform.tfstate
 terraform/gcp/terraform.tfstate.backup
 terraform/gcp/.terraform.tfstate.lock.info
 
+terraform/azr/cert.pem
 terraform/azr/ccloud.auto.tfvars
 terraform/azr/cloud.auto.tfvars
 terraform/azr/.terraform

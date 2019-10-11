@@ -62,6 +62,7 @@ data "template_file" "ksql_server_bootstrap" {
 data "template_file" "bastion_server_bootstrap" {
   template = file("../util/bastion-server.sh")
   vars = {
+    user = "ec2-user"
     private_key_pem = tls_private_key.key_pair.private_key_pem
     rest_proxy_addresses = join(" ", formatlist("%s", aws_instance.rest_proxy.*.private_ip))
     ksql_server_addresses = join(" ", formatlist("%s", aws_instance.ksql_server.*.private_ip))
