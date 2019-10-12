@@ -2,6 +2,22 @@
 ################# Azure ###################
 ###########################################
 
+### To obtain the variables below, you can
+### follow these steps using the Azure CLI:
+
+### 1) az login
+### 2) Copy the 'id' field from the returned JSON
+### 3) export SUBSCRIPTION_ID=<ID_FROM_RETURNED_JSON>
+### 4) az account set --subscription="${SUBSCRIPTION_ID}"
+### 5) az ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/${SUBSCRIPTION_ID}"
+
+### Now set the variables based on both returned JSON
+
+### 'azure_subscription_id' = '<ID_FROM_THE_FIRST_JSON>'
+### 'azure_client_id'       = '<APPID_FROM_SECOND_JSON>'
+### 'azure_client_secret'   = '<PASSWORD_FROM_SECOND_JSON>'
+### 'azure_tenant_id'       = '<TENANT_FROM_SECOND_JSON>'
+
 azure_subscription_id = "<AZURE_SUBSCRIPTION_ID>"
 azure_client_id = "<AZURE_CLIENT_ID>"
 azure_client_secret = "<AZURE_CLIENT_SECRET>"
