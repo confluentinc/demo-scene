@@ -8,7 +8,7 @@ terraform/aws/terraform.tfstate
 terraform/aws/terraform.tfstate.backup
 terraform/aws/.terraform.tfstate.lock.info
 
-terraform/aws/cert.pem
+terraform/gcp/cert.pem
 terraform/gcp/ccloud.auto.tfvars
 terraform/gcp/cloud.auto.tfvars
 terraform/gcp/credentials.json
