@@ -1,0 +1,306 @@
+= ksqlDB : Postgres to Elasticsearch
+Robin Moffatt <robin@confluent.io>
+v0.01, 14 October 2019
+
+In Postgres we have data about customer transactions: 
+
+[source,sql]
+----
+postgres=# select * from demo.transactions limit 5;
+ txn_id | customer_id | amount | currency |    txn_timestamp
+--------+-------------+--------+----------+----------------------
+      1 |           5 | -72.97 | RUB      | 2018-12-12T13:58:37Z
+      2 |           2 |  95.21 | PLN      | 2018-07-30T09:06:21Z
+      3 |           2 |  17.13 | EUR      | 2018-04-30T21:30:39Z
+      4 |           4 |  63.83 | PHP      | 2018-07-30T14:25:32Z
+      5 |           2 |  66.08 | KGS      | 2018-07-13T02:10:10Z
+----
+
+In KSQL, create a connector to ingest these into Kafka: 
+
+[source,sql]
+----
+CREATE SOURCE CONNECTOR source_jdbc_postgres_01 WITH (
+  'connector.class'          = 'io.confluent.connect.jdbc.JdbcSourceConnector',
+  'connection.url'           = 'jdbc:postgresql://postgres:5432/postgres', 
+  'connection.user'          = 'connect_user',
+  'connection.password'      = 'asgard',
+  'topic.prefix'             = 'jdbc_postgres_',
+  'table.whitelist'          = 'demo.transactions',
+  'mode'                     = 'incrementing',
+  'numeric.mapping'          = 'best_fit',
+  'incrementing.column.name' = 'txn_id',
+  'validate.non.null'        = 'false',
+  'key'                      = 'txn_id');
+----
+
+Show connector
+
+[source,sql]
+----
+ksql> SHOW CONNECTORS;
+
+ Connector Name          | Type   | Class
+----------------------------------------------------------------------------------
+ SOURCE_JDBC_POSTGRES_01 | SOURCE | io.confluent.connect.jdbc.JdbcSourceConnector
+----------------------------------------------------------------------------------
+----
+
+Check health of connector
+
+[source,sql]
+----
+ksql> DESCRIBE CONNECTOR SOURCE_JDBC_POSTGRES_01;
+
+Name                 : SOURCE_JDBC_POSTGRES_01
+Class                : io.confluent.connect.jdbc.JdbcSourceConnector
+Type                 : source
+State                : RUNNING
+WorkerId             : kafka-connect:8083
+
+ Task ID | State   | Error Trace
+---------------------------------
+ 0       | RUNNING |
+---------------------------------
+
+ Related Topics
+----------------------------
+ jdbc_postgres_transactions
+----------------------------
+ksql>
+----
+
+Inspect data
+
+[source,sql]
+----
+ksql> PRINT jdbc_postgres_transactions LIMIT 5;
+Format:AVRO
+10/14/19 12:38:33 PM UTC, 1, {"txn_id": 1, "customer_id": 5, "amount": -72.97, "currency": "RUB", "txn_timestamp": "2018-12-12T13:58:37Z"}
+10/14/19 12:38:33 PM UTC, 2, {"txn_id": 2, "customer_id": 2, "amount": 95.21, "currency": "PLN", "txn_timestamp": "2018-07-30T09:06:21Z"}
+10/14/19 12:38:33 PM UTC, 3, {"txn_id": 3, "customer_id": 2, "amount": 17.13, "currency": "EUR", "txn_timestamp": "2018-04-30T21:30:39Z"}
+10/14/19 12:38:33 PM UTC, 4, {"txn_id": 4, "customer_id": 4, "amount": 63.83, "currency": "PHP", "txn_timestamp": "2018-07-30T14:25:32Z"}
+10/14/19 12:38:33 PM UTC, 5, {"txn_id": 5, "customer_id": 2, "amount": 66.08, "currency": "KGS", "txn_timestamp": "2018-07-13T02:10:10Z"}
+ksql>
+----
+
+== Stream straight through to Elasticsearch
+
+[source,sql]
+----
+ CREATE SINK CONNECTOR sink_es_01 WITH (
+  'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+  'key.converter'   = 'org.apache.kafka.connect.storage.StringConverter',
+  'topics'          = 'jdbc_postgres_transactions',
+  'key.ignore'      = 'true',
+  'schema.ignore'   = 'true',
+  'type.name'       = '',
+  'connection.url'  = 'http://elasticsearch:9200');
+----
+
+[source,sql]
+----
+ksql> describe connector SINK_ES_01;
+
+Name                 : SINK_ES_01
+Class                : io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
+Type                 : sink
+State                : RUNNING
+WorkerId             : kafka-connect:8083
+
+ Task ID | State   | Error Trace
+---------------------------------
+ 0       | RUNNING |
+--------------------------------- 
+----
+
+Check data in Elasticsearch
+
+[source,bash]
+----
+$ docker exec -it elasticsearch curl -XGET "http://localhost:9200/_cat/indices?h=idx,docsCount"
+jdbc_postgres_transactions 1000
+
+$ docker exec -it elasticsearch curl -XGET "http://localhost:9200/jdbc_postgres_transactions/_search"|jq '.hits.hits[0]'
+{
+  "_index": "jdbc_postgres_transactions",
+  "_type": "_doc",
+  "_id": "jdbc_postgres_transactions+0+1",
+  "_score": 1,
+  "_source": {
+    "txn_id": 2,
+    "customer_id": 2,
+    "amount": 95.21,
+    "currency": "PLN",
+    "txn_timestamp": "2018-07-30T09:06:21Z"
+  }
+}
+----
+
+== Filter messages
+
+Define the source stream (topic + schema): 
+
+[source,sql]
+----
+CREATE STREAM JDBC_POSTGRES_TRANSACTIONS 
+  WITH (KAFKA_TOPIC='jdbc_postgres_transactions',
+        VALUE_FORMAT='AVRO');
+----
+
+Create a new stream with a predicate:
+
+[source,sql]
+----
+ CREATE STREAM JDBC_POSTGRES_TRANSACTIONS_GBP AS
+  SELECT  *
+    FROM JDBC_POSTGRES_TRANSACTIONS
+    WHERE CURRENCY='GBP';
+----
+
+Stream the new topic to Elasticsearch: 
+
+[source,sql]
+----
+ CREATE SINK CONNECTOR sink_es_04 WITH (
+  'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+  'key.converter'   = 'org.apache.kafka.connect.storage.StringConverter',
+  'topics'          = 'JDBC_POSTGRES_TRANSACTIONS_GBP',
+  'key.ignore'      = 'true',
+  'schema.ignore'   = 'true',
+  'type.name'       = '',
+  'connection.url'  = 'http://elasticsearch:9200'
+  ); 
+----
+
+Results: 
+
+[source,bash]
+----
+$ docker exec -it elasticsearch curl -XGET "http://localhost:9200/jdbc_postgres_transactions_gbp/_search" -H  "Content-Type:application/json" -d '{
+    "size": 0,
+    "aggs": {
+      "group_by": {
+        "terms": {
+          "field": "CURRENCY.keyword"
+        }
+      }
+    }
+  }'|jq '.aggregations'
+{
+  "group_by": {
+    "doc_count_error_upper_bound": 0,
+    "sum_other_doc_count": 0,
+    "buckets": [
+      {
+        "key": "GBP",
+        "doc_count": 3
+      }
+    ]
+  }
+}
+----
+
+== Drop column(s) from the message
+
+=== Option 1 : Single Message Transform (SMT)
+
+[source,sql]
+----
+ CREATE SINK CONNECTOR sink_es_02 WITH (
+  'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+  'key.converter'   = 'org.apache.kafka.connect.storage.StringConverter',
+  'topics'          = 'jdbc_postgres_transactions',
+  'key.ignore'      = 'true',
+  'schema.ignore'   = 'true',
+  'type.name'       = '',
+  'connection.url'  = 'http://elasticsearch:9200',
+  'transforms'      = 'dropCustomerID',
+  'transforms.dropCustomerID.type' = 'org.apache.kafka.connect.transforms.ReplaceField$Value',
+  'transforms.dropCustomerID.blacklist' = 'customer_id'
+  ); 
+----
+
+Resulting document omits the `customer_id` field: 
+
+[source,bash]
+----
+$ docker exec -it elasticsearch curl -XGET "http://localhost:9200/jdbc_postgres_transactions/_search"|jq '.hits.hits[0]'
+{
+  "_index": "jdbc_postgres_transactions",
+  "_type": "_doc",
+  "_id": "jdbc_postgres_transactions+0+65",
+  "_score": 1,
+  "_source": {
+    "txn_id": 66,
+    "amount": -31.48,
+    "currency": "IDR",
+    "txn_timestamp": "2018-05-09T13:24:41Z"
+  }
+}
+----
+
+=== Option 2 : KSQL
+
+Define the source stream (topic + schema): 
+
+[source,sql]
+----
+CREATE STREAM JDBC_POSTGRES_TRANSACTIONS 
+  WITH (KAFKA_TOPIC='jdbc_postgres_transactions',
+        VALUE_FORMAT='AVRO');
+----
+
+
+Create a new stream with the field omitted: 
+
+[source,sql]
+----
+ CREATE STREAM jdbc_postgres_transactions_no_CustomerID AS
+  SELECT  TXN_ID,
+          AMOUNT,
+          CURRENCY,
+          TXN_TIMESTAMP
+    FROM JDBC_POSTGRES_TRANSACTIONS;
+----
+
+Stream the new topic to Elasticsearch: 
+
+[source,sql]
+----
+ CREATE SINK CONNECTOR sink_es_03 WITH (
+  'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+  'key.converter'   = 'org.apache.kafka.connect.storage.StringConverter',
+  'topics'          = 'JDBC_POSTGRES_TRANSACTIONS_NO_CUSTOMERID',
+  'key.ignore'      = 'true',
+  'schema.ignore'   = 'true',
+  'type.name'       = '',
+  'connection.url'  = 'http://elasticsearch:9200'
+  ); 
+----
+
+Result: 
+
+[source,bash]
+----
+$ docker exec -it elasticsearch curl -XGET "http://localhost:9200/jdbc_postgres_transactions_no_customerid/_search"|jq '.hits.hits[0]'
+{
+  "_index": "jdbc_postgres_transactions_no_customerid",
+  "_type": "_doc",
+  "_id": "JDBC_POSTGRES_TRANSACTIONS_NO_CUSTOMERID+0+0",
+  "_score": 1,
+  "_source": {
+    "TXN_ID": 1,
+    "AMOUNT": -72.97,
+    "CURRENCY": "RUB",
+    "TXN_TIMESTAMP": "2018-12-12T13:58:37Z"
+  }
+}
+----
+
+=== Which option is best? 
+
+➖SMT is more fiddly to configure, and less easy to comprehend than SQL
+➕SMT modifies the data on its way out to the sink, so does not write the changed message to Kafka (resulting in duplicated data on the cluster). 
+✔️If you don't want to re-use the modified data in other sinks or applications, SMT is a good option
+✔️If you need the modified data in more than one place then writing a derived topic using KSQL would probably be the appropriate route to take
