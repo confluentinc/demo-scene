@@ -57,7 +57,7 @@ cluster_api_key = "<CCLOUD_API_KEY>"
 cluster_api_secret = "<CCLOUD_API_SECRET>"
 
 schema_registry_url = "<SCHEMA_REGISTRY_URL>"
-schema_registry_basic_auth = "<SCHEMA_REGISTRY_BASIC_AUTH>"
+schema_registry_basic_auth = "<SCHEMA_REGISTRY_API_KEY>:<SCHEMA_REGISTRY_SECRET>"
 ----
 
 4. Create a variables file for AWS
@@ -131,7 +131,7 @@ cluster_api_key = "<CCLOUD_API_KEY>"
 cluster_api_secret = "<CCLOUD_API_SECRET>"
 
 schema_registry_url = "<SCHEMA_REGISTRY_URL>"
-schema_registry_basic_auth = "<SCHEMA_REGISTRY_BASIC_AUTH>"
+schema_registry_basic_auth = "<SCHEMA_REGISTRY_API_KEY>:<SCHEMA_REGISTRY_SECRET>"
 ----
 
 4. Create a variables file for GCP
@@ -219,7 +219,7 @@ cluster_api_key = "<CCLOUD_API_KEY>"
 cluster_api_secret = "<CCLOUD_API_SECRET>"
 
 schema_registry_url = "<SCHEMA_REGISTRY_URL>"
-schema_registry_basic_auth = "<SCHEMA_REGISTRY_BASIC_AUTH>"
+schema_registry_basic_auth = "<SCHEMA_REGISTRY_API_KEY>:<SCHEMA_REGISTRY_SECRET>"
 ----
 
 4. Create a variables file for Azure
