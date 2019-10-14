@@ -66,14 +66,14 @@ services:
       - kafka
       - schema-registry
     ports:
-      - 18083:18083
+      - 8083:8083
     environment:
       CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
-      CONNECT_REST_PORT: 18083
+      CONNECT_REST_PORT: 8083
       CONNECT_GROUP_ID: kafka-connect
-      CONNECT_CONFIG_STORAGE_TOPIC: docker-kafka-connect-configs
-      CONNECT_OFFSET_STORAGE_TOPIC: docker-kafka-connect-offsets
-      CONNECT_STATUS_STORAGE_TOPIC: docker-kafka-connect-status
+      CONNECT_CONFIG_STORAGE_TOPIC: _kafka-connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _kafka-connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _kafka-connect-status
       CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
@@ -83,10 +83,11 @@ services:
       CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
       CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
       CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
-      CONNECT_PLUGIN_PATH: '/usr/share/java'
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components'
       # # Interceptor config
       # CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       # CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
@@ -98,25 +99,29 @@ services:
       - bash 
       - -c 
       - |
+        # JDBC Drivers
+        # ------------
+        # MySQL
+        cd /usr/share/java/kafka-connect-jdbc/
+        curl https://cdn.mysql.com/Downloads/Connector-J/mysql-connector-java-8.0.16.tar.gz | tar xz 
+        # MS SQL
+        cd /usr/share/java/kafka-connect-jdbc/
+        curl http://central.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/7.0.0.jre8/mssql-jdbc-7.0.0.jre8.jar --output mssql-jdbc-7.0.0.jre8.jar
+        # Oracle
+        cd /usr/share/java/kafka-connect-jdbc/
+        curl https://repo1.maven.org/maven2/com/oracle/ojdbc/ojdbc8/19.3.0.0/ojdbc8-19.3.0.0.jar --output ojdbc8-19.3.0.0.jar
+        #
+        echo "Installing connector plugins" 
+        confluent-hub install --no-prompt debezium/debezium-connector-mysql:0.9.5
+        #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 
         #
-        echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
-        while : ; do
-          curl_status=$$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors)
-          echo -e $$(date) " Kafka Connect listener HTTP state: " $$curl_status " (waiting for 200)"
-          if [ $$curl_status -eq 200 ] ; then
-            break
-          fi
-          sleep 5 
-        done
-
-        echo -e "\n--\n+> Creating Kafka Connect Elasticsearch sink"
-        /scripts/create-es-sink.sh 
         sleep infinity
 
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.4.0-dist-1
+    #image: confluentinc/cp-ksql-server:5.4.0-dist-1
+    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-server:master-latest
     container_name: ksql-server
     ports:
       - 8088:8088
@@ -130,6 +135,9 @@ services:
       KSQL_CUB_KAFKA_TIMEOUT: 300
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
+      # Connect integration
+      KSQL_KSQL_CONNECT_URL: http://kafka-connect:8083/
+      # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
       # Useful settings for development/laptop use - modify as needed for Prod
       KSQL_KSQL_COMMIT_INTERVAL_MS: 2000
       KSQL_KSQL_SINK_PARTITIONS: 1
@@ -141,7 +149,8 @@ services:
       KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
 
   ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.4.0-dist-1
+    #image: confluentinc/cp-ksql-cli:5.4.0-dist-1
+    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-cli:master-latest
     container_name: ksql-cli
     depends_on:
       - ksql-server
@@ -232,43 +241,43 @@ services:
     volumes:
       - ./customers.sql:/docker-entrypoint-initdb.d/z99_dump.sql
 
-  connect-debezium:
-    image: debezium/connect:0.9.3.Final
-    container_name: connect-debezium
-    depends_on:
-      - kafka
-      - mysql
-      - schema-registry
-    ports:
-      - 8083:8083
-    environment:
-      BOOTSTRAP_SERVERS: kafka:29092
-      GROUP_ID: connect-debezium
-      CONFIG_STORAGE_TOPIC: docker-connect-debezium-configs
-      OFFSET_STORAGE_TOPIC: docker-connect-debezium-offsets
-      STATUS_STORAGE_TOPIC: docker-connect-debezium-status
-      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-    volumes:
-     - $PWD/scripts:/scripts
-    command: 
-      - bash 
-      - -c 
-      - |
-        /docker-entrypoint.sh start & 
-        echo "Waiting for Kafka Connect to start listening on connect-debezium ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://connect-debezium:8083/connectors) -ne 200 ] ; do 
-          echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://connect-debezium:8083/connectors) " (waiting for 200)"
-          sleep 5 
-        done
-        echo "Waiting for Schema Registry to start listening on schema-registry:8081 ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) -eq 000 ] ; do 
-          echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for != 000)"
-          sleep 5 
-        done
-        echo -e "\n--\n+> Creating Kafka Connect Debezium source"
-        /scripts/create-mysql-source.sh 
-        sleep infinity
+  # connect-debezium:
+  #   image: debezium/connect:0.9.3.Final
+  #   container_name: connect-debezium
+  #   depends_on:
+  #     - kafka
+  #     - mysql
+  #     - schema-registry
+  #   ports:
+  #     - 8083:8083
+  #   environment:
+  #     BOOTSTRAP_SERVERS: kafka:29092
+  #     GROUP_ID: connect-debezium
+  #     CONFIG_STORAGE_TOPIC: docker-connect-debezium-configs
+  #     OFFSET_STORAGE_TOPIC: docker-connect-debezium-offsets
+  #     STATUS_STORAGE_TOPIC: docker-connect-debezium-status
+  #     CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+  #     CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+  #   volumes:
+  #    - $PWD/scripts:/scripts
+  #   command: 
+  #     - bash 
+  #     - -c 
+  #     - |
+  #       /docker-entrypoint.sh start & 
+  #       echo "Waiting for Kafka Connect to start listening on connect-debezium ⏳"
+  #       while [ $$(curl -s -o /dev/null -w %{http_code} http://connect-debezium:8083/connectors) -ne 200 ] ; do 
+  #         echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://connect-debezium:8083/connectors) " (waiting for 200)"
+  #         sleep 5 
+  #       done
+  #       echo "Waiting for Schema Registry to start listening on schema-registry:8081 ⏳"
+  #       while [ $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) -eq 000 ] ; do 
+  #         echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for != 000)"
+  #         sleep 5 
+  #       done
+  #       echo -e "\n--\n+> Creating Kafka Connect Debezium source"
+  #       /scripts/create-mysql-source.sh 
+  #       sleep infinity
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.7.0

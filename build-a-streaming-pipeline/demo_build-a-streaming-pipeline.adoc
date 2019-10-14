@@ -176,6 +176,58 @@ SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS LIMIT 5;
 5 rows in set (0.00 sec)
 ----
 
+=== Create connector to database
+
+==== JDBC source connector 
+
+[source,sql]
+----
+CREATE SOURCE CONNECTOR source_jdbc_mysql_01 WITH (
+  'connector.class'       = 'io.confluent.connect.jdbc.JdbcSourceConnector',
+  'connection.url'        = 'jdbc:mysql://mysql:3306/demo', 
+  'connection.user'       = 'mysqluser',
+  'connection.password'   = 'mysqlpw',
+  'topic.prefix'          = 'jdbc_',
+  'table.whitelist'       = 'demo.CUSTOMERS',
+  'mode'                  = 'timestamp',
+  'timestamp.column.name' = 'update_ts',
+  'validate.non.null'     = 'false',
+  'key'                   = 'id');
+
+CREATE TABLE CUSTOMERS WITH (KAFKA_TOPIC='jdbc_CUSTOMERS',VALUE_FORMAT='AVRO');
+----
+
+==== Debezium source connector 
+
+[source,sql]
+----
+CREATE SOURCE CONNECTOR source_dbz_mysql_01 WITH (
+            'connector.class'= 'io.debezium.connector.mysql.MySqlConnector',
+            'database.hostname'= 'mysql',
+            'database.port'= '3306',
+            'database.user'= 'debezium',
+            'database.password'= 'dbz',
+            'database.server.id'= '42',
+            'database.server.name'= 'asgard',
+            'table.whitelist'= 'demo.customers',
+            'database.history.kafka.bootstrap.servers'= 'kafka:29092',
+            'database.history.kafka.topic'= 'dbhistory.demo' ,
+            'include.schema.changes'= 'true',
+            'key.converter'= 'org.apache.kafka.connect.storage.StringConverter',
+            'transforms'= 'renameTopic,unwrap,ksqlCreateKey,ksqlExtractString',
+            'transforms.renameTopic.regex'= '(.*)',
+            'transforms.renameTopic.replacement'= 'dbz_$1',
+            'transforms.renameTopic.type'= 'org.apache.kafka.connect.transforms.RegexRouter',
+            'transforms.unwrap.type'= 'io.debezium.transforms.UnwrapFromEnvelope',
+            'transforms.ksqlCreateKey.type'= 'org.apache.kafka.connect.transforms.ValueToKey',
+            'transforms.ksqlCreateKey.fields'= 'id',
+            'transforms.ksqlExtractString.field'= 'id',
+            'transforms.ksqlExtractString.type'= 'org.apache.kafka.connect.transforms.ExtractField$Key');
+
+
+CREATE TABLE CUSTOMERS WITH (KAFKA_TOPIC='dbz_asgard.demo.CUSTOMERS',VALUE_FORMAT='AVRO');
+----
+
 === Check status of Debezium connectors
 
 [source,bash]
