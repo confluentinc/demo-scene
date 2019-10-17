@@ -75,14 +75,14 @@ Trigger the MySQL data generator with:
 
 [source,bash]
 ----
-docker-compose exec mysql /data/02_populate_more_orders.sh
+docker exec mysql /data/02_populate_more_orders.sh
 ----
 
 Look at the new rows!
 
 [source,bash]
 ----
-watch -n 2 -x docker-compose exec mysql bash -c 'echo "SELECT * FROM ORDERS ORDER BY CREATE_TS DESC LIMIT 1 \G" | mysql -u root -p$MYSQL_ROOT_PASSWORD demo'
+watch -n 1 -x docker exec -t mysql bash -c 'echo "SELECT * FROM ORDERS ORDER BY CREATE_TS DESC LIMIT 1 \G" | mysql -u root -p$MYSQL_ROOT_PASSWORD demo'
 ----
 
 ==== Create the connector
@@ -105,7 +105,7 @@ curl -i -X PUT -H  "Content-Type:application/json" \
             "decimal.handling.mode": "double",
             "include.schema.changes": "true",
             "transforms": "unwrap,addTopicPrefix",
-            "transforms.unwrap.type": "io.debezium.transforms.UnwrapFromEnvelope",
+            "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
             "transforms.addTopicPrefix.type":"org.apache.kafka.connect.transforms.RegexRouter",
             "transforms.addTopicPrefix.regex":"(.*)",
             "transforms.addTopicPrefix.replacement":"mysql-debezium-$1"
@@ -122,14 +122,6 @@ curl -s "http://localhost:8083/connectors?expand=info&expand=status" | \
        column -s : -t| sed 's/\"//g'| sort
 ----
 
-[source,bash]
-----
-# Apache Kafka <=2.2
-curl -s "http://localhost:8083/connectors?expand=info&expand=status"|jq '. | to_entries[] | [ .value.info.type, .key, .value.status.connector.state,.value.status.tasks[].state,.value.info.config."connector.class"]|join(":|:")' | \
-       column -s : -t| sed 's/\"//g'| sort
-curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
-----
-
 Output should be
 
 [source,bash]
@@ -141,7 +133,17 @@ http://localhost:9021/[View the topic in Confluent Control Center] or from the C
 
 [source,bash]
 ----
-docker-compose exec -T kafka-connect-01 \
+docker run --net host --rm edenhill/kafkacat:1.5.0 \
+        -b localhost:9092 \
+        -r http://localhost:8081\
+        -s avro \
+        -t mysql-debezium-asgard.demo.ORDERS \
+        -C -o -10 -q | jq '.'
+----
+
+[source,bash]
+----
+docker exec -t kafka-connect-01 \
             kafka-avro-console-consumer \
             --bootstrap-server kafka:29092 \
             --property schema.registry.url=http://schema-registry:8081 \
@@ -149,7 +151,6 @@ docker-compose exec -T kafka-connect-01 \
 ----
 
 Show Kafka Consumer and MySQL side by side. 
-
 
 === Stream data from Kafka to Elasticsearch
 
@@ -201,9 +202,9 @@ http://localhost:5601/app/kibana#/discover?_g=(refreshInterval:(pause:!f,value:5
 [source,bash]
 ----
 curl -s http://localhost:9200/mysql-debezium-asgard.demo.orders/_search \
-  -H 'content-type: application/json' \
-  -d '{ "size": 1, "sort": [ { "CREATE_TS": { "order": "desc" } } ] }' |\
-  jq '.'
+    -H 'content-type: application/json' \
+    -d '{ "size": 1, "sort": [ { "CREATE_TS": { "order": "desc" } } ] }' |\
+    jq '.hits.hits[]._source'
 ----
 
 [NOTE]
@@ -222,5 +223,5 @@ If you want to set the Elasticsearch document id to match the key of the source 
 
 === View in Neo4j
 
-View in http://localhost:7474/browser/[Neo4j browser]
+View in http://localhost:7474/browser/[Neo4j browser] (login `neo4j`/`connect`)
 

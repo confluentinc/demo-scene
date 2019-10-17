@@ -2,14 +2,14 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.3.0
+    image: confluentinc/cp-zookeeper:5.4.0-beta1
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.3.0
+    image: confluentinc/cp-enterprise-kafka:5.4.0-beta1
     container_name: kafka
     depends_on:
       - zookeeper
@@ -49,7 +49,7 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.3.0
+    image: confluentinc/cp-schema-registry:5.4.0-beta1
     container_name: schema-registry
     ports:
       - "8081:8081"
@@ -61,7 +61,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   kafka-connect-01:
-    image: confluentinc/cp-kafka-connect:5.3.0
+    image: confluentinc/cp-kafka-connect:5.4.0-beta1
     container_name: kafka-connect-01
     depends_on:
       - zookeeper
@@ -92,14 +92,14 @@ services:
       # Interceptor config
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.0-SNAPSHOT.jar
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.4.0-beta1-SNAPSHOT.jar
     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
     command:
       - bash
       - -c
       - |
         echo "Installing Connector"
-        confluent-hub install --no-prompt debezium/debezium-connector-mysql:0.9.4
+        confluent-hub install --no-prompt debezium/debezium-connector-mysql:0.10.0
         confluent-hub install --no-prompt jcustenborder/kafka-connect-spooldir:1.0.37
         confluent-hub install --no-prompt neo4j/kafka-connect-neo4j:1.0.0
         #
@@ -109,7 +109,7 @@ services:
         sleep infinity
 
   # kafka-connect-02:
-  #   image: confluentinc/cp-kafka-connect:5.3.0
+  #   image: confluentinc/cp-kafka-connect:5.4.0-beta1
   #   container_name: kafka-connect-02
   #   depends_on:
   #     - zookeeper
@@ -140,7 +140,7 @@ services:
   #     # Interceptor config
   #     CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
   #     CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-  #     CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.0.jar
+  #     CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.4.0-beta1.jar
   #   # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
   #   command:
   #     - bash
@@ -156,101 +156,101 @@ services:
   #       #
   #       sleep infinity
 
-  ksql-server:
-    image: confluentinc/cp-ksql-server:5.3.0
-    container_name: ksql-server
-    ports:
-      - 8088:8088
-    depends_on:
-      - kafka
-    environment:
-      KSQL_BOOTSTRAP_SERVERS: kafka:29092
-      KSQL_LISTENERS: http://0.0.0.0:8088
-      KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
-      KSQL_CUB_KAFKA_TIMEOUT: 300
-      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
-      # Useful settings for development/laptop use - modify as needed for Prod
-      KSQL_KSQL_COMMIT_INTERVAL_MS: 2000
-      KSQL_KSQL_SINK_PARTITIONS: 1
-      KSQL_KSQL_CACHE_MAX_BYTES_BUFFERING: 10000000
-      KSQL_KSQL_STREAMS_AUTO_OFFSET_RESET: earliest
-      # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
-      # Producer Confluent Monitoring Interceptors for Control Center streams monitoring
-      KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
-      KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+  # ksql-server:
+  #   image: confluentinc/cp-ksql-server:5.4.0-beta1
+  #   container_name: ksql-server
+  #   ports:
+  #     - 8088:8088
+  #   depends_on:
+  #     - kafka
+  #   environment:
+  #     KSQL_BOOTSTRAP_SERVERS: kafka:29092
+  #     KSQL_LISTENERS: http://0.0.0.0:8088
+  #     KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
+  #     KSQL_CUB_KAFKA_TIMEOUT: 300
+  #     KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+  #     # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
+  #     # Useful settings for development/laptop use - modify as needed for Prod
+  #     KSQL_KSQL_COMMIT_INTERVAL_MS: 2000
+  #     KSQL_KSQL_SINK_PARTITIONS: 1
+  #     KSQL_KSQL_CACHE_MAX_BYTES_BUFFERING: 10000000
+  #     KSQL_KSQL_STREAMS_AUTO_OFFSET_RESET: earliest
+  #     # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
+  #     # Producer Confluent Monitoring Interceptors for Control Center streams monitoring
+  #     KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+  #     KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
 
-  ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.3.0
-    container_name: ksql-cli
-    depends_on:
-      - ksql-server
-    entrypoint: /bin/sh
-    tty: true
+  # ksql-cli:
+  #   image: confluentinc/cp-ksql-cli:5.4.0-beta1
+  #   container_name: ksql-cli
+  #   depends_on:
+  #     - ksql-server
+  #   entrypoint: /bin/sh
+  #   tty: true
 
-  # Runs the Kafka KSQL data generator for ratings
-  datagen-ratings:
-    image: confluentinc/ksql-examples:5.1.2
-    container_name: datagen-ratings
-    depends_on:
-      - kafka
-      - schema-registry
-    command: "bash -c 'echo Waiting for Kafka to be ready... && \
-                       cub kafka-ready -b kafka:29092 1 300 && \
-                       echo Waiting for Confluent Schema Registry to be ready... && \
-                       cub sr-ready schema-registry 8081 300 && \
-                       echo Waiting a few seconds for topic creation to finish... && \
-                       sleep 20 && \
-                       ksql-datagen \
-                          quickstart=ratings \
-                          format=avro \
-                          topic=ratings \
-                          maxInterval=1000 \
-                          bootstrap-server=kafka:29092 \
-                          schemaRegistryUrl=http://schema-registry:8081 \
-                          propertiesFile=/etc/ksql/datagen.properties'"
+  # # Runs the Kafka KSQL data generator for ratings
+  # datagen-ratings:
+  #   image: confluentinc/ksql-examples:5.1.2
+  #   container_name: datagen-ratings
+  #   depends_on:
+  #     - kafka
+  #     - schema-registry
+  #   command: "bash -c 'echo Waiting for Kafka to be ready... && \
+  #                      cub kafka-ready -b kafka:29092 1 300 && \
+  #                      echo Waiting for Confluent Schema Registry to be ready... && \
+  #                      cub sr-ready schema-registry 8081 300 && \
+  #                      echo Waiting a few seconds for topic creation to finish... && \
+  #                      sleep 20 && \
+  #                      ksql-datagen \
+  #                         quickstart=ratings \
+  #                         format=avro \
+  #                         topic=ratings \
+  #                         maxInterval=1000 \
+  #                         bootstrap-server=kafka:29092 \
+  #                         schemaRegistryUrl=http://schema-registry:8081 \
+  #                         propertiesFile=/etc/ksql/datagen.properties'"
 
 
-  control-center:
-    image: confluentinc/cp-enterprise-control-center:5.3.0
-    container_name: control-center
-    depends_on:
-      - zookeeper
-      - kafka
-      - schema-registry
-      - kafka-connect-01
-      - ksql-server
-    ports:
-      - "9021:9021"
-    environment:
-      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
-      CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      # CONTROL_CENTER_CONNECT_DEBEZIUM-SOURCE_CLUSTER: 'http://connect-debezium:8083'
-      CONTROL_CENTER_CONNECT_CLUSTER: 'http://kafka-connect:8083'
-      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-      # The advertised URL needs to be the URL on which the browser
-      #  can access the KSQL server (e.g. http://localhost:8088/info)
-      CONTROL_CENTER_KSQL_URL: "http://ksql-server:8088"
-      CONTROL_CENTER_KSQL_ADVERTISED_URL: "http://localhost:8088"
-      # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
-      # Useful settings for development/laptop use - modify as needed for Prod
-      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
-      CONTROL_CENTER_REPLICATION_FACTOR: 1
-      CONTROL_CENTER_COMMAND_TOPIC_REPLICATION: 1
-      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_REPLICATION: 1
-      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
-      CONTROL_CENTER_INTERNAL_TOPICS_REPLICATION: 1
-      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
-      CONTROL_CENTER_STREAMS_NUM_STREAM_THREADS: 1
-      CONTROL_CENTER_STREAMS_CACHE_MAX_BYTES_BUFFERING: 104857600
-    command:
-      - bash
-      - -c 
-      - |
-        echo "Waiting two minutes for Kafka brokers to start and 
-               necessary topics to be available"
-        sleep 120  
-        /etc/confluent/docker/run
+  # control-center:
+  #   image: confluentinc/cp-enterprise-control-center:5.4.0-beta1
+  #   container_name: control-center
+  #   depends_on:
+  #     - zookeeper
+  #     - kafka
+  #     - schema-registry
+  #     - kafka-connect-01
+  #     - ksql-server
+  #   ports:
+  #     - "9021:9021"
+  #   environment:
+  #     CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
+  #     CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+  #     # CONTROL_CENTER_CONNECT_DEBEZIUM-SOURCE_CLUSTER: 'http://connect-debezium:8083'
+  #     CONTROL_CENTER_CONNECT_CLUSTER: 'http://kafka-connect:8083'
+  #     CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+  #     # The advertised URL needs to be the URL on which the browser
+  #     #  can access the KSQL server (e.g. http://localhost:8088/info)
+  #     CONTROL_CENTER_KSQL_URL: "http://ksql-server:8088"
+  #     CONTROL_CENTER_KSQL_ADVERTISED_URL: "http://localhost:8088"
+  #     # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
+  #     # Useful settings for development/laptop use - modify as needed for Prod
+  #     CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+  #     CONTROL_CENTER_REPLICATION_FACTOR: 1
+  #     CONTROL_CENTER_COMMAND_TOPIC_REPLICATION: 1
+  #     CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_REPLICATION: 1
+  #     CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+  #     CONTROL_CENTER_INTERNAL_TOPICS_REPLICATION: 1
+  #     CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+  #     CONTROL_CENTER_STREAMS_NUM_STREAM_THREADS: 1
+  #     CONTROL_CENTER_STREAMS_CACHE_MAX_BYTES_BUFFERING: 104857600
+  #   command:
+  #     - bash
+  #     - -c 
+  #     - |
+  #       echo "Waiting two minutes for Kafka brokers to start and 
+  #              necessary topics to be available"
+  #       sleep 120  
+  #       /etc/confluent/docker/run
 
 # Other systems
   mysql:
@@ -338,3 +338,6 @@ services:
       NEO4J_AUTH: neo4j/connect
       NEO4J_dbms_memory_heap_max__size: 8G
       NEO4J_ACCEPT_LICENSE_AGREEMENT: 'yes'
+
+  # kafkacat:
+  #   image: edenhill/kafkacat:1.5.0
