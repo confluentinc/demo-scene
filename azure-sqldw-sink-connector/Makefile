@@ -50,5 +50,3 @@ connect:
 		-H "Content-Type: application/json" \
 		http://connect:8083/connectors/clickstream/config 
 
-test:
-	sed -i '' 's/_SERVER_/${SERVER}/g' azure.sqldw.json 
