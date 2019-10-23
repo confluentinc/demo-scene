@@ -58,7 +58,7 @@ services:
     environment:
       CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
       CONNECT_REST_PORT: 8083
-      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-01"
       CONNECT_GROUP_ID: kafka-connect-01
       CONNECT_CONFIG_STORAGE_TOPIC: _kafka-connect-01-configs
       CONNECT_OFFSET_STORAGE_TOPIC: _kafka-connect-01-offsets
@@ -109,6 +109,15 @@ services:
           sleep 5 
         done
         #
+        echo "Creating connector"
+        curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/source-datagen-item_details_01/config \
+            -d '{
+            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+            "kafka.topic": "ratings",
+            "max.interval":250,
+            "quickstart": "ratings"
+          }'
         # echo -e "\n--\n+> Creating Kafka Connect JDBC Source"
         # curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
         #           "name": "jdbc_source_mysql_00",

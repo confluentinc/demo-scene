@@ -31,6 +31,18 @@ echo -e $(date) " Kafka Connect is ready! Listener HTTP state: " $(curl -s -o /d
 '
 ----
 
+3. Make sure the connector plugins are available
++
+[source,bash]
+----
+curl -s localhost:8083/connector-plugins|jq '.[].class'|egrep 'debezium.*mysql|JdbcSink'
+----
++
+[source,bash]
+----
+"io.confluent.connect.jdbc.JdbcSinkConnector"
+"io.debezium.connector.mysql.MySqlConnector"
+----
 3. Launch MySQL CLI
 +
 [source,bash]
@@ -102,18 +114,19 @@ curl -s "http://localhost:8083/connectors?expand=info&expand=status" |
 +
 [source,bash]
 ----
-source  |  source-jdbc-mysql-00  |  RUNNING  |  RUNNING  |  io.confluent.connect.jdbc.JdbcSourceConnector
+source  |  source-datagen-item_details_01  |  RUNNING  |  RUNNING  |  io.confluent.kafka.connect.datagen.DatagenConnector
+source  |  source-jdbc-mysql-00            |  RUNNING  |  RUNNING  |  io.confluent.connect.jdbc.JdbcSourceConnector
 ----
 
 4. Examine the data
 +
 [source,bash]
 ----
-docker run --net host --rm edenhill/kafkacat:1.5.0
-        -b localhost:9092
-        -r http://localhost:8081\
-        -s avro
-        -t mysql-00-customers
+docker run --net host --rm edenhill/kafkacat:1.5.0 \
+        -b localhost:9092                          \
+        -r http://localhost:8081                   \
+        -s avro                                    \
+        -t mysql-00-customers                      \
         -C -o beginning -u -q | jq -c '.'
 ----
 
@@ -166,23 +179,21 @@ SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, UPDATE_TS FROM customers;
 +
 [source,bash]
 ----
-curl -i -X POST -H "Accept:application/json"
-    -H  "Content-Type:application/json" http://localhost:8083/connectors/
+curl -i -X PUT -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/source-debezium-mysql-00/config \
     -d '{
-      "name": "source-debezium-mysql-00",
-      "config": {
-            "connector.class": "io.debezium.connector.mysql.MySqlConnector",
-            "database.hostname": "mysql",
-            "database.port": "3306",
-            "database.user": "debezium",
-            "database.password": "dbz",
-            "database.server.id": "42",
-            "database.server.name": "asgard",
-            "table.whitelist": "demo.customers",
-            "database.history.kafka.bootstrap.servers": "kafka:29092",
-            "database.history.kafka.topic": "asgard.dbhistory.demo" ,
-            "include.schema.changes": "true"
-       }
+          "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+          "database.hostname": "mysql",
+          "database.port": "3306",
+          "database.user": "debezium",
+          "database.password": "dbz",
+          "database.server.id": "42",
+          "database.allowPublicKeyRetrieval":"true",
+          "database.server.name": "asgard",
+          "table.whitelist": "demo.customers",
+          "database.history.kafka.bootstrap.servers": "kafka:29092",
+          "database.history.kafka.topic": "asgard.dbhistory.demo" ,
+          "include.schema.changes": "true"
     }'
 ----
 
@@ -197,80 +208,89 @@ curl -s "http://localhost:8083/connectors?expand=info&expand=status" |
 +
 [source,bash]
 ----
-source  |  source-debezium-mysql-00      |  RUNNING  |  RUNNING  |  io.debezium.connector.mysql.MySqlConnector
-source  |  source-jdbc-mysql-00          |  RUNNING  |  RUNNING  |  io.confluent.connect.jdbc.JdbcSourceConnector
+source  |  source-datagen-item_details_01  |  RUNNING  |  RUNNING  |  io.confluent.kafka.connect.datagen.DatagenConnector
+source  |  source-debezium-mysql-00        |  RUNNING  |  RUNNING  |  io.debezium.connector.mysql.MySqlConnector
+source  |  source-jdbc-mysql-00            |  RUNNING  |  RUNNING  |  io.confluent.connect.jdbc.JdbcSourceConnector
 ----
 
-4. Examine the data with console consumer
+4. Examine the data with kafkacat
 +
 [source,bash]
 ----
-docker run --net host --rm edenhill/kafkacat:1.5.0
-        -b localhost:9092
-        -r http://localhost:8081\
-        -s avro
-        -t asgard.demo.customers
-        -C -o beginning -u -q | jq '.op, .before, .after'
+docker run --net host --rm edenhill/kafkacat:1.5.0 \
+        -b localhost:9092                          \
+        -r http://localhost:8081                   \
+        -s avro                                    \
+        -t asgard.demo.customers                   \
+        -C -o beginning -u -q | jq '.'
 ----
 +
 [source,bash]
 ----
-"u"
 {
-  "asgard.demo.customers.Value": {
-    "id": 42,
-    "first_name": {
-      "string": "Rick"
+  "before": null,
+  "after": {
+    "Value": {
+      "id": 42,
+      "first_name": {
+        "string": "Rick"
+      },
+      "last_name": {
+        "string": "Astley"
+      },
+      "email": {
+        "string": "Never.gonna.give.you@up.com"
+      },
+      "gender": {
+        "string": "Male"
+      },
+      "comments": {
+        "string": ""
+      },
+      "UPDATE_TS": {
+        "string": "2019-10-23T16:29:53Z"
+      }
+    }
+  },
+  "source": {
+    "version": "0.10.0.Final",
+    "connector": "mysql",
+    "name": "asgard",
+    "ts_ms": 0,
+    "snapshot": {
+      "string": "last"
     },
-    "last_name": {
-      "string": "Astley"
+    "db": "demo",
+    "table": {
+      "string": "customers"
     },
-    "email": {
-      "string": ""
-    },
-    "gender": {
-      "string": "Male"
-    },
-    "comments": {
-      "string": ""
-    },
-    "UPDATE_TS": "2019-04-01T23:53:31Z"
-  }
-}
-{
-  "asgard.demo.customers.Value": {
-    "id": 42,
-    "first_name": {
-      "string": "Rick"
-    },
-    "last_name": {
-      "string": "Astley"
-    },
-    "email": {
-      "string": "Never.gonna.give.you@up.com"
-    },
-    "gender": {
-      "string": "Male"
-    },
-    "comments": {
-      "string": ""
-    },
-    "UPDATE_TS": "2019-04-01T23:53:38Z"
+    "server_id": 0,
+    "gtid": null,
+    "file": "binlog.000002",
+    "pos": 873,
+    "row": 0,
+    "thread": null,
+    "query": null
+  },
+  "op": "c",
+  "ts_ms": {
+    "long": 1571848220368
   }
 }
 ----
 
 5. Split the screen to show Kafka topic output along with MySQL. 
 
-4. Rerun the console consumer to show compact output
+4. Rerun kafkacat to show compact output
 +
 [source,bash]
 ----
-docker-compose exec -T kafka-connect
-          kafka-avro-console-consumer
-          --bootstrap-server kafka:29092
-          --property schema.registry.url=http://schema-registry:8081
-          --topic asgard.demo.customers --from-beginning | jq -c '.'
+docker run --net host --rm edenhill/kafkacat:1.5.0 \
+        -b localhost:9092                          \
+        -r http://localhost:8081                   \
+        -s avro                                    \
+        -t asgard.demo.customers                   \
+        -C -o beginning -u -q | jq '.op, .before, .after'
 ----
 
 
@@ -360,7 +380,6 @@ SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM CUSTOMERS_STREAM WHERE ID=42 EMIT C
 SET 'auto.offset.reset' = 'earliest';
 
 SELECT OP, BEFORE->EMAIL, AFTER->EMAIL FROM CUSTOMERS_CDC_STREAM WHERE AFTER->ID=42 EMIT CHANGES;
-[source,sql]
 ----
 +
 ----
