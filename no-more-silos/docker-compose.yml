@@ -183,8 +183,8 @@ services:
 
 
   ksql-server:
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-server:master-1389
-    #image: confluentinc/cp-ksql-server:5.4.0-beta1
+    #image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-server:master-1389
+    image: confluentinc/cp-ksql-server:5.4.0-dist-1
     container_name: ksql-server
     depends_on:
       - kafka
@@ -202,8 +202,8 @@ services:
     #   docker exec -it ksql-cli ksql http://ksql-server:8088
     # *-----------------------------*
     container_name: ksql-cli
-    image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-cli:master-1389
-    #image: confluentinc/cp-ksql-cli:5.4.0-beta1
+    #image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-cli:master-1389
+    image: confluentinc/cp-ksql-cli:5.4.0-dist-1
     depends_on:
       - ksql-server
     entrypoint: /bin/sh
