@@ -35,6 +35,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - [Kafka Connect deepdive](connect-deepdive) - understanding converters and serialization
   - [Kafka Connect JDBC Source demo environment](connect-jdbc)
   - [Example Kafka Connect syslog configuration and Docker Compose](syslog)
+  - [Azure SQL Data Warehouse Connector Sink Demo](syslog)
 
 - Confluent Cloud
 
