@@ -21,7 +21,7 @@ This brings up the stack ready for use.
 +
 [source,bash]
 ----
-bash -c ' \
+bash -c '
 echo "Waiting for Kafka Connect to start listening on localhost ⏳"
 while [ $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) -ne 200 ] ; do 
   echo -e $(date) " Kafka Connect listener HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) " (waiting for 200)"
@@ -31,19 +31,23 @@ echo -e $(date) " Kafka Connect is ready! Listener HTTP state: " $(curl -s -o /d
 '
 ----
 
-
-2. Launch the KSQL CLI: 
+3. Make sure the connector plugins are available
 +
 [source,bash]
 ----
-docker-compose exec ksql-cli bash -c 'echo -e "\n\n⏳ Waiting for KSQL to be available before launching CLI\n"; while [ $(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/) -ne 200 ] ; do echo -e $(date) "KSQL Server HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/) " (waiting for 200)" ; sleep 5 ; done; ksql http://ksql-server:8088'
+curl -s localhost:8083/connector-plugins|jq '.[].class'|egrep 'debezium.*mysql|JdbcSink'
 ----
-
-4. Launch MySQL CLI
 +
 [source,bash]
 ----
-docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
+"io.confluent.connect.jdbc.JdbcSinkConnector"
+"io.debezium.connector.mysql.MySqlConnector"
+----
+3. Launch MySQL CLI
++
+[source,bash]
+----
+docker exec -it mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
 ----
 
 
@@ -82,7 +86,7 @@ SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, UPDATE_TS FROM customers;
 [source,bash]
 ----
 curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
-          "name": "jdbc_source_mysql_00",
+          "name": "source-jdbc-mysql-00",
           "config": {
                   "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
                   "connection.url": "jdbc:mysql://mysql:3306/demo",
@@ -103,67 +107,28 @@ curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json
 +
 [source,bash]
 ----
-curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+curl -s "http://localhost:8083/connectors?expand=info&expand=status" |
+       jq '. | to_entries[] | [ .value.info.type, .key, .value.status.connector.state,.value.status.tasks[].state,.value.info.config."connector.class"]|join(":|:")' |
+       column -s : -t| sed 's/\"//g'| sort
 ----
 +
 [source,bash]
 ----
-jdbc_source_mysql_00  |  RUNNING  |  RUNNING
+source  |  source-datagen-item_details_01  |  RUNNING  |  RUNNING  |  io.confluent.kafka.connect.datagen.DatagenConnector
+source  |  source-jdbc-mysql-00            |  RUNNING  |  RUNNING  |  io.confluent.connect.jdbc.JdbcSourceConnector
 ----
 
-4. Examine the data with KSQL (doesn't have to be; it's just an easy tool to use)
-+
-** List topics: 
-+
-[source,sql]
-----
-SHOW TOPICS;
-----
-+
-[source,sql]
-----
- Kafka Topic              | Registered | Partitions | Partition Replicas | Consumers | ConsumerGroups
-------------------------------------------------------------------------------------------------------
- _confluent-metrics       | false      | 12         | 1                  | 0         | 0
- _schemas                 | false      | 1          | 1                  | 0         | 0
- connect-debezium-configs | false      | 1          | 1                  | 0         | 0
- connect-debezium-offsets | false      | 25         | 1                  | 0         | 0
- connect-debezium-status  | false      | 5          | 1                  | 0         | 0
- kafka-connect-configs    | false      | 1          | 1                  | 0         | 0
- kafka-connect-offsets    | false      | 25         | 1                  | 0         | 0
- kafka-connect-status     | false      | 5          | 1                  | 0         | 0
- mysql-00-customers       | false      | 1          | 1                  | 0         | 0
-------------------------------------------------------------------------------------------------------
-----
-+
-** Show the contents of the topic: 
-+
-[source,sql]
-----
-PRINT 'mysql-00-customers' FROM BEGINNING;
-----
-+
-[source,sql]
-----
-Format:AVRO
-4/1/19 5:01:52 PM UTC, null, {"id": 1, "first_name": "Bibby", "last_name": "Argabrite", "email": "bargabrite0@google.com.hk", "gender": "Female", "comments": "Reactive exuding productivity", "UPDATE_TS": 1554137478000}
-4/1/19 5:01:52 PM UTC, null, {"id": 2, "first_name": "Auberon", "last_name": "Sulland", "email": "asulland1@slideshare.net", "gender": "Male", "comments": "Organized context-sensitive Graphical User Interface", "UPDATE_TS": 1554137478000}
-4/1/19 5:01:52 PM UTC, null, {"id": 3, "first_name": "Marv", "last_name": "Dalrymple", "email": "mdalrymple2@macromedia.com", "gender": "Male", "comments": "Versatile didactic pricing structure", "UPDATE_TS": 1554137478000}
-4/1/19 5:01:52 PM UTC, null, {"id": 4, "first_name": "Nolana", "last_name": "Yeeles", "email": "nyeeles3@drupal.org", "gender": "Female", "comments": "Adaptive real-time archive", "UPDATE_TS": 1554137478000}
-4/1/19 5:01:52 PM UTC, null, {"id": 5, "first_name": "Modestia", "last_name": "Coltart", "email": "mcoltart4@scribd.com", "gender": "Female", "comments": "Reverse-engineered non-volatile success", "UPDATE_TS": 1554137478000}
-----
-+
-NOTE: Instead of KSQL you can use a standard Kafka consumer
+4. Examine the data
 +
 [source,bash]
 ----
-docker-compose exec -T kafka-connect \
-          kafka-avro-console-consumer \
-          --bootstrap-server kafka:29092 \
-          --property schema.registry.url=http://schema-registry:8081 \
-          --topic mysql-00-customers --from-beginning | jq -c '.'
+docker run --net host --rm edenhill/kafkacat:1.5.0 \
+        -b localhost:9092                          \
+        -r http://localhost:8081                   \
+        -s avro                                    \
+        -t mysql-00-customers                      \
+        -C -o beginning -u -q | jq -c '.'
 ----
-
 
 5. Split the screen to show Kafka topic output along with MySQL. 
 
@@ -214,23 +179,21 @@ SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, UPDATE_TS FROM customers;
 +
 [source,bash]
 ----
-curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://localhost:18083/connectors/ \
+curl -i -X PUT -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/source-debezium-mysql-00/config \
     -d '{
-      "name": "debezium-source-customers-00",
-      "config": {
-            "connector.class": "io.debezium.connector.mysql.MySqlConnector",
-            "database.hostname": "mysql",
-            "database.port": "3306",
-            "database.user": "debezium",
-            "database.password": "dbz",
-            "database.server.id": "42",
-            "database.server.name": "asgard",
-            "table.whitelist": "demo.customers",
-            "database.history.kafka.bootstrap.servers": "kafka:29092",
-            "database.history.kafka.topic": "dbhistory.demo" ,
-            "include.schema.changes": "true"
-       }
+          "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+          "database.hostname": "mysql",
+          "database.port": "3306",
+          "database.user": "debezium",
+          "database.password": "dbz",
+          "database.server.id": "42",
+          "database.allowPublicKeyRetrieval":"true",
+          "database.server.name": "asgard",
+          "table.whitelist": "demo.customers",
+          "database.history.kafka.bootstrap.servers": "kafka:29092",
+          "database.history.kafka.topic": "asgard.dbhistory.demo" ,
+          "include.schema.changes": "true"
     }'
 ----
 
@@ -238,85 +201,96 @@ curl -i -X POST -H "Accept:application/json" \
 +
 [source,bash]
 ----
-curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
+curl -s "http://localhost:8083/connectors?expand=info&expand=status" |
+       jq '. | to_entries[] | [ .value.info.type, .key, .value.status.connector.state,.value.status.tasks[].state,.value.info.config."connector.class"]|join(":|:")' |
+       column -s : -t| sed 's/\"//g'| sort
 ----
 +
 [source,bash]
 ----
-debezium-source-customers-00  |  RUNNING  |  RUNNING
+source  |  source-datagen-item_details_01  |  RUNNING  |  RUNNING  |  io.confluent.kafka.connect.datagen.DatagenConnector
+source  |  source-debezium-mysql-00        |  RUNNING  |  RUNNING  |  io.debezium.connector.mysql.MySqlConnector
+source  |  source-jdbc-mysql-00            |  RUNNING  |  RUNNING  |  io.confluent.connect.jdbc.JdbcSourceConnector
 ----
 
-4. Examine the data with console consumer
+4. Examine the data with kafkacat
 +
 [source,bash]
 ----
-docker-compose exec -T kafka-connect \
-          kafka-avro-console-consumer \
-          --bootstrap-server kafka:29092 \
-          --property schema.registry.url=http://schema-registry:8081 \
-          --topic asgard.demo.customers --from-beginning | jq '.op, .before, .after'
+docker run --net host --rm edenhill/kafkacat:1.5.0 \
+        -b localhost:9092                          \
+        -r http://localhost:8081                   \
+        -s avro                                    \
+        -t asgard.demo.customers                   \
+        -C -o beginning -u -q | jq '.'
 ----
 +
 [source,bash]
 ----
-"u"
 {
-  "asgard.demo.customers.Value": {
-    "id": 42,
-    "first_name": {
-      "string": "Rick"
+  "before": null,
+  "after": {
+    "Value": {
+      "id": 42,
+      "first_name": {
+        "string": "Rick"
+      },
+      "last_name": {
+        "string": "Astley"
+      },
+      "email": {
+        "string": "Never.gonna.give.you@up.com"
+      },
+      "gender": {
+        "string": "Male"
+      },
+      "comments": {
+        "string": ""
+      },
+      "UPDATE_TS": {
+        "string": "2019-10-23T16:29:53Z"
+      }
+    }
+  },
+  "source": {
+    "version": "0.10.0.Final",
+    "connector": "mysql",
+    "name": "asgard",
+    "ts_ms": 0,
+    "snapshot": {
+      "string": "last"
     },
-    "last_name": {
-      "string": "Astley"
+    "db": "demo",
+    "table": {
+      "string": "customers"
     },
-    "email": {
-      "string": ""
-    },
-    "gender": {
-      "string": "Male"
-    },
-    "comments": {
-      "string": ""
-    },
-    "UPDATE_TS": "2019-04-01T23:53:31Z"
-  }
-}
-{
-  "asgard.demo.customers.Value": {
-    "id": 42,
-    "first_name": {
-      "string": "Rick"
-    },
-    "last_name": {
-      "string": "Astley"
-    },
-    "email": {
-      "string": "Never.gonna.give.you@up.com"
-    },
-    "gender": {
-      "string": "Male"
-    },
-    "comments": {
-      "string": ""
-    },
-    "UPDATE_TS": "2019-04-01T23:53:38Z"
+    "server_id": 0,
+    "gtid": null,
+    "file": "binlog.000002",
+    "pos": 873,
+    "row": 0,
+    "thread": null,
+    "query": null
+  },
+  "op": "c",
+  "ts_ms": {
+    "long": 1571848220368
   }
 }
 ----
-+
-NOTE: You can use KSQL here too: `PRINT 'asgard.demo.customers' FROM BEGINNING;`
 
 5. Split the screen to show Kafka topic output along with MySQL. 
 
-4. Rerun the console consumer to show compact output
+4. Rerun kafkacat to show compact output
 +
 [source,bash]
 ----
-docker-compose exec -T kafka-connect \
-          kafka-avro-console-consumer \
-          --bootstrap-server kafka:29092 \
-          --property schema.registry.url=http://schema-registry:8081 \
-          --topic asgard.demo.customers --from-beginning | jq -c '.'
+docker run --net host --rm edenhill/kafkacat:1.5.0 \
+        -b localhost:9092                          \
+        -r http://localhost:8081                   \
+        -s avro                                    \
+        -t asgard.demo.customers                   \
+        -C -o beginning -u -q | jq '.op, .before, .after'
 ----
 
 
@@ -356,8 +330,8 @@ CREATE STREAM CUSTOMERS_AFTER AS
          AFTER->COMMENTS AS COMMENTS
     FROM CUSTOMERS_CDC_STREAM;
 CREATE STREAM CUSTOMERS_STREAM WITH (PARTITIONS=1) AS SELECT * FROM CUSTOMERS_AFTER PARTITION BY ID;
-SELECT ROWKEY, ID FROM CUSTOMERS_STREAM LIMIT 1;
-CREATE TABLE CUSTOMERS_TABLE WITH (KAFKA_TOPIC='CUSTOMERS_STREAM', VALUE_FORMAT='AVRO', KEY='ID');
+SELECT ROWKEY, ID FROM CUSTOMERS_STREAM EMIT CHANGES LIMIT 1;
+CREATE TABLE CUSTOMERS_TABLE WITH (KAFKA_TOPIC='CUSTOMERS_STREAM', VALUE_FORMAT='AVRO');
 ----
 
 * In MySQL, query the state: 
@@ -383,7 +357,7 @@ mysql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM customers WHERE ID=42;
 ----
 SET 'auto.offset.reset' = 'earliest';
 
-SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM CUSTOMERS_TABLE WHERE ID=42;
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM CUSTOMERS_TABLE WHERE ID=42 EMIT CHANGES;
 42 | Rick | Astley | Never.gonna.give.you@up.com | 2019-04-01T22:42:58Z
 ----
 
@@ -393,7 +367,7 @@ SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM CUSTOMERS_TABLE WHERE ID=42;
 ----
 SET 'auto.offset.reset' = 'earliest';
 
-SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM CUSTOMERS_STREAM WHERE ID=42;
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM CUSTOMERS_STREAM WHERE ID=42 EMIT CHANGES;
 42 | Rick | Astley |
 42 | Rick | Astley | Never.gonna.give.you@up.com
 42 | Rick | Astley | r.astley@example.com
@@ -405,8 +379,7 @@ SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM CUSTOMERS_STREAM WHERE ID=42;
 ----
 SET 'auto.offset.reset' = 'earliest';
 
-SELECT OP, BEFORE->EMAIL, AFTER->EMAIL FROM CUSTOMERS_CDC_STREAM WHERE AFTER->ID=42;
-[source,sql]
+SELECT OP, BEFORE->EMAIL, AFTER->EMAIL FROM CUSTOMERS_CDC_STREAM WHERE AFTER->ID=42 EMIT CHANGES;
 ----
 +
 ----
@@ -427,27 +400,28 @@ CREATE STREAM RATINGS WITH (KAFKA_TOPIC='ratings',VALUE_FORMAT='AVRO');
 +
 [source,sql]
 ----
-SELECT MESSAGE, STARS, USER_ID FROM RATINGS;
+SELECT MESSAGE, STARS, USER_ID FROM RATINGS EMIT CHANGES;
 ----
 +
 [source,sql]
 ----
-SELECT R.RATING_ID, R.MESSAGE, R.STARS, \
+SELECT R.RATING_ID, R.MESSAGE, R.STARS,
       C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, C.EMAIL AS EMAIL
-      FROM RATINGS R \
-        LEFT JOIN CUSTOMERS_TABLE C \
-        ON R.USER_ID = C.ID \
-      WHERE C.FIRST_NAME IS NOT NULL;
+      FROM RATINGS R
+        LEFT JOIN CUSTOMERS_TABLE C
+        ON R.USER_ID = C.ROWKEY
+      WHERE C.FIRST_NAME IS NOT NULL
+      EMIT CHANGES;
 ----
 +
 [source,sql]
 ----
-CREATE STREAM RATINGS_ENRICHED AS \ 
-SELECT R.RATING_ID, R.MESSAGE, R.STARS, \
+CREATE STREAM RATINGS_ENRICHED AS 
+SELECT R.RATING_ID, R.MESSAGE, R.STARS,
       C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, C.EMAIL AS EMAIL
-      FROM RATINGS R \
-        LEFT JOIN CUSTOMERS_TABLE C \
-        ON R.USER_ID = C.ID \
+      FROM RATINGS R
+        LEFT JOIN CUSTOMERS_TABLE C
+        ON R.USER_ID = C.ROWKEY
       WHERE C.FIRST_NAME IS NOT NULL;
 ----
 +
