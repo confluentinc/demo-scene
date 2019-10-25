@@ -2,7 +2,7 @@
 
 This repository uses the datagen connector to mock clickstream data and sends it to Kafka. The Azure SQLDW Sink connector will consume the data and create a table in SQLDW. Instead of using the `mssql` command line tool to query from SQLDW, I will provide instructions select it from Azure.
 
-This demo requires the `az` command line tool. Please follow the instructions [here](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) too install.
+This demo requires the `az` command line tool. Please follow the instructions [here](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) to install.
 
 ## Environment Vairables
 
