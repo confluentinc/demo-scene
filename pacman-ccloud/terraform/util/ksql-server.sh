@@ -10,9 +10,9 @@ yum install java-1.8.0-openjdk-devel.x86_64 -y
 
 cd /tmp
 wget ${confluent_platform_location}
-unzip confluent-5.3.0-2.12.zip
+unzip confluent-5.3.1-2.12.zip
 mkdir /etc/confluent
-mv confluent-5.3.0 /etc/confluent
+mv confluent-5.3.1 /etc/confluent
 mkdir ${confluent_home_value}/data
 
 ########### Generating Props File ###########
