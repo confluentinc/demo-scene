@@ -161,5 +161,5 @@ resource "google_compute_instance_template" "ksql_server" {
     access_config {
     }
   }
-  tags = ["ksql-server-${var.global_prefix}"]
+  tags = ["${var.global_prefix}-ksql-server"]
 }
