@@ -147,14 +147,13 @@ services:
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
-      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/'
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/,/data/connector-jars'
       # External secrets config
       # See https://docs.confluent.io/current/connect/security.html#externalizing-secrets
       CONNECT_CONFIG_PROVIDERS: 'file'
       CONNECT_CONFIG_PROVIDERS_FILE_CLASS: 'org.apache.kafka.common.config.provider.FileConfigProvider'
     volumes:
       - ./data:/data
-      - /Users/rmoff/Downloads/debezium-connector-mysql:/usr/share/confluent-hub-components/debezium-connector-mysql
     command: 
       # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
       - bash 
@@ -162,6 +161,7 @@ services:
       - |
         echo "Installing connector plugins"
         confluent-hub install --no-prompt confluentinc/kafka-connect-mqtt:1.2.3
+        confluent-hub install --no-prompt debezium/debezium-connector-mysql:0.10.0
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 

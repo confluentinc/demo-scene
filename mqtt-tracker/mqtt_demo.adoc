@@ -1,6 +1,6 @@
 = Building a Stream Processing pipeline with MQTT, Apache Kafka, and KSQL
 Robin Moffatt <robin@confluent.io>
-v1.00, 29 September 2019
+v1.01, 6 November 2019
 
 == Overview
 
@@ -56,7 +56,14 @@ docker exec -it mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
 ----
 ./load_sample_data.sh
 ----
-
++
+or
++
+[source,bash]
+----
+kafkacat -b localhost:9092 -t data_mqtt -K: -P -T -l ./data/dummy_data.kcat
+kafkacat -b localhost:9092 -t data_mqtt -K: -P -T -l ./data/tmp.kcat
+----
 * Option 2 : live pull from CCloud
 
 ** Replicator
@@ -81,15 +88,22 @@ kafkacat -b $CCLOUD_BROKER_HOST \
     -X auto.offset.reset=earliest \
     -G copy_to_local_01 data_mqtt -K: | \
 kafkacat -b localhost:9092,localhost:19092,localhost:29092 \
-    -t data_mqtt-import \
+    -t data_mqtt \
     -K: -P 
+----
+
+* Option 3 : stream from MQTT source
++
+[source,bash]
+----
+./create_mqtt_source_local.sh
 ----
 
 Check there's data on the topic: 
 
 [source,bash]
 ----
-kafkacat -b localhost:9092 -t data_mqtt-import -o beginning -C
+kafkacat -b localhost:9092 -t data_mqtt -o beginning -C
 ----
 
 == Demo
@@ -119,14 +133,14 @@ CREATE STREAM MQTT_RAW
      TST  BIGINT,  ALT  INTEGER, COG       INTEGER, VEL  INTEGER,
      P    DOUBLE,  BS   INTEGER, CONN      VARCHAR, ACC  INTEGER,
      T    VARCHAR, VAC  INTEGER, INREGIONS VARCHAR, TYPE VARCHAR) 
-WITH (KAFKA_TOPIC = 'data_mqtt-import', VALUE_FORMAT='JSON');
+WITH (KAFKA_TOPIC = 'data_mqtt', VALUE_FORMAT='JSON');
 ----
 
 image::images/mqtt_kafka_04.png[]
 
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(TST*1000, 'MMM-dd HH:mm:ss','America/Los_Angeles') as TS, 
+SELECT TIMESTAMPTOSTRING(TST*1000, 'MMM-dd HH:mm:ss','Europe/Copenhagen') as TS, 
        TID, 
        BATT,
        BS 
@@ -141,7 +155,7 @@ CREATE STREAM RUNNER_LOCATION_00
     WITH (VALUE_FORMAT='AVRO') AS
     SELECT SPLIT(ROWKEY, '/')[2] AS WHO
             , TST * 1000 AS EVENT_TIME_EPOCH_MS_TS
-            , TIMESTAMPTOSTRING(TST*1000,'yyyy-MM-dd HH:mm:ss','America/Los_Angeles') AS EVENT_TIME
+            , TIMESTAMPTOSTRING(TST*1000,'yyyy-MM-dd HH:mm:ss','Europe/Copenhagen') AS EVENT_TIME
             , CASE WHEN LAT IS NULL OR LON IS NULL THEN CAST(NULL AS VARCHAR) 
             	   ELSE CAST(LAT AS VARCHAR) ||','||CAST(LON AS VARCHAR) 
               END AS LOCATION
@@ -197,16 +211,15 @@ Since this is just a Kafka topic we can use and consume it just like any other. 
 +
 [source,bash]
 ----
-curl -XPUT "http://localhost:9200/_template/kafkaconnect/?include_type_name=true" -H 'Content-Type: application/json' -d'
-{
-            "template": "*",
+curl -XPUT "http://localhost:9200/_template/kafkaconnect/" -H 'Content-Type: application/json' -d'
+          {
+            "index_patterns": "*",
             "settings": { "number_of_shards": 1, "number_of_replicas": 0 },
-            "mappings": { "_default_" : {
-                "dynamic_templates": [
-                    { "dates": { "match": "*_TS", "mapping": { "type": "date" } } },
-                    { "heights": { "match": "HEIGHT", "mapping": { "type": "float" } } },
-                    { "locations": { "match": "LOCATION", "mapping": { "type": "geo_point" } } }
-                ] } } }'
+            "mappings": { "dynamic_templates": [
+                { "dates": { "match": "*_TS", "mapping": { "type": "date" } } },
+                { "heights": { "match": "HEIGHT", "mapping": { "type": "float" } } },
+                { "locations": { "match": "LOCATION", "mapping": { "type": "geo_point" } } }
+            ] } }'
 ----
 
 * Create the sink
@@ -235,7 +248,7 @@ sink  |  sink-elastic-runner_location-00  |  RUNNING  |  RUNNING  |  io.confluen
 [source,bash]
 ----
 echo -e "\n--\n+> Opt out of Kibana telemetry"
-curl 'http://localhost:5601/api/telemetry/v1/optIn' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'content-type: application/json' -H 'accept: application/json' --data-binary '{"enabled":false}' --compressed
+curl 'http://localhost:5601/api/telemetry/v2/optIn' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'content-type: application/json' -H 'accept: application/json' --data-binary '{"enabled":false}' --compressed
 
 echo -e "\n--\n+> Create Kibana index patterns"
 curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/runner_location_idx' \
@@ -283,9 +296,10 @@ Declare the KSQL table on the topic populated from the database:
 SET 'auto.offset.reset' = 'earliest';
 
 CREATE STREAM USERS_STREAM WITH (KAFKA_TOPIC='mysql-asgard.demo.USERS', VALUE_FORMAT='AVRO');
-CREATE STREAM USERS_REKEY WITH (PARTITIONS=6) AS SELECT * FROM USERS_STREAM PARTITION BY USERID;
-PRINT USERS_REKEY LIMIT 1;
-CREATE TABLE USERS WITH (KAFKA_TOPIC='USERS_REKEY', VALUE_FORMAT='AVRO'); 
+CREATE STREAM USERS_REKEY_P6 WITH (PARTITIONS=6) AS SELECT * FROM USERS_STREAM PARTITION BY USERID;
+CREATE STREAM USERS_REKEY_P1 WITH (PARTITIONS=1) AS SELECT * FROM USERS_STREAM PARTITION BY USERID;
+PRINT USERS_REKEY_P1 LIMIT 1;
+CREATE TABLE USERS WITH (KAFKA_TOPIC='USERS_REKEY_P1', VALUE_FORMAT='AVRO'); 
 ----
 
 Examine the data: 
@@ -294,7 +308,7 @@ Examine the data:
 ----
 SET 'auto.offset.reset' = 'latest';
 
-SELECT TIMESTAMPTOSTRING(R.ROWTIME, 'MMM-dd HH:mm:ss','America/Los_Angeles') AS TS,
+SELECT TIMESTAMPTOSTRING(R.ROWTIME, 'MMM-dd HH:mm:ss','Europe/Copenhagen') AS TS,
        R.WHO, 
        U.EMAIL, 
        U.SHARE_LOCATION_OPTIN, 
@@ -344,7 +358,7 @@ CREATE STREAM RUNNER_LOCATION_OPTIN AS
 ----
 SET 'auto.offset.reset' = 'latest';
 
-SELECT TIMESTAMPTOSTRING(ROWTIME, 'MMM-dd HH:mm:ss','America/Los_Angeles'),WHO, LOCATION, BATTERY_STATUS, BATTERY_PCT
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'MMM-dd HH:mm:ss','Europe/Copenhagen'),WHO, LOCATION, BATTERY_STATUS, BATTERY_PCT
     FROM RUNNER_LOCATION_OPTIN;
 ----
 
@@ -526,7 +540,7 @@ CREATE TABLE RUNNER_STATUS AS
 ----
 kafkacat -b localhost:9092 \
   -o beginning -K: -e -q \
-  -t data_mqtt2 \
+  -t data_mqtt \
   > data/export_20190929.kcat
 ----
 
