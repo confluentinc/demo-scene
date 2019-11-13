@@ -140,10 +140,20 @@ image::images/mqtt_kafka_04.png[]
 
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(TST*1000, 'MMM-dd HH:mm:ss','Europe/Copenhagen') as TS, 
+SELECT TIMESTAMPTOSTRING(TST*1000, 'MMM-dd HH:mm:ss','Europe/London') as TS, 
        TID, 
        BATT,
        BS 
+  FROM MQTT_RAW; 
+----
+
+[source,sql]
+----
+SELECT TIMESTAMPTOSTRING(TST*1000, 'MMM-dd HH:mm:ss','Europe/London') as TS, 
+       TID, 
+       BATT,
+       BS, 
+       GEO_DISTANCE(LAT,LON,51.4965005,-0.2106881,'KM') AS DISTANCE_FROM_VENUE
   FROM MQTT_RAW; 
 ----
 
@@ -151,11 +161,11 @@ Now let's do something more than just write this to the screen. Let's write it t
 
 [source,sql]
 ----
-CREATE STREAM RUNNER_LOCATION_00
+CREATE STREAM PHONE_DATA
     WITH (VALUE_FORMAT='AVRO') AS
     SELECT SPLIT(ROWKEY, '/')[2] AS WHO
             , TST * 1000 AS EVENT_TIME_EPOCH_MS_TS
-            , TIMESTAMPTOSTRING(TST*1000,'yyyy-MM-dd HH:mm:ss','Europe/Copenhagen') AS EVENT_TIME
+            , TIMESTAMPTOSTRING(TST*1000,'yyyy-MM-dd HH:mm:ss','Europe/London') AS EVENT_TIME
             , CASE WHEN LAT IS NULL OR LON IS NULL THEN CAST(NULL AS VARCHAR) 
             	   ELSE CAST(LAT AS VARCHAR) ||','||CAST(LON AS VARCHAR) 
               END AS LOCATION
@@ -182,13 +192,14 @@ CREATE STREAM RUNNER_LOCATION_00
             , VAC AS VERTICAL_ACCURACY_M
             , VEL AS VELOCITY_KMH
             , P AS PRESSURE_KPA
-            , CASE WHEN CONN='w' THEN 'WiFI'
+            , CASE WHEN CONN='w' THEN 'WiFi'
                    WHEN CONN='o' THEN 'Offline'
                    WHEN CONN='m' THEN 'Mobile'
                    ELSE '[unknown]'
               END AS CONNECTIVITY_STATUS
             , INREGIONS AS REGIONS
-            , LAT, LON
+            , LAT, LON,
+            GEO_DISTANCE(LAT,LON,51.4965005,-0.2106881,'KM') AS DISTANCE_FROM_VENUE
         FROM MQTT_RAW;
 ----
 
@@ -196,33 +207,21 @@ Show it worked:
 
 [source,sql]
 ----
-SELECT EVENT_TIME, 
+SELECT WHO, 
+       EVENT_TIME, 
        TRACKER_ID, 
        BATTERY_PCT, 
-       BATTERY_STATUS 
-  FROM RUNNER_LOCATION_00; 
+       BATTERY_STATUS,
+       REPORT_TRIGGER,
+       CONNECTIVITY_STATUS
+  FROM PHONE_DATA; 
 ----
 
 image::images/mqtt_kafka_03.png[]
 
 Since this is just a Kafka topic we can use and consume it just like any other. In this example, streaming the data to Elasticsearch.  
 
-* Create a dynamic mapping to pick up geopoint field
-+
-[source,bash]
-----
-curl -XPUT "http://localhost:9200/_template/kafkaconnect/" -H 'Content-Type: application/json' -d'
-          {
-            "index_patterns": "*",
-            "settings": { "number_of_shards": 1, "number_of_replicas": 0 },
-            "mappings": { "dynamic_templates": [
-                { "dates": { "match": "*_TS", "mapping": { "type": "date" } } },
-                { "heights": { "match": "HEIGHT", "mapping": { "type": "float" } } },
-                { "locations": { "match": "LOCATION", "mapping": { "type": "geo_point" } } }
-            ] } }'
-----
-
-* Create the sink
+* Create the sink (dynamic mapping already created by the Docker Compose)
 +
 [source,bash]
 ----
@@ -240,7 +239,7 @@ curl -s "http://localhost:8083/connectors?expand=info&expand=status" | \
 +
 [source,bash]
 ----
-sink  |  sink-elastic-runner_location-00  |  RUNNING  |  RUNNING  |  io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
+sink    |  sink-elastic-phone_data-00      |  RUNNING  |  RUNNING  |  io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
 ----
 
 * Set up Kibana
@@ -250,20 +249,23 @@ sink  |  sink-elastic-runner_location-00  |  RUNNING  |  RUNNING  |  io.confluen
 echo -e "\n--\n+> Opt out of Kibana telemetry"
 curl 'http://localhost:5601/api/telemetry/v2/optIn' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'content-type: application/json' -H 'accept: application/json' --data-binary '{"enabled":false}' --compressed
 
-echo -e "\n--\n+> Create Kibana index patterns"
-curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/runner_location_idx' \
-    -H 'kbn-xsrf: nevergonnagiveyouup' \
-    -H 'Content-Type: application/json' \
-    -d '{"attributes":{"title":"runner_location*","timeFieldName":"EVENT_TIME_EPOCH_MS_TS"}}'
-
+echo -e "Import objects"
+curl 'http://localhost:5601/api/saved_objects/_import?overwrite=true' -H 'Connection: keep-alive' -H 'Origin: http://localhost:5601' -H 'kbn-version: 7.4.0' --form file=@data/kibana.ndjson
+-- 
+-- echo -e "\n--\n+> Create Kibana index patterns"
+-- curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/phone_data_idx' \
+--     -H 'kbn-xsrf: nevergonnagiveyouup' \
+--     -H 'Content-Type: application/json' \
+--     -d '{"attributes":{"title":"phone_data","timeFieldName":"EVENT_TIME_EPOCH_MS_TS"}}'
+-- 
 echo -e "\n--\n+> Set default Kibana index"
 curl -XPOST 'http://localhost:5601/api/kibana/settings' \
     -H 'kbn-xsrf: nevergonnagiveyouup' \
     -H 'content-type: application/json' \
-    -d '{"changes":{"defaultIndex":"runner_location_idx"}}'
+    -d '{"changes":{"defaultIndex":"phone_data_idx"}}'
 ----
 
-* Show Kibana http://localhost:5601/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-7d,mode:quick,to:now))&_a=(columns:!(WHO,CONNECTIVITY_STATUS,BATTERY_PCT,BATTERY_STATUS),index:runner_location_idx,interval:auto,query:(language:lucene,query:''),sort:!(EVENT_TIME_EPOCH_MS_TS,desc))[discovery view] & http://localhost:5601/app/kibana#/visualize/create?type=tile_map&indexPattern=runner_location_idx&_g=(refreshInterval:(pause:!t,value:0),time:(from:now-7d,mode:quick,to:now))&_a=(filters:!(),linked:!f,query:(language:lucene,query:''),uiState:(),vis:(aggs:!((enabled:!t,id:'1',params:(),schema:metric,type:count),(enabled:!t,id:'2',params:(autoPrecision:!t,field:LOCATION,isFilteredByCollar:!t,mapCenter:!(0,0),mapZoom:2,precision:2,useGeocentroid:!t),schema:segment,type:geohash_grid)),params:(addTooltip:!t,colorSchema:'Yellow%20to%20Red',heatClusterSize:1.5,isDesaturated:!t,legendPosition:bottomright,mapCenter:!(0,0),mapType:'Shaded%20Circle%20Markers',mapZoom:2,wms:(enabled:!f,options:(format:image%2Fpng,transparent:!t),selectedTmsLayer:(attribution:'%3Cp%3E%26%23169;%20%3Ca%20href%3D%22https:%2F%2Fwww.openstreetmap.org%2Fcopyright%22%3EOpenStreetMap%20contributors%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fopenmaptiles.org%22%3EOpenMapTiles%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fwww.maptiler.com%22%3EMapTiler%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fwww.elastic.co%2Felastic-maps-service%22%3EElastic%20Maps%20Service%3C%2Fa%3E%3C%2Fp%3E%26%2310;',id:road_map,maxZoom:18,minZoom:0,origin:elastic_maps_service))),title:'New%20Visualization',type:tile_map))[map viz]
+* Show Kibana http://localhost:5601/app/kibana#/discover?_g=(refreshInterval:(pause:!f,value:1000),time:(from:now-24h,to:now))&_a=(columns:!(WHO,CONNECTIVITY_STATUS,BATTERY_PCT,BATTERY_STATUS,DISTANCE_FROM_VENUE),index:phone_data_idx,interval:auto,query:(language:lucene,query:''),sort:!(!(EVENT_TIME_EPOCH_MS_TS,desc)))[discovery view] & http://localhost:5601/app/kibana#/visualize/create?type=tile_map&indexPattern=phone_data_idx&_g=(refreshInterval:(pause:!t,value:0),time:(from:now-7d,mode:quick,to:now))&_a=(filters:!(),linked:!f,query:(language:lucene,query:''),uiState:(),vis:(aggs:!((enabled:!t,id:'1',params:(),schema:metric,type:count),(enabled:!t,id:'2',params:(autoPrecision:!t,field:LOCATION,isFilteredByCollar:!t,mapCenter:!(0,0),mapZoom:2,precision:2,useGeocentroid:!t),schema:segment,type:geohash_grid)),params:(addTooltip:!t,colorSchema:'Yellow%20to%20Red',heatClusterSize:1.5,isDesaturated:!t,legendPosition:bottomright,mapCenter:!(0,0),mapType:'Shaded%20Circle%20Markers',mapZoom:2,wms:(enabled:!f,options:(format:image%2Fpng,transparent:!t),selectedTmsLayer:(attribution:'%3Cp%3E%26%23169;%20%3Ca%20href%3D%22https:%2F%2Fwww.openstreetmap.org%2Fcopyright%22%3EOpenStreetMap%20contributors%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fopenmaptiles.org%22%3EOpenMapTiles%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fwww.maptiler.com%22%3EMapTiler%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fwww.elastic.co%2Felastic-maps-service%22%3EElastic%20Maps%20Service%3C%2Fa%3E%3C%2Fp%3E%26%2310;',id:road_map,maxZoom:18,minZoom:0,origin:elastic_maps_service))),title:'New%20Visualization',type:tile_map))[map viz]
 
 
 
@@ -300,6 +302,8 @@ CREATE STREAM USERS_REKEY_P6 WITH (PARTITIONS=6) AS SELECT * FROM USERS_STREAM P
 CREATE STREAM USERS_REKEY_P1 WITH (PARTITIONS=1) AS SELECT * FROM USERS_STREAM PARTITION BY USERID;
 PRINT USERS_REKEY_P1 LIMIT 1;
 CREATE TABLE USERS WITH (KAFKA_TOPIC='USERS_REKEY_P1', VALUE_FORMAT='AVRO'); 
+-- DROP TABLE USERS;
+-- CREATE TABLE USERS WITH (KAFKA_TOPIC='USERS_REKEY_P6', VALUE_FORMAT='AVRO'); 
 ----
 
 Examine the data: 
@@ -308,12 +312,14 @@ Examine the data:
 ----
 SET 'auto.offset.reset' = 'latest';
 
-SELECT TIMESTAMPTOSTRING(R.ROWTIME, 'MMM-dd HH:mm:ss','Europe/Copenhagen') AS TS,
+SELECT TIMESTAMPTOSTRING(R.ROWTIME, 'MMM-dd HH:mm:ss','Europe/London') AS TS,
        R.WHO, 
        U.EMAIL, 
        U.SHARE_LOCATION_OPTIN, 
-       R.BATTERY_STATUS
-    FROM RUNNER_LOCATION_00 R
+       R.BATTERY_STATUS,
+       R.LAT,
+       R.LON
+    FROM PHONE_DATA R
            LEFT JOIN USERS U
            ON R.WHO = U.ROWKEY ;
 ----
@@ -338,28 +344,19 @@ Set datagen running
 
 [source,sql]
 ----
-SET 'auto.offset.reset' = 'earliest';
-
-CREATE STREAM RUNNER_LOCATION_OPTIN AS
-  SELECT  WHO
-          ,EVENT_TIME_EPOCH_MS_TS
-          ,CASE WHEN U.SHARE_LOCATION_OPTIN = 1 THEN LOCATION 
-             ELSE CAST(NULL AS VARCHAR) 
-           END AS LOCATION
-          ,BATTERY_PCT
-          ,BATTERY_STATUS
-          ,U.EMAIL AS EMAIL
-    FROM RUNNER_LOCATION_00 R 
-           LEFT JOIN USERS U 
-           ON R.WHO = U.ROWKEY;
-----
-
-[source,sql]
-----
 SET 'auto.offset.reset' = 'latest';
 
-SELECT TIMESTAMPTOSTRING(ROWTIME, 'MMM-dd HH:mm:ss','Europe/Copenhagen'),WHO, LOCATION, BATTERY_STATUS, BATTERY_PCT
-    FROM RUNNER_LOCATION_OPTIN;
+SELECT  TIMESTAMPTOSTRING(ROWTIME, 'MMM-dd HH:mm:ss','Europe/London') AS TS,
+         WHO
+        ,U.EMAIL AS EMAIL
+        ,CASE WHEN U.SHARE_LOCATION_OPTIN = 1 THEN LOCATION 
+            ELSE CAST(NULL AS VARCHAR) 
+          END AS LOCATION
+        ,BATTERY_PCT
+        ,BATTERY_STATUS
+  FROM PHONE_DATA R 
+          LEFT JOIN USERS U 
+          ON R.WHO = U.ROWKEY;
 ----
 
 In a new terminal, show MySQL with KSQL still visible.
@@ -379,7 +376,39 @@ UPDATE USERS SET SHARE_LOCATION_OPTIN=TRUE WHERE USERID='ivor';
 UPDATE USERS SET SHARE_LOCATION_OPTIN=FALSE WHERE USERID='ivor';
 ----
 
-''''
+[source,sql]
+----
+CREATE STREAM PHONE_LOCATION_OPTIN AS
+  SELECT WHO,
+         EVENT_TIME_EPOCH_MS_TS,
+         CASE 
+            WHEN U.SHARE_LOCATION_OPTIN = 1 THEN 
+              CASE 
+                WHEN GEO_DISTANCE (LAT,LON,PRIVACY_LOCATION_LAT,PRIVACY_LOCATION_LON,'KM') > PRIVACY_ZONE_KM 
+                  THEN LOCATION 
+                ELSE '<Private>'
+              END
+            WHEN U.SHARE_LOCATION_OPTIN = 0 THEN '<Opted out>'
+            ELSE '<No user record>' 
+         END AS LOCATION, 
+         GEO_DISTANCE (LAT,LON,PRIVACY_LOCATION_LAT,PRIVACY_LOCATION_LON,'KM') AS DISTANCE_KM_FROM_PRIVACY_ZONE,
+         BATTERY_PCT,
+         BATTERY_STATUS,
+         U.EMAIL AS EMAIL
+  FROM   PHONE_DATA R
+         LEFT JOIN USERS U
+         ON R.WHO = U.ROWKEY;
+----
+
+[source,sql]
+----
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'MMM-dd HH:mm:ss','Europe/London') AS TS,
+       WHO,
+       LOCATION,
+       DISTANCE_KM_FROM_PRIVACY_ZONE
+  FROM PHONE_LOCATION_OPTIN
+  WHERE WHO='rmoff';
+----
 
 == MOAR derived streams
 
@@ -387,18 +416,20 @@ You can also use KSQL to create a subset of the data so that other teams could u
 
 [source,sql]
 ----
-CREATE STREAM MQTT_BATTERY_DATA AS
+SET 'auto.offset.reset' = 'earliest';
+
+CREATE STREAM PHONE_BATTERY_DATA AS
   SELECT WHO, BATTERY_PCT, BATTERY_STATUS, CONNECTIVITY_STATUS 
-    FROM RUNNER_LOCATION_00;
+    FROM PHONE_DATA;
 ----
 
 Aggregate the data to show connectivity type per day: 
 
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(windowstart(), 'yyyy-MM-dd HH:mm:ss'),
+SELECT TIMESTAMPTOSTRING(windowstart(), 'yyyy-MM-dd HH:mm:ss') AS TS,
        CONNECTIVITY_STATUS, COUNT(*) 
-  FROM MQTT_BATTERY_DATA 
+  FROM PHONE_BATTERY_DATA 
         WINDOW TUMBLING (SIZE 1 DAY) 
 GROUP BY CONNECTIVITY_STATUS; 
 ----
@@ -509,28 +540,7 @@ SELECT BS,
 
 
 
-EOFEOFEOF
-
-== Scrap notes
-
-
-
-CREATE STREAM RUNNER_LOCATION 
-    WITH (TIMESTAMP='EVENT_TIME_EPOCH_MS') AS
-    SELECT *
-    FROM RUNNER_LOCATION_00
-PARTITION BY WHO;
-
-CREATE TABLE RUNNER_STATUS AS 
-    SELECT WHO, 
-           MIN(VELOCITY_KMH) AS MIN_SPEED, 
-           MAX(VELOCITY_KMH) AS MAX_SPEED, 
-           COUNT(*) AS NUM_EVENTS, 
-           MAX(ROWTIME) AS LAST_EVENT_TS,
-           MIN(GEO_DISTANCE(LAT, LON, 53.925915, -1.823168, 'KM')) AS DIST_TO_ILKLEY
-     FROM RUNNER_LOCATION 
-            WINDOW TUMBLING (SIZE 5 MINUTE) 
-    GROUP BY WHO;
+`EOFEOFEOF`
 
 == Appendix
 
