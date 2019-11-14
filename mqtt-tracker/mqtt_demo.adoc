@@ -212,7 +212,6 @@ SELECT WHO,
        TRACKER_ID, 
        BATTERY_PCT, 
        BATTERY_STATUS,
-       REPORT_TRIGGER,
        CONNECTIVITY_STATUS
   FROM PHONE_DATA; 
 ----
@@ -251,18 +250,6 @@ curl 'http://localhost:5601/api/telemetry/v2/optIn' -H 'kbn-xsrf: nevergonnagive
 
 echo -e "Import objects"
 curl 'http://localhost:5601/api/saved_objects/_import?overwrite=true' -H 'Connection: keep-alive' -H 'Origin: http://localhost:5601' -H 'kbn-version: 7.4.0' --form file=@data/kibana.ndjson
--- 
--- echo -e "\n--\n+> Create Kibana index patterns"
--- curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/phone_data_idx' \
---     -H 'kbn-xsrf: nevergonnagiveyouup' \
---     -H 'Content-Type: application/json' \
---     -d '{"attributes":{"title":"phone_data","timeFieldName":"EVENT_TIME_EPOCH_MS_TS"}}'
--- 
-echo -e "\n--\n+> Set default Kibana index"
-curl -XPOST 'http://localhost:5601/api/kibana/settings' \
-    -H 'kbn-xsrf: nevergonnagiveyouup' \
-    -H 'content-type: application/json' \
-    -d '{"changes":{"defaultIndex":"phone_data_idx"}}'
 ----
 
 * Show Kibana http://localhost:5601/app/kibana#/discover?_g=(refreshInterval:(pause:!f,value:1000),time:(from:now-24h,to:now))&_a=(columns:!(WHO,CONNECTIVITY_STATUS,BATTERY_PCT,BATTERY_STATUS,DISTANCE_FROM_VENUE),index:phone_data_idx,interval:auto,query:(language:lucene,query:''),sort:!(!(EVENT_TIME_EPOCH_MS_TS,desc)))[discovery view] & http://localhost:5601/app/kibana#/visualize/create?type=tile_map&indexPattern=phone_data_idx&_g=(refreshInterval:(pause:!t,value:0),time:(from:now-7d,mode:quick,to:now))&_a=(filters:!(),linked:!f,query:(language:lucene,query:''),uiState:(),vis:(aggs:!((enabled:!t,id:'1',params:(),schema:metric,type:count),(enabled:!t,id:'2',params:(autoPrecision:!t,field:LOCATION,isFilteredByCollar:!t,mapCenter:!(0,0),mapZoom:2,precision:2,useGeocentroid:!t),schema:segment,type:geohash_grid)),params:(addTooltip:!t,colorSchema:'Yellow%20to%20Red',heatClusterSize:1.5,isDesaturated:!t,legendPosition:bottomright,mapCenter:!(0,0),mapType:'Shaded%20Circle%20Markers',mapZoom:2,wms:(enabled:!f,options:(format:image%2Fpng,transparent:!t),selectedTmsLayer:(attribution:'%3Cp%3E%26%23169;%20%3Ca%20href%3D%22https:%2F%2Fwww.openstreetmap.org%2Fcopyright%22%3EOpenStreetMap%20contributors%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fopenmaptiles.org%22%3EOpenMapTiles%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fwww.maptiler.com%22%3EMapTiler%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fwww.elastic.co%2Felastic-maps-service%22%3EElastic%20Maps%20Service%3C%2Fa%3E%3C%2Fp%3E%26%2310;',id:road_map,maxZoom:18,minZoom:0,origin:elastic_maps_service))),title:'New%20Visualization',type:tile_map))[map viz]
@@ -300,10 +287,10 @@ SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM USERS_STREAM WITH (KAFKA_TOPIC='mysql-asgard.demo.USERS', VALUE_FORMAT='AVRO');
 CREATE STREAM USERS_REKEY_P6 WITH (PARTITIONS=6) AS SELECT * FROM USERS_STREAM PARTITION BY USERID;
 CREATE STREAM USERS_REKEY_P1 WITH (PARTITIONS=1) AS SELECT * FROM USERS_STREAM PARTITION BY USERID;
-PRINT USERS_REKEY_P1 LIMIT 1;
-CREATE TABLE USERS WITH (KAFKA_TOPIC='USERS_REKEY_P1', VALUE_FORMAT='AVRO'); 
+PRINT USERS_REKEY_P6 LIMIT 1;
+CREATE TABLE USERS WITH (KAFKA_TOPIC='USERS_REKEY_P6', VALUE_FORMAT='AVRO'); 
+-- CREATE TABLE USERS WITH (KAFKA_TOPIC='USERS_REKEY_P1', VALUE_FORMAT='AVRO'); 
 -- DROP TABLE USERS;
--- CREATE TABLE USERS WITH (KAFKA_TOPIC='USERS_REKEY_P6', VALUE_FORMAT='AVRO'); 
 ----
 
 Examine the data: 
@@ -316,7 +303,6 @@ SELECT TIMESTAMPTOSTRING(R.ROWTIME, 'MMM-dd HH:mm:ss','Europe/London') AS TS,
        R.WHO, 
        U.EMAIL, 
        U.SHARE_LOCATION_OPTIN, 
-       R.BATTERY_STATUS,
        R.LAT,
        R.LON
     FROM PHONE_DATA R
@@ -346,17 +332,16 @@ Set datagen running
 ----
 SET 'auto.offset.reset' = 'latest';
 
-SELECT  TIMESTAMPTOSTRING(ROWTIME, 'MMM-dd HH:mm:ss','Europe/London') AS TS,
+SELECT  TIMESTAMPTOSTRING(R.ROWTIME, 'MMM-dd HH:mm:ss','Europe/London') AS TS,
          WHO
         ,U.EMAIL AS EMAIL
         ,CASE WHEN U.SHARE_LOCATION_OPTIN = 1 THEN LOCATION 
             ELSE CAST(NULL AS VARCHAR) 
           END AS LOCATION
-        ,BATTERY_PCT
-        ,BATTERY_STATUS
   FROM PHONE_DATA R 
           LEFT JOIN USERS U 
-          ON R.WHO = U.ROWKEY;
+          ON R.WHO = U.ROWKEY
+  WHERE WHO='ivor';
 ----
 
 In a new terminal, show MySQL with KSQL still visible.
@@ -376,6 +361,29 @@ UPDATE USERS SET SHARE_LOCATION_OPTIN=TRUE WHERE USERID='ivor';
 UPDATE USERS SET SHARE_LOCATION_OPTIN=FALSE WHERE USERID='ivor';
 ----
 
+Looking at the data in MySQL in more detail, we can see each user can optionally specify a _privacy zone_ within which their data won't be shared, but outside of which it can. 
+
+[source,sql]
+----
+SELECT * FROM USERS WHERE USERID='rmoff' \G 
+----
+
+[source,sql]
+----
+*************************** 1. row ***************************
+              USERID: rmoff
+               EMAIL: robin@rmoff.net
+SHARE_LOCATION_OPTIN: 1
+PRIVACY_LOCATION_LAT: 53.924729
+PRIVACY_LOCATION_LON: -1.804453
+     PRIVACY_ZONE_KM: 1
+           CREATE_TS: 2019-11-14 06:54:38
+           UPDATE_TS: 2019-11-14 06:54:38
+1 row in set (0.00 sec) 
+----
+
+We can apply this logic in the SQL as part of the streaming application: 
+
 [source,sql]
 ----
 CREATE STREAM PHONE_LOCATION_OPTIN AS
@@ -392,6 +400,7 @@ CREATE STREAM PHONE_LOCATION_OPTIN AS
             ELSE '<No user record>' 
          END AS LOCATION, 
          GEO_DISTANCE (LAT,LON,PRIVACY_LOCATION_LAT,PRIVACY_LOCATION_LON,'KM') AS DISTANCE_KM_FROM_PRIVACY_ZONE,
+         PRIVACY_ZONE_KM AS PRIVACY_ZONE_THRESHOLD_KM
          BATTERY_PCT,
          BATTERY_STATUS,
          U.EMAIL AS EMAIL
@@ -405,7 +414,8 @@ CREATE STREAM PHONE_LOCATION_OPTIN AS
 SELECT TIMESTAMPTOSTRING(ROWTIME, 'MMM-dd HH:mm:ss','Europe/London') AS TS,
        WHO,
        LOCATION,
-       DISTANCE_KM_FROM_PRIVACY_ZONE
+       DISTANCE_KM_FROM_PRIVACY_ZONE,
+       PRIVACY_ZONE_THRESHOLD_KM
   FROM PHONE_LOCATION_OPTIN
   WHERE WHO='rmoff';
 ----
