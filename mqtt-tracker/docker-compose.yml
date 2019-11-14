@@ -147,7 +147,7 @@ services:
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
-      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/,/data/connector-jars'
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/,/data/connect-jars'
       # External secrets config
       # See https://docs.confluent.io/current/connect/security.html#externalizing-secrets
       CONNECT_CONFIG_PROVIDERS: 'file'
@@ -239,7 +239,6 @@ services:
 
 
   elasticsearch:
-#    image: docker.elastic.co/elasticsearch/elasticsearch:6.8.3
     image: docker.elastic.co/elasticsearch/elasticsearch:7.4.0
     container_name: elasticsearch
     ports:
@@ -250,9 +249,31 @@ services:
       discovery.type: "single-node"
     # volumes: 
     #   - ./data/container_data/elasticserarch:/usr/share/elasticsearch/data
+    command: 
+      - bash 
+      - -c 
+      - |
+        /usr/local/bin/docker-entrypoint.sh & 
+        echo "Waiting for Elasticsearch to start ⏳"
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://localhost:9200/) -eq 000 ] ; do 
+          echo -e $$(date) " Elasticsearch listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://localhost:9200/) " (waiting for != 000)"
+          sleep 5 
+        done
+
+        curl -XPUT "http://localhost:9200/_template/kafkaconnect/" -H 'Content-Type: application/json' -d'
+          {
+            "index_patterns": "*",
+            "settings": { "number_of_shards": 1, "number_of_replicas": 0 },
+            "mappings": { "dynamic_templates": [
+                { "dates": { "match": "*_TS", "mapping": { "type": "date" } } },
+                { "heights": { "match": "HEIGHT", "mapping": { "type": "float" } } },
+                { "locations": { "match": "LOCATION", "mapping": { "type": "geo_point" } } }
+            ] } }'        
+
+        sleep infinity
+
 
   kibana:
-#    image: docker.elastic.co/kibana/kibana:6.7.0
     image: docker.elastic.co/kibana/kibana:7.4.0
     container_name: kibana
     depends_on:
@@ -315,50 +336,12 @@ services:
 
     #     sleep infinity
 
-  # sample_data:
-  #   image: edenhill/kafkacat:1.5.0
-  #   container_name: kafkacat
-  #   volumes: 
-  #     - ./data:/data
-  #   depends_on:
-  #     - kafka-1
-  #     - kafka-2
-  #     - kafka-3
-  #   command: 
-  #     - -b 
-  #     - kafka-1:39092,kafka-2:49092,kafka-3:59092
-  #     - -t 
-  #     - "data_mqtt-import" 
-  #     - "-K:"
-  #     - -P 
-  #     - -l 
-  #     - "data/export_20190929.kcat"
-  #    # - "/data/mqtt_data.kcat"
-
-  # datagen:
-  #   image: confluentinc/cp-kafkacat:latest
-  #   depends_on:
-  #     - kafka-1
-  #     - kafka-2
-  #     - kafka-3
-  #   volumes: 
-  #     - ./data:/data
-  #   command: 
-  #     - bash 
-  #     - -c 
-  #     - |
-  #       while [ 1 -eq 1 ]
-  #         do awk '{print $$0;system("sleep 0.5");}' /data/dummy_data.kcat | \
-  #             kafkacat -b kafka-1:39092 -P -t data_mqtt-import -K:
-  #         done
-
-  # Other systems
   mysql:
     # *-----------------------------*
     # To connect to the DB: 
     #   docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
     # *-----------------------------*
-    image: debezium/example-mysql:0.9
+    image: mysql:8.0
     container_name: mysql
     ports:
       - 3306:3306
