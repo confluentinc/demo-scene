@@ -1,0 +1,342 @@
+= Pipeline to the Cloud 
+Robin Moffatt <robin@confluent.io>
+v0.01, 16 October 2019
+
+
+MySQL -> Kafka Connect DBZ -> Kafka   -> KSQL    
+local        local            CCloud  <- CCloud  
+                                /\
+                               /  \
+                              /    \
+                             /      \
+                            /        \
+                    Kafka Connect   Kafka Connect
+                     local             CCloud
+                       |                  |
+                       |                  |
+                    Snowflake         Amazon S3
+
+== MySQL
+
+[source,bash]
+----
+$ docker exec -it mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
+
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 8
+Server version: 8.0.18 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql>
+mysql> show tables;
++----------------+
+| Tables_in_demo |
++----------------+
+| customers      |
+| transactions   |
++----------------+
+2 rows in set (0.00 sec)
+
+mysql> SELECT * FROM customers;
++----+------------+-----------+----------------------------+--------+------------------------------------------------------+---------------------+
+| id | first_name | last_name | email                      | gender | comments                                             | UPDATE_TS           |
++----+------------+-----------+----------------------------+--------+------------------------------------------------------+---------------------+
+|  1 | Bibby      | Argabrite | bargabrite0@google.com.hk  | Female | Reactive exuding productivity                        | 2019-10-24 19:53:13 |
+|  2 | Auberon    | Sulland   | asulland1@slideshare.net   | Male   | Organized context-sensitive Graphical User Interface | 2019-10-24 19:53:13 |
+|  3 | Marv       | Dalrymple | mdalrymple2@macromedia.com | Male   | Versatile didactic pricing structure                 | 2019-10-24 19:53:13 |
+|  4 | Nolana     | Yeeles    | nyeeles3@drupal.org        | Female | Adaptive real-time archive                           | 2019-10-24 19:53:13 |
+|  5 | Modestia   | Coltart   | mcoltart4@scribd.com       | Female | Reverse-engineered non-volatile success              | 2019-10-24 19:53:13 |
++----+------------+-----------+----------------------------+--------+------------------------------------------------------+---------------------+
+5 rows in set (0.00 sec)
+
+mysql> SELECT * FROM transactions LIMIT 5;
++--------+-------------+--------+----------+----------------------+
+| txn_id | customer_id | amount | currency | txn_timestamp        |
++--------+-------------+--------+----------+----------------------+
+|      1 |           5 | -72.97 | RUB      | 2018-12-12T13:58:37Z |
+|      2 |           2 |  95.21 | PLN      | 2018-07-30T09:06:21Z |
+|      3 |           2 |  17.13 | EUR      | 2018-04-30T21:30:39Z |
+|      4 |           4 |  63.83 | PHP      | 2018-07-30T14:25:32Z |
+|      5 |           2 |  66.08 | KGS      | 2018-07-13T02:10:10Z |
++--------+-------------+--------+----------+----------------------+
+5 rows in set (0.00 sec)
+----
+
+== MySQL -> Confluent Cloud using Debezium
+
+See https://rmoff.net/2019/10/16/using-kafka-connect-and-debezium-with-confluent-cloud/ to configure. 
+
+[source,bash]
+----
+curl -i -X PUT -H  "Content-Type:application/json" \
+    http://localhost:8083/connectors/source-debezium-mssql-01/config \
+    -d '{
+            "connector.class": "io.debezium.connector.sqlserver.SqlServerConnector", 
+            "database.hostname": "mssql",
+            "database.port": "1433",
+            "database.user": "sa",
+            "database.password": "Admin123",
+            "database.dbname": "demo",
+            "database.server.name": "mssql",
+            "table.whitelist":"dbo.accounts",
+            "database.history.kafka.bootstrap.servers": "${file:/data/credentials.properties:CCLOUD_BROKER_HOST}",
+            "database.history.kafka.topic": "dbz_dbhistory.asgard-02",
+            "database.history.consumer.security.protocol": "SASL_SSL",
+            "database.history.consumer.ssl.endpoint.identification.algorithm": "https",
+            "database.history.consumer.sasl.mechanism": "PLAIN",
+            "database.history.consumer.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${file:/data/credentials.properties:CCLOUD_API_KEY}\" password=\"${file:/data/credentials.properties:CCLOUD_API_SECRET}\";",
+            "database.history.producer.security.protocol": "SASL_SSL",
+            "database.history.producer.ssl.endpoint.identification.algorithm": "https",
+            "database.history.producer.sasl.mechanism": "PLAIN",
+            "database.history.producer.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${file:/data/credentials.properties:CCLOUD_API_KEY}\" password=\"${file:/data/credentials.properties:CCLOUD_API_SECRET}\";",
+            "decimal.handling.mode":"double",
+            "transforms": "unwrap,addTopicPrefix",
+            "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+            "transforms.addTopicPrefix.type":"org.apache.kafka.connect.transforms.RegexRouter",
+            "transforms.addTopicPrefix.regex":"(.*)",
+            "transforms.addTopicPrefix.replacement":"mssql-01-$1"
+    }'
+
+curl -i -X PUT -H  "Content-Type:application/json" \
+    http://localhost:8083/connectors/source-debezium-mysql-01/config \
+    -d '{
+            "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+            "database.hostname": "mysql",
+            "database.port": "3306",
+            "database.user": "debezium",
+            "database.password": "dbz",
+            "database.server.name": "asgard",
+            "database.history.kafka.bootstrap.servers": "${file:/data/credentials.properties:CCLOUD_BROKER_HOST}",
+            "database.history.kafka.topic": "dbz_dbhistory.asgard-01",
+            "database.history.consumer.security.protocol": "SASL_SSL",
+            "database.history.consumer.ssl.endpoint.identification.algorithm": "https",
+            "database.history.consumer.sasl.mechanism": "PLAIN",
+            "database.history.consumer.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${file:/data/credentials.properties:CCLOUD_API_KEY}\" password=\"${file:/data/credentials.properties:CCLOUD_API_SECRET}\";",
+            "database.history.producer.security.protocol": "SASL_SSL",
+            "database.history.producer.ssl.endpoint.identification.algorithm": "https",
+            "database.history.producer.sasl.mechanism": "PLAIN",
+            "database.history.producer.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${file:/data/credentials.properties:CCLOUD_API_KEY}\" password=\"${file:/data/credentials.properties:CCLOUD_API_SECRET}\";",
+            "table.whitelist":"demo.transactions",
+            "decimal.handling.mode":"double",
+            "transforms": "unwrap,addTopicPrefix",
+            "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+            "transforms.addTopicPrefix.type":"org.apache.kafka.connect.transforms.RegexRouter",
+            "transforms.addTopicPrefix.regex":"(.*)",
+            "transforms.addTopicPrefix.replacement":"mysql-01-$1"
+    }'
+----
+
+[source,bash]
+----
+$ curl -s "http://localhost:8083/connectors?expand=info&expand=status" |
+         jq '. | to_entries[] | [ .value.info.type, .key, .value.status.connector.state,.value.status.tasks[].state,.value.info.config."connector.class"]|join(":|:")' |
+         column -s : -t| sed 's/\"//g'| sort
+source  |  source-debezium-mysql-03  |  RUNNING  |  RUNNING  |  io.debezium.connector.mysql.MySqlConnector
+----
+
+Check data: 
+
+[source,bash]
+----
+bash -c '
+    source .env
+    docker run --rm edenhill/kafkacat:1.5.0 \
+        -X security.protocol=SASL_SSL -X sasl.mechanisms=PLAIN \
+        -X ssl.ca.location=./etc/ssl/cert.pem -X api.version.request=true \
+        -b ${CCLOUD_BROKER_HOST} \
+        -X sasl.username="${CCLOUD_API_KEY}" \
+        -X sasl.password="${CCLOUD_API_SECRET}" \
+        -r https://"${CCLOUD_SCHEMA_REGISTRY_API_KEY}":"${CCLOUD_SCHEMA_REGISTRY_API_SECRET}"@${CCLOUD_SCHEMA_REGISTRY_URL} \
+        -s avro \
+        -t mysql-01-asgard.demo.transactions \
+        -C -o beginning -c5
+'
+----
+
+[source,bash]
+----
+bash -c '
+    source .env
+    docker run --rm edenhill/kafkacat:1.5.0 \
+        -X security.protocol=SASL_SSL -X sasl.mechanisms=PLAIN \
+        -X ssl.ca.location=./etc/ssl/cert.pem -X api.version.request=true \
+        -b ${CCLOUD_BROKER_HOST} \
+        -X sasl.username="${CCLOUD_API_KEY}" \
+        -X sasl.password="${CCLOUD_API_SECRET}" \
+        -r https://"${CCLOUD_SCHEMA_REGISTRY_API_KEY}":"${CCLOUD_SCHEMA_REGISTRY_API_SECRET}"@${CCLOUD_SCHEMA_REGISTRY_URL} \
+        -s avro \
+        -t mssql-01-mssql.dbo.ACCOUNTS \
+        -C -o beginning -c5
+'
+----
+
+
+== Confluent Cloud to Snowflake
+
+Install connector
+
+    confluent-hub install snowflake/snowflake-kafka-connector:0.5.5
+
+Make sure to restart Kafka Connect worker. 
+
+Confirm that plugin is loaded
+
+[source,bash]
+----
+$ curl -s localhost:8083/connector-plugins|jq '.[].class'|grep Snow
+"com.snowflake.kafka.connector.SnowflakeSinkConnector"
+----
+
+Create key pair for snowflake account
+
+[source,bash]
+----
+openssl genrsa -out rsa_key.pem 2048
+openssl rsa -in rsa_key.pem  -pubout -out rsa_key.pub
+
+$ ls -l rsa_key.*
+-rw-r--r--  1 rmoff  staff  1675 16 Oct 17:42 rsa_key.pem
+-rw-r--r--  1 rmoff  staff   451 16 Oct 17:43 rsa_key.pub
+
+$ grep -v "BEGIN PUBLIC" rsa_key.pub | grep -v "END PUBLIC"|tr -d \n
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvJaFYB3qjAnGXD1bdhyLd3Okx6dMs7Y3qM4pGJjODS7bdgvV9/rtiy6BJeAP132cOKPsQanNIhqZ81+dHtIxL00Tw29GTkyfb5KcNBPx0+eO/QV3RGHNcoOd3NZ0aidP+HLdWo1efWha/WFBZ9dgp0VRIRPq4dAVVl7y6FeOxm8pBeEK5Tzl21OzRJ1OJaA09HbPh86OHQMUzt/o0Ajq/4IJrLWTFJzG3J/JCMexM1SckXbxBwnrMc/n+486jTMe5zNNomFH1AyRqlCpz5qG3NCafvLcs6+8v+1Kpvb2w3JRuev6XIUQ3s/QvBL4vm7mQ1SmQ6c04H8OjtNd0ow2pwIDAQAB
+----
+
+Add key to Snowflake account from Web UI - *make sure to set context to `SECURITYADMIN` first*
+
+[source,sql]
+----
+CREATE USER kafka RSA_PUBLIC_KEY='MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvJaFYB3qjAnGXD1bdhyLd3Okx6dMs7Y3qM4pGJjODS7bdgvV9/rtiy6BJeAP132cOKPsQanNIhqZ81+dHtIxL00Tw29GTkyfb5KcNBPx0+eO/QV3RGHNcoOd3NZ0aidP+HLdWo1efWha/WFBZ9dgp0VRIRPq4dAVVl7y6FeOxm8pBeEK5Tzl21OzRJ1OJaA09HbPh86OHQMUzt/o0Ajq/4IJrLWTFJzG3J/JCMexM1SckXbxBwnrMc/n+486jTMe5zNNomFH1AyRqlCpz5qG3NCafvLcs6+8v+1Kpvb2w3JRuev6XIUQ3s/QvBL4vm7mQ1SmQ6c04H8OjtNd0ow2pwIDAQAB'
+GRANT ROLE SYSADMIN TO USER kafka; 
+----
+
+Strip out the private key
+
+[source,bash]
+----
+$ grep -v "BEGIN RSA PRIVATE" rsa_key.pem | grep -v "END RSA PRIVATE"|tr -d \n
+MIIEowIBAAKCAQEAvJaFYB3qjAnGXD1bdhyLd3Okx6dMs7Y3qM4pGJjODS7bdgvV9/rtiy6BJeAP132cOKPsQanNIhqZ81+dHtIxL00Tw29GTkyfb5KcNBPx0+eO/QV3RGHNcoOd3NZ0aidP+HLdWo1efWha/WFBZ9dgp0VRIRPq4dAVVl7y6FeOxm8pBeEK5Tzl21OzRJ1OJaA09HbPh86OHQMUzt/o0Ajq/4IJrLWTFJzG3J/JCMexM1SckXbxBwnrMc/n+486jTMe5zNNomFH1AyRqlCpz5qG3NCafvLcs6+8v+1Kpvb2w3JRuev6XIUQ3s/QvBL4vm7mQ1SmQ6c04H8OjtNd0ow2pwIDAQABAoIBAAI9HzQ25rPm4c3yhIVwbU9rtgcQu15eyWZdnCtIlRme9sf99/pLpkpCsRHMCSQbv6EEgSd+ZosDGdTDy8+z2xWeqp9lUMZZLoNakDQmEHbdhtsGF5ZeOtwjJ9qZSSSBdveSFYKfrwF6HapoXyhmbCVQM1hbLiykFbzCv8t2TqGYZvtgYK+VKrnLtmGNNLvD7nME6D9D4+T2z0PnUDiXn/FchOhoo5CADfhQeKwxLOMI7ZNu92L/XAJeY2GerKVg9n8hmZyoLjxMBvxicrwpRcTONybtf58CzcOxu2MMHl8q3unPyxkno4Pr7Ub5JC42oSVcHtP8mmpbvzhzNPvFrvECgYEA9BOPqk5S89YsEXRIlPt8Wv1fY1EyB62BNpQ1GcbqnT3XchxtcREuOsqm3PJPQebDvV/M7JgegtxupRfjNMaqiLAIgcK7zDwjunkOmRneHWjVUi3c8BoRSOL65xPbGCKXD4R9w47L9CCkkis6Tld36dwoWHQXc1VCSV7GhSC2g40CgYEAxc0EW/7xFT2bZitIyKOrWVLHYE+S7iJHOM/dcPVtGXE59/+mP+k7uAqWiniTuEdcrmA17Bh2l85W0GCxMyqxbgpifXm1pD0BbRppLsgpBWWCNNsSdAAkcwqFcnRXSiIXxut9tYEkKWQxbk+OlD089IJlfyICynDcKyDF9VQqXAMCgYEA3UL6YwY79uY57ty+i6hrtESq+2r48rLcRzEV7jdAKqmMLNsOb4iGoy9hEzzqkrBy07MMH5NLXZAdEbbU9tv+bok+PPveqSf/r6Tckfg8PebyM1x2RIctEikKEP8UCA4baSrPo79IrxgEeKmNYsWyZCN7w6wCMkChJcgwKTFdo2UCgYAiCGBTo82/JdZzAceIHgEBYWjEfWx+ZI90iu9C3DdlRUIAFZB5Npv70naMZKql7kFYD123vY3KGMp/F+PlNddJY6gGhsZl98kjCIRIdE/6ibiZd4f5RXz//jNvuey66JrGswXyEMI0DPUkUbPqdY7jUvw7n5JzWm/HS+BDkbOoGQKBgGv/fvPXBk5TRMCXDGVs4xB8ycRiKm+BhKu/FbuCGnY3ShxEq5PRBXZC8BlL3ySg7CZEZWmgjOvA7hurbKxrm84aQbs5R/IdNDzCzgX1I8YLDpQuwYOT7jI2p63rHaKK4y+Gjy3KFrayZvpUlyvBzvC36RHbjll4ih9yFNI5tD8w
+----
+
+Add it to `.env` under `SNOWFLAKE_PRIVATE_KEY` which is mounted into the Kafka Connect worker as `/data/credentials.properties`
+
+Create the connector: 
+
+[source,bash]
+----
+curl -i -X PUT -H  "Content-Type:application/json" \
+    http://localhost:8083/connectors/sink_snowflake_01/config \
+    -d '{
+        "connector.class":"com.snowflake.kafka.connector.SnowflakeSinkConnector",
+        "tasks.max":1,
+        "topics":"mysql-01-asgard.demo.transactions,mssql-01-mssql.dbo.ACCOUNTS",
+        "snowflake.url.name":"ki28888.us-east-1.snowflakecomputing.com",
+        "snowflake.user.name":"kafka",
+        "snowflake.user.role":"SYSADMIN",
+        "snowflake.private.key":"${file:/data/credentials.properties:SNOWFLAKE_PRIVATE_KEY}",
+        "snowflake.database.name":"DEMO_DB",
+        "snowflake.schema.name":"PUBLIC",
+        "key.converter":"org.apache.kafka.connect.storage.StringConverter",
+        "value.converter":"com.snowflake.kafka.connector.records.SnowflakeAvroConverter",
+        "value.converter.schema.registry.url":"https://${file:/data/credentials.properties:CCLOUD_SCHEMA_REGISTRY_URL}",
+        "value.converter.basic.auth.credentials.source":"USER_INFO",
+        "value.converter.basic.auth.user.info":"${file:/data/credentials.properties:CCLOUD_SCHEMA_REGISTRY_API_KEY}:${file:/data/credentials.properties:CCLOUD_SCHEMA_REGISTRY_API_SECRET}"
+     }'
+----
+
+
+        "snowflake.topic2table.map": "mysql-01-asgard.demo.transactions:TRANSACTIONS",
+
+----
+
+
+Map in Snowflake
+
+SELECT  T.RECORD_CONTENT:txn_id,
+        T.RECORD_CONTENT:txn_timestamp,
+        A.RECORD_CONTENT:FIRST_NAME,
+        A.RECORD_CONTENT:LAST_NAME,
+        A.RECORD_CONTENT:USERNAME,
+        A.RECORD_CONTENT:COMPANY,
+        T.RECORD_CONTENT:amount,
+        T.RECORD_CONTENT:currency
+FROM    MYSQL_01_ASGARD_DEMO_TRANSACTIONS_1160394993 T
+        LEFT JOIN MSSQL_01_MSSQL_DBO_ACCOUNTS_120433424 A 
+        ON T.RECORD_CONTENT:customer_id = A.RECORD_CONTENT:ID
+
+
+Blog - show streaming to Snowflake, to S3 - discuss joining the data
+Show joining it in KSQL
+Write single joined topic out to target
+transform once, use many
+
+
+== S3 sink
+
+
+[source,bash]
+----
+bash -c '
+    source .env
+    docker run --rm edenhill/kafkacat:1.5.0 \
+        -X security.protocol=SASL_SSL -X sasl.mechanisms=PLAIN \
+        -X ssl.ca.location=./etc/ssl/cert.pem -X api.version.request=true \
+        -b ${CCLOUD_BROKER_HOST} \
+        -X sasl.username="${CCLOUD_API_KEY}" \
+        -X sasl.password="${CCLOUD_API_SECRET}" \
+        -r https://"${CCLOUD_SCHEMA_REGISTRY_API_KEY}":"${CCLOUD_SCHEMA_REGISTRY_API_SECRET}"@${CCLOUD_SCHEMA_REGISTRY_URL} \
+        -f 'Topic %t[%p], offset: %o, Headers: %h, key: %k, payload: %S bytes: %s\n'
+        -s avro \
+        -t dlq-lcc-emj3x \
+        -C -o -1
+'
+----
+
+
+
+== Snowflake notes
+
+
+[source,bash]
+----
+curl -i -X PUT -H  "Content-Type:application/json" \
+    http://localhost:8083/connectors/sink_snowflake_03_avro/config \
+    -d '{
+        "connector.class":"com.snowflake.kafka.connector.SnowflakeSinkConnector",
+        "tasks.max":1,
+        "topics":"mysql-01-asgard.demo.transactions",
+        "snowflake.topic2table.map": "mysql-01-asgard.demo.transactions:TRANSACTIONS03",
+        "snowflake.url.name":"ki28888.us-east-1.snowflakecomputing.com",
+        "snowflake.user.name":"kafka",
+        "snowflake.user.role":"SYSADMIN",
+        "snowflake.private.key":"${file:/data/credentials.properties:SNOWFLAKE_PRIVATE_KEY}",
+        "snowflake.database.name":"DEMO_DB",
+        "snowflake.schema.name":"PUBLIC",
+        "key.converter":"org.apache.kafka.connect.storage.StringConverter",
+        "value.converter":"io.confluent.connect.avro.AvroConverter",
+        "value.converter.schema.registry.url":"https://${file:/data/credentials.properties:CCLOUD_SCHEMA_REGISTRY_URL}",
+        "value.converter.basic.auth.credentials.source":"USER_INFO",
+        "value.converter.basic.auth.user.info":"${file:/data/credentials.properties:CCLOUD_SCHEMA_REGISTRY_API_KEY}:${file:/data/credentials.properties:CCLOUD_SCHEMA_REGISTRY_API_SECRET}",
+        "offset.flush.interval.ms":"60000",
+        "offset.flush.timeout.ms":"10000",
+        "buffer.count.records":"100",
+        "buffer.size.bytes":"65536"
+     }'
+----
+
+Can't use standard converters 
+
+[SF_KAFKA_CONNECTOR] Exception: Invalid record data
+[SF_KAFKA_CONNECTOR] Error Code: 0019
+[SF_KAFKA_CONNECTOR] Detail: Unrecognizable record content, please use Snowflake Converters

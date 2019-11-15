@@ -1,3 +1,4 @@
+.env
 python_notify
 img_data
 *.docx
@@ -26,3 +27,5 @@ delta_configs
 .settings/
 .DS_Store
 mqtt-tracker/.env
+rsa_key.pem
+rsa_key.pub
