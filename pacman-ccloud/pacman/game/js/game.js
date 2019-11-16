@@ -384,8 +384,10 @@ function score(s, type) {
 
 function produceRecord(topic, record) {
 
+	const PROVIDER = "${cloud_provider}";
+	var contentType = "application/json";
+	var url = "${event_handler_api}?topic=" + topic;
 	var json = JSON.stringify(record);
-	var PROVIDER = "${cloud_provider}";
 
 	// The verification below is only
 	// necessary while the application
@@ -395,19 +397,26 @@ function produceRecord(topic, record) {
 	// game events.
 	
 	if (PROVIDER == "GCP" || PROVIDER == "AZR") {
+
 		// Fallback to the format that REST Proxy
 		// requires in order to emmit the events.
+
+		contentType = "application/vnd.kafka.json.v2+json";
+		url = "${event_handler_api}/topics/" + topic;
+
 		var recordHolder = {};
 		recordHolder.value = record;
 		var recordsHolder = {};
 		recordsHolder.records = [recordHolder];
 		json = JSON.stringify(recordsHolder);
+
 	}
 
 	const request = new XMLHttpRequest();
-	const url = "${event_handler_api}?topic=" + topic;
 	request.open("POST", url, true);
-	request.setRequestHeader("Content-Type", "application/json");
+	request.setRequestHeader("Content-Type", contentType);
 	request.send(json);
+
+	record
 
 }
