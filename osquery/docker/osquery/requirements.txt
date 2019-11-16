@@ -1,0 +1,2 @@
+osquery
+confluent_kafka
