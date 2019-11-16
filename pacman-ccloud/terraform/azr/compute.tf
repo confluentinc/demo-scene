@@ -27,7 +27,7 @@ resource "null_resource" "private_key_permissions" {
 
 resource "azurerm_storage_blob" "bastion_server_bootstrap" {
   count = var.instance_count["bastion_server"] >= 1 ? 1 : 0
-  depends_on = ["module.staticweb"]
+  depends_on = [module.staticweb]
   name = "scripts/bootstrap/bastion-server.sh"
   content_type = "text/x-shellscript"
   storage_account_name = azurerm_storage_account.pacman.name
@@ -38,7 +38,7 @@ resource "azurerm_storage_blob" "bastion_server_bootstrap" {
 
 resource "azurerm_storage_blob" "rest_proxy_bootstrap" {
   count = var.instance_count["rest_proxy"] >= 1 ? 1 : 0
-  depends_on = ["module.staticweb"]
+  depends_on = [module.staticweb]
   name = "scripts/bootstrap/rest-proxy.sh"
   content_type = "text/x-shellscript"
   storage_account_name = azurerm_storage_account.pacman.name
@@ -49,7 +49,7 @@ resource "azurerm_storage_blob" "rest_proxy_bootstrap" {
 
 resource "azurerm_storage_blob" "ksql_server_bootstrap" {
   count = var.instance_count["ksql_server"] >= 1 ? 1 : 0
-  depends_on = ["module.staticweb"]
+  depends_on = [module.staticweb]
   name = "scripts/bootstrap/ksql-server.sh"
   content_type = "text/x-shellscript"
   storage_account_name = azurerm_storage_account.pacman.name
