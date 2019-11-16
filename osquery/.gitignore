@@ -1,0 +1,7 @@
+.ipynb_checkpoints
+__pycache__
+target
+dependency-reduced-pom.xml
+streamz
+docker/elasticsearch
+.idea
