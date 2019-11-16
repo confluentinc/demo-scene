@@ -284,15 +284,13 @@ function lifes(l) {
 	}
 
 	// Emit event 'USER_GAME' event
-	var recordData = {};
-	recordData.user = window.name;
-	recordData.game = {}
-	recordData.game.score = SCORE
-	recordData.game.lives = LIFES
-	recordData.game.level = LEVEL
-
 	var record = {};
-	record.value = recordData;
+	record.user = window.name;
+	record.game = {}
+	record.game.score = SCORE
+	record.game.lives = LIFES
+	record.game.level = LEVEL
+
 	produceRecord('USER_GAME', record);
 
 }
@@ -318,10 +316,8 @@ function gameover() {
 	SCORE = 0;
 
 	// Emit event 'USER_LOSSES' event
-	var recordData = {};
-	recordData.user = window.name;
 	var record = {};
-	record.value = recordData;
+	record.user = window.name;
 	produceRecord('USER_LOSSES', record);
 
 }
@@ -375,29 +371,52 @@ function score(s, type) {
 	}
 
 	// Emit event 'USER_GAME' event
-	var recordData = {};
-	recordData.user = window.name;
-	recordData.game = {}
-	recordData.game.score = SCORE
-	recordData.game.lives = LIFES
-	recordData.game.level = LEVEL
-
 	var record = {};
-	record.value = recordData;
+	record.user = window.name;
+	record.game = {}
+	record.game.score = SCORE
+	record.game.lives = LIFES
+	record.game.level = LEVEL
+
 	produceRecord('USER_GAME', record);
 
 }
 
 function produceRecord(topic, record) {
 
-	var eventData = {};
-	eventData.records = [record];
-	var json = JSON.stringify(eventData);
+	const PROVIDER = "${cloud_provider}";
+	var contentType = "application/json";
+	var url = "${event_handler_api}?topic=" + topic;
+	var json = JSON.stringify(record);
+
+	// The verification below is only
+	// necessary while the application
+	// is being migrated to serverless,
+	// since some implementations still
+	// rely on REST Proxy to emmit the
+	// game events.
+	
+	if (PROVIDER == "GCP" || PROVIDER == "AZR") {
+
+		// Fallback to the format that REST Proxy
+		// requires in order to emmit the events.
+
+		contentType = "application/vnd.kafka.json.v2+json";
+		url = "${event_handler_api}/topics/" + topic;
+
+		var recordHolder = {};
+		recordHolder.value = record;
+		var recordsHolder = {};
+		recordsHolder.records = [recordHolder];
+		json = JSON.stringify(recordsHolder);
+
+	}
 
 	const request = new XMLHttpRequest();
-	const url = "${rest_proxy_endpoint}/topics/" + topic;
 	request.open("POST", url, true);
-	request.setRequestHeader("Content-Type", "application/vnd.kafka.json.v2+json");
+	request.setRequestHeader("Content-Type", contentType);
 	request.send(json);
+
+	record
 
 }

@@ -158,7 +158,8 @@ resource "google_storage_object_acl" "js_files" {
 data "template_file" "game_js" {
   template = file("../../pacman/game/js/game.js")
   vars = {
-    rest_proxy_endpoint = join(",", formatlist("http://%s", google_compute_global_address.rest_proxy.*.address))
+    event_handler_api = join(",", formatlist("http://%s", google_compute_global_address.rest_proxy.*.address))
+    cloud_provider = "GCP"
   }
 }
 
