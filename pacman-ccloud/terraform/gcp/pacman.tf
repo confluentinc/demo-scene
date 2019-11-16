@@ -159,6 +159,7 @@ data "template_file" "game_js" {
   template = file("../../pacman/game/js/game.js")
   vars = {
     rest_proxy_endpoint = join(",", formatlist("http://%s", google_compute_global_address.rest_proxy.*.address))
+    cloud_provider = "GCP"
   }
 }
 

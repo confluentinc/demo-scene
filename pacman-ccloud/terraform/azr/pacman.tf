@@ -126,6 +126,7 @@ data "template_file" "game_js" {
   template = file("../../pacman/game/js/game.js")
   vars = {
     rest_proxy_endpoint = "http://${azurerm_public_ip.rest_proxy[0].fqdn}"
+    cloud_provider = "AZR"
   }
 }
 

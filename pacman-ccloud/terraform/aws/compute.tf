@@ -27,31 +27,6 @@ resource "null_resource" "private_key_permissions" {
 }
 
 ###########################################
-############## REST Proxy #################
-###########################################
-
-resource "aws_instance" "rest_proxy" {
-  depends_on = [
-    aws_subnet.private_subnet,
-    aws_nat_gateway.default,
-  ]
-  count = var.instance_count["rest_proxy"]
-  ami = data.aws_ami.amazon_linux_2.id
-  instance_type = "t3.2xlarge"
-  key_name = aws_key_pair.generated_key.key_name
-  subnet_id = element(aws_subnet.private_subnet.*.id, count.index)
-  vpc_security_group_ids = [aws_security_group.rest_proxy[0].id]
-  user_data = data.template_file.rest_proxy_bootstrap.rendered
-  root_block_device {
-    volume_type = "gp2"
-    volume_size = 100
-  }
-  tags = {
-    Name = "${var.global_prefix}-rest-proxy-${count.index}"
-  }
-}
-
-###########################################
 ############## KSQL Server ################
 ###########################################
 
@@ -81,10 +56,7 @@ resource "aws_instance" "ksql_server" {
 ###########################################
 
 resource "aws_instance" "bastion_server" {
-  depends_on = [
-    aws_instance.rest_proxy,
-    aws_instance.ksql_server
-  ]
+  depends_on = [aws_instance.ksql_server]
   count = var.instance_count["bastion_server"] >= 1 ? 1 : 0
   ami = data.aws_ami.amazon_linux_2.id
   instance_type = "t2.micro"
@@ -98,56 +70,6 @@ resource "aws_instance" "bastion_server" {
   }
   tags = {
     Name = "${var.global_prefix}-bastion-server"
-  }
-}
-
-###########################################
-############# REST Proxy LBR ##############
-###########################################
-
-resource "aws_alb_target_group" "rest_proxy_target_group" {
-  count = var.instance_count["rest_proxy"] >= 1 ? 1 : 0
-  name = "${var.global_prefix}-rp-target-group"
-  port = "8082"
-  protocol = "HTTP"
-  vpc_id = aws_vpc.default.id
-  health_check {
-    healthy_threshold = 3
-    unhealthy_threshold = 3
-    timeout = 3
-    interval = 5
-    path = "/"
-    port = "8082"
-  }
-}
-
-resource "aws_alb_target_group_attachment" "rest_proxy_attachment" {
-  count = var.instance_count["rest_proxy"] >= 1 ? var.instance_count["rest_proxy"] : 0
-  target_group_arn = aws_alb_target_group.rest_proxy_target_group[0].arn
-  target_id = element(aws_instance.rest_proxy.*.id, count.index)
-  port = 8082
-}
-
-resource "aws_alb" "rest_proxy" {
-  depends_on = [aws_instance.rest_proxy]
-  count = var.instance_count["rest_proxy"] >= 1 ? 1 : 0
-  name = "${var.global_prefix}-rest-proxy"
-  subnets = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
-  security_groups = [aws_security_group.load_balancer.id]
-  internal = false
-  tags = {
-    Name = "${var.global_prefix}-rest-proxy"
-  }
-}
-
-resource "aws_alb_listener" "rest_proxy_listener" {
-  count = var.instance_count["rest_proxy"] >= 1 ? 1 : 0
-  load_balancer_arn = aws_alb.rest_proxy[0].arn
-  protocol = "HTTP"
-  port = "80"
-  default_action {
-    target_group_arn = aws_alb_target_group.rest_proxy_target_group[0].arn
-    type = "forward"
   }
 }
 
