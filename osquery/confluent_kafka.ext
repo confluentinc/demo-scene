@@ -1,0 +1,103 @@
+#!/usr/bin/env python
+
+import osquery
+import json
+import sys
+import os
+import sys
+import traceback
+import re
+from confluent_kafka import Producer
+
+
+def config():
+    """
+        If OSQURY_CONFIG env variable is set, this method will use it to read in the config. Else
+        it will try to read a osquery_confluent_config.json file locally.
+    """
+    path = os.getenv('OSQURY_CONFIG') if "OSQURY_CONFIG" in os.environ else "osquery_confluent_config.json"
+    with open(path) as json_file:
+        config = json.load(json_file)
+    return config
+
+
+@osquery.register_plugin
+class ConfluentConfigPlugin(osquery.ConfigPlugin):
+    """Example config plugin"""
+
+    def __init__(self):
+        self.config = config()
+        print("config {}".format(self.config['source']))
+
+    def name(self):
+        return "osquery_confluent_config"
+
+    def content(self):
+        return [
+            {
+                "source_one": json.dumps(self.config['source']),
+            }
+        ]
+        
+
+@osquery.register_plugin
+class ConfluentLoggerPlugin(osquery.LoggerPlugin):
+    """Example logger plugin"""
+
+    def __init__(self):
+        self.config = config()
+        self.p = Producer(self.config['config'])
+        self.pattern = re.compile('[^a-zA-Z\d_-]')
+
+    def name(self):
+        return "confluent_logger"
+
+    def delivery_report(self, err = None, msg = None):
+        """ Called once for each message produced to indicate delivery result.
+            Triggered by poll() or flush(). """
+        if err is not None:
+            print('Message delivery failed: {}'.format(err))
+        else:
+            print('Message delivered to {} [{}]'.format(msg.topic(), msg.partition()))
+
+    def log_string(self, value):
+        try:
+            # Trigger any available delivery report callbacks from previous produce() calls
+            self.p.poll(0)
+
+            # OSQuery will return its results in JSON format
+            # print(value)
+            json_message = json.loads(value)
+
+            # OSQuery will send a name column to identify the query provided in the 
+            # configuration. That name is used as the topic name in Kafka.
+            topic = json_message['name'] if "name" in json_message else self.config['topic']
+            topic  = self.pattern.sub("-", topic)
+
+            # Evaluating the key expression in the configuration file to pull the key out of
+            # the JSON document. If 'key' isn't provided, key is set to None. The configuration
+            # uses the identifyingHost column to identify logs from a specific host.
+            key = eval("json_message{}".format(self.config['source']['schedule'][topic]['key'])) if "key" in self.config['source']['schedule'][topic] else None
+
+            # Asynchronously produce a message, the delivery report callback
+            # will be triggered from poll() above, or flush() below, when the message has
+            # been successfully delivered or failed permanently.
+            self.p.produce(topic=topic, value=value.encode('utf-8'), callback=self.delivery_report, key=key)
+
+            # Wait for any outstanding messages to be delivered and delivery report
+            # callbacks to be triggered.
+            self.p.flush()
+
+            return osquery.extensions.ttypes.ExtensionStatus(code=0, message="OK")
+            
+        except:
+            print "Unexpected error:", sys.exc_info()[0]
+            traceback.print_exc()
+
+            raise
+
+
+if __name__ == "__main__":
+    osquery.start_extension(
+        name="confluent_cloud",
+        version="1.0.0",)
