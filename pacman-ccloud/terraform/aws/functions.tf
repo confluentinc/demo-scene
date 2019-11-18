@@ -106,7 +106,7 @@ resource "aws_api_gateway_integration_response" "cors_integration_response" {
 ######### Event Handler Function ##########
 ###########################################
 
-resource "aws_iam_role_policy" "guess_policy" {
+resource "aws_iam_role_policy" "event_handler_policy" {
   role = aws_iam_role.event_handler_role.name
   policy = <<POLICY
 {
@@ -166,7 +166,7 @@ resource "aws_lambda_function" "event_handler_function" {
   }
 }
 
-resource "aws_lambda_permission" "api_gateway_trigger" {
+resource "aws_lambda_permission" "event_handler_api_gateway_trigger" {
   statement_id = "AllowExecutionFromApiGateway"
   action = "lambda:InvokeFunction"
   principal = "apigateway.amazonaws.com"
