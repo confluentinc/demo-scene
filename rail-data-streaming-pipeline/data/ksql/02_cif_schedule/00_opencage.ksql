@@ -1,0 +1,19 @@
+CREATE STREAM OPENCAGE (rest_query    VARCHAR,
+                        total_results INT, 
+                        RESULTS       ARRAY<VARCHAR>) 
+    WITH (KAFKA_TOPIC='opencage',
+          VALUE_FORMAT='JSON');
+
+SET 'auto.offset.reset' = 'earliest';
+
+CREATE STREAM LOCATION_GEOCODE 
+    WITH (VALUE_FORMAT='AVRO') AS 
+    SELECT  REST_QUERY AS TPS_DESCRIPTION, 
+            TOTAL_RESULTS, 
+            EXTRACTJSONFIELD(RESULTS[0],'$.annotations.geohash') AS GEOHASH, 
+            EXTRACTJSONFIELD(RESULTS[0],'$.annotations.OSM.url') AS OSM_URL, 
+            EXTRACTJSONFIELD(RESULTS[0],'$.components') AS COMPONENTS, 
+            EXTRACTJSONFIELD(RESULTS[0],'$.geometry.lat') + ',' 
+            + EXTRACTJSONFIELD(RESULTS[0],'$.geometry.lng') AS GEO_LATLON
+    FROM    OPENCAGE 
+    PARTITION BY TPS_DESCRIPTION;

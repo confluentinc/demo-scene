@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Poor Ratings</title>
+  <style>
+    body {
+        font-family: 'Roboto', sans-serif;
+    }
+
+    .speech-bubble {
+        position: relative;
+        background: #ddddff;
+        border-radius: .4em;
+        padding: 10px;
+        margin: 10px;
+    }
+
+    .speech-bubble:after {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        width: 0;
+        height: 0;
+        border: 20px solid transparent;
+        border-right-color: #ddddff;
+        border-left: 0;
+        border-bottom: 0;
+        margin-top: -10px;
+        margin-left: -20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Poor Ratings</h2>
+  <div id='main'>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+  $(function(){
+
+    const socket = io({
+        transports: ['websocket']
+    });
+
+    socket.on('new message', (data) => {
+        var bubble = $("<div>", {
+            'class': "speech-bubble",
+            });
+        bubble.append(data.message.string);
+        for (var i=0; i<data.stars.int; i++)
+            bubble.append('⭐️');
+        $('#main').append(bubble);
+    });
+  });
+  </script>
+</body>
+</html>

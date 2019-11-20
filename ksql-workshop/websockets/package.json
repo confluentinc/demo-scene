@@ -1,0 +1,16 @@
+{
+  "name": "ratings-websockets",
+  "version": "0.0.1",
+  "description": "Websockets for ksql-workshop",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "russ.sayers@confluent.io",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "kafka-avro": "^1.2.0",
+    "socket.io": "^2.2.0"
+  }
+}

@@ -176,9 +176,9 @@ services:
     #   - -c
     #   - |
     #     echo -e "\n\n⏳ Waiting for KSQL to be available before launching CLI\n"
-    #     while [ $$(curl -s -o /dev/null -w %{http_code} http://ksql-server-asgard-01:8088/) -eq 000 ]
+    #     while [ $$(curl -s -o /dev/null -w %{http_code} http://ksql-server-asgard-01:8088/) -ne 307 ]
     #     do 
-    #       echo -e $$(date) "KSQL Server HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://ksql-server-asgard-01:8088/) " (waiting for 200)"
+    #       echo -e $$(date) "KSQL Server HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://ksql-server-asgard-01:8088/) " (waiting for 307)"
     #       sleep 5
     #     done
     #     echo -e "\n\n-> Running KSQL commands\n"
@@ -243,14 +243,14 @@ services:
         /etc/confluent/docker/run & 
         #
         # echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
-        # while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -eq 000 ] ; do 
+        # while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -ne 200 ] ; do 
         #   echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) " (waiting for 200)"
         #   sleep 5 
         # done
         # nc -vz $$CONNECT_REST_ADVERTISED_HOST_NAME $$CONNECT_REST_PORT
         # echo "Waiting for Schema Registry to start listening on schema-registry:8081 ⏳"
         # while [ $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) -eq 000 ] ; do 
-        #   echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for 200)"
+        #   echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for != 000)"
         #   sleep 5 
         # done
         # #
@@ -355,14 +355,14 @@ services:
         confluent-hub install --no-prompt cjmatta/kafka-connect-irc:5.0.0
         /etc/confluent/docker/run & 
         # echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
-        # while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -eq 000 ] ; do 
+        # while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -ne 200 ] ; do 
         #   echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) " (waiting for 200)"
         #   sleep 5 
         # done
         # nc -vz $$CONNECT_REST_ADVERTISED_HOST_NAME $$CONNECT_REST_PORT
         # echo "Waiting for Schema Registry to start listening on schema-registry:8081 ⏳"
         # while [ $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) -eq 000 ] ; do 
-        #   echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for 200)"
+        #   echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for != 000)"
         #   sleep 5 
         # done
         # #
@@ -453,7 +453,7 @@ services:
       CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       # Multiple connect clusters here
       CONTROL_CENTER_CONNECT_PLUTO_CLUSTER: 'http://kafka-connect-pluto-01:8083,http://kafka-connect-pluto-02:8083'
-      CONTROL_CENTER_CONNECT_MERCURY_CLUSTER: 'kafka-connect-mercury-01:8083'
+      CONTROL_CENTER_CONNECT_MERCURY_CLUSTER: 'http://kafka-connect-mercury-01:8083'
       # Multiple KSQL clusters here
       CONTROL_CENTER_KSQL_ASGARD_URL: "http://ksql-server-asgard-01:8088,http://ksql-server-asgard-02:8088"
       # The advertised URL needs to be the URL on which the browser can access the KSQL server (e.g. http://localhost:8088/info)

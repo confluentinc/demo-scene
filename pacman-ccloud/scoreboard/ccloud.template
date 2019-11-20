@@ -1,0 +1,9 @@
+bootstrap.servers=${bootstrap_server}
+sasl.mechanism=PLAIN
+security.protocol=SASL_SSL
+sasl.username=${cluster_api_key}
+sasl.password=${cluster_api_secret}
+
+schema.registry.url=${schema_registry_url}
+schema.registry.username=${schema_registry_username}
+schema.registry.password=${schema_registry_password}

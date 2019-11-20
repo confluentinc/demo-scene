@@ -2,14 +2,14 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.2.1
+    image: confluentinc/cp-zookeeper:5.3.1
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.2.1
+    image: confluentinc/cp-enterprise-kafka:5.3.1
     container_name: kafka
     depends_on:
       - zookeeper
@@ -49,7 +49,7 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.2.1
+    image: confluentinc/cp-schema-registry:5.3.1
     container_name: schema-registry
     depends_on:
       - zookeeper
@@ -59,7 +59,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect:5.2.1
+    image: confluentinc/cp-kafka-connect:5.3.1
     container_name: kafka-connect
     depends_on:
       - zookeeper
@@ -90,10 +90,10 @@ services:
       # Interceptor config
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.1.jar
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.1.jar
 
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.2.1
+    image: confluentinc/cp-ksql-server:5.3.1
     container_name: ksql-server
     ports:
       - 8088:8088
@@ -117,7 +117,7 @@ services:
       KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
 
   ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.2.1
+    image: confluentinc/cp-ksql-cli:5.3.1
     container_name: ksql-cli
     depends_on:
       - ksql-server
@@ -155,7 +155,7 @@ services:
 
 
   control-center:
-    image: confluentinc/cp-enterprise-control-center:5.2.1
+    image: confluentinc/cp-enterprise-control-center:5.3.1
     container_name: control-center
     depends_on:
       - zookeeper
@@ -168,8 +168,8 @@ services:
     environment:
       CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
       CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      CONTROL_CENTER_CONNECT_DEBEZIUM-SOURCE_CLUSTER: 'connect-debezium:8083'
-      CONTROL_CENTER_CONNECT_ELASTIC-SINKS_CLUSTER: 'kafka-connect:18083'
+      CONTROL_CENTER_CONNECT_DEBEZIUM-SOURCE_CLUSTER: 'http://connect-debezium:8083'
+      CONTROL_CENTER_CONNECT_ELASTIC-SINKS_CLUSTER: 'http://kafka-connect:18083'
       CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       # The advertised URL needs to be the URL on which the browser
       #  can access the KSQL server (e.g. http://localhost:8088/info)
@@ -255,3 +255,17 @@ services:
     environment:
       xpack.security.enabled: "false"
       discovery.type: "single-node"
+
+  websockets:
+    container_name: websockets
+    build: ./websockets
+  
+  nginx:
+    image: nginx:1.15-alpine
+    container_name: nginx
+    depends_on:
+      - websockets
+    ports:
+      - 8080:8080
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d

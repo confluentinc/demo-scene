@@ -1,0 +1,7 @@
+CREATE TABLE TIPLOC WITH (KAFKA_TOPIC='TIPLOC_FLAT_KEYED',
+                          VALUE_FORMAT='AVRO', 
+                          KEY='TIPLOC_CODE');
+
+CREATE TABLE STANOX WITH (KAFKA_TOPIC='STANOX_FLAT_KEYED',
+                          VALUE_FORMAT='AVRO', 
+                          KEY='STANOX');

@@ -1,0 +1,11 @@
+stomp
+credentials.properties
+aws_credentials
+set_credentials_env.sh
+*.log
+data/alerts.txt
+data/aws_credentials2
+data/egress/s3/00_create_sink2.sh
+data/ingest/cif_schedule/CIF_FULL_DAILY.json
+data/ingest/cif_schedule/CIF_FULL_DAILY_2019-06-13.json
+data/container_data

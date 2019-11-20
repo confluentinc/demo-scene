@@ -1,0 +1,100 @@
+RUN SCRIPT '/data/ksql/01_corpus_location/01_corpus.ksql';
+-- Make sure CORPUS_BY_STANOX exists before continuing
+SET 'auto.offset.reset' = 'earliest';
+SELECT * FROM CORPUS_BY_STANOX LIMIT 1;
+RUN SCRIPT '/data/ksql/01_corpus_location/02_stanox.ksql';
+
+-- ksql> show tables;
+
+--  Table Name | Kafka Topic      | Format | Windowed
+-- ---------------------------------------------------
+--  STANOX     | CORPUS_BY_STANOX | AVRO   | false
+-- ---------------------------------------------------
+-- ksql> SHOW STREAMS;
+
+--  Stream Name       | Kafka Topic       | Format
+-- ------------------------------------------------
+--  CORPUS_RAW        | corpus            | JSON
+--  CORPUS_BY_STANOX  | CORPUS_BY_STANOX  | AVRO
+-- ------------------------------------------------
+-- ksql>
+
+-- ##############################################################
+
+RUN SCRIPT '/data/ksql/02_cif_schedule/01_schedule_raw.ksql';
+
+-- Make sure TIPLOC_FLAT_KEYED exists before continuing
+SELECT * FROM TIPLOC_FLAT_KEYED LIMIT 1;
+RUN SCRIPT '/data/ksql/02_cif_schedule/02_tiploc.ksql';
+RUN SCRIPT '/data/ksql/02_cif_schedule/03_schedule.ksql';
+
+-- Make sure SCHEDULE_01 exists before continuing
+SELECT * FROM SCHEDULE_01 LIMIT 1;
+RUN SCRIPT '/data/ksql/02_cif_schedule/04_schedule_table.ksql';
+
+
+-- ksql> SHOW TABLES;
+
+--  Table Name    | Kafka Topic       | Format | Windowed
+-- -------------------------------------------------------
+--  TIPLOC        | TIPLOC_FLAT_KEYED | AVRO   | false
+--  STANOX        | CORPUS_BY_STANOX  | AVRO   | false
+--  SCHEDULE_01_T | SCHEDULE_01       | AVRO   | false
+-- -------------------------------------------------------
+
+-- ksql> SHOW STREAMS;
+
+--  Stream Name       | Kafka Topic       | Format
+-- ------------------------------------------------
+--  CORPUS_RAW        | corpus            | JSON
+--  TIPLOC_FLAT_KEYED | TIPLOC_FLAT_KEYED | AVRO
+--  SCHEDULE_RAW      | CIF_FULL_DAILY    | JSON
+--  CORPUS_BY_STANOX  | CORPUS_BY_STANOX  | AVRO
+--  SCHEDULE_00       | SCHEDULE_00       | AVRO
+--  SCHEDULE_01       | SCHEDULE_01       | AVRO
+-- ------------------------------------------------
+-- ##############################################################
+
+RUN SCRIPT '/data/ksql/03_movements/01_canx_reason.ksql';
+RUN SCRIPT '/data/ksql/03_movements/01_movement_raw.ksql';
+RUN SCRIPT '/data/ksql/03_movements/02_activations.ksql';
+RUN SCRIPT '/data/ksql/03_movements/02_cancellations.ksql';
+RUN SCRIPT '/data/ksql/03_movements/02_movements.ksql';
+
+SELECT * FROM TRAIN_ACTIVATIONS_01 LIMIT 1;
+RUN SCRIPT '/data/ksql/03_movements/03_activations_table.ksql';
+RUN SCRIPT '/data/ksql/03_movements/04_movements_activations.ksql';
+RUN SCRIPT '/data/ksql/03_movements/05_movements_activations_schedules.ksql';
+
+
+
+-- ksql> SHOW TABLES;
+
+--  Table Name  | Kafka Topic       | Format | Windowed
+-- -----------------------------------------------------
+--  TIPLOC      | TIPLOC_FLAT_KEYED | AVRO   | false
+--  CANX_REASON | canx_reason_code  | JSON   | false
+--  STANOX      | CORPUS_BY_STANOX  | AVRO   | false
+-- -----------------------------------------------------
+
+-- ksql> SHOW STREAMS;
+
+--  Stream Name                             | Kafka Topic                             | Format
+-- --------------------------------------------------------------------------------------------
+--  TRAIN_ACTIVATIONS_00                    | TRAIN_ACTIVATIONS_00                    | AVRO
+--  TRAIN_MOVEMENTS_ACTIVATIONS_00          | TRAIN_MOVEMENTS_ACTIVATIONS_00          | AVRO
+--  TRAIN_CANCELLATIONS_02                  | TRAIN_CANCELLATIONS_02                  | AVRO
+--  CORPUS_RAW                              | corpus                                  | JSON
+--  TRAIN_ACTIVATIONS_01                    | TRAIN_ACTIVATIONS_01                    | AVRO
+--  CORPUS_BY_STANOX                        | CORPUS_BY_STANOX                        | AVRO
+--  TRAIN_MOVEMENTS_01                      | TRAIN_MOVEMENTS_01                      | AVRO
+--  TRAIN_CANCELLATIONS_01                  | TRAIN_CANCELLATIONS_01                  | AVRO
+--  TRAIN_MOVEMENTS_00                      | TRAIN_MOVEMENTS_00                      | AVRO
+--  TRAIN_CANCELLATIONS_00                  | TRAIN_CANCELLATIONS_00                  | AVRO
+--  NETWORKRAIL_TRAIN_MVT_X                 | networkrail_TRAIN_MVT_X                 | JSON
+--  TIPLOC_FLAT_KEYED                       | TIPLOC_FLAT_KEYED                       | AVRO
+--  SCHEDULE_RAW                            | CIF_FULL_DAILY                          | JSON
+--  SCHEDULE_00                             | SCHEDULE_00                             | AVRO
+--  TRAIN_MOVEMENTS_ACTIVATIONS_SCHEDULE_00 | TRAIN_MOVEMENTS_ACTIVATIONS_SCHEDULE_00 | AVRO
+--  SCHEDULE_01                             | SCHEDULE_01                             | AVRO
+-- --------------------------------------------------------------------------------------------

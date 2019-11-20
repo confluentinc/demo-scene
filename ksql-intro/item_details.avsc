@@ -1,0 +1,429 @@
+// Ref: https://www.mockaroo.com/schemas/175270
+// @rmoff June 10, 2019
+{
+   "namespace": "ksql",
+   "name": "item_details",
+   "type": "record",
+   "fields": [
+      {
+         "name": "id",
+         "type": "string"
+      },
+      {
+         "name": "make",
+         "type": "string"
+      },
+      {
+         "name": "model",
+         "type": "string"
+      },
+      {
+         "name": "colour",
+         "type": "string"
+      },
+      {
+         "name": "category",
+         "type": "string"
+      },
+      {
+         "name": "unit_cost",
+         "type": "double"
+      }
+   ],
+   "arg.properties": {
+      "options": [
+         {
+            "id": "Item_1",
+            "make": "Boyle-McDermott",
+            "model": "Apiaceae",
+            "colour": "Crimson",
+            "category": "Sports",
+            "unit_cost": 19.9
+         },
+         {
+            "id": "Item_2",
+            "make": "Adams, Bednar and Kutch",
+            "model": "Brassicaceae",
+            "colour": "Pink",
+            "category": "Clothing",
+            "unit_cost": 9.08
+         },
+         {
+            "id": "Item_3",
+            "make": "Gislason, Upton and Dibbert",
+            "model": "Asteraceae",
+            "colour": "Puce",
+            "category": "Books",
+            "unit_cost": 11.61
+         },
+         {
+            "id": "Item_4",
+            "make": "Spencer-Ondricka",
+            "model": "Papaveraceae",
+            "colour": "Green",
+            "category": "Home",
+            "unit_cost": 3.63
+         },
+         {
+            "id": "Item_5",
+            "make": "Wisozk LLC",
+            "model": "Rosaceae",
+            "colour": "Fuscia",
+            "category": "Books",
+            "unit_cost": 8.82
+         },
+         {
+            "id": "Item_6",
+            "make": "Hudson, Schaden and Medhurst",
+            "model": "Pertusariaceae",
+            "colour": "Aquamarine",
+            "category": "Movies",
+            "unit_cost": 11.14
+         },
+         {
+            "id": "Item_7",
+            "make": "Satterfield and Sons",
+            "model": "Poaceae",
+            "colour": "Violet",
+            "category": "Books",
+            "unit_cost": 4.03
+         },
+         {
+            "id": "Item_8",
+            "make": "Harris, Pouros and Kreiger",
+            "model": "Fabaceae",
+            "colour": "Blue",
+            "category": "Sports",
+            "unit_cost": 14.87
+         },
+         {
+            "id": "Item_9",
+            "make": "Wisozk-Nader",
+            "model": "Seligeriaceae",
+            "colour": "Blue",
+            "category": "Computers",
+            "unit_cost": 14.06
+         },
+         {
+            "id": "Item_10",
+            "make": "Considine and Sons",
+            "model": "Chenopodiaceae",
+            "colour": "Pink",
+            "category": "Beauty",
+            "unit_cost": 4.76
+         },
+         {
+            "id": "Item_11",
+            "make": "Hilpert and Sons",
+            "model": "Liliaceae",
+            "colour": "Puce",
+            "category": "Sports",
+            "unit_cost": 17.17
+         },
+         {
+            "id": "Item_12",
+            "make": "Beer, Feil and Ratke",
+            "model": "Poaceae",
+            "colour": "Teal",
+            "category": "Books",
+            "unit_cost": 9.29
+         },
+         {
+            "id": "Item_13",
+            "make": "Lakin, Langworth and Cartwright",
+            "model": "Onagraceae",
+            "colour": "Violet",
+            "category": "Baby",
+            "unit_cost": 17.56
+         },
+         {
+            "id": "Item_14",
+            "make": "Quigley LLC",
+            "model": "Poaceae",
+            "colour": "Red",
+            "category": "Baby",
+            "unit_cost": 12.59
+         },
+         {
+            "id": "Item_15",
+            "make": "Ledner, Skiles and Skiles",
+            "model": "Pteridaceae",
+            "colour": "Mauv",
+            "category": "Automotive",
+            "unit_cost": 19.29
+         },
+         {
+            "id": "Item_16",
+            "make": "MacGyver Group",
+            "model": "Cyperaceae",
+            "colour": "Puce",
+            "category": "Health",
+            "unit_cost": 10.6
+         },
+         {
+            "id": "Item_17",
+            "make": "Bechtelar and Sons",
+            "model": "Lecanoraceae",
+            "colour": "Aquamarine",
+            "category": "Electronics",
+            "unit_cost": 11.1
+         },
+         {
+            "id": "Item_18",
+            "make": "Jakubowski, Mosciski and Erdman",
+            "model": "Convolvulaceae",
+            "colour": "Puce",
+            "category": "Baby",
+            "unit_cost": 11.06
+         },
+         {
+            "id": "Item_19",
+            "make": "Corwin, Funk and Anderson",
+            "model": "Verrucariaceae",
+            "colour": "Goldenrod",
+            "category": "Movies",
+            "unit_cost": 9.88
+         },
+         {
+            "id": "Item_20",
+            "make": "Bauch-Hudson",
+            "model": "Ericaceae",
+            "colour": "Indigo",
+            "category": "Books",
+            "unit_cost": 15.95
+         },
+         {
+            "id": "Item_21",
+            "make": "Hudson-Davis",
+            "model": "Convolvulaceae",
+            "colour": "Aquamarine",
+            "category": "Electronics",
+            "unit_cost": 2.37
+         },
+         {
+            "id": "Item_22",
+            "make": "Hyatt-Tremblay",
+            "model": "Agavaceae",
+            "colour": "Red",
+            "category": "Grocery",
+            "unit_cost": 4.1
+         },
+         {
+            "id": "Item_23",
+            "make": "Funk Inc",
+            "model": "Liliaceae",
+            "colour": "Blue",
+            "category": "Baby",
+            "unit_cost": 3.92
+         },
+         {
+            "id": "Item_24",
+            "make": "Fahey and Sons",
+            "model": "Fabaceae",
+            "colour": "Yellow",
+            "category": "Kids",
+            "unit_cost": 8.56
+         },
+         {
+            "id": "Item_25",
+            "make": "Rice-Ziemann",
+            "model": "Cyperaceae",
+            "colour": "Violet",
+            "category": "Automotive",
+            "unit_cost": 11.41
+         },
+         {
+            "id": "Item_26",
+            "make": "Kling Inc",
+            "model": "Asteraceae",
+            "colour": "Khaki",
+            "category": "Electronics",
+            "unit_cost": 16.19
+         },
+         {
+            "id": "Item_27",
+            "make": "Quitzon, Renner and Pouros",
+            "model": "Trapaceae",
+            "colour": "Aquamarine",
+            "category": "Jewelery",
+            "unit_cost": 9.46
+         },
+         {
+            "id": "Item_28",
+            "make": "Wolff and Sons",
+            "model": "Poaceae",
+            "colour": "Green",
+            "category": "Music",
+            "unit_cost": 4.05
+         },
+         {
+            "id": "Item_29",
+            "make": "Dickinson Group",
+            "model": "Onagraceae",
+            "colour": "Yellow",
+            "category": "Automotive",
+            "unit_cost": 8.35
+         },
+         {
+            "id": "Item_30",
+            "make": "Gerlach-Hane",
+            "model": "Liliaceae",
+            "colour": "Puce",
+            "category": "Toys",
+            "unit_cost": 3.78
+         },
+         {
+            "id": "Item_31",
+            "make": "Huel-Ziemann",
+            "model": "Parmeliaceae",
+            "colour": "Aquamarine",
+            "category": "Books",
+            "unit_cost": 5.0
+         },
+         {
+            "id": "Item_32",
+            "make": "Kemmer Inc",
+            "model": "Poaceae",
+            "colour": "Blue",
+            "category": "Grocery",
+            "unit_cost": 9.49
+         },
+         {
+            "id": "Item_33",
+            "make": "Bednar, Brakus and Haag",
+            "model": "Fabaceae",
+            "colour": "Orange",
+            "category": "Industrial",
+            "unit_cost": 18.98
+         },
+         {
+            "id": "Item_34",
+            "make": "Goodwin, Osinski and Kiehn",
+            "model": "Caliciaceae",
+            "colour": "Orange",
+            "category": "Movies",
+            "unit_cost": 9.39
+         },
+         {
+            "id": "Item_35",
+            "make": "Corkery-Rath",
+            "model": "Poaceae",
+            "colour": "Goldenrod",
+            "category": "Shoes",
+            "unit_cost": 7.38
+         },
+         {
+            "id": "Item_36",
+            "make": "Beer-Bartell",
+            "model": "Rubiaceae",
+            "colour": "Crimson",
+            "category": "Beauty",
+            "unit_cost": 5.4
+         },
+         {
+            "id": "Item_37",
+            "make": "Paucek and Sons",
+            "model": "Bromeliaceae",
+            "colour": "Puce",
+            "category": "Beauty",
+            "unit_cost": 18.02
+         },
+         {
+            "id": "Item_38",
+            "make": "Homenick, Auer and Wunsch",
+            "model": "Pontederiaceae",
+            "colour": "Red",
+            "category": "Electronics",
+            "unit_cost": 16.38
+         },
+         {
+            "id": "Item_39",
+            "make": "Gleichner-Willms",
+            "model": "Chenopodiaceae",
+            "colour": "Puce",
+            "category": "Outdoors",
+            "unit_cost": 18.51
+         },
+         {
+            "id": "Item_40",
+            "make": "Stark Group",
+            "model": "Fabaceae",
+            "colour": "Red",
+            "category": "Toys",
+            "unit_cost": 18.99
+         },
+         {
+            "id": "Item_41",
+            "make": "Roob-Schmeler",
+            "model": "Fagaceae",
+            "colour": "Fuscia",
+            "category": "Health",
+            "unit_cost": 1.27
+         },
+         {
+            "id": "Item_42",
+            "make": "Kulas and Sons",
+            "model": "Scrophulariaceae",
+            "colour": "Maroon",
+            "category": "Health",
+            "unit_cost": 2.12
+         },
+         {
+            "id": "Item_43",
+            "make": "Stracke-Haley",
+            "model": "Convolvulaceae",
+            "colour": "Violet",
+            "category": "Clothing",
+            "unit_cost": 17.91
+         },
+         {
+            "id": "Item_44",
+            "make": "Runte LLC",
+            "model": "Polygonaceae",
+            "colour": "Red",
+            "category": "Music",
+            "unit_cost": 10.04
+         },
+         {
+            "id": "Item_45",
+            "make": "Anderson-Bins",
+            "model": "Encalyptaceae",
+            "colour": "Khaki",
+            "category": "Shoes",
+            "unit_cost": 7.52
+         },
+         {
+            "id": "Item_46",
+            "make": "Mante, Collier and Dicki",
+            "model": "Brassicaceae",
+            "colour": "Turquoise",
+            "category": "Outdoors",
+            "unit_cost": 7.22
+         },
+         {
+            "id": "Item_47",
+            "make": "Beahan-Greenholt",
+            "model": "Asteraceae",
+            "colour": "Goldenrod",
+            "category": "Industrial",
+            "unit_cost": 6.61
+         },
+         {
+            "id": "Item_48",
+            "make": "Paucek-Willms",
+            "model": "Ranunculaceae",
+            "colour": "Red",
+            "category": "Games",
+            "unit_cost": 15.83
+         },
+         {
+            "id": "Item_49",
+            "make": "D'Amore LLC",
+            "model": "Brassicaceae",
+            "colour": "Goldenrod",
+            "category": "Outdoors",
+            "unit_cost": 13.63
+         }
+      ]
+   }
+}

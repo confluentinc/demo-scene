@@ -25,5 +25,5 @@ delta_configs
 .project
 .settings/
 .DS_Store
-
-
+mqtt-tracker/.env
+connect-jars

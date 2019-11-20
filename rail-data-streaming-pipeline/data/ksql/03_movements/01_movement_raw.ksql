@@ -1,0 +1,8 @@
+-- The header is common across message types
+-- but the body fields depends on the type of message
+
+CREATE STREAM NETWORKRAIL_TRAIN_MVT_X (
+  header STRUCT< msg_type VARCHAR, source_dev_id VARCHAR, user_id VARCHAR, original_data_source VARCHAR, msg_queue_timestamp VARCHAR, source_system_id VARCHAR >,
+  BODY VARCHAR)
+  WITH (KAFKA_TOPIC='networkrail_TRAIN_MVT_X', 
+            VALUE_FORMAT='JSON');

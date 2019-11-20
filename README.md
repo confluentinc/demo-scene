@@ -11,6 +11,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
 
 - Data pipelines (Database + KSQL + Elasticsearch)
 
+  - [Rail data streaming pipeline](rail-data-streaming-pipeline)
   - [MySQL / Debezium CDC / KSQL / Elasticsearch](mysql-debezium-ksql-elasticsearch)
   - [Oracle CDC / KSQL / Elasticsearch](oracle-ksql-elasticsearch)
   - [Postgres / Debezium CDC / KSQL / Elasticsearch](postgres-debezium-ksql-elasticsearch)
@@ -19,21 +20,28 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - [Building data pipelines with Confluent Cloud and GCP (BigQuery, GCS, etc)](gcp-pipeline)
 
 - KSQL
+  - [An introduction to KSQL](ksql-intro)
   - [Live-Coding KSQL scripts](live-coding-ksql)
   - [KSQL UDF Advanced Example](ksql-udf-advanced-example)
   - [KSQL Troubleshooting](ksql-troubleshooting)
   - [ATM Fraud detection with Kafka and KSQL](ksql-atm-fraud-detection)
   - [Kafka Streams/KSQL Movie Demo](streams-movie-demo)
+  - [KSQL MQTT demo](mqtt-tracker)
+  - [KSQL Dump Utility](ksql-dump)
+
 - Kafka Connect
 
   - [MQTT Connect Connector Demo](mqtt-connect-connector-demo)
   - [Kafka Connect deepdive](connect-deepdive) - understanding converters and serialization
   - [Kafka Connect JDBC Source demo environment](connect-jdbc)
   - [Example Kafka Connect syslog configuration and Docker Compose](syslog)
+  - [Azure SQL Data Warehouse Connector Sink Demo](azure-sqldw-sink-connector)
+  - [IBM MQ Connect Connector Demo](cp-all-in-one-ibmmq)
 
 - Confluent Cloud
 
-  - [Confluent Cloud "The Cube" Demo](ccloud-cube-demo)
+  - [Pac-Man Demo](pacman-ccloud)
+  - ["The Cube" Demo](ccloud-cube-demo)
 
 - Misc
   - [Hacky export/import between Kafka clusters](export-import-with-kafkacat) using `kafkacat`

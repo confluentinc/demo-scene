@@ -1,0 +1,9 @@
+SET 'auto.offset.reset' = 'latest';
+
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') as actual_timestamp, 
+       EVENT_TYPE, 
+       LOC_NLCDESC, 
+       PLATFORM,
+       ORIGIN_TPS_DESCRIPTION,
+       DESTINATION_TPS_DESCRIPTION
+  FROM TRAIN_MOVEMENTS_ACTIVATIONS_SCHEDULE_00 ;

@@ -1,0 +1,46 @@
+-- https://docs.confluent.io/5.2.1/connect/kafka-connect-activemq/source_connector_config.html#activemq-source-connector-config
+-- https://opendata.nationalrail.co.uk/feeds
+
+-- https://wiki.openraildata.com/index.php/Advanced_Uses
+-- https://wiki.openraildata.com/index.php/About_the_Network_Rail_feeds
+
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -d '{
+  "name": "source-activemq-nationalrail-00",
+  "config": {
+    "connector.class": "io.confluent.connect.activemq.ActiveMQSourceConnector",
+    "activemq.url":"tcp://darwin-dist-44ae45.nationalrail.co.uk:61616?jms.watchTopicAdvisories=false",
+    "activemq.username":"natrail_USERNAME",
+    "activemq.password":"natrail_PASSWORD",
+    "jms.destination.type":"topic",
+    "jms.destination.name":"darwin.pushport-v16",
+    "kafka.topic":"darwin.pushport-v16",
+    "confluent.license":"",
+    "confluent.topic.bootstrap.servers":"kafka:29092",
+    "confluent.topic.replication.factor":1
+  }
+}'
+
+---
+
+For both : 
+
+kb-dist-261e4f.nationalrail.co.uk:61616
+darwin-dist-44ae45.nationalrail.co.uk:61616
+
+Failed to connect to broker: User natrail_USERNAME is not authorized to read from: ActiveMQ.Advisory.TempQueue,ActiveMQ.Advisory.TempTopic
+
+Try again on Monday? Only signed up for account today? 
+Same error from Kafka Connect ActiveMQ and ActiveMQ CLI
+
+Solution: append `jms.watchTopicAdvisories=false` to connection URL and then it works!
+
+---
+
+Using https://github.com/openraildata/stomp-client-python
+
+  Connecting to darwin-dist-44ae45.nationalrail.co.uk
+  Disconnected waiting 15 seconds before exiting
+
+  

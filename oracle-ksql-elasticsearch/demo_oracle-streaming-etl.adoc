@@ -249,13 +249,16 @@ ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS WHERE 
 
 [source,sql]
 ----
-ksql> SELECT R.RATING_ID, R.MESSAGE, 
+SELECT R.RATING_ID, R.MESSAGE, 
       C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, 
       C.CLUB_STATUS 
       FROM RATINGS R 
-        LEFT JOIN CUSTOMERS C 
-        ON R.USER_ID = C.ID 
-      WHERE C.FIRST_NAME IS NOT NULL;
+        INNER JOIN CUSTOMERS C 
+        ON R.USER_ID = C.ID; 
+----
+
+[source,sql]
+----
 524 | Surprisingly good, maybe you are getting your mojo back at long last! | Patti Rosten | silver
 525 | meh | Fred Blaisdell | bronze
 526 | more peanuts please | Hashim Rumke | platinum
@@ -277,7 +280,7 @@ SELECT R.RATING_ID, R.MESSAGE, R.STARS, R.CHANNEL,
       C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, 
       C.CLUB_STATUS, C.EMAIL 
       FROM RATINGS R 
-        LEFT JOIN CUSTOMERS C 
+        INNER JOIN CUSTOMERS C 
         ON R.USER_ID = C.ID 
       WHERE C.FIRST_NAME IS NOT NULL;
 

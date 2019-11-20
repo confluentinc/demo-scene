@@ -2,13 +2,13 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.1.0
+    image: confluentinc/cp-zookeeper:5.4.0-beta1
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.1.0
+    image: confluentinc/cp-enterprise-kafka:5.4.0-beta1
     depends_on:
       - zookeeper
     ports:
@@ -33,7 +33,7 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.1.0
+    image: confluentinc/cp-schema-registry:5.4.0-beta1
     ports:
       - 8081:8081
     depends_on:
@@ -44,7 +44,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect:5.1.0
+    image: confluentinc/cp-kafka-connect:5.4.0-beta1
     depends_on:
       - zookeeper
       - kafka
@@ -93,7 +93,7 @@ services:
         /etc/confluent/docker/run 
 
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.1.0
+    image: confluentinc/cp-ksql-server:5.4.0-beta1
     depends_on:
       - kafka
       - schema-registry
@@ -109,7 +109,7 @@ services:
     # To connect to the KSQL CLI: 
     #   docker-compose exec ksql-cli ksql http://ksql-server:8088
     # *-----------------------------*
-    image: confluentinc/cp-ksql-cli:5.1.0
+    image: confluentinc/cp-ksql-cli:5.4.0-beta1
     depends_on:
       - ksql-server
     entrypoint: /bin/sh

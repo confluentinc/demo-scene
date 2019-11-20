@@ -1,6 +1,6 @@
 = Streaming ETL demo - Enriching event stream data with CDC data from MySQL, stream into Elasticsearch
 Robin Moffatt <robin@confluent.io>
-v1.31, May 10, 2019
+v1.33, 12 September 2019
 
 image:images/ksql-debezium-es.png[Kafka Connect / KSQL / Elasticsearch]
 
@@ -33,14 +33,14 @@ Optionally, use something like `screen` or `tmux` to have these both easily to h
 +
 [source,bash]
 ----
-docker-compose exec ksql-cli bash -c 'echo -e "\n\n⏳ Waiting for KSQL to be available before launching CLI\n"; while [ $(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/) -eq 000 ] ; do echo -e $(date) "KSQL Server HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/) " (waiting for 200)" ; sleep 5 ; done; ksql http://ksql-server:8088'
+docker exec -it ksql-cli bash -c 'echo -e "\n\n⏳ Waiting for KSQL to be available before launching CLI\n"; while : ; do curl_status=$(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/info) ; echo -e $(date) " KSQL server listener HTTP state: " $curl_status " (waiting for 200)" ; if [ $curl_status -eq 200 ] ; then  break ; fi ; sleep 5 ; done ; ksql http://ksql-server:8088'
 ----
 
 * MySQL CLI:
 +
 [source,bash]
 ----
-docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
+docker exec -it mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
 ----
 
 == Pre-flight checklist
@@ -112,6 +112,9 @@ Optionally, bring up a second KSQL prompt and show live ratings / live filtered 
 ----
 -- Live stream of ratings data
 SET 'auto.offset.reset' = 'latest';
+PRINT 'RATINGS';
+
+-- You can use SELECT too, but PRINT makes it clearer that it's coming from a topic
 SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TIMESTAMP, STARS, CHANNEL FROM RATINGS;
 ----
 
@@ -119,6 +122,9 @@ SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TIMESTAMP, ST
 ----
 -- Just the ratings with star rating less than 3: 
 SET 'auto.offset.reset' = 'latest';
+PRINT 'POOR_RATINGS';
+
+-- You can use SELECT too, but PRINT makes it clearer that it's coming from a topic
 SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TIMESTAMP, STARS, CHANNEL FROM POOR_RATINGS;
 ----
 
@@ -254,7 +260,12 @@ UPDATE CUSTOMERS SET CLUB_STATUS = 'platinum' where ID=42;
 Here's the table - the latest value for a given key
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss'), ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS 
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS TS, 
+       ID, 
+       FIRST_NAME, 
+       LAST_NAME, 
+       EMAIL, 
+       CLUB_STATUS 
   FROM CUSTOMERS WHERE ID=42;
 ----
 
@@ -270,8 +281,14 @@ Here's the stream - every event, which in this context is every change event on 
 
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss'), ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS TS, 
+       ID, 
+       FIRST_NAME, 
+       LAST_NAME, 
+       EMAIL, 
+       CLUB_STATUS 
   FROM CUSTOMERS_STREAM WHERE ID=42;
+
 ----
 
 [source,sql]
@@ -354,7 +371,10 @@ CUSTOMERS is a KSQL _table_, which means that we have the latest value for a giv
 Check out the ratings for customer id 2 only:
 [source,sql]
 ----
-ksql> SELECT FULL_NAME, CLUB_STATUS, STARS, MESSAGE, CHANNEL FROM RATINGS_WITH_CUSTOMER_DATA WHERE ID=2;
+ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS TS, 
+             FULL_NAME, CLUB_STATUS, STARS, MESSAGE, CHANNEL 
+        FROM RATINGS_WITH_CUSTOMER_DATA 
+       WHERE ID=2;
 ----
 
 In mysql, make a change to ID 2
@@ -411,8 +431,8 @@ Persist this and show the timestamp:
 
 [source,sql]
 ----
-CREATE TABLE RATINGS_PER_CUSTOMER_PER_MINUTE AS SELECT FULL_NAME,COUNT(*) AS RATINGS_COUNT FROM ratings_with_customer_data WINDOW TUMBLING (SIZE 1 MINUTE) GROUP BY FULL_NAME;
-SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') , FULL_NAME, RATINGS_COUNT FROM RATINGS_PER_CUSTOMER_PER_MINUTE;
+CREATE TABLE RATINGS_PER_CUSTOMER_PER_MINUTE AS SELECT TIMESTAMPTOSTRING(WindowStart(), 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS,FULL_NAME,COUNT(*) AS RATINGS_COUNT FROM ratings_with_customer_data WINDOW TUMBLING (SIZE 1 MINUTE) GROUP BY FULL_NAME;
+SELECT WINDOW_START_TS , FULL_NAME, RATINGS_COUNT FROM RATINGS_PER_CUSTOMER_PER_MINUTE;
 ----
 
 === Slack/PushBullet notifications
