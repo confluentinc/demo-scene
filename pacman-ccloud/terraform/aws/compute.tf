@@ -12,20 +12,6 @@ resource "aws_key_pair" "generated_key" {
   public_key = tls_private_key.key_pair.public_key_openssh
 }
 
-resource "local_file" "private_key" {
-  content = tls_private_key.key_pair.private_key_pem
-  filename = "cert.pem"
-}
-
-resource "null_resource" "private_key_permissions" {
-  depends_on = [local_file.private_key]
-  provisioner "local-exec" {
-    command = "chmod 600 cert.pem"
-    interpreter = ["bash", "-c"]
-    on_failure = continue
-  }
-}
-
 ###########################################
 ############## KSQL Server ################
 ###########################################
@@ -48,28 +34,6 @@ resource "aws_instance" "ksql_server" {
   }
   tags = {
     Name = "${var.global_prefix}-ksql-server-${count.index}"
-  }
-}
-
-###########################################
-############ Bastion Server ###############
-###########################################
-
-resource "aws_instance" "bastion_server" {
-  depends_on = [aws_instance.ksql_server]
-  count = var.instance_count["bastion_server"] >= 1 ? 1 : 0
-  ami = data.aws_ami.amazon_linux_2.id
-  instance_type = "t2.micro"
-  key_name = aws_key_pair.generated_key.key_name
-  subnet_id = aws_subnet.bastion_server[0].id
-  vpc_security_group_ids = [aws_security_group.bastion_server[0].id]
-  user_data = data.template_file.bastion_server_bootstrap.rendered
-  root_block_device {
-    volume_type = "gp2"
-    volume_size = 100
-  }
-  tags = {
-    Name = "${var.global_prefix}-bastion-server"
   }
 }
 

@@ -116,17 +116,6 @@ resource "aws_subnet" "public_subnet_2" {
   }
 }
 
-resource "aws_subnet" "bastion_server" {
-  count = var.instance_count["bastion_server"] >= 1 ? 1 : 0
-  vpc_id = aws_vpc.default.id
-  cidr_block = "10.0.9.0/24"
-  map_public_ip_on_launch = true
-  availability_zone = data.aws_availability_zones.available.names[0]
-  tags = {
-    Name = "${var.global_prefix}-bastion-server"
-  }
-}
-
 ###########################################
 ############# Security Groups #############
 ###########################################
@@ -187,27 +176,5 @@ resource "aws_security_group" "ksql_server" {
   }
   tags = {
     Name = "${var.global_prefix}-ksql-server"
-  }
-}
-
-resource "aws_security_group" "bastion_server" {
-  count = var.instance_count["bastion_server"] >= 1 ? 1 : 0
-  name = "${var.global_prefix}-bastion-server"
-  description = "Bastion Server"
-  vpc_id = aws_vpc.default.id
-  ingress {
-    from_port = 22
-    to_port = 22
-    protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  tags = {
-    Name = "${var.global_prefix}-bastion-server"
   }
 }
