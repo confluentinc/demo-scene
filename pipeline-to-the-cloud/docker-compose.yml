@@ -1,0 +1,115 @@
+---
+version: '3'
+services:
+
+  kafka-connect-01:
+    image: confluentinc/cp-kafka-connect:5.4.0-beta1
+    container_name: kafka-connect-01
+    ports:
+      - 8083:8083
+    environment:
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
+      CONNECT_CUB_KAFKA_TIMEOUT: 300
+      CONNECT_BOOTSTRAP_SERVERS: "${CCLOUD_BROKER_HOST}:9092"
+      CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect-01'
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: kafka-connect-group-01-v04
+      CONNECT_CONFIG_STORAGE_TOPIC: _kafka-connect-group-01-v04-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _kafka-connect-group-01-v04-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _kafka-connect-group-01-v04-status
+      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "https://${CCLOUD_SCHEMA_REGISTRY_HOST}"
+      CONNECT_KEY_CONVERTER_BASIC_AUTH_CREDENTIALS_SOURCE: "USER_INFO"
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_BASIC_AUTH_USER_INFO: "${CCLOUD_SCHEMA_REGISTRY_API_KEY}:${CCLOUD_SCHEMA_REGISTRY_API_SECRET}"
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "https://${CCLOUD_SCHEMA_REGISTRY_HOST}"
+      CONNECT_VALUE_CONVERTER_BASIC_AUTH_CREDENTIALS_SOURCE: "USER_INFO"
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_BASIC_AUTH_USER_INFO: "${CCLOUD_SCHEMA_REGISTRY_API_KEY}:${CCLOUD_SCHEMA_REGISTRY_API_SECRET}"
+      CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
+      CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '3'
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '3'
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '3'
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/'
+      # Confluent Cloud config
+      CONNECT_REQUEST_TIMEOUT_MS: "20000"
+      CONNECT_RETRY_BACKOFF_MS: "500"
+      CONNECT_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "https"
+      CONNECT_SASL_MECHANISM: "PLAIN"
+      CONNECT_SECURITY_PROTOCOL: "SASL_SSL"
+      CONNECT_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${CCLOUD_API_KEY}\" password=\"${CCLOUD_API_SECRET}\";"
+      #
+      CONNECT_CONSUMER_SECURITY_PROTOCOL: "SASL_SSL"
+      CONNECT_CONSUMER_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "https"
+      CONNECT_CONSUMER_SASL_MECHANISM: "PLAIN"
+      CONNECT_CONSUMER_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${CCLOUD_API_KEY}\" password=\"${CCLOUD_API_SECRET}\";"
+      CONNECT_CONSUMER_REQUEST_TIMEOUT_MS: "20000"
+      CONNECT_CONSUMER_RETRY_BACKOFF_MS: "500"
+      #
+      CONNECT_PRODUCER_SECURITY_PROTOCOL: "SASL_SSL"
+      CONNECT_PRODUCER_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "https"
+      CONNECT_PRODUCER_SASL_MECHANISM: "PLAIN"
+      CONNECT_PRODUCER_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${CCLOUD_API_KEY}\" password=\"${CCLOUD_API_SECRET}\";"
+      CONNECT_PRODUCER_REQUEST_TIMEOUT_MS: "20000"
+      CONNECT_PRODUCER_RETRY_BACKOFF_MS: "500"
+      # External secrets config
+      # See https://docs.confluent.io/current/connect/security.html#externalizing-secrets
+      CONNECT_CONFIG_PROVIDERS: 'file'
+      CONNECT_CONFIG_PROVIDERS_FILE_CLASS: 'org.apache.kafka.common.config.provider.FileConfigProvider'
+    command: 
+      - bash 
+      - -c 
+      - |
+        echo "Installing connector plugins"
+        confluent-hub install --no-prompt debezium/debezium-connector-sqlserver:0.10.0
+        confluent-hub install --no-prompt snowflakeinc/snowflake-kafka-connector:0.5.5
+        #
+        echo "Launching Kafka Connect worker"
+        /etc/confluent/docker/run & 
+        #
+        sleep infinity
+    volumes: 
+      - .env:/data/credentials.properties
+
+  mssql:
+    # *-----------------------------*
+    # To connect to the DB: 
+    #   docker exec -it mssql bash -c '/opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -U sa -P $SA_PASSWORD'
+    # *-----------------------------*
+    image: mcr.microsoft.com/mssql/server:2017-latest
+    container_name: mssql
+    ports: 
+      - 1433:1433
+    environment: 
+      - SA_PASSWORD=Admin123
+      - ACCEPT_EULA=Y
+      - MSSQL_AGENT_ENABLED=true
+    volumes:
+     - ./data/mssql:/scripts/
+    command:
+      - /bin/bash
+      - -c 
+      - |
+        # Launch MSSQL and send to background
+        /opt/mssql/bin/sqlservr &
+        # Wait for it to be available
+        echo "Waiting for MS SQL to be available ⏳"
+        /opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -h-1 -V1 -U sa -P $$SA_PASSWORD -Q "SET NOCOUNT ON SELECT \"YAY WE ARE UP\" , @@servername"
+        is_up=$$?
+        while [ $$is_up -ne 0 ] ; do 
+          echo -e $$(date) 
+          /opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -h-1 -V1 -U sa -P $$SA_PASSWORD -Q "SET NOCOUNT ON SELECT \"YAY WE ARE UP\" , @@servername"
+          is_up=$$?
+          sleep 5 
+        done
+
+        # Run every script in /scripts
+        # TODO set a flag so that this is only done once on creation, 
+        #      and not every time the container runs
+        for foo in /scripts/*.sql
+          do /opt/mssql-tools/bin/sqlcmd -U sa -P $$SA_PASSWORD -l 30 -e -i $$foo
+        done
+        # So that the container doesn't shut down, sleep this thread
+        sleep infinity

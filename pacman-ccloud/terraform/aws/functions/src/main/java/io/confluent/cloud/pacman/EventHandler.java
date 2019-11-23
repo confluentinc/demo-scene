@@ -1,7 +1,8 @@
 package io.confluent.cloud.pacman;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 import java.util.Map;
 import java.util.Properties;
@@ -70,29 +71,18 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
 
     }
 
-    private Properties getConnectProperties() {
-        Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", BOOTSTRAP_SERVERS);
-        properties.setProperty("ssl.endpoint.identification.algorithm", "https");
-        properties.setProperty("sasl.mechanism", "PLAIN");
-        properties.setProperty("security.protocol", "SASL_SSL");
-        properties.setProperty("sasl.jaas.config", getJaaSConfig());
-        return properties;
-    }
-
     private void createTopicsIfNeeded() {
-        Properties properties = getConnectProperties();
-        try (AdminClient adminClient = AdminClient.create(properties)) {
-            ListTopicsResult topics = adminClient.listTopics();
-            Set<String> topicNames = topics.names().get();
-            if (!topicNames.contains(USER_GAME_TOPIC)) {
-                NewTopic newTopic = new NewTopic(USER_GAME_TOPIC, 6, (short) 3);
-                adminClient.createTopics(Collections.singletonList(newTopic));
+        try (AdminClient adminClient = AdminClient.create(getConnectProperties())) {
+            ListTopicsResult listTopics = adminClient.listTopics();
+            Set<String> existingTopics = listTopics.names().get();
+            List<NewTopic> topicsToCreate = new ArrayList<>();
+            if (!existingTopics.contains(USER_GAME_TOPIC)) {
+                topicsToCreate.add(new NewTopic(USER_GAME_TOPIC, 6, (short) 3));
             }
-            if (!topicNames.contains(USER_LOSSES_TOPIC)) {
-                NewTopic newTopic = new NewTopic(USER_LOSSES_TOPIC, 6, (short) 3);
-                adminClient.createTopics(Collections.singletonList(newTopic));
+            if (!existingTopics.contains(USER_LOSSES_TOPIC)) {
+                topicsToCreate.add(new NewTopic(USER_LOSSES_TOPIC, 6, (short) 3));
             }
+            adminClient.createTopics(topicsToCreate);
         } catch (InterruptedException | ExecutionException ex) {}
     }
 
@@ -104,6 +94,16 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
             properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
             producer = new KafkaProducer<String, String>(properties);
         }
+    }
+
+    private Properties getConnectProperties() {
+        Properties properties = new Properties();
+        properties.setProperty("bootstrap.servers", BOOTSTRAP_SERVERS);
+        properties.setProperty("ssl.endpoint.identification.algorithm", "https");
+        properties.setProperty("sasl.mechanism", "PLAIN");
+        properties.setProperty("security.protocol", "SASL_SSL");
+        properties.setProperty("sasl.jaas.config", getJaaSConfig());
+        return properties;
     }
 
     private String getJaaSConfig() {
@@ -130,7 +130,9 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
     static {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
-                producer.close();
+                if (producer != null) {
+                    producer.close();
+                }
             }
         });
     }

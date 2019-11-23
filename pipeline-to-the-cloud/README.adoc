@@ -1,0 +1,1 @@
+See https://rmoff.net/2019/11/20/streaming-data-from-sql-server-to-kafka-to-snowflake-with-kafka-connect/ for full explanation and example connector configuration. 
