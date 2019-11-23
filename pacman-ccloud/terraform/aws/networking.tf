@@ -141,32 +141,15 @@ resource "aws_security_group" "load_balancer" {
   }
 }
 
-resource "aws_security_group" "ksql_server" {
-  count = var.instance_count["ksql_server"] >= 1 ? 1 : 0
-  name = "${var.global_prefix}-ksql-server"
-  description = "KSQL Server"
+resource "aws_security_group" "ecs_tasks" {
+  name = "${var.global_prefix}-ecs-tasks"
+  description = "Inbound Access from LBR"
   vpc_id = aws_vpc.default.id
   ingress {
-    from_port = 22
-    to_port = 22
     protocol = "tcp"
-    cidr_blocks = ["10.0.9.0/24"]
-  }
-  ingress {
     from_port = 8088
     to_port = 8088
-    protocol = "tcp"
-
-    cidr_blocks = [
-      "10.0.1.0/24",
-      "10.0.2.0/24",
-      "10.0.3.0/24",
-      "10.0.4.0/24",
-      "10.0.5.0/24",
-      "10.0.6.0/24",
-      "10.0.7.0/24",
-      "10.0.8.0/24",
-    ]
+    security_groups = [aws_security_group.load_balancer.id]
   }
   egress {
     from_port = 0
@@ -175,6 +158,6 @@ resource "aws_security_group" "ksql_server" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = {
-    Name = "${var.global_prefix}-ksql-server"
+    Name = "${var.global_prefix}-ecs-tasks"
   }
 }

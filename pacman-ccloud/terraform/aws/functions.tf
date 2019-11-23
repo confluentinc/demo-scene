@@ -98,7 +98,7 @@ resource "aws_api_gateway_integration_response" "cors_integration_response" {
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'*'"
     "method.response.header.Access-Control-Allow-Methods" = "'POST'"
-    "method.response.header.Access-Control-Allow-Origin" = "'*'"
+    "method.response.header.Access-Control-Allow-Origin" = "'http://${aws_s3_bucket.pacman.website_endpoint}'"
   }
 }
 
@@ -106,7 +106,7 @@ resource "aws_api_gateway_integration_response" "cors_integration_response" {
 ######### Event Handler Function ##########
 ###########################################
 
-resource "aws_iam_role_policy" "guess_policy" {
+resource "aws_iam_role_policy" "event_handler_role_policy" {
   role = aws_iam_role.event_handler_role.name
   policy = <<POLICY
 {
@@ -162,6 +162,7 @@ resource "aws_lambda_function" "event_handler_function" {
       BOOTSTRAP_SERVERS = var.bootstrap_server
       CLUSTER_API_KEY = var.cluster_api_key
       CLUSTER_API_SECRET = var.cluster_api_secret
+      ORIGIN_ALLOWED = "http://${aws_s3_bucket.pacman.website_endpoint}"
     }
   }
 }
