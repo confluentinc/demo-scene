@@ -27,44 +27,85 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
     public Map<String, Object> handleRequest(final Map<String, Object> request, final Context context) {
 
         final LambdaLogger logger = context.getLogger();
-        logger.log("Request Type: " + request.getClass().getName());
+        final Map<String, Object> response = new HashMap<>();
         logger.log("Request Content: " + request);
 
-        Map<String, Object> headers = new HashMap<>();
-        Map<String, Object> response = new HashMap<>();
-        headers.put("Content-Type", "text/plain");
-        headers.put("Access-Control-Allow-Origin", "*");
-        response.put("headers", headers);
-        response.put("statusCode", 200);
+        final Map<String, Object> requestHeaders =
+            (Map<String, Object>) request.get(HEADERS_KEY);
 
-        if (request.containsKey(QUERY_PARAMS_KEY) && request.containsKey(BODY_KEY)) {
-
-            createTopicsIfNeeded();
-            ensureProducerIsReady();
-
-            String event = (String) request.get(BODY_KEY);
-            Map<String, String> queryParams = (Map<String, String>) request.get(QUERY_PARAMS_KEY);
-            String topic = queryParams.get(TOPIC_KEY);
+        if (requestHeaders.containsKey(ORIGIN_KEY)) {
             
-            producer.send(new ProducerRecord<String, String>(topic, event), new Callback() {
-                public void onCompletion(final RecordMetadata metadata, final Exception exception) {
-                    StringBuilder message = new StringBuilder();
-                    message.append("Event emmited successfully to topic '");
-                    message.append(metadata.topic()).append("'.");
-                    response.put(BODY_KEY, message.toString());
-                }
-            });
-            producer.flush();
+            String origin = (String) requestHeaders.get(ORIGIN_KEY);
+            if (origin.equals(ORIGIN_ALLOWED)) {
 
-        } else {
-            logger.log("Wake up event received");
+                if (request.containsKey(QUERY_PARAMS_KEY) && request.containsKey(BODY_KEY)) {
+        
+                    String event = (String) request.get(BODY_KEY);
+                    Map<String, String> queryParams = (Map<String, String>) request.get(QUERY_PARAMS_KEY);
+                    
+                    if (event != null && queryParams != null) {
+                        String topic = queryParams.get(TOPIC_KEY);
+                        producer.send(new ProducerRecord<String, String>(topic, event), new Callback() {
+                            public void onCompletion(final RecordMetadata metadata, final Exception exception) {
+                                StringBuilder message = new StringBuilder();
+                                message.append("Event emmited successfully to topic '");
+                                message.append(metadata.topic()).append("'.");
+                                response.put(BODY_KEY, message.toString());
+                            }
+                        });
+                        producer.flush();
+                    }
+        
+                }
+                
+            }
+
         }
+
+        final Map<String, Object> responseHeaders = new HashMap<>();
+        responseHeaders.put("Access-Control-Allow-Origin", ORIGIN_ALLOWED);
+        response.put("headers", responseHeaders);
         
         return response;
 
     }
 
-    private void createTopicsIfNeeded() {
+    private static final String TOPIC_KEY = "topic";
+    private static final String BODY_KEY = "body";
+    private static final String ORIGIN_KEY = "origin";
+    private static final String HEADERS_KEY = "headers";
+    private static final String QUERY_PARAMS_KEY = "queryStringParameters";
+    private static final String USER_GAME_TOPIC = "USER_GAME";
+    private static final String USER_LOSSES_TOPIC = "USER_LOSSES";
+    private static final String BOOTSTRAP_SERVERS = System.getenv("BOOTSTRAP_SERVERS");
+    private static final String CLUSTER_API_KEY = System.getenv("CLUSTER_API_KEY");
+    private static final String CLUSTER_API_SECRET = System.getenv("CLUSTER_API_SECRET");
+    private static final String ORIGIN_ALLOWED = System.getenv("ORIGIN_ALLOWED");
+    private static KafkaProducer<String, String> producer;
+
+    static {
+        initializeProducer();
+        createTopicsIfNeeded();
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                if (producer != null) {
+                    producer.close();
+                }
+            }
+        });
+    }
+
+    private static void initializeProducer() {
+        if (producer == null) {
+            Properties properties = getConnectProperties();
+            properties.setProperty(ProducerConfig.ACKS_CONFIG, "0");
+            properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+            properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+            producer = new KafkaProducer<String, String>(properties);
+        }
+    }
+
+    private static void createTopicsIfNeeded() {
         try (AdminClient adminClient = AdminClient.create(getConnectProperties())) {
             ListTopicsResult listTopics = adminClient.listTopics();
             Set<String> existingTopics = listTopics.names().get();
@@ -79,18 +120,7 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
         } catch (InterruptedException | ExecutionException ex) {}
     }
 
-    private void ensureProducerIsReady() {
-        if (producer == null) {
-            Properties properties = getConnectProperties();
-            properties.setProperty(ProducerConfig.RETRY_BACKOFF_MS_CONFIG, "500");
-            properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-            properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-            properties.setProperty(ProducerConfig.ACKS_CONFIG, "all");
-            producer = new KafkaProducer<String, String>(properties);
-        }
-    }
-
-    private Properties getConnectProperties() {
+    private static Properties getConnectProperties() {
         Properties properties = new Properties();
         properties.setProperty("bootstrap.servers", BOOTSTRAP_SERVERS);
         properties.setProperty("ssl.endpoint.identification.algorithm", "https");
@@ -100,32 +130,12 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
         return properties;
     }
 
-    private String getJaaSConfig() {
+    private static String getJaaSConfig() {
         final StringBuilder jaasConfig = new StringBuilder();
         jaasConfig.append("org.apache.kafka.common.security.plain.PlainLoginModule ");
         jaasConfig.append("required username=\"").append(CLUSTER_API_KEY).append("\" ");
         jaasConfig.append("password=\"").append(CLUSTER_API_SECRET).append("\"; ");
         return jaasConfig.toString();
-    }
-
-    private static final String TOPIC_KEY = "topic";
-    private static final String BODY_KEY = "body";
-    private static final String QUERY_PARAMS_KEY = "queryStringParameters";
-    private static final String USER_GAME_TOPIC = "USER_GAME";
-    private static final String USER_LOSSES_TOPIC = "USER_LOSSES";
-    private static final String BOOTSTRAP_SERVERS = System.getenv("BOOTSTRAP_SERVERS");
-    private static final String CLUSTER_API_KEY = System.getenv("CLUSTER_API_KEY");
-    private static final String CLUSTER_API_SECRET = System.getenv("CLUSTER_API_SECRET");
-    private static KafkaProducer<String, String> producer;
-
-    static {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            public void run() {
-                if (producer != null) {
-                    producer.close();
-                }
-            }
-        });
     }
 
 }
