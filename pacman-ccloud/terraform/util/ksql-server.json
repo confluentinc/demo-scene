@@ -1,10 +1,8 @@
 [
   {
-    "image": "${ksql_server_image}",
     "essential": true,
+    "image": "${ksql_server_image}",
     "name": "ksql_server",
-    "cpu": 2048,
-    "memory": 8192,
     "portMappings": [
       {
         "hostPort": 8088,
