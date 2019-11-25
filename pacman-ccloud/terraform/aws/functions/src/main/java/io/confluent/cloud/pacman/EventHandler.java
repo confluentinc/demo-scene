@@ -45,7 +45,6 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
                     
                     if (event != null && queryParams != null) {
                         String topic = queryParams.get(TOPIC_KEY);
-                        createTopicsIfNeeded(); ensureProducerIsReady();    
                         producer.send(new ProducerRecord<String, String>(topic, event), new Callback() {
                             public void onCompletion(final RecordMetadata metadata, final Exception exception) {
                                 StringBuilder message = new StringBuilder();
@@ -71,49 +70,6 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
 
     }
 
-    private void createTopicsIfNeeded() {
-        try (AdminClient adminClient = AdminClient.create(getConnectProperties())) {
-            ListTopicsResult listTopics = adminClient.listTopics();
-            Set<String> existingTopics = listTopics.names().get();
-            List<NewTopic> topicsToCreate = new ArrayList<>();
-            if (!existingTopics.contains(USER_GAME_TOPIC)) {
-                topicsToCreate.add(new NewTopic(USER_GAME_TOPIC, 6, (short) 3));
-            }
-            if (!existingTopics.contains(USER_LOSSES_TOPIC)) {
-                topicsToCreate.add(new NewTopic(USER_LOSSES_TOPIC, 6, (short) 3));
-            }
-            adminClient.createTopics(topicsToCreate);
-        } catch (InterruptedException | ExecutionException ex) {}
-    }
-
-    private void ensureProducerIsReady() {
-        if (producer == null) {
-            Properties properties = getConnectProperties();
-            properties.setProperty(ProducerConfig.ACKS_CONFIG, "0");
-            properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-            properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-            producer = new KafkaProducer<String, String>(properties);
-        }
-    }
-
-    private Properties getConnectProperties() {
-        Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", BOOTSTRAP_SERVERS);
-        properties.setProperty("ssl.endpoint.identification.algorithm", "https");
-        properties.setProperty("sasl.mechanism", "PLAIN");
-        properties.setProperty("security.protocol", "SASL_SSL");
-        properties.setProperty("sasl.jaas.config", getJaaSConfig());
-        return properties;
-    }
-
-    private String getJaaSConfig() {
-        final StringBuilder jaasConfig = new StringBuilder();
-        jaasConfig.append("org.apache.kafka.common.security.plain.PlainLoginModule ");
-        jaasConfig.append("required username=\"").append(CLUSTER_API_KEY).append("\" ");
-        jaasConfig.append("password=\"").append(CLUSTER_API_SECRET).append("\"; ");
-        return jaasConfig.toString();
-    }
-
     private static final String TOPIC_KEY = "topic";
     private static final String BODY_KEY = "body";
     private static final String ORIGIN_KEY = "origin";
@@ -128,6 +84,8 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
     private static KafkaProducer<String, String> producer;
 
     static {
+        initializeProducer();
+        createTopicsIfNeeded();
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
                 if (producer != null) {
@@ -135,6 +93,49 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
                 }
             }
         });
+    }
+
+    private static void initializeProducer() {
+        if (producer == null) {
+            Properties properties = getConnectProperties();
+            properties.setProperty(ProducerConfig.ACKS_CONFIG, "0");
+            properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+            properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+            producer = new KafkaProducer<String, String>(properties);
+        }
+    }
+
+    private static void createTopicsIfNeeded() {
+        try (AdminClient adminClient = AdminClient.create(getConnectProperties())) {
+            ListTopicsResult listTopics = adminClient.listTopics();
+            Set<String> existingTopics = listTopics.names().get();
+            List<NewTopic> topicsToCreate = new ArrayList<>();
+            if (!existingTopics.contains(USER_GAME_TOPIC)) {
+                topicsToCreate.add(new NewTopic(USER_GAME_TOPIC, 6, (short) 3));
+            }
+            if (!existingTopics.contains(USER_LOSSES_TOPIC)) {
+                topicsToCreate.add(new NewTopic(USER_LOSSES_TOPIC, 6, (short) 3));
+            }
+            adminClient.createTopics(topicsToCreate);
+        } catch (InterruptedException | ExecutionException ex) {}
+    }
+
+    private static Properties getConnectProperties() {
+        Properties properties = new Properties();
+        properties.setProperty("bootstrap.servers", BOOTSTRAP_SERVERS);
+        properties.setProperty("ssl.endpoint.identification.algorithm", "https");
+        properties.setProperty("sasl.mechanism", "PLAIN");
+        properties.setProperty("security.protocol", "SASL_SSL");
+        properties.setProperty("sasl.jaas.config", getJaaSConfig());
+        return properties;
+    }
+
+    private static String getJaaSConfig() {
+        final StringBuilder jaasConfig = new StringBuilder();
+        jaasConfig.append("org.apache.kafka.common.security.plain.PlainLoginModule ");
+        jaasConfig.append("required username=\"").append(CLUSTER_API_KEY).append("\" ");
+        jaasConfig.append("password=\"").append(CLUSTER_API_SECRET).append("\"; ");
+        return jaasConfig.toString();
     }
 
 }

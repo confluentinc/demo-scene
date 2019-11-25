@@ -59,6 +59,8 @@ data "template_file" "ksql_server_container_def" {
     bootstrap_server = var.bootstrap_server
     cluster_api_key = var.cluster_api_key
     cluster_api_secret = var.cluster_api_secret
+    schema_registry_url = var.schema_registry_url
+    schema_registry_basic_auth = var.schema_registry_basic_auth
     ksql_server_image = var.ksql_server_image
     logs_region = local.region
     global_prefix = var.global_prefix
