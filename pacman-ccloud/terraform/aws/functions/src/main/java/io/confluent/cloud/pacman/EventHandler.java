@@ -30,6 +30,13 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
         final Map<String, Object> response = new HashMap<>();
         logger.log("Request Content: " + request);
 
+        if (!request.containsKey(HEADERS_KEY)) {
+            StringBuilder message = new StringBuilder();
+            message.append("Thanks for waking me up'");
+            response.put(BODY_KEY, message.toString());
+            return response;
+        }
+
         final Map<String, Object> requestHeaders =
             (Map<String, Object>) request.get(HEADERS_KEY);
 

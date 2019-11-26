@@ -5,7 +5,7 @@ locals {
 variable "instance_count" {
   type = map(string)
   default = {
-    "ksql_server" = 1
+    "ksql_server" = 2
   }
 }
 
