@@ -31,9 +31,7 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
         logger.log("Request Content: " + request);
 
         if (!request.containsKey(HEADERS_KEY)) {
-            StringBuilder message = new StringBuilder();
-            message.append("Thanks for waking me up'");
-            response.put(BODY_KEY, message.toString());
+            response.put(BODY_KEY, "Thanks for waking me up");
             return response;
         }
 
