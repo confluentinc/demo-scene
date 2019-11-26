@@ -40,7 +40,7 @@ POLICY
 }
 
 resource "aws_iam_role" "ksql_server_role" {
-  name = "ksqlServerRole"
+  name = "ksql_server_role"
   assume_role_policy = data.aws_iam_policy_document.ksql_server_policy_document.json
 }
 

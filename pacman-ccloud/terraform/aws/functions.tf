@@ -154,7 +154,7 @@ resource "aws_lambda_function" "event_handler_function" {
   filename = "functions/deploy/aws-event-handler-1.0.jar"
   handler = "io.confluent.cloud.pacman.EventHandler"
   role = aws_iam_role.event_handler_role.arn
-  runtime = "java8"
+  runtime = "java11"
   memory_size = 256
   timeout = 60
   environment {
