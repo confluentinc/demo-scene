@@ -7,5 +7,5 @@ output "Pacman" {
 }
 
 output "KSQL_Server" {
-  value = var.instance_count["ksql_server"] >= 1 ? join(",", formatlist("http://%s", aws_alb.ksql_server.*.dns_name)) : "KSQL Server has been disabled"
+  value = "http://${aws_alb.ksql_server.dns_name}"
 }

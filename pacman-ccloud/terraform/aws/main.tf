@@ -90,10 +90,18 @@ variable "schema_registry_url" {
 variable "schema_registry_basic_auth" {
 }
 
+locals {
+  region = split(".", var.bootstrap_server)[1]
+}
+
 ###########################################
 ################## Others #################
 ###########################################
 
 variable "global_prefix" {
   default = "pacman-ccloud"
+}
+
+variable "ksql_server_image" {
+  default = "confluentinc/cp-ksql-server"
 }

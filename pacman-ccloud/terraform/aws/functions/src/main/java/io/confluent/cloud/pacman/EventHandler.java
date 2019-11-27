@@ -58,7 +58,6 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
                                 response.put(BODY_KEY, message.toString());
                             }
                         });
-                        producer.flush();
                     }
         
                 }
@@ -106,7 +105,8 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
             properties.setProperty(ProducerConfig.ACKS_CONFIG, "0");
             properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
             properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-            producer = new KafkaProducer<String, String>(properties);
+            properties.setProperty(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "1");
+            producer = new KafkaProducer<>(properties);
         }
     }
 

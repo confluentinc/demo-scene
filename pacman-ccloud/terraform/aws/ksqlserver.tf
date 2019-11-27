@@ -71,8 +71,8 @@ resource "aws_ecs_task_definition" "ksql_server_task_def" {
   family = "ksql_server_task_def"
   network_mode = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu = "2048"
-  memory = "8192"
+  cpu = "4096"
+  memory = "16384"
   execution_role_arn = aws_iam_role.ksql_server_role.arn
   task_role_arn = aws_iam_role.ksql_server_role.arn
   container_definitions = data.template_file.ksql_server_container_def.rendered
@@ -86,7 +86,7 @@ resource "aws_ecs_service" "ksql_server_service" {
   name = "${var.global_prefix}-ksql-server-service"
   cluster = aws_ecs_cluster.ksql_server_cluster.id
   task_definition = aws_ecs_task_definition.ksql_server_task_def.arn
-  desired_count = var.instance_count["ksql_server"]
+  desired_count = 1
   launch_type = "FARGATE"
   network_configuration {
     security_groups = [aws_security_group.ecs_tasks.id]
@@ -97,6 +97,85 @@ resource "aws_ecs_service" "ksql_server_service" {
     container_name = "ksql_server"
     container_port = "8088"
   }
+}
+
+###########################################
+############## Auto Scaling ###############
+###########################################
+
+resource "aws_appautoscaling_target" "ksql_server_auto_scaling_target" {
+  service_namespace = "ecs"
+  resource_id = "service/${aws_ecs_cluster.ksql_server_cluster.name}/${aws_ecs_service.ksql_server_service.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  role_arn = aws_iam_role.ksql_server_role.arn
+  min_capacity = 1
+  max_capacity = 8
+}
+
+resource "aws_appautoscaling_policy" "ksql_server_auto_scaling_up" {
+  depends_on = [aws_appautoscaling_target.ksql_server_auto_scaling_target]
+  name = "ksql_server_auto_scaling_up"
+  service_namespace  = "ecs"
+  resource_id = "service/${aws_ecs_cluster.ksql_server_cluster.name}/${aws_ecs_service.ksql_server_service.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  step_scaling_policy_configuration {
+    adjustment_type = "ChangeInCapacity"
+    cooldown = 60
+    metric_aggregation_type = "Maximum"
+    step_adjustment {
+      metric_interval_lower_bound = 0
+      scaling_adjustment = 1
+    }
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "ksql_server_cpu_high_alarm" {
+  alarm_name = "ksql_server_cpu_high_alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods = "2"
+  metric_name = "CPUUtilization"
+  namespace = "AWS/ECS"
+  period = "60"
+  statistic = "Average"
+  threshold = "85"
+  dimensions = {
+    ClusterName = aws_ecs_cluster.ksql_server_cluster.name
+    ServiceName = aws_ecs_service.ksql_server_service.name
+  }
+  alarm_actions = [aws_appautoscaling_policy.ksql_server_auto_scaling_up.arn]
+}
+
+resource "aws_appautoscaling_policy" "ksql_server_auto_scaling_down" {
+  depends_on = [aws_appautoscaling_target.ksql_server_auto_scaling_target]  
+  name = "ksql_server_auto_scaling_down"
+  service_namespace  = "ecs"
+  resource_id = "service/${aws_ecs_cluster.ksql_server_cluster.name}/${aws_ecs_service.ksql_server_service.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  step_scaling_policy_configuration {
+    adjustment_type = "ChangeInCapacity"
+    cooldown = 60
+    metric_aggregation_type = "Maximum"
+    step_adjustment {
+      metric_interval_lower_bound = 0
+      scaling_adjustment = -1
+    }
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "ksql_server_cpu_low_alarm" {
+  alarm_name = "ksql_server_cpu_low_alarm"
+  comparison_operator = "LessThanOrEqualToThreshold"
+  evaluation_periods = "2"
+  metric_name = "CPUUtilization"
+  namespace = "AWS/ECS"
+  period = "60"
+  statistic = "Average"
+  threshold = "10"
+  dimensions = {
+    ClusterName = aws_ecs_cluster.ksql_server_cluster.name
+    ServiceName = aws_ecs_service.ksql_server_service.name
+  }
+ alarm_actions = [aws_appautoscaling_policy.ksql_server_auto_scaling_down.arn]
 }
 
 ###########################################
