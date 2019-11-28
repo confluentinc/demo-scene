@@ -102,10 +102,9 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
     private static void initializeProducer() {
         if (producer == null) {
             Properties properties = getConnectProperties();
-            properties.setProperty(ProducerConfig.ACKS_CONFIG, "0");
+            properties.setProperty(ProducerConfig.ACKS_CONFIG, "all");
             properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
             properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-            properties.setProperty(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "1");
             producer = new KafkaProducer<>(properties);
         }
     }
