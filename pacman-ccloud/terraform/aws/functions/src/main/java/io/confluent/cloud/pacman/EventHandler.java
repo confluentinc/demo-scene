@@ -39,37 +39,33 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
             (Map<String, Object>) request.get(HEADERS_KEY);
 
         if (requestHeaders.containsKey(ORIGIN_KEY)) {
-            
             String origin = (String) requestHeaders.get(ORIGIN_KEY);
             if (origin.equals(ORIGIN_ALLOWED)) {
-
                 if (request.containsKey(QUERY_PARAMS_KEY) && request.containsKey(BODY_KEY)) {
         
                     String event = (String) request.get(BODY_KEY);
-                    Map<String, String> queryParams = (Map<String, String>) request.get(QUERY_PARAMS_KEY);
+                    Map<String, String> queryParams =
+                        (Map<String, String>) request.get(QUERY_PARAMS_KEY);
                     
                     if (event != null && queryParams != null) {
                         String topic = queryParams.get(TOPIC_KEY);
                         producer.send(new ProducerRecord<String, String>(topic, event), new Callback() {
-                            public void onCompletion(final RecordMetadata metadata, final Exception exception) {
+                            public void onCompletion(final RecordMetadata metadata, final Exception ex) {
                                 StringBuilder message = new StringBuilder();
-                                message.append("Event emmited successfully to topic '");
-                                message.append(metadata.topic()).append("'.");
+                                message.append("Event sent successfully to topic '");
+                                message.append(metadata.topic()).append("' on the ");
+                                message.append("partition ").append(metadata.partition());
                                 response.put(BODY_KEY, message.toString());
                             }
                         });
+                        producer.flush();
                     }
         
                 }
                 
             }
-
         }
 
-        final Map<String, Object> responseHeaders = new HashMap<>();
-        responseHeaders.put("Access-Control-Allow-Origin", ORIGIN_ALLOWED);
-        response.put("headers", responseHeaders);
-        
         return response;
 
     }
@@ -102,7 +98,6 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
     private static void initializeProducer() {
         if (producer == null) {
             Properties properties = getConnectProperties();
-            properties.setProperty(ProducerConfig.ACKS_CONFIG, "all");
             properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
             properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
             producer = new KafkaProducer<>(properties);
