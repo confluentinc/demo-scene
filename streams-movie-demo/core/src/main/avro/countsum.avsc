@@ -1,19 +1,15 @@
 {
   "namespace": "io.confluent.demo",
   "type": "record",
-  "name": "Rating",
+  "name": "CountAndSum",
   "fields": [
     {
-      "name": "movie_id",
+      "name": "count",
       "type": "long"
     },
     {
-      "name": "rating",
+      "name": "sum",
       "type": "double"
-    },
-    {
-      "name": "user_id",
-      "type": "long"
     }
   ]
 }

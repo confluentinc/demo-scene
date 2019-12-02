@@ -31,16 +31,33 @@ class RatingUtil {
       [id: 501, rating: 8.5] // Terminator 2
   ]
 
-  static Rating generateRandomRating(List<LinkedHashMap<String, Number>> ratingTargets, int stddev) {
+  public static def userTargets = [
+      [id: 101, name: "Ale"],
+      [id: 102, name: "Ricardo"],
+      [id: 103, name: "Robin"],
+      [id: 104, name: "Victoria"],
+      [id: 105, name: "Viktor"],
+      [id: 106, name: "Yeva"]
+  ]
+
+  static Rating generateRandomRating(List<LinkedHashMap<String, Number>> ratingTargets,
+                                     List<LinkedHashMap<String, Number>> userTargets,
+                                     int stddev) {
+
     Random random = new Random()
-    int numberOfTargets = ratingTargets.size()
-    int targetIndex = random.nextInt(numberOfTargets)
+    int numberOfTargetRatings = ratingTargets.size()
+    def numberOfUsers = userTargets.size()
+
+    int targetIndex = random.nextInt(numberOfTargetRatings)
+    def targetUserIndex = random.nextInt(numberOfUsers)
+
     double randomRating = (double) ((random.nextGaussian() * stddev) + ratingTargets[targetIndex].rating)
     randomRating = Math.max(Math.min(randomRating, 10), 0)
 
-    Rating rating = new Rating()
-    rating.movieId = (Long) ratingTargets[targetIndex].id
-    rating.rating = randomRating
-    rating
+    long randomUser = (long) ((random.nextGaussian() * stddev) + userTargets[targetUserIndex].id)
+    randomUser = Math.max(Math.min(randomUser, 106), 101)
+
+    // simulating «real person rating» - int value for rating
+    new Rating((Long) ratingTargets[targetIndex].id, randomRating.intValue(), randomUser)
   }
 }
