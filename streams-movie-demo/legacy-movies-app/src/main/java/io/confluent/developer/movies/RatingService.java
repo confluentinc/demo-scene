@@ -1,6 +1,5 @@
 package io.confluent.developer.movies;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -14,19 +13,19 @@ import io.confluent.demo.Movie;
 import io.confluent.demo.RatedMovie;
 import io.confluent.demo.Rating;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import static io.confluent.demo.Parser.parseArray;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RatingService {
 
-  @Autowired
   private final JdbcTemplate jdbcTemplate;
-
-  @Autowired
   private final KafkaTemplate<Long, RatedMovie> kafkaProducer;
 
+  // in-memory store for intermediate ratings count and sum
   private static ConcurrentHashMap<Long, CountAndSum> countAndSumStorage = new ConcurrentHashMap<>();
 
   @KafkaListener(topics = "ratings", groupId = "rating_averager")
@@ -37,7 +36,7 @@ public class RatingService {
                                (aLong, prevCountAndSum) -> {
                                  if (prevCountAndSum != null) {
                                    return new CountAndSum(prevCountAndSum.getCount() + 1,
-                                                   prevCountAndSum.getSum() + rating.getRating());
+                                                          prevCountAndSum.getSum() + rating.getRating());
                                  }
                                  return new CountAndSum(1L, rating.getRating());
                                });
@@ -48,15 +47,15 @@ public class RatingService {
       final RatedMovie ratedMovie = new RatedMovie(movie.getMovieId(), movie.getTitle(), movie.getReleaseYear(),
                                                    countAndSum.getSum() / countAndSum.getCount());
 
-      System.out.println(ratedMovie);
       kafkaProducer.send("rated-movies", movieId, ratedMovie);
 
     } else {
-      System.out.println("can't find movie with id: " + movieId);
+      log.warn("can't find movie with id: " + movieId);
     }
   }
 
-  public Movie getMovieFromDb(Long movieId) {
+  // getting movie by id from MySQL database
+  private Movie getMovieFromDb(Long movieId) {
     List<Movie> movies = jdbcTemplate.query("select movie_id,"
                                             + "title,"
                                             + "release_year,"

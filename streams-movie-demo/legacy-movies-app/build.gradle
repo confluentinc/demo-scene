@@ -2,6 +2,7 @@ plugins {
   id 'org.springframework.boot'
   id 'io.spring.dependency-management'
   id 'java'
+  id 'io.franzbecker.gradle-lombok' version '3.2.0'
 }
 
 group = 'io.confluent.developer'
@@ -14,7 +15,7 @@ dependencies {
   
   implementation 'org.springframework.boot:spring-boot-starter-jdbc'
   implementation 'org.springframework.kafka:spring-kafka'
-  implementation "org.projectlombok:lombok:"
+  implementation "org.projectlombok:lombok"
   runtimeOnly 'mysql:mysql-connector-java'
   testImplementation('org.springframework.boot:spring-boot-starter-test') {
     exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'

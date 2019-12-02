@@ -16,7 +16,7 @@ public class RatingsRestController {
 
   @RequestMapping(path = "/rating", method = POST)
   public String rateMovie(@RequestParam Long movieId, @RequestParam Double rating) {
-    Rating userRating = new Rating(movieId, rating);
+    Rating userRating = new Rating(movieId, rating, (long) 101);
     System.out.println("userRating = " + userRating.toString());
     kafkaTemplate.send("raw-ratings", userRating.getMovieId(), Parser.toRawRating(userRating));
     return "👍";
