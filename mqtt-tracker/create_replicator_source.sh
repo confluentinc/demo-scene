@@ -28,7 +28,7 @@ curl -s -X PUT -H "Accept:application/json" \
         "src.consumer.group.id": "replicator-'$epoch'",
         "dest.kafka.bootstrap.servers": "kafka-1:39092,kafka-2:49092,kafka-3:59092",
         "topic.whitelist": "data_mqtt",
-        "topic.rename.format":"${topic}-import",
+        "topic.rename.format":"${topic}",
         "confluent.license":"",
         "confluent.topic.bootstrap.servers":"kafka-1:39092,kafka-2:49092,kafka-3:59092",
         "confluent.topic.replication.factor":1,

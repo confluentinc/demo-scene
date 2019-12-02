@@ -39,7 +39,7 @@ variable "css_files" {
 resource "aws_s3_bucket_object" "css_files" {
   count = length(var.css_files)
   bucket = aws_s3_bucket.pacman.bucket
-  key = "${var.css_files[count.index]}"
+  key = var.css_files[count.index]
   content_type = "text/css"
   source = "../../pacman/${var.css_files[count.index]}"
 }
@@ -69,7 +69,7 @@ variable "img_files" {
 resource "aws_s3_bucket_object" "img_files" {
   count = length(var.img_files)
   bucket = aws_s3_bucket.pacman.bucket
-  key = "${var.img_files[count.index]}"
+  key = var.img_files[count.index]
   content_type = "images/png"
   source = "../../pacman/${var.img_files[count.index]}"
 }
@@ -99,7 +99,7 @@ variable "js_files" {
 resource "aws_s3_bucket_object" "js_files" {
   count = length(var.js_files)
   bucket = aws_s3_bucket.pacman.bucket
-  key = "${var.js_files[count.index]}"
+  key = var.js_files[count.index]
   content_type = "text/javascript"
   source = "../../pacman/${var.js_files[count.index]}"
 }
@@ -107,7 +107,8 @@ resource "aws_s3_bucket_object" "js_files" {
 data "template_file" "game_js" {
   template = file("../../pacman/game/js/game.js")
   vars = {
-    rest_proxy_endpoint = join(",", formatlist("http://%s", aws_alb.rest_proxy.*.dns_name))
+    event_handler_api = "${aws_api_gateway_deployment.event_handler_v1.invoke_url}${aws_api_gateway_resource.event_handler_resource.path}"
+    cloud_provider = "AWS"
   }
 }
 
@@ -141,7 +142,7 @@ variable "snd_files" {
 resource "aws_s3_bucket_object" "snd_files" {
   count = length(var.snd_files)
   bucket = aws_s3_bucket.pacman.bucket
-  key = "${var.snd_files[count.index]}"
+  key = var.snd_files[count.index]
   content_type = "audio/mpeg"
   source = "../../pacman/${var.snd_files[count.index]}"
 }

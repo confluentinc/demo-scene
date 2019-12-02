@@ -3,7 +3,7 @@
 ###########################################
 
 resource "azurerm_storage_blob" "index" {
-  depends_on = ["module.staticweb"]
+  depends_on = [module.staticweb]
   name = "index.html"
   content_type = "text/html"
   storage_account_name = azurerm_storage_account.pacman.name
@@ -13,7 +13,7 @@ resource "azurerm_storage_blob" "index" {
 }
 
 resource "azurerm_storage_blob" "error" {
-  depends_on = ["module.staticweb"]
+  depends_on = [module.staticweb]
   name = "error.html"
   content_type = "text/html"
   storage_account_name = azurerm_storage_account.pacman.name
@@ -23,7 +23,7 @@ resource "azurerm_storage_blob" "error" {
 }
 
 resource "azurerm_storage_blob" "start" {
-  depends_on = ["module.staticweb"]
+  depends_on = [module.staticweb]
   name = "start.html"
   content_type = "text/html"
   storage_account_name = azurerm_storage_account.pacman.name
@@ -46,7 +46,7 @@ variable "css_files" {
 }
 
 resource "azurerm_storage_blob" "css_files" {
-  depends_on = ["module.staticweb"]
+  depends_on = [module.staticweb]
   count = length(var.css_files)
   name = var.css_files[count.index]
   storage_account_name = azurerm_storage_account.pacman.name
@@ -79,7 +79,7 @@ variable "img_files" {
 }
 
 resource "azurerm_storage_blob" "img_files" {
-  depends_on = ["module.staticweb"]
+  depends_on = [module.staticweb]
   count = length(var.img_files)
   name = var.img_files[count.index]
   storage_account_name = azurerm_storage_account.pacman.name
@@ -112,7 +112,7 @@ variable "js_files" {
 }
 
 resource "azurerm_storage_blob" "js_files" {
-  depends_on = ["module.staticweb"]
+  depends_on = [module.staticweb]
   count = length(var.js_files)
   name = var.js_files[count.index]
   storage_account_name = azurerm_storage_account.pacman.name
@@ -125,12 +125,13 @@ resource "azurerm_storage_blob" "js_files" {
 data "template_file" "game_js" {
   template = file("../../pacman/game/js/game.js")
   vars = {
-    rest_proxy_endpoint = "http://${azurerm_public_ip.rest_proxy[0].fqdn}"
+    event_handler_api = "http://${azurerm_public_ip.rest_proxy[0].fqdn}"
+    cloud_provider = "AZR"
   }
 }
 
 resource "azurerm_storage_blob" "game_js" {
-  depends_on = ["module.staticweb"]
+  depends_on = [module.staticweb]
   name = "game/js/game.js"
   storage_account_name = azurerm_storage_account.pacman.name
   storage_container_name = "$web"
@@ -160,7 +161,7 @@ variable "snd_files" {
 }
 
 resource "azurerm_storage_blob" "snd_files" {
-  depends_on = ["module.staticweb"]
+  depends_on = [module.staticweb]
   count = length(var.snd_files)
   name = var.snd_files[count.index]
   storage_account_name = azurerm_storage_account.pacman.name

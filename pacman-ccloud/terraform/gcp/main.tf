@@ -34,6 +34,7 @@ resource "google_storage_bucket" "pacman" {
       main_page_suffix = "index.html"
       not_found_page = "error.html"
   }
+  force_destroy = "true"
 }
 
 resource "google_storage_default_object_acl" "default_obj_acl" {

@@ -11,6 +11,8 @@ image::images/mqtt_kafka_01.png[]
 
 *For demo script see link:./mqtt_demo.adoc[here]*
 
+image::images/kibana01.png[]
+
 ''''
 
 * Install Owntracks on your phone

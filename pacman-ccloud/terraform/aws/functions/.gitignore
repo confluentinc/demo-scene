@@ -1,0 +1,14 @@
+deploy
+vendor
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+target
+.classpath
+.factorypath
+.settings
+.project
