@@ -1,0 +1,8 @@
+{
+	"name": "trainer",
+	"connector.class": "org.apache.kafka.connect.file.FileStreamSinkConnector",
+	"key.converter": "org.apache.kafka.connect.storage.StringConverter",
+	"value.converter": "org.apache.kafka.connect.storage.StringConverter",
+	"topics": "host1",
+	"file": "/project/cp/logs/train.log"
+}

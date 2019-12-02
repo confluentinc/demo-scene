@@ -5,3 +5,5 @@ dependency-reduced-pom.xml
 streamz
 docker/elasticsearch
 .idea
+java/demo/models
+logs

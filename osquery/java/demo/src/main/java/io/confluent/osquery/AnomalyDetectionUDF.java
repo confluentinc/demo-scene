@@ -1,9 +1,8 @@
 package io.confluent.osquery;
 
-import cc.mallet.topics.ParallelTopicModel;
 import io.confluent.common.Configurable;
-import io.confluent.ksql.function.udaf.UdafDescription;
-import io.confluent.ksql.function.udaf.UdafFactory;
+import io.confluent.ksql.function.udf.Udf;
+import io.confluent.ksql.function.udf.UdfDescription;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
@@ -11,73 +10,76 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
-@UdafDescription(name = "LDA", description = "scores a document")
+@UdfDescription(name = "lda", description = "scores a document")
 public class AnomalyDetectionUDF implements Configurable {
 
+    private static final String ENDPOINT = "ksql.functions.lda.endpoint";
     private ExecutorService exec = Executors.newSingleThreadExecutor();
-    private Map<String, ?> map;
-    private Future<ParallelTopicModel> future;
+    private Map<String, String> map = new HashMap<>();
 
-    @UdafFactory(description = "score a document")
+    @Udf(description = "score a document")
     public double score(final String... values) {
-        String doc = StringUtils.join(values, " ");
-        if(!map.containsKey("endpoint")) return -1;
-        return call(doc, map.get("endpoint").toString());
+        if(values == null) return -2;
+        try {
+            String doc = StringUtils.join(values, " ");
+            String endpoint = map.containsKey(ENDPOINT) ? map.get(ENDPOINT) : "http://model:4567/model/latest/score";
+            return call(doc, endpoint);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -1.1;
+        }
     }
 
     @Override
     public void configure(Map<String, ?> map) {
-        this.map = map;
+        map.entrySet().stream().forEach((e) -> this.map.put(e.getKey(), e.getValue().toString()));
     }
 
-    private double call(String message, String endpoint) {
-        try {
+    private double call(String message, String endpoint) throws IOException {
+        URL url = new URL(endpoint);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setDoOutput(true);
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "text/plain");
+        conn.setConnectTimeout(50000);
 
-            URL url = new URL(endpoint);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setDoOutput(true);
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("Content-Type", "application/json");
+        OutputStream os = conn.getOutputStream();
+        os.write(message.getBytes());
+        os.flush();
 
-            OutputStream os = conn.getOutputStream();
-            os.write(message.getBytes());
-            os.flush();
+        BufferedReader br = new BufferedReader(new InputStreamReader(
+                (conn.getInputStream())));
 
-            if (conn.getResponseCode() != HttpURLConnection.HTTP_CREATED) {
-                throw new RuntimeException("Failed : HTTP error code : "
-                        + conn.getResponseCode());
-            }
+        String output;
+        StringBuffer sb = new StringBuffer();
+        while ((output = br.readLine()) != null) {
+            sb.append(output);
+        }
 
-            BufferedReader br = new BufferedReader(new InputStreamReader(
-                    (conn.getInputStream())));
+        conn.disconnect();
 
-            String output;
-            StringBuffer sb = new StringBuffer();
-            System.out.println("Output from Server .... \n");
-            while ((output = br.readLine()) != null) {
-                sb.append(output);
-            }
+        return Double.parseDouble(sb.toString());
+    }
 
-            conn.disconnect();
+    public static void main(String... args) throws IOException {
+        AnomalyDetectionUDF udf = new AnomalyDetectionUDF();
+        Map<String, String> conf = new HashMap<>();
+        conf.put(ENDPOINT, "http://localhost:4567/model/latest/score");
+        udf.configure(conf);
 
-            return Double.parseDouble(sb.toString());
-
-        } catch (MalformedURLException e) {
-
-            e.printStackTrace();
-            return -1;
-
-        } catch (IOException e) {
-
-            e.printStackTrace();
-            return -1;
+        Scanner sc = new Scanner(System.in);
+        System.out.println("messages:");
+        while(sc.hasNextLine()) {
+            String message = sc.nextLine();
+            double score = udf.call(message, conf.get(ENDPOINT));
+            System.out.println(message+": "+score);
         }
     }
 }

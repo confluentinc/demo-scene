@@ -1,0 +1,12 @@
+{
+    "options": {
+      "host_identifier": "mac",
+      "schedule_splay_percent": 10
+    },
+    "schedule": {
+      "processes": {
+        "query": "SELECT * FROM processes;",
+        "interval": 2
+      }
+    }
+  }

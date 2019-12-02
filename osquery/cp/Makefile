@@ -5,26 +5,31 @@ build:
 	docker build ../docker/osquery -t demo-scene/osquery
 	@echo "------------"
 	docker build ../docker/connect -t demo-scene/connect
+	$(MAKE) java 
 	@echo "------------"	
 	docker-compose build
+
+java:
+	@echo "------------"	
+	mvn -f ../java/demo/pom.xml clean package 
 
 cluster: up
 
 up:
 	docker-compose up -d
+
+pipeline:
+	docker exec -it ksql-cli ksql  http://ksql-server:8088 <<EOF
+		> RUN SCRIPT '/project/cp/ksql-commands.ksql';
+		> exit
+		> EOF
 	
 topics:
+	# create your topics manually in case auto.create.topics.enable is set to true
 	@echo 'creating topics'
 	@for t in $(TOPICS); do \
 		docker exec -it broker kafka-topics --bootstrap-server broker:9092 --create --topic $$t --partitions 1 --replication-factor 1 ; \
 	done
-
-connect:
-	# docker exec -it connect /project/certs/gen-certs.sh
-	docker exec -it connect curl -d "@/project/docker/connect/elasticsearch-sink-processes.json" \
-		-X PUT \
-		-H "Content-Type: application/json" \
-		http://connect:8083/connectors/elasticsearch-sink-processes/config 
 
 ksql:
 	docker exec -it ksql-cli ksql http://ksql-server:8088
@@ -34,3 +39,6 @@ down:
 
 ps:
 	docker-compose ps
+
+login:
+	docker exec -it --user jay host1 bash

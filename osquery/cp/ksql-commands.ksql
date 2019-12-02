@@ -1,0 +1,49 @@
+CREATE STREAM training as
+    select * from processes
+    where hostidentifier = 'host1'
+    emit changes;
+
+CREATE SOURCE CONNECTOR training WITH (
+    'connector.class' = 'FileStreamSinkConnector',
+    'key.converter'  = 'org.apache.kafka.connect.storage.StringConverter',
+    'value.converter' = 'org.apache.kafka.connect.storage.StringConverter',
+    'topics' = 'training',
+    'file' = '/project/cp/logs/train.log'
+);
+
+CREATE STREAM scored as
+    select 
+        hostidentifier, 
+        action, 
+        lda(hostidentifier, 
+            columns['path'], 
+            columns['name'], 
+            action
+        ) as score
+    from processes
+
+CREATE STREAM good as
+    select *
+    from scored
+    where score >= .7
+    emit changes;
+
+CREATE STREAM bad as
+    select *
+    from scored
+    where score < .3
+    emit changes;
+
+CREATE STREAM ugly as
+    select *
+    from scored
+    where score >= .3 and score < .7
+    emit changes;
+
+CREATE SOURCE CONNECTOR bad WITH (
+    'connector.class' = 'FileStreamSinkConnector',
+    'key.converter'  = 'org.apache.kafka.connect.storage.StringConverter',
+    'value.converter' = 'org.apache.kafka.connect.storage.StringConverter',
+    'topics' = 'training',
+    'file' = '/project/cp/logs/train.log'
+);

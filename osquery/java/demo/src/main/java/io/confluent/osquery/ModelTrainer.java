@@ -1,110 +1,116 @@
 package io.confluent.osquery;
 
+import cc.mallet.pipe.CharSequence2TokenSequence;
 import cc.mallet.pipe.Pipe;
 import cc.mallet.pipe.SerialPipes;
 import cc.mallet.pipe.TokenSequence2FeatureSequence;
 import cc.mallet.pipe.iterator.StringArrayIterator;
 import cc.mallet.topics.ParallelTopicModel;
 import cc.mallet.types.InstanceList;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Options;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonString;
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * You should run this trainer as a separate process and
+ * not invoke it from the model server so that you can
+ * scale the model serving and training separately.
+ */
 public class ModelTrainer {
 
-    public static void main(String... args) throws Exception {
-
-        // create Options object
-        Options options = new Options();
-
-        options.addOption("s", true, "source directory for ML training");
-        options.addOption("k", true, "number of topic clusters to train");
-        options.addOption("e", true, "endpoint url to post the newly trained model");
-        CommandLineParser parser = new DefaultParser();
-        CommandLine cmd = parser.parse( options, args);
-
-        String dir = cmd.hasOption("s") ? cmd.getOptionValue("s") : ".";
-        int k = cmd.hasOption("k") ? Integer.parseInt(cmd.getOptionValue("k")) : 100;
-        String endpoint = cmd.hasOption("e") ? cmd.getOptionValue("e") : "http://model-server:4567/model/lates";
-
-        Stream<String> files = Files
+    public static Pair<String, ParallelTopicModel> train(String dir, int k) throws IOException {
+        String[] docs = Files
                 .list(Paths.get(dir))
-                .filter((f) -> Files.isRegularFile(f))
+                .parallel()
+                .filter((f) -> Files.isRegularFile(f) && f.getFileName().endsWith("osqueryd.results.log"))
                 .flatMap((f) -> {
                     try {
+                        String s = f.toFile().getAbsolutePath();
                         return Files.readAllLines(f).stream();
                     } catch (IOException e) {
                         return null;
                     }
                 })
-                .filter((f) -> f != null);
+                .filter((f) -> f != null)
+                .map((string) -> {
+                    List<String> tokes = new ArrayList<>();
+                    try{
+                        Reader reader = new StringReader(string);
+                        JsonReader jsonReader = Json.createReader(reader);
+                        JsonObject doc = jsonReader.readObject();
+                        JsonObject columns = doc.getJsonObject("columns");
+                        Stream<String> values = columns.values().parallelStream()
+                                .map((s) -> ((JsonString)s).getString().toLowerCase().trim())
+                                .filter((s) -> !NumberUtils.isCreatable(s))
+                                .filter((s) -> !s.isEmpty());
+                        tokes.addAll(values.collect(Collectors.toList()));
+                        tokes.add(doc.getString("hostIdentifier"));
+                    }
+                    catch(Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    return tokes.stream().collect(Collectors.joining(" "));
+                })
+                .filter((s) -> s != null)
+                .toArray(String[]::new);
 
         ArrayList<Pipe> pipeList = new ArrayList<>();
+        String regex = "\\b(\\w*[^\\d][\\w\\.\\:]*\\w)\\ b";
+        pipeList.add(new CharSequence2TokenSequence());
         pipeList.add(new TokenSequence2FeatureSequence());
         SerialPipes sp = new SerialPipes(pipeList);
         InstanceList instances = new InstanceList(sp);
 
-        StringArrayIterator sai = new StringArrayIterator(files.toArray(String[]::new));
+        StringArrayIterator sai = new StringArrayIterator(docs);
         instances.addThruPipe(sai); // data, label, name fields
 
         // Model
-        ParallelTopicModel model = new ParallelTopicModel(k, 1.0, 0.01);
+        ParallelTopicModel model = new ParallelTopicModel(k, 2.0, 0.01);
         model.addInstances(instances);
         model.setNumThreads(4);
         model.setNumIterations(50);
         model.estimate();
 
         // Serialize
-        call(model, endpoint);
+        String path = save(model);
+
+        return Pair.of(path, model);
     }
 
-    private static void call(ParallelTopicModel model, String endpoint) {
-        try {
+    private static String save(ParallelTopicModel model) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+        String date = sdf.format(new Date(System.currentTimeMillis()));
+        File file = new File("models/lda." + date);
+//        try {
+//            file.getParentFile().mkdirs();
+//            FileOutputStream fos = new FileOutputStream(file);
+//            ObjectOutputStream out = new ObjectOutputStream(fos);
+//            out.writeObject(model);
+//            fos.flush();
+//            fos.close();
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+        return file.getAbsolutePath();
 
-            URL url = new URL(endpoint);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setDoOutput(true);
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/json");
-
-            OutputStream os = conn.getOutputStream();
-            ObjectOutputStream out = new ObjectOutputStream(os);
-            out.writeObject(model);
-            os.flush();
-
-            if (conn.getResponseCode() != HttpURLConnection.HTTP_CREATED) {
-                throw new RuntimeException("Failed : HTTP error code : "
-                        + conn.getResponseCode());
-            }
-
-            BufferedReader br = new BufferedReader(new InputStreamReader(
-                    (conn.getInputStream())));
-
-            String output;
-            StringBuffer sb = new StringBuffer();
-            System.out.println("Output from Server .... \n");
-            while ((output = br.readLine()) != null) {
-                sb.append(output);
-            }
-
-            conn.disconnect();
-        } catch (MalformedURLException e) {
-
-            e.printStackTrace();
-
-        } catch (IOException e) {
-
-            e.printStackTrace();
-        }
     }
 }
