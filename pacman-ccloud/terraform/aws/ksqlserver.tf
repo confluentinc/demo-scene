@@ -53,7 +53,7 @@ resource "aws_ecs_cluster" "ksql_server_cluster" {
   name = "${var.global_prefix}-ksql-server-cluster"
 }
 
-data "template_file" "ksql_server_container_def" {
+data "template_file" "ksql_server_definition" {
   template = file("../util/ksql-server.json")
   vars = {
     bootstrap_server = var.bootstrap_server
@@ -67,15 +67,15 @@ data "template_file" "ksql_server_container_def" {
   }
 }
 
-resource "aws_ecs_task_definition" "ksql_server_task_def" {
-  family = "ksql_server_task_def"
+resource "aws_ecs_task_definition" "ksql_server_task" {
+  family = "ksql_server_task"
   network_mode = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu = "4096"
   memory = "16384"
   execution_role_arn = aws_iam_role.ksql_server_role.arn
   task_role_arn = aws_iam_role.ksql_server_role.arn
-  container_definitions = data.template_file.ksql_server_container_def.rendered
+  container_definitions = data.template_file.ksql_server_definition.rendered
 }
 
 resource "aws_ecs_service" "ksql_server_service" {
@@ -85,7 +85,7 @@ resource "aws_ecs_service" "ksql_server_service" {
   ]
   name = "${var.global_prefix}-ksql-server-service"
   cluster = aws_ecs_cluster.ksql_server_cluster.id
-  task_definition = aws_ecs_task_definition.ksql_server_task_def.arn
+  task_definition = aws_ecs_task_definition.ksql_server_task.arn
   desired_count = 1
   launch_type = "FARGATE"
   network_configuration {
@@ -184,7 +184,7 @@ resource "aws_cloudwatch_metric_alarm" "ksql_server_cpu_low_alarm" {
 
 resource "aws_alb" "ksql_server" {
   name = "pacman${random_string.random_string.result}-ksql"
-  subnets = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
+  subnets = aws_subnet.public_subnet[*].id
   security_groups = [aws_security_group.load_balancer.id]
   tags = {
     Name = "pacman${random_string.random_string.result}-ksql"
