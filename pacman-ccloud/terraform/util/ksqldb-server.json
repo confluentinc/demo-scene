@@ -1,8 +1,8 @@
 [
   {
     "essential": true,
-    "image": "${ksql_server_image}",
-    "name": "ksql_server",
+    "image": "${ksqldb_server_image}",
+    "name": "ksqldb_server",
     "portMappings": [
       {
         "hostPort": 8088,
@@ -60,6 +60,18 @@
         "value": "3"
       },
       {
+        "name": "KSQL_KSQL_LOGGING_PROCESSING_TOPIC_REPLICATION_FACTOR",
+        "value": "3"
+      },
+      {
+        "name": "KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE",
+        "value": "true"
+      },
+      {
+        "name": "KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE",
+        "value": "true"
+      },
+      {
         "name": "KSQL_KSQL_STREAMS_NUM_STREAM_THREADS",
         "value": "4"
       },
@@ -72,7 +84,7 @@
       "logDriver": "awslogs",
       "options": {
         "awslogs-create-group": "true",
-        "awslogs-group": "/ecs/ksql_server",
+        "awslogs-group": "/ecs/ksqldb_server",
         "awslogs-region": "${logs_region}",
         "awslogs-stream-prefix": "ecs"
       }

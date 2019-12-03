@@ -89,6 +89,6 @@ variable "global_prefix" {
   default = "pacman-ccloud"
 }
 
-variable "ksql_server_image" {
-  default = "confluentinc/cp-ksql-server"
+variable "ksqldb_server_image" {
+  default = "confluentinc/ksqldb-server"
 }
