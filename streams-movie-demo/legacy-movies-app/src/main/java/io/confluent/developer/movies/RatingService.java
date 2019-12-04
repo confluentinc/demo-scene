@@ -1,32 +1,33 @@
 package io.confluent.developer.movies;
 
+import io.confluent.demo.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.confluent.demo.CountAndSum;
-import io.confluent.demo.Movie;
-import io.confluent.demo.RatedMovie;
-import io.confluent.demo.Rating;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import static io.confluent.demo.Parser.parseArray;
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
-@RestControllers
+@RestController
 @RequiredArgsConstructor
 @Slf4j
 public class RatingService {
 
   private final JdbcTemplate jdbcTemplate;
-  private final KafkaTemplate<Long, RatedMovie> kafkaProducer;
 
   // in-memory store for intermediate ratings count and sum
   private static ConcurrentHashMap<Long, CountAndSum> countAndSumStorage = new ConcurrentHashMap<>();
+  private static ConcurrentHashMap<Long, RatedMovie> ratedMovieStorage = new ConcurrentHashMap<>();
 
   @KafkaListener(topics = "ratings", groupId = "rating_averager")
   private void ratingListener(Rating rating) {
@@ -46,13 +47,19 @@ public class RatingService {
       final CountAndSum countAndSum = countAndSumStorage.get(movieId);
       final RatedMovie ratedMovie = new RatedMovie(movie.getMovieId(), movie.getTitle(), movie.getReleaseYear(),
                                                    countAndSum.getSum() / countAndSum.getCount());
-
-      kafkaProducer.send("rated-movies", movieId, ratedMovie);
-
+      ratedMovieStorage.put(movie.getMovieId(), ratedMovie);
     } else {
       log.warn("can't find movie with id: " + movieId);
     }
   }
+
+  @RequestMapping(path = "/average", method = GET)
+  public String movieAverage(@RequestParam Long movieId) {
+    System.out.println("movieId="+movieId);
+    System.out.println(ratedMovieStorage.get(movieId));
+    return ratedMovieStorage.get(movieId).toString();
+  }
+
 
   // getting movie by id from MySQL database
   private Movie getMovieFromDb(Long movieId) {

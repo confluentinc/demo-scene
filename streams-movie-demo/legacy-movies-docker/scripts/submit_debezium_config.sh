@@ -9,7 +9,7 @@ curl -i -X PUT -H "Content-Type:application/json" \
             "database.user": "debezium",
             "database.password": "dbz",
             "database.server.id": "42",
-            "database.server.name": "carlstadt",
+            "database.server.name": "asgard",
             "table.whitelist": "demo.movies",
             "database.history.kafka.bootstrap.servers": "kafka:29092",
             "database.history.kafka.topic": "dbhistory.demo" ,
