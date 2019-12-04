@@ -151,6 +151,46 @@ services:
       CONNECT_LOG4J_ROOT_LOGLEVEL: DEBUG
     command: "tail -f /dev/null"
 
+  ksqldb-server:
+    image: confluentinc/ksqldb-server:0.6.0
+    hostname: ksqldb-server
+    container_name: ksqldb-server
+    depends_on:
+      - kafka
+    ports:
+      - "8089:8089"
+    environment:
+      KSQL_HOST_NAME: ksql-server
+      KSQL_CONFIG_DIR: "/etc/ksql"
+      KSQL_LOG4J_OPTS: "-Dlog4j.configuration=file:/etc/ksql/log4j-rolling.properties"
+      KSQL_LISTENERS: "http://0.0.0.0:8089"
+      KSQL_AUTO_OFFSET_RESET: "earliest"
+      KSQL_COMMIT_INTERVAL_MS: 0
+      KSQL_CACHE_MAX_BYTES_BUFFERING: 0
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      KSQL_BOOTSTRAP_SERVERS: $BOOTSTRAP_SERVERS
+      KSQL_SECURITY_PROTOCOL: "SASL_SSL"
+      KSQL_SASL_JAAS_CONFIG: $SASL_JAAS_CONFIG
+      KSQL_SASL_MECHANISM: "PLAIN"
+      KSQL_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "HTTPS"
+      KSQL_KSQL_STREAMS_PRODUCER_RETRIES: 2147483647
+      KSQL_KSQL_STREAMS_PRODUCER_CONFLUENT_BATCH_EXPIRE_MS: 9223372036854775807
+      KSQL_KSQL_STREAMS_PRODUCER_REQUEST_TIMEOUT_MS: 300000
+      KSQL_KSQL_STREAMS_PRODUCER_MAX_BLOCK_MS: 9223372036854775807
+      KSQL_KSQL_STREAMS_REPLICATION_FACTOR: 3
+      KSQL_KSQL_INTERNAL_TOPIC_REPLICAS: 3
+      KSQL_KSQL_SINK_REPLICAS: 3
+
+
+  ksqldb-cli:
+    image: confluentinc/ksqldb-cli:0.6.0
+    container_name: ksqldb-cli
+    depends_on:
+      - ksqldb-server
+    entrypoint: /bin/sh
+    tty: true
+
+
 volumes:
   mi2: {}
   mi3: {}
