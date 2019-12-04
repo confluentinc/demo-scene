@@ -3,7 +3,7 @@ package io.confluent.developer.movies;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import static io.confluent.demo.Parser.parseArray;
 
-@Service
+@RestControllers
 @RequiredArgsConstructor
 @Slf4j
 public class RatingService {
