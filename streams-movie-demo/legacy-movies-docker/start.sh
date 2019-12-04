@@ -1,5 +1,9 @@
 #!/bin/bash
 
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+GREEN='\033[0;32m'
+
 # Source library
 . ./scripts/helper.sh
 
@@ -16,7 +20,7 @@ if [[ "${USE_CONFLUENT_CLOUD_SCHEMA_REGISTRY}" == true ]]; then
 else
   SCHEMA_REGISTRY_CONFIG_FILE=schema_registry_docker.config
 fi
-./ccloud-generate-cp-configs.sh $CONFIG_FILE $SCHEMA_REGISTRY_CONFIG_FILE
+./scripts/ccloud-generate-cp-configs.sh $CONFIG_FILE $SCHEMA_REGISTRY_CONFIG_FILE
 
 DELTA_CONFIGS_DIR=delta_configs
 source $DELTA_CONFIGS_DIR/env.delta
@@ -27,13 +31,22 @@ fi
 
 docker-compose up -d
 
-echo "Sleeping 90 seconds to wait for all services to come up"
-sleep 90
+echo "Confluent Platform is starting up..."
+
+# ---- Set up Replicator source connector ---
+export CONNECT_HOST=connect-cloud
+echo -e "\n--\n\n$(date) Waiting for Kafka Connect to start on ${GREEN}$CONNECT_HOST ${NC}… ⏳"
+grep -q "Kafka Connect started" <(docker-compose logs -f $CONNECT_HOST)
+echo -e "\n--\n$(date) 👉 Creating Replicator to CCloud connector"
+. ./scripts/submit_replicator_docker_config.sh
+
+
+# ---- Set up Debezium source connector ---
+export CONNECT_HOST=connect-debezium
+echo -e "\n--\n\n$(date) Waiting for Kafka Connect to start on ${GREEN}$CONNECT_HOST${NC}… ⏳"
+grep -q "Kafka Connect started" <(docker-compose logs -f $CONNECT_HOST)
+echo -e "\n--\n$(date) 👉 Creating Debezium connector"
+. ./scripts/submit_debezium_config.sh
 
 # Reregister a schema for a topic with a different name
 #curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" --data "{\"schema\": $(curl -s http://localhost:8085/subjects/pageviews-value/versions/latest | jq '.schema')}" http://localhost:8085/subjects/pageviews.replica-value/versions
-
-# Replicator
-. ./scripts/submit_replicator_docker_config.sh
-
-sleep 30

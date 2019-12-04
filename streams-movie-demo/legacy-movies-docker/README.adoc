@@ -1,0 +1,84 @@
+ = Legacy System example
+Viktor Gamov <viktor@confluent.io>, © 2019 Confluent, Inc.
+2019-12-04
+:revdate: 2019-12-04 3:51:13 -0600
+:linkattrs:
+:ast: &ast;
+:y: &#10003;
+:n: &#10008;
+:y: icon:check-sign[role="green"]
+:n: icon:check-minus[role="red"]
+:c: icon:file-text-alt[role="blue"]
+:toc: auto
+:toc-placement: auto
+:toc-position: auto
+:toc-title: Table of content
+:toclevels: 3
+:idprefix:
+:idseparator: -
+:sectanchors:
+:icons: font
+:source-highlighter: highlight.js
+:highlightjs-theme: idea
+:experimental:
+
+This docker-compose stack represents traditional / legacy set of applications - Kafka used as just messaging system, database (MySQL) used as default storage system.
+
+toc::[]
+
+== Prerequisites
+
+Docker, Docker Compose, jq
+
+== How to start and stop
+
+. To start, run `./start.sh` and relax
+. To stop, run `docker-compose down`
+. To perform cleanup volumes run `stop_and_destroy.sh`
+
+== Validation and troubleshooting 
+
+
+=== Basics
+
+. `kafka-topics --list --bootstrap-server localhost:9092` should print something like this
++
+
+[source,bash]
+.console.sh
+----
+__confluent.support.metrics
+__consumer_offsets
+__consumer_timestamps
+_confluent-metrics
+_schemas
+carlstadt
+carlstadt.demo.movies
+dbhistory.demo
+docker-connect-debezium-configs
+docker-connect-debezium-offsets
+docker-connect-debezium-status
+movies
+ratings
+----
+
+. to check if movies data is replicated 
++
+
+[source]
+.filename
+----
+kafka-avro-console-consumer --bootstrap-server localhost:9092 --property schema.registry.url=http://localhost:8081 --topic carlstadt.demo.movies --from-beginning | jq .
+----
+
+
+=== Connect
+
+[source,sh]
+.validate debezium
+----
+❯ curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'
+
+"source-debezium-orders-00:|:RUNNING:|:RUNNING"
+----
+

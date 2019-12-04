@@ -169,7 +169,7 @@ while read -r line; do
 done <"$CONFIG_FILE"
 chmod $PERM $INTERCEPTORS_CONFIG_FILE
 
-echo -e "\nConfluent Platform Components:"
+echo -e "\nConfluent Platform Components:\n====================================\n"
 
 ################################################################################
 # Confluent Replicator (executable) for Confluent Cloud

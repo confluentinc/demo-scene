@@ -14,7 +14,7 @@ DATA=$( cat << EOF
   "name": "replicator",
   "config": {
     "connector.class": "io.confluent.connect.replicator.ReplicatorSourceConnector",
-    "topic.whitelist": "ratings,movies",
+    "topic.whitelist": "ratings,movies,carlstadt.demo.movies",
     "topic.auto.create": "true",
     "key.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
     "value.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
@@ -25,16 +25,6 @@ DATA=$( cat << EOF
     "confluent.topic.replication.factor": 3,
     "src.kafka.bootstrap.servers": "kafka:29092",
     "src.consumer.group.id": "connect-replicator",
-    "src.consumer.interceptor.classes": "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor",
-    "src.consumer.confluent.monitoring.interceptor.bootstrap.servers": "$BOOTSTRAP_SERVERS",
-    "src.consumer.confluent.monitoring.interceptor.security.protocol": "SASL_SSL",
-    "src.consumer.confluent.monitoring.interceptor.sasl.mechanism": "PLAIN",
-    "src.consumer.confluent.monitoring.interceptor.sasl.jaas.config": "$REPLICATOR_SASL_JAAS_CONFIG",
-    "src.kafka.timestamps.producer.interceptor.classes": "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor",
-    "src.kafka.timestamps.producer.confluent.monitoring.interceptor.bootstrap.servers": "$BOOTSTRAP_SERVERS",
-    "src.kafka.timestamps.producer.confluent.monitoring.interceptor.security.protocol": "SASL_SSL",
-    "src.kafka.timestamps.producer.confluent.monitoring.interceptor.sasl.mechanism": "PLAIN",
-    "src.kafka.timestamps.producer.confluent.monitoring.interceptor.sasl.jaas.config": "$REPLICATOR_SASL_JAAS_CONFIG",
     "tasks.max": "1"
   }
 }
