@@ -95,7 +95,7 @@ services:
       - mi3:/usr/share/java/kafka-connect-replicator/
       - $PWD/delta_configs/ak-tools-ccloud.delta:/tmp/ak-tools-ccloud.delta
     environment:
-      CONNECT_BOOTSTRAP_SERVERS: kafka:29092
+      CONNECT_BOOTSTRAP_SERVERS: $BOOTSTRAP_SERVERS
       CONNECT_REST_ADVERTISED_HOST_NAME: connect-cloud
       CONNECT_PRODUCER_CLIENT_ID: "connect-cloud-worker-producer"
       CONNECT_REST_PORT: 8087
@@ -103,10 +103,10 @@ services:
       CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-replicator-configs
       CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-replicator-offsets
       CONNECT_STATUS_STORAGE_TOPIC: docker-connect-replicator-statuses
-      CONNECT_REPLICATION_FACTOR: 1
-      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
-      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
-      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_REPLICATION_FACTOR: 3
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 3
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 3
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 3
       CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
       CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
@@ -115,7 +115,21 @@ services:
       CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
       CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
       CONNECT_LOG4J_LOGGERS: org.reflections=ERROR
-      
+      # Connect worker
+      CONNECT_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_SASL_JAAS_CONFIG: $SASL_JAAS_CONFIG
+      CONNECT_SASL_MECHANISM: PLAIN
+      CONNECT_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "HTTPS"
+      # Connect producer
+      CONNECT_PRODUCER_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_PRODUCER_SASL_JAAS_CONFIG: $SASL_JAAS_CONFIG
+      CONNECT_PRODUCER_SASL_MECHANISM: PLAIN
+      # Connect consumer
+      CONNECT_CONSUMER_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_CONSUMER_SASL_JAAS_CONFIG: $SASL_JAAS_CONFIG
+      CONNECT_CONSUMER_SASL_MECHANISM: PLAIN
+
+
   # This container is just to transfer Replicator jars to the Connect worker
   # It is not used as a Connect worker
   replicator-for-jar-transfer:
