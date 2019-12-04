@@ -67,9 +67,8 @@ ratings
 [source]
 .filename
 ----
-kafka-avro-console-consumer --bootstrap-server localhost:9092 --property schema.registry.url=http://localhost:8081 --topic carlstadt.demo.movies --from-beginning | jq .
+kafka-avro-console-consumer --bootstrap-server localhost:9092 --property schema.registry.url=http://localhost:8081 --topic movies --from-beginning | jq .
 ----
-
 
 === Connect
 

@@ -3,6 +3,7 @@
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 GREEN='\033[0;32m'
+BLUE='\033[0;34m'
 
 # Source library
 . ./scripts/helper.sh
@@ -31,7 +32,7 @@ fi
 
 docker-compose up -d
 
-echo "Confluent Platform is starting up..."
+echo -e "${BLUE}☁️ Confluent Platform is starting up...${NC}"
 
 # ---- Set up Replicator source connector ---
 export CONNECT_HOST=connect-cloud
