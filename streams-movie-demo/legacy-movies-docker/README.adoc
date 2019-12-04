@@ -36,8 +36,7 @@ Docker, Docker Compose, jq
 . To stop, run `docker-compose down`
 . To perform cleanup volumes run `stop_and_destroy.sh`
 
-== Validation and troubleshooting 
-
+== Validation and troubleshooting
 
 === Basics
 
@@ -80,5 +79,25 @@ kafka-avro-console-consumer --bootstrap-server localhost:9092 --property schema.
 ❯ curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'
 
 "source-debezium-orders-00:|:RUNNING:|:RUNNING"
+----
+
+[source]
+.validate replicator
+----
+❯ curl -s "http://localhost:8087/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8087/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'
+
+"replicator:|:RUNNING:|:RUNNING"
+----
+
+[source]
+.delete debezium connector
+----
+curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s -XDELETE "http://localhost:8083/connectors/"{connector_name}
+----
+
+[source]
+.delete replicator connector
+----
+curl -s "http://localhost:8087/connectors"| jq '.[]'| xargs -I{connector_name} curl -s -XDELETE "http://localhost:8087/connectors/"{connector_name}
 ----
 
