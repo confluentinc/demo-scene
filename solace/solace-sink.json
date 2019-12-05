@@ -1,0 +1,17 @@
+{
+    "name": "SolaceSinkConnector",
+    "connector.class": "io.confluent.connect.jms.SolaceSinkConnector",
+    "tasks.max": "1",
+    "topics": "to-solace-messages",
+    "solace.host": "smf://solace:55555",
+    "solace.username": "admin",
+    "solace.password": "admin",
+    "solace.dynamic.durables": "false",
+    "jms.destination.type": "queue",
+    "jms.destination.name": "connector-quickstart",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "confluent.topic.bootstrap.servers": "broker:29092",
+    "confluent.topic.replication.factor": "1"
+}
+  
