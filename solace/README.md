@@ -26,5 +26,6 @@ Run the commands below in 2 different terminals.
 ```bash
 # terminal 1
 make producer # to put your data in
+# terminal 2
 make consumer # to consume the data you sent to solace via connectors
 ```
