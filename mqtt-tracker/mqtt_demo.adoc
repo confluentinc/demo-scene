@@ -167,7 +167,7 @@ CREATE STREAM PHONE_DATA
             , TST * 1000 AS EVENT_TIME_EPOCH_MS_TS
             , TIMESTAMPTOSTRING(TST*1000,'yyyy-MM-dd HH:mm:ss','Europe/London') AS EVENT_TIME
             , CASE WHEN LAT IS NULL OR LON IS NULL THEN CAST(NULL AS VARCHAR) 
-            	   ELSE CAST(LAT AS VARCHAR) ||','||CAST(LON AS VARCHAR) 
+            	   ELSE CAST(LAT AS VARCHAR) +','+CAST(LON AS VARCHAR) 
               END AS LOCATION
             , ACC AS LOCATION_ACCURACY_M
             , ALT AS ALTITUDE_M
@@ -220,11 +220,24 @@ image::images/mqtt_kafka_03.png[]
 
 Since this is just a Kafka topic we can use and consume it just like any other. In this example, streaming the data to Elasticsearch.  
 
-* Create the sink (dynamic mapping already created by the Docker Compose)
-+
-[source,bash]
+[source,sql]
 ----
-./create_es_sink.sh
+CREATE SINK CONNECTOR sink_elastic_phone_data_00 WITH (
+  'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+  'connection.url' = '${file:/data/credentials.properties:ELASTIC_URL}',
+  'connection.username' = '${file:/data/credentials.properties:ELASTIC_USERNAME}',
+  'connection.password' = '${file:/data/credentials.properties:ELASTIC_PASSWORD}',
+  'type.name' = '',
+  'behavior.on.malformed.documents' = 'warn',
+  'errors.tolerance' = 'all',
+  'errors.log.enable' = 'true',
+  'errors.log.include.messages' = 'true',
+  'topics.regex' = 'PHONE_.*',
+  'key.ignore' = 'true',
+  'schema.ignore' = 'true',
+  'key.converter' = 'org.apache.kafka.connect.storage.StringConverter'
+);
+
 ----
 
 * Check it's running
@@ -249,7 +262,7 @@ echo -e "\n--\n+> Opt out of Kibana telemetry"
 curl 'http://localhost:5601/api/telemetry/v2/optIn' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'content-type: application/json' -H 'accept: application/json' --data-binary '{"enabled":false}' --compressed
 
 echo -e "Import objects"
-curl 'http://localhost:5601/api/saved_objects/_import?overwrite=true' -H 'Connection: keep-alive' -H 'Origin: http://localhost:5601' -H 'kbn-version: 7.4.0' --form file=@data/kibana.ndjson
+curl 'http://localhost:5601/api/saved_objects/_import?overwrite=true' -H 'Connection: keep-alive' -H 'Origin: http://localhost:5601' -H 'kbn-version: 7.5.0' --form file=@data/kibana.ndjson
 ----
 
 * Show Kibana http://localhost:5601/app/kibana#/discover?_g=(refreshInterval:(pause:!f,value:1000),time:(from:now-24h,to:now))&_a=(columns:!(WHO,CONNECTIVITY_STATUS,BATTERY_PCT,BATTERY_STATUS,DISTANCE_FROM_VENUE),index:phone_data_idx,interval:auto,query:(language:lucene,query:''),sort:!(!(EVENT_TIME_EPOCH_MS_TS,desc)))[discovery view] & http://localhost:5601/app/kibana#/visualize/create?type=tile_map&indexPattern=phone_data_idx&_g=(refreshInterval:(pause:!t,value:0),time:(from:now-7d,mode:quick,to:now))&_a=(filters:!(),linked:!f,query:(language:lucene,query:''),uiState:(),vis:(aggs:!((enabled:!t,id:'1',params:(),schema:metric,type:count),(enabled:!t,id:'2',params:(autoPrecision:!t,field:LOCATION,isFilteredByCollar:!t,mapCenter:!(0,0),mapZoom:2,precision:2,useGeocentroid:!t),schema:segment,type:geohash_grid)),params:(addTooltip:!t,colorSchema:'Yellow%20to%20Red',heatClusterSize:1.5,isDesaturated:!t,legendPosition:bottomright,mapCenter:!(0,0),mapType:'Shaded%20Circle%20Markers',mapZoom:2,wms:(enabled:!f,options:(format:image%2Fpng,transparent:!t),selectedTmsLayer:(attribution:'%3Cp%3E%26%23169;%20%3Ca%20href%3D%22https:%2F%2Fwww.openstreetmap.org%2Fcopyright%22%3EOpenStreetMap%20contributors%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fopenmaptiles.org%22%3EOpenMapTiles%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fwww.maptiler.com%22%3EMapTiler%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fwww.elastic.co%2Felastic-maps-service%22%3EElastic%20Maps%20Service%3C%2Fa%3E%3C%2Fp%3E%26%2310;',id:road_map,maxZoom:18,minZoom:0,origin:elastic_maps_service))),title:'New%20Visualization',type:tile_map))[map viz]
@@ -276,6 +289,31 @@ SELECT USERID, EMAIL, SHARE_LOCATION_OPTIN FROM USERS;
 | ivor   | ivor@example.com |                    0 |
 | hugh   | hugh@example.com |                    0 |
 +--------+------------------+----------------------+ 
+----
+
+Ingest the data into ksqlDB
+
+[source,sql]
+----
+CREATE SOURCE CONNECTOR source_debezium_mysql_users_00 WITH (
+  'connector.class' = 'io.debezium.connector.mysql.MySqlConnector',
+  'database.hostname' = 'mysql',
+  'database.port' = '3306',
+  'database.user' = 'debezium',
+  'database.password' = 'dbz',
+  'database.server.id' = '42',
+  'database.server.name' = 'asgard',
+  'table.whitelist' = 'demo.USERS',
+  'database.history.kafka.bootstrap.servers' = 'kafka-1:39092',
+  'database.history.kafka.topic' = 'dbhistory.demo' ,
+  'decimal.handling.mode' = 'double',
+  'include.schema.changes' = 'true',
+  'transforms' = 'unwrap,addTopicPrefix',
+  'transforms.unwrap.type' = 'io.debezium.transforms.UnwrapFromEnvelope',
+  'transforms.addTopicPrefix.type' = 'org.apache.kafka.connect.transforms.RegexRouter',
+  'transforms.addTopicPrefix.regex' = '(.*)',
+  'transforms.addTopicPrefix.replacement' = 'mysql2-$1'
+);
 ----
 
 Declare the KSQL table on the topic populated from the database: 

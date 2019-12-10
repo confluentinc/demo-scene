@@ -83,33 +83,28 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka-1:39092,PLAINTEXT://kafka-2:49092,PLAINTEXT://kafka-3:59092
       SCHEMA_REGISTRY_CUB_KAFKA_TIMEOUT: 300
 
-  ksql-server:
-    image: confluentinc/cp-ksql-server:${CONFLUENTPLATFORM_VERSION}
-    container_name: ksql-server
-    ports:
-      - 8088:8088
+  ksqldb-server:
+    image: confluentinc/ksqldb-server:0.6.0
+    hostname: ksqldb-server
+    container_name: ksqldb-server
     depends_on:
       - kafka-1
-      - kafka-2
-      - kafka-3
+      - kafka-connect-01
+    ports:
+      - "8088:8088"
     environment:
-      KSQL_BOOTSTRAP_SERVERS: kafka-1:39092,kafka-2:49092,kafka-3:59092
       KSQL_LISTENERS: http://0.0.0.0:8088
-      KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
-      KSQL_CUB_KAFKA_TIMEOUT: 300
+      KSQL_BOOTSTRAP_SERVERS: kafka-1:39092,kafka-2:49092,kafka-3:59092
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+      KSQL_KSQL_CONNECT_URL: http://kafka-connect-01:8083
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
-      # Useful settings for development/laptop use - modify as needed for Prod
-      KSQL_KSQL_COMMIT_INTERVAL_MS: 2000
-      # KSQL_KSQL_SINK_PARTITIONS: 1
-      KSQL_KSQL_CACHE_MAX_BYTES_BUFFERING: 10000000
-      KSQL_KSQL_STREAMS_AUTO_OFFSET_RESET: earliest
 
-  ksql-cli:
-    image: confluentinc/cp-ksql-cli:${CONFLUENTPLATFORM_VERSION}
-    container_name: ksql-cli
+  ksqldb-cli:
+    image: confluentinc/ksqldb-cli:0.6.0
+    container_name: ksqldb-cli
     depends_on:
-      - ksql-server
+      - ksqldb-server
     entrypoint: /bin/sh
     tty: true
     volumes:
@@ -154,6 +149,7 @@ services:
       CONNECT_CONFIG_PROVIDERS_FILE_CLASS: 'org.apache.kafka.common.config.provider.FileConfigProvider'
     volumes:
       - ./data:/data
+      - ${PWD}/.env:/data/credentials.properties
     command: 
       # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
       - bash 
@@ -181,28 +177,7 @@ services:
           echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for != 000)"
           sleep 5 
         done
-        #
-        curl -i -X PUT -H  "Content-Type:application/json" \
-            http://localhost:8083/connectors/source-debezium-mysql-users-00/config \
-            -d '{
-                    "connector.class": "io.debezium.connector.mysql.MySqlConnector",
-                    "database.hostname": "mysql",
-                    "database.port": "3306",
-                    "database.user": "debezium",
-                    "database.password": "dbz",
-                    "database.server.id": "42",
-                    "database.server.name": "asgard",
-                    "table.whitelist": "demo.USERS",
-                    "database.history.kafka.bootstrap.servers": "kafka-1:39092",
-                    "database.history.kafka.topic": "dbhistory.demo" ,
-                    "decimal.handling.mode": "double",
-                    "include.schema.changes": "true",
-                    "transforms": "unwrap,addTopicPrefix",
-                    "transforms.unwrap.type": "io.debezium.transforms.UnwrapFromEnvelope",
-                    "transforms.addTopicPrefix.type":"org.apache.kafka.connect.transforms.RegexRouter",
-                    "transforms.addTopicPrefix.regex":"(.*)",
-                    "transforms.addTopicPrefix.replacement":"mysql-$$1"
-            }'        
+        #      
         sleep infinity
 
   replicator:
@@ -239,7 +214,7 @@ services:
 
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.0
     container_name: elasticsearch
     ports:
       - 9200:9200
@@ -274,7 +249,7 @@ services:
 
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.4.0
+    image: docker.elastic.co/kibana/kibana:7.5.0
     container_name: kibana
     depends_on:
       - elasticsearch
