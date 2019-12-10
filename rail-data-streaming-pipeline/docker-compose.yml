@@ -69,40 +69,67 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:29092
       SCHEMA_REGISTRY_CUB_KAFKA_TIMEOUT: 300
 
-
-  ksql-server:
-    image: confluentinc/cp-ksql-server:5.4.0-beta1
-    container_name: ksql-server
-    ports:
-      - 8088:8088
+  ksqldb-server:
+    image: confluentinc/ksqldb-server:0.6.0
+    hostname: ksqldb-server
+    container_name: ksqldb-server
     depends_on:
       - kafka
+      - kafka-connect-01
+    ports:
+      - "8088:8088"
     environment:
-      KSQL_BOOTSTRAP_SERVERS: kafka:29092
       KSQL_LISTENERS: http://0.0.0.0:8088
-      KSQL_KSQL_SERVICE_ID: confluent_rmoff_05
-      KSQL_CUB_KAFKA_TIMEOUT: 300
+      KSQL_BOOTSTRAP_SERVERS: kafka:29092
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+      KSQL_KSQL_CONNECT_URL: http://kafka-connect-01:8083
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
-      # Useful settings for development/laptop use - modify as needed for Prod
-      KSQL_KSQL_COMMIT_INTERVAL_MS: 2000
-      KSQL_KSQL_SINK_PARTITIONS: 1
-      KSQL_KSQL_CACHE_MAX_BYTES_BUFFERING: 10000000
       KSQL_KSQL_STREAMS_AUTO_OFFSET_RESET: earliest
-      # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
-      # Producer Confluent Monitoring Interceptors for Control Center streams monitoring
-      KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
-      KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
 
-  ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.4.0-beta1
-    container_name: ksql-cli
+  ksqldb-cli:
+    image: confluentinc/ksqldb-cli:0.6.0
+    container_name: ksqldb-cli
     depends_on:
-      - ksql-server
+      - ksqldb-server
     entrypoint: /bin/sh
     tty: true
     volumes:
       - ./data:/data
+
+  # ksql-server:
+  #   image: confluentinc/cp-ksql-server:5.4.0-beta1
+  #   container_name: ksql-server
+  #   ports:
+  #     - 8088:8088
+  #   depends_on:
+  #     - kafka
+  #   environment:
+  #     KSQL_BOOTSTRAP_SERVERS: kafka:29092
+  #     KSQL_LISTENERS: http://0.0.0.0:8088
+  #     KSQL_KSQL_SERVICE_ID: confluent_rmoff_05
+  #     KSQL_CUB_KAFKA_TIMEOUT: 300
+  #     KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+  #     # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
+  #     # Useful settings for development/laptop use - modify as needed for Prod
+  #     KSQL_KSQL_COMMIT_INTERVAL_MS: 2000
+  #     KSQL_KSQL_SINK_PARTITIONS: 1
+  #     KSQL_KSQL_CACHE_MAX_BYTES_BUFFERING: 10000000
+  #     KSQL_KSQL_STREAMS_AUTO_OFFSET_RESET: earliest
+  #     # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
+  #     # Producer Confluent Monitoring Interceptors for Control Center streams monitoring
+  #     KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+  #     KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+
+  # ksql-cli:
+  #   image: confluentinc/cp-ksql-cli:5.4.0-beta1
+  #   container_name: ksql-cli
+  #   depends_on:
+  #     - ksql-server
+  #   entrypoint: /bin/sh
+  #   tty: true
+  #   volumes:
+  #     - ./data:/data
 
   kafka-connect-01:
   # Ingest
@@ -276,36 +303,36 @@ services:
         sleep 120  
         /etc/confluent/docker/run
 
-  # replicator:
-  #   image: confluentinc/cp-enterprise-replicator:5.4.0-beta1
-  #   container_name: replicator
-  #   depends_on:
-  #     - zookeeper
-  #     - kafka
-  #     - schema-registry
-  #   ports:
-  #     - 58083:58083
-  #   environment:
-  #     CONNECT_BOOTSTRAP_SERVERS: 'kafka:29092'
-  #     CONNECT_REST_ADVERTISED_HOST_NAME: 'replicator'
-  #     CONNECT_REST_PORT: 58083
-  #     CONNECT_GROUP_ID: compose-replicator
-  #     CONNECT_CONFIG_STORAGE_TOPIC: replicator-configs
-  #     CONNECT_OFFSET_STORAGE_TOPIC: replicator-offsets
-  #     CONNECT_STATUS_STORAGE_TOPIC: replicator-status
-  #     CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
-  #     CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-  #     CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
-  #     CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-  #     CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
-  #     CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
-  #     CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
-  #     CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
-  #     CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
-  #     CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
-  #     CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
-  #     CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/'
-  #     CONNECT_CONNECTOR_CLIENT_CONFIG_OVERRIDE_POLICY: 'All'
+  replicator:
+    image: confluentinc/cp-enterprise-replicator:5.4.0-beta1
+    container_name: replicator
+    depends_on:
+      - zookeeper
+      - kafka
+      - schema-registry
+    ports:
+      - 58083:58083
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: 'kafka:29092'
+      CONNECT_REST_ADVERTISED_HOST_NAME: 'replicator'
+      CONNECT_REST_PORT: 58083
+      CONNECT_GROUP_ID: compose-replicator
+      CONNECT_CONFIG_STORAGE_TOPIC: replicator-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: replicator-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: replicator-status
+      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
+      CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/'
+      CONNECT_CONNECTOR_CLIENT_CONFIG_OVERRIDE_POLICY: 'All'
 
   neo4j:
     image: neo4j:3.4-enterprise
@@ -321,7 +348,7 @@ services:
       NEO4J_ACCEPT_LICENSE_AGREEMENT: 'yes'
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.7.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.0
     container_name: elasticsearch
     ports:
       - 9200:9200
@@ -332,7 +359,7 @@ services:
       - ./data/container_data/elasticserarch:/usr/share/elasticsearch/data
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:6.7.0
+    image: docker.elastic.co/kibana/kibana:7.5.0
     container_name: kibana
     depends_on:
       - elasticsearch

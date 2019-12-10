@@ -4,7 +4,7 @@ v1.20, 7 August 2019
 
 == What is it?
 
-A PoC showing what can be done with streaming and batch sources of data, Apache Kafka and KSQL, and various data stores and tools. 
+A PoC showing what can be done with streaming and batch sources of data, Apache Kafka and ksqlDB, and various data stores and tools. 
 
 image::images/overview.png[]
 
@@ -57,26 +57,26 @@ docker-compose up -d
 docker-compose ps
 ----
 
-* Launch KSQL CLI
+* Launch ksqlDB CLI
 +
 [source,bash]
 ----
-$ docker exec -it ksql-cli ksql http://ksql-server:8088
+$ docker exec -it ksqldb-cli bash -c 'echo -e "\n\n⏳ Waiting for ksqlDB to be available before launching CLI\n"; while : ; do curl_status=$(curl -s -o /dev/null -w %{http_code} http://ksqldb-server:8088/info) ; echo -e $(date) " ksqlDB server listener HTTP state: " $curl_status " (waiting for 200)" ; if [ $curl_status -eq 200 ] ; then  break ; fi ; sleep 5 ; done ; ksql http://ksqlDB-server:8088'
 
                   ===========================================
-                  =        _  __ _____  ____  _             =
-                  =       | |/ // ____|/ __ \| |            =
-                  =       | ' /| (___ | |  | | |            =
-                  =       |  <  \___ \| |  | | |            =
-                  =       | . \ ____) | |__| | |____        =
-                  =       |_|\_\_____/ \___\_\______|       =
-                  =                                         =
-                  =  Streaming SQL Engine for Apache Kafka® =
+                  =       _              _ ____  ____       =
+                  =      | | _____  __ _| |  _ \| __ )      =
+                  =      | |/ / __|/ _` | | | | |  _ \      =
+                  =      |   <\__ \ (_| | | |_| | |_) |     =
+                  =      |_|\_\___/\__, |_|____/|____/      =
+                  =                   |_|                   =
+                  =  Event Streaming Database purpose-built =
+                  =        for stream processing apps       =
                   ===========================================
 
-Copyright 2017-2018 Confluent Inc.
+Copyright 2017-2019 Confluent Inc.
 
-CLI v5.3.0, Server v5.3.0 located at http://ksql-server:8088
+CLI v0.6.0, Server v0.6.0 located at http://ksqlDB-server:8088
 
 Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
 
@@ -121,11 +121,11 @@ $ kafkacat -b localhost:9092 -t JsonScheduleV1 -C -c1
 {"CIF_bank_holiday_running":null,"CIF_stp_indicator":"P","CIF_train_uid":"C02207","applicable_timetable":"Y","atoc_code":"NT","new_schedule_segment":{"traction_class":"","uic_code":""},"schedule_days_runs":"0000010","schedule_end_date":"2019-12-14","schedule_segment":{"signalling_id":"5A99","CIF_train_category":"EE","CIF_headcode":"5102","CIF_course_indicator":1,"CIF_train_service_code":"21791000","CIF_business_sector":"??","CIF_power_type":"DMU","CIF_timing_load":"A","CIF_speed":"075","CIF_operating_characteristics":null,"CIF_train_class":null,"CIF_sleepers":null,"CIF_reservations":null,"CIF_connection_indicator":null,"CIF_catering_code":null,"CIF_service_branding":"","schedule_location":[{"location_type":"LO","record_identity":"LO","tiploc_code":"DLTN","tiploc_instance":null,"ORIGIN":"2319","public_ORIGIN":null,"platform":"1","line":null,"engineering_allowance":null,"pathing_allowance":null,"performance_allowance":null},{"location_type":"LI","record_identity":"LI","tiploc_code":"FYHLSJN","tiploc_instance":null,"DESTINATION":null,"ORIGIN":null,"pass":"2331","public_DESTINATION":null,"public_ORIGIN":null,"platform":null,"line":null,"path":null,"engineering_allowance":null,"pathing_allowance":null,"performance_allowance":null},{"location_type":"LI","record_identity":"LI","tiploc_code":"TURSDLJ","tiploc_instance":null,"DESTINATION":null,"ORIGIN":null,"pass":"2333","public_DESTINATION":null,"public_ORIGIN":null,"platform":null,"line":null,"path":null,"engineering_allowance":null,"pathing_allowance":null,"performance_allowance":null},{"location_type":"LI","record_identity":"LI","tiploc_code":"DRHM","tiploc_instance":null,"DESTINATION":null,"ORIGIN":null,"pass":"2339","public_DESTINATION":null,"public_ORIGIN":null,"platform":"DM","line":null,"path":null,"engineering_allowance":"1","pathing_allowance":null,"performance_allowance":null},{"location_type":"LI","record_identity":"LI","tiploc_code":"BRTLYJN","tiploc_instance":null,"DESTINATION":null,"ORIGIN":null,"pass":"2347","public_DESTINATION":null,"public_ORIGIN":null,"platform":null,"line":null,"path":null,"engineering_allowance":null,"pathing_allowance":null,"performance_allowance":null},{"location_type":"LI","record_identity":"LI","tiploc_code":"KEBGSJN","tiploc_instance":null,"DESTINATION":null,"ORIGIN":null,"pass":"2350H","public_DESTINATION":null,"public_ORIGIN":null,"platform":null,"line":null,"path":null,"engineering_allowance":null,"pathing_allowance":null,"performance_allowance":null},{"location_type":"LT","record_identity":"LT","tiploc_code":"NWCSTLE","tiploc_instance":null,"DESTINATION":"2353","public_DESTINATION":null,"platform":"6","path":null}]},"schedule_start_date":"2019-05-25","train_status":"P","transaction_type":"Create","last_schedule_segment":{"location_type":"LT","record_identity":"LT","tiploc_code":"NWCSTLE","tiploc_instance":null,"DESTINATION":"2353","public_DESTINATION":null,"platform":"6","path":null}}
 ----
 
-=== KSQL 
+=== ksqlDB 
 
 **Do this before starting on the movement/cancellation data below**
 
-From KSQL CLI: 
+From ksqlDB CLI: 
 
 [source,sql]
 ----
@@ -178,6 +178,7 @@ SELECT SCHEDULE_KEY,
        DESTINATION_TPS_DESCRIPTION, DESTINATION_PUBLIC_ARRIVAL_TIME 
   FROM SCHEDULE_02_T
  WHERE ORIGIN_PUBLIC_DEPARTURE_TIME IS NOT NULL
+ EMIT CHANGES
  LIMIT 1;
 ----
 
@@ -212,12 +213,13 @@ SELECT TIPLOC_CODE,
        GEO_OSM_URL 
   FROM STANOX 
 WHERE OPENCAGE_TOTAL_RESULTS>0 
+EMIT CHANGES
  LIMIT 1;
 ----
 
 [source,sql]
 ----
-ksql> SELECT TIPLOC_CODE, STANOX, TPS_DESCRIPTION, OPENCAGE_TOTAL_RESULTS, GEO_OSM_URL FROM STANOX WHERE OPENCAGE_TOTAL_RESULTS>0 LIMIT 1;
+ksql> SELECT TIPLOC_CODE, STANOX, TPS_DESCRIPTION, OPENCAGE_TOTAL_RESULTS, GEO_OSM_URL FROM STANOX WHERE OPENCAGE_TOTAL_RESULTS>0 EMIT CHANGES LIMIT 1;
 +-----------------------------------+-----------------------------------+-----------------------------------+-----------------------------------+-----------------------------------+
 |TIPLOC_CODE                        |STANOX                             |TPS_DESCRIPTION                    |OPENCAGE_TOTAL_RESULTS             |GEO_OSM_URL                        |
 +-----------------------------------+-----------------------------------+-----------------------------------+-----------------------------------+-----------------------------------+
@@ -340,7 +342,7 @@ $ kafkacat -b localhost:9092 -t networkrail_TRAIN_MVT_X -C -c1 | jq '.'
 ----
 
 
-=== KSQL
+=== ksqlDB
 
 [source,sql]
 ----

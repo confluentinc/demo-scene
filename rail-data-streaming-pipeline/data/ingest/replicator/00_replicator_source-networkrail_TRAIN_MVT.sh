@@ -15,5 +15,5 @@ curl -i -X PUT -H "Accept:application/json" \
 	"confluent.license":"",
 	"confluent.topic.bootstrap.servers":"kafka:29092",
 	"confluent.topic.replication.factor":1,
-	"consumer.override.auto.offset.reset": "latest"
+	"consumer.override.auto.offset.reset": "earliest"
 	}'
