@@ -3,14 +3,14 @@ version: '3'
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:5.4.0-beta1
-    container_name: zookeeper
+    container_name: syslog_zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
     image: confluentinc/cp-enterprise-kafka:5.4.0-beta1
-    container_name: kafka
+    container_name: syslog_kafka
     depends_on:
       - zookeeper
     # ports:
@@ -29,7 +29,7 @@ services:
     image: confluentinc/cp-schema-registry:5.4.0-beta1
     # ports:
     #   - 8081:8081
-    container_name: schema-registry
+    container_name: syslog_schema-registry
     depends_on:
       - kafka
     environment:
@@ -40,7 +40,7 @@ services:
   ksqldb-server:
     image: confluentinc/ksqldb-server:0.6.0
     hostname: ksqldb-server
-    container_name: ksqldb-server
+    container_name: syslog_ksqldb-server
     depends_on:
       - kafka
       - kafka-connect-01
@@ -56,7 +56,7 @@ services:
 
   ksqldb-cli:
     image: confluentinc/ksqldb-cli:0.6.0
-    container_name: ksqldb-cli
+    container_name: syslog_ksqldb-cli
     depends_on:
       - ksqldb-server
     entrypoint: /bin/sh
@@ -64,7 +64,7 @@ services:
 
   kafka-connect-01:
     image: confluentinc/cp-kafka-connect:5.4.0-beta1
-    container_name: kafka-connect-01
+    container_name: syslog_kafka-connect-01
     depends_on:
       - kafka
       - schema-registry
@@ -142,7 +142,7 @@ services:
 
   monogodb:
     image: mongo:4.2.2
-    container_name: mongodb
+    container_name: syslog_mongodb
     ports: 
     - "27017:27017"
     environment: 
@@ -151,7 +151,7 @@ services:
 
   neo4j:
     image: neo4j:3.5-enterprise
-    container_name: neo4j
+    container_name: syslog_neo4j
     ports:
     - "7474:7474"
     - "7687:7687"
@@ -162,7 +162,7 @@ services:
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.5.0
-    container_name: elasticsearch
+    container_name: syslog_elasticsearch
     # ports:
     #   - 9200:9200
     environment:
@@ -194,7 +194,7 @@ services:
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.5.0
-    container_name: kibana
+    container_name: syslog_kibana
     depends_on:
       - elasticsearch
     ports:
