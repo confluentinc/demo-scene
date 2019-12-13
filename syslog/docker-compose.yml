@@ -153,8 +153,8 @@ services:
     image: neo4j:3.5-enterprise
     container_name: syslog_neo4j
     ports:
-    - "7474:7474"
-    - "7687:7687"
+    - "17474:7474"
+    - "17687:7687"
     environment:
       NEO4J_AUTH: neo4j/connect
       NEO4J_dbms_memory_heap_max__size: 8G
