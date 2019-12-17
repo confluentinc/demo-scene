@@ -145,15 +145,15 @@ services:
         #
         sleep infinity
 
-  monogodb:
+  mongodb:
     image: mongo:4.2.2
     container_name: syslog_mongodb
-    hostname: monogodb
+    hostname: mongodb
     ports: 
     - "27017:27017"
-    environment: 
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
+    # environment: 
+    #   MONGO_INITDB_ROOT_USERNAME: root
+    #   MONGO_INITDB_ROOT_PASSWORD: example
 
   neo4j:
     image: neo4j:3.5-enterprise
