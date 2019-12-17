@@ -86,13 +86,11 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
     static {
         initializeProducer();
         createTopicsIfNeeded();
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            public void run() {
-                if (producer != null) {
-                    producer.close();
-                }
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (producer != null) {
+                producer.close();
             }
-        });
+        }));
     }
 
     private static void initializeProducer() {

@@ -37,6 +37,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - [Example Kafka Connect syslog configuration and Docker Compose](syslog)
   - [Azure SQL Data Warehouse Connector Sink Demo](azure-sqldw-sink-connector)
   - [IBM MQ Connect Connector Demo](cp-all-in-one-ibmmq)
+  - [Solace Sink/Source Demo](solace)
 
 - Confluent Cloud
 
