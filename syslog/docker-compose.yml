@@ -47,8 +47,8 @@ services:
     depends_on:
       - kafka
       - kafka-connect-01
-    # ports:
-    #   - "8088:8088"
+    ports:
+      - "18088:8088"
     environment:
       KSQL_LISTENERS: http://0.0.0.0:8088
       KSQL_BOOTSTRAP_SERVERS: kafka:29092
@@ -129,20 +129,6 @@ services:
           sleep 5 
         done
         #
-        curl -i -X PUT -H  "Content-Type:application/json" \
-          http://localhost:8083/connectors/source-syslog-udp-00/config \
-          -d '{
-                "tasks.max": "1",
-                "connector.class": "io.confluent.connect.syslog.SyslogSourceConnector",
-                "topic.prefix": "syslog",
-                "syslog.port": "42514",
-                "syslog.listener": "UDP",
-                "syslog.reverse.dns.remote.ip": "true",
-                "confluent.license":"",
-                "confluent.topic.bootstrap.servers":"kafka:29092",
-                "confluent.topic.replication.factor":1
-              }'        
-        #
         sleep infinity
 
   mongodb:
@@ -195,7 +181,9 @@ services:
             "index_patterns": "*",
             "settings": { "number_of_shards": 1, "number_of_replicas": 0 },
             "mappings": { "dynamic_templates": [
-                { "dates": { "match": "*_TS", "mapping": { "type": "date" } } }
+                { "dates1": { "match": "date", "mapping": { "type": "date" } } },
+                { "dates2": { "match": "DATE", "mapping": { "type": "date" } } },
+                { "dates3": { "match": "*_TS", "mapping": { "type": "date" } } }
             ] } }'        
 
         sleep infinity
