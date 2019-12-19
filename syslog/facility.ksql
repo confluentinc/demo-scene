@@ -1,0 +1,26 @@
+CREATE TABLE FACILITY (ROWKEY STRING KEY, DESCRIPTION VARCHAR) 
+    WITH (KAFKA_TOPIC='facility',VALUE_FORMAT='AVRO', PARTITIONS=1);
+INSERT INTO FACILITY VALUES ('0','kernel messages');
+INSERT INTO FACILITY VALUES ('1','user-level messages');
+INSERT INTO FACILITY VALUES ('2','mail system');
+INSERT INTO FACILITY VALUES ('3','system daemons');
+INSERT INTO FACILITY VALUES ('4','security/authorization messages');
+INSERT INTO FACILITY VALUES ('5','messages generated internally by syslogd');
+INSERT INTO FACILITY VALUES ('6','line printer subsystem');
+INSERT INTO FACILITY VALUES ('7','network news subsystem');
+INSERT INTO FACILITY VALUES ('8','UUCP subsystem');
+INSERT INTO FACILITY VALUES ('9','clock daemon');
+INSERT INTO FACILITY VALUES ('10','security/authorization messages');
+INSERT INTO FACILITY VALUES ('11','FTP daemon');
+INSERT INTO FACILITY VALUES ('12','NTP subsystem');
+INSERT INTO FACILITY VALUES ('13','log audit');
+INSERT INTO FACILITY VALUES ('14','log alert');
+INSERT INTO FACILITY VALUES ('15','clock daemon (note 2)');
+INSERT INTO FACILITY VALUES ('16','local use 0  (local0)');
+INSERT INTO FACILITY VALUES ('17','local use 1  (local1)');
+INSERT INTO FACILITY VALUES ('18','local use 2  (local2)');
+INSERT INTO FACILITY VALUES ('19','local use 3  (local3)');
+INSERT INTO FACILITY VALUES ('20','local use 4  (local4)');
+INSERT INTO FACILITY VALUES ('21','local use 5  (local5)');
+INSERT INTO FACILITY VALUES ('22','local use 6  (local6)');
+INSERT INTO FACILITY VALUES ('23','local use 7  (local7)');

@@ -8,6 +8,9 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    # volumes: 
+    #   - ./data/container_data/zk-data:/var/lib/zookeeper/data
+    #   - ./data/container_data/zk-txn-logs:/var/lib/zookeeper/log
 
   kafka:
     image: confluentinc/cp-enterprise-kafka:5.4.0-beta1
@@ -26,6 +29,8 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
+    # volumes: 
+    #   - ./data/container_data/kafka-data:/var/lib/kafka/data
 
   schema-registry:
     image: confluentinc/cp-schema-registry:5.4.0-beta1
