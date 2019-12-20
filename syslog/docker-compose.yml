@@ -34,8 +34,8 @@ services:
 
   schema-registry:
     image: confluentinc/cp-schema-registry:5.4.0-beta1
-    # ports:
-    #   - 8081:8081
+    ports:
+      - 8081:8081
     container_name: syslog_schema-registry
     hostname: schema-registry
     depends_on:
@@ -137,14 +137,34 @@ services:
         sleep infinity
 
   mongodb:
+    # *-----------------------------*
+    # To connect to mongoDB
+    #   docker exec --interactive --tty syslog_mongodb mongo localhost:27017
+    # *-----------------------------*
     image: mongo:4.2.2
     container_name: syslog_mongodb
     hostname: mongodb
     ports: 
     - "27017:27017"
-    # environment: 
-    #   MONGO_INITDB_ROOT_USERNAME: root
-    #   MONGO_INITDB_ROOT_PASSWORD: example
+    command: 
+      - bash 
+      - -c 
+      - |
+        # Launch mongodb
+        mongod --replSet replSet01 --bind_ip_all &
+        # Wait for Mongo to be available 
+        # Based on https://stackoverflow.com/questions/16542372/shell-script-check-mongod-server-is-running
+        while : ; do
+          mongo_status=$$(mongo --eval "db.stats()" > /dev/null; echo $$?)
+          echo -e $$(date) " Mongo RC: " $$mongo_status " (waiting for 0)"
+          if [ $$mongo_status -eq 0 ] ; then
+            break
+          fi
+          sleep 5 
+        done
+        # Init the replicaset
+        mongo admin --eval "rs.initiate();"
+        sleep infinity
 
   neo4j:
     image: neo4j:3.5-enterprise
