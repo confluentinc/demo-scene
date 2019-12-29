@@ -1,0 +1,38 @@
+{
+  "services": [
+    {
+      "service": "CustomerService",
+      "config": {
+        "sampler": {
+          "type": "const",
+          "param": 1
+        },
+        "reporter": {
+          "logSpans": false
+        }
+      },
+      "topics": [
+        "STAGE2",
+        "STAGE3",
+        "STAGE4",
+        "STAGE5"
+      ]
+    },
+    {
+      "service": "ProductService",
+      "config": {
+        "sampler": {
+          "type": "const",
+          "param": 1
+        },
+        "reporter": {
+          "logSpans": false
+        }
+      },
+      "topics": [
+        "STAGE6",
+        "STAGEN"
+      ]
+    }
+  ]
+}
