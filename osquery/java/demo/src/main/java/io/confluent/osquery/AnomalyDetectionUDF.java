@@ -3,7 +3,10 @@ package io.confluent.osquery;
 import io.confluent.common.Configurable;
 import io.confluent.ksql.function.udf.Udf;
 import io.confluent.ksql.function.udf.UdfDescription;
+import io.confluent.ksql.function.udf.UdfParameter;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -23,9 +26,10 @@ public class AnomalyDetectionUDF implements Configurable {
     private static final String ENDPOINT = "ksql.functions.lda.endpoint";
     private ExecutorService exec = Executors.newSingleThreadExecutor();
     private Map<String, String> map = new HashMap<>();
+    private static Logger logger = LoggerFactory.getLogger(AnomalyDetectionUDF.class);
 
     @Udf(description = "score a document")
-    public double score(final String... values) {
+    public double lda(@UdfParameter(value = "values", description = "variadic string columns") final String... values) {
         if(values == null) return -2;
         try {
             String doc = StringUtils.join(values, " ");
@@ -43,6 +47,9 @@ public class AnomalyDetectionUDF implements Configurable {
     }
 
     private double call(String message, String endpoint) throws IOException {
+
+        logger.info(message);
+
         URL url = new URL(endpoint);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setDoOutput(true);

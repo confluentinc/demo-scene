@@ -1,5 +1,3 @@
-![image](../images/confluent-logo-300-2.png)
-
 # IBM MQ demo
 
 This repository demonstrates how to use the IBM MQ connector. Two connectors will be started up: Datagen source, to mock clickstream data and IBM MQ Connetor source. Then we'll use KSQL to join the two sources together. No sink connector is configured.

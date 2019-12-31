@@ -14,7 +14,6 @@ import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonString;
-import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -89,28 +88,9 @@ public class ModelTrainer {
         model.estimate();
 
         // Serialize
-        String path = save(model);
-
-        return Pair.of(path, model);
-    }
-
-    private static String save(ParallelTopicModel model) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
         String date = sdf.format(new Date(System.currentTimeMillis()));
-        File file = new File("models/lda." + date);
-//        try {
-//            file.getParentFile().mkdirs();
-//            FileOutputStream fos = new FileOutputStream(file);
-//            ObjectOutputStream out = new ObjectOutputStream(fos);
-//            out.writeObject(model);
-//            fos.flush();
-//            fos.close();
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-        return file.getAbsolutePath();
 
+        return Pair.of(date, model);
     }
 }

@@ -10,6 +10,8 @@ import cc.mallet.types.Instance;
 import cc.mallet.types.InstanceList;
 import org.apache.commons.cli.*;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import spark.Request;
 
 import java.io.IOException;
@@ -30,7 +32,9 @@ import static spark.Spark.*;
  */
 public class ModelServer
 {
-    public static final Stack<Pair<String, ParallelTopicModel>> stack = new Stack<>();
+    private static final Stack<Pair<String, ParallelTopicModel>> stack = new Stack<>();
+
+    private static Logger logger = LoggerFactory.getLogger(ModelServer.class);
 
     public static void main(String[] args) throws ParseException {
         Options options = new Options();
@@ -43,7 +47,7 @@ public class ModelServer
         int k = cmd.hasOption("k") ? Integer.parseInt(cmd.getOptionValue("k")) : 100;
 
         ScheduledExecutorService exec = Executors.newScheduledThreadPool(1);
-        exec.schedule(() -> train(dir, k), 1, TimeUnit.MINUTES);
+        exec.scheduleAtFixedRate(() -> train(dir, k),  1,5, TimeUnit.SECONDS);
 
         initExceptionHandler((e) -> {
             e.printStackTrace();
@@ -59,6 +63,7 @@ public class ModelServer
 
         delete("/model/latest", (request, response) -> {
             // rollback a model
+            if(stack.isEmpty()) return "empty";
             String lastModel = stack.pop().getKey();
             return "removing "+lastModel;
         });
@@ -68,21 +73,22 @@ public class ModelServer
         try {
             stack.push(ModelTrainer.train(dir, k));
             while(stack.size() > 5) stack.remove(0);
-        } catch (IOException e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
     }
 
     private static double score(Request req) throws Exception {
-
         String doc = req.body();
-        if(stack.isEmpty()) throw new IllegalStateException("model not available");
+
+        logger.info(doc);
+
+        if(stack.isEmpty()) return -1;
 
         try {
             ParallelTopicModel model = stack.peek().getValue();
 
             ArrayList<Pipe> pipeList = new ArrayList<>();
-            String regex = "\\b(\\w*[^\\d][\\w\\.\\:]*\\w)\\b";
             pipeList.add(new CharSequence2TokenSequence());
             pipeList.add(new TokenSequence2FeatureSequence());
             SerialPipes sp = new SerialPipes(pipeList);
@@ -93,11 +99,11 @@ public class ModelServer
             double[] probabilities = inferencer.getSampledDistribution(event.get(0), 50, 1, 5);
 
             DoubleStream stream = Arrays.stream(probabilities);
-            double score = stream.max().getAsDouble();
-            return score; // find the max probability. we don't care which topic it belongs
-        } catch (Exception e) {
+            return stream.max().getAsDouble(); // find the max probability. we don't care which topic it belongs
+
+        } catch (Throwable e) {
             e.printStackTrace();
-            throw new Exception((e));
+            return -1;
         }
     }
 }

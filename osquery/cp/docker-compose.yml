@@ -142,7 +142,7 @@ services:
       # KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       # KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
       # passed to the configurable UDF
-      KSQL_KSQL_FUNCTIONS_LDA_ENDPOINT: "http://model:4567"
+      KSQL_KSQL_FUNCTIONS_LDA_ENDPOINT: "http://model:4567/model/latest/score"
       # sets the /ext directory to the path defined in the volumes section
       KSQL_KSQL_EXTENSION_DIR: "/etc/ksql-server/ext/"
       # ksql.connect.url
@@ -198,7 +198,7 @@ services:
     container_name: model
     ports:
       - 4567:4567
-    command: java -cp /project/java/demo/target/demo-1.0-SNAPSHOT.jar io.confluent.osquery.ModelServer -s /project/cp/logs/ -k 100
+    command: java -cp /project/java/demo/target/demo-1.0-SNAPSHOT.jar io.confluent.osquery.ModelServer -s /project/cp/logs/ -k 100 
     # command: tail -F anything
     volumes:
       - ..:/project

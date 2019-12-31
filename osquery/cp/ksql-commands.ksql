@@ -7,7 +7,7 @@ CREATE SOURCE CONNECTOR training WITH (
     'connector.class' = 'FileStreamSinkConnector',
     'key.converter'  = 'org.apache.kafka.connect.storage.StringConverter',
     'value.converter' = 'org.apache.kafka.connect.storage.StringConverter',
-    'topics' = 'training',
+    'topics' = 'TRAINING',
     'file' = '/project/cp/logs/train.log'
 );
 
@@ -20,7 +20,7 @@ CREATE STREAM scored as
             columns['name'], 
             action
         ) as score
-    from processes
+    from processes;
 
 CREATE STREAM good as
     select *
