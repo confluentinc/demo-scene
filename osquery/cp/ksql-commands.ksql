@@ -13,11 +13,21 @@ CREATE SOURCE CONNECTOR training WITH (
 
 CREATE STREAM scored as
     select 
-        hostidentifier, 
-        action, 
+        hostidentifier as host, 
+        columns['path'] as path, 
+        columns['name'] as name, 
+        columns['cmdline'] as cmdline,
+        columns['cwd'] as cwd,
+        columns['root'] as root,
+        columns['state'] as state,
+        action,
         lda(hostidentifier, 
             columns['path'], 
             columns['name'], 
+            columns['cmdline'],
+            columns['cwd'],
+            columns['root'],
+            columns['state'],
             action
         ) as score
     from processes;
