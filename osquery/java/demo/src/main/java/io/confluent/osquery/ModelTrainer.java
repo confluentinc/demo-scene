@@ -6,6 +6,8 @@ import cc.mallet.pipe.SerialPipes;
 import cc.mallet.pipe.TokenSequence2FeatureSequence;
 import cc.mallet.pipe.iterator.StringArrayIterator;
 import cc.mallet.topics.ParallelTopicModel;
+import cc.mallet.topics.TopicInferencer;
+import cc.mallet.types.Instance;
 import cc.mallet.types.InstanceList;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -21,9 +23,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
 /**
@@ -37,10 +41,8 @@ public class ModelTrainer {
         String[] docs = Files
                 .list(Paths.get(dir))
                 .parallel()
-                .filter((f) -> Files.isRegularFile(f) && f.getFileName().endsWith("osqueryd.results.log"))
                 .flatMap((f) -> {
                     try {
-                        String s = f.toFile().getAbsolutePath();
                         return Files.readAllLines(f).stream();
                     } catch (IOException e) {
                         return null;
@@ -53,13 +55,13 @@ public class ModelTrainer {
                         Reader reader = new StringReader(string);
                         JsonReader jsonReader = Json.createReader(reader);
                         JsonObject doc = jsonReader.readObject();
-                        JsonObject columns = doc.getJsonObject("columns");
+                        JsonObject columns = doc.getJsonObject("COLUMNS");
                         Stream<String> values = columns.values().parallelStream()
                                 .map((s) -> ((JsonString)s).getString().toLowerCase().trim())
                                 .filter((s) -> !NumberUtils.isCreatable(s))
                                 .filter((s) -> !s.isEmpty());
                         tokes.addAll(values.collect(Collectors.toList()));
-                        tokes.add(doc.getString("hostIdentifier"));
+                        tokes.add(doc.getString("HOSTIDENTIFIER"));
                     }
                     catch(Exception e) {
                         e.printStackTrace();
@@ -92,5 +94,26 @@ public class ModelTrainer {
         String date = sdf.format(new Date(System.currentTimeMillis()));
 
         return Pair.of(date, model);
+    }
+
+    public static void main(String... args) throws IOException {
+        String doc = "foo bar";
+
+        Pair<String, ParallelTopicModel> m = train("../../cp/logs/", 100);
+        // LDA model
+        ParallelTopicModel model = m.getValue();
+
+        ArrayList<Pipe> pipeList = new ArrayList<>();
+        pipeList.add(new CharSequence2TokenSequence());
+        pipeList.add(new TokenSequence2FeatureSequence());
+        SerialPipes sp = new SerialPipes(pipeList);
+        InstanceList event = new InstanceList(sp);
+        event.addThruPipe(new Instance(doc, null, "instance", null));
+
+        TopicInferencer inferencer = model.getInferencer();
+        double[] probabilities = inferencer.getSampledDistribution(event.get(0), 50, 1, 5);
+
+        DoubleStream stream = Arrays.stream(probabilities);
+        System.out.println(stream.max().getAsDouble()); // find the max probability. we don't care which topic it belongs
     }
 }

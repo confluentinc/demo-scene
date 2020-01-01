@@ -40,10 +40,10 @@ CREATE STREAM ugly as
     where score >= .3 and score < .7
     emit changes;
 
-CREATE SOURCE CONNECTOR bad WITH (
+CREATE SOURCE CONNECTOR feedback WITH (
     'connector.class' = 'FileStreamSinkConnector',
     'key.converter'  = 'org.apache.kafka.connect.storage.StringConverter',
     'value.converter' = 'org.apache.kafka.connect.storage.StringConverter',
-    'topics' = 'training',
-    'file' = '/project/cp/logs/train.log'
+    'topics' = 'GOOD',
+    'file' = '/project/cp/logs/feedback.log'
 );

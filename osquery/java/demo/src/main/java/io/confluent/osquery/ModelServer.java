@@ -17,6 +17,7 @@ import spark.Request;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.Stack;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -83,9 +84,12 @@ public class ModelServer
 
         logger.info(doc);
 
+        // model is not available yet
         if(stack.isEmpty()) return -1;
 
         try {
+
+            // LDA model
             ParallelTopicModel model = stack.peek().getValue();
 
             ArrayList<Pipe> pipeList = new ArrayList<>();
@@ -102,8 +106,11 @@ public class ModelServer
             return stream.max().getAsDouble(); // find the max probability. we don't care which topic it belongs
 
         } catch (Throwable e) {
+            // error in executing model
+            // if the model did not have any training data it will error
+            // once a valid model is generated, this will return a score from the LDA model
             e.printStackTrace();
-            return -1;
+            return -2;
         }
     }
 }
