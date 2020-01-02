@@ -1,4 +1,3 @@
-/* Creates a stream called training that only selects osquery logs from host1 which will provide normal logs. */
 CREATE STREAM training as
     select * from processes
     where hostidentifier = 'host1'
