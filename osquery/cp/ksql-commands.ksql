@@ -1,9 +1,10 @@
+/* Creates a stream called training that only selects osquery logs from host1 which will provide normal logs. */
 CREATE STREAM training as
     select * from processes
     where hostidentifier = 'host1'
     emit changes;
 
-CREATE SOURCE CONNECTOR training WITH (
+CREATE SINK CONNECTOR training WITH (
     'connector.class' = 'FileStreamSinkConnector',
     'key.converter'  = 'org.apache.kafka.connect.storage.StringConverter',
     'value.converter' = 'org.apache.kafka.connect.storage.StringConverter',
@@ -50,7 +51,7 @@ CREATE STREAM ugly as
     where score >= .3 and score < .7
     emit changes;
 
-CREATE SOURCE CONNECTOR feedback WITH (
+CREATE SINK CONNECTOR feedback WITH (
     'connector.class' = 'FileStreamSinkConnector',
     'key.converter'  = 'org.apache.kafka.connect.storage.StringConverter',
     'value.converter' = 'org.apache.kafka.connect.storage.StringConverter',

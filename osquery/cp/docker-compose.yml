@@ -109,18 +109,6 @@ services:
       CONFLUENT_METRICS_TOPIC_REPLICATION: 1
       PORT: 9021
 
-  # ksql-server:
-  #   image: "confluentinc/cp-ksql-server:5.3.0"
-  #   hostname: ksql-server
-  #   container_name: ksql-server
-  #   depends_on:
-  #     - broker
-  #     - schema-registry
-  #   environment:
-  #     KSQL_BOOTSTRAP_SERVERS: 'broker:29092'
-  #     KSQL_LISTENERS: 'http://0.0.0.0:8088'
-  #     KSQL_KSQL_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-
   ksql-server:
     image: confluentinc/ksqldb-server:0.6.0
     hostname: ksql-server
@@ -149,16 +137,6 @@ services:
       KSQL_KSQL_CONNECT_URL: "http://connect:8083"
     volumes:
       - ../java/demo/target/demo-1.0-SNAPSHOT.jar:/etc/ksql-server/ext/demo-udf.jar
-
-  # ksql-cli:
-  #   image: confluentinc/cp-ksql-cli:5.3.1
-  #   container_name: ksql-cli
-  #   depends_on:
-  #     - broker
-  #     - connect
-  #     - ksql-server
-  #   entrypoint: /bin/sh
-  #   tty: true
 
   ksql-cli:
     image: confluentinc/ksqldb-cli:0.6.0
