@@ -15,9 +15,9 @@ done
 curl -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/source-mqtt-01/config \
     -d '{
     "connector.class" : "io.confluent.connect.mqtt.MqttSourceConnector",
-    "mqtt.server.uri" : "$${file:/data/mqtt.credentials:MQTT_URL}",
-    "mqtt.password" : "$${file:/data/mqtt.credentials:MQTT_PASSWORD}",
-    "mqtt.username" : "$${file:/data/mqtt.credentials:MQTT_USERNAME}",
+    "mqtt.server.uri" : "${file:/data/mqtt.credentials:MQTT_URL}",
+    "mqtt.password" : "${file:/data/mqtt.credentials:MQTT_PASSWORD}",
+    "mqtt.username" : "${file:/data/mqtt.credentials:MQTT_USERNAME}",
     "mqtt.topics" : "owntracks/#",
     "kafka.topic" : "data_mqtt",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",

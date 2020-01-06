@@ -11,12 +11,14 @@ image::images/mqtt_kafka_01.png[]
 
 *For demo script see link:./mqtt_demo.adoc[here]*
 
+image::images/kibana01.png[]
+
 ''''
 
 * Install Owntracks on your phone
 * Owntracks sends https://owntracks.org/booklet/tech/json/#_typelocation[data] to MQTT server
 * Kafka Connect ingests MQTT into Kafka topic
-* KSQL parses and transforms the data for analysis
+* ksqlDB parses and transforms the data for analysis
 * Kafka Connect streams the data to Elasticsearch
 * Kibana does nice visualisation of the data
 
@@ -42,7 +44,7 @@ Tip: https://mqtt-explorer.com/[MQTT Explorer] is a useful tool.
 
 In this approach you use Confluent Cloud and Elastic Cloud as fully managed services. The only thing you have to run is a Kafka Connect worker, which is shown here done under Docker, but there are also link::ec2_notes.adoc[notes here on deploying it on EC2]. 
 
-* Sign up for https://confluent.cloud/[Confluent Cloud], and provision a Schema Registry and KSQL instance. 
+* Sign up for https://confluent.cloud/[Confluent Cloud], and provision a Schema Registry and ksqlDB instance. 
 * Sign up for https://elastic.co/cloud/[Elastic Cloud] - use version 6, not 7.
 
 Create a local `.env` file and enter into it your details from Confluent Cloud along with your details of your MQTT server and Elasticsearch instance. 
@@ -116,17 +118,17 @@ Depending on whether you are sending data up to Confluent Cloud or to a local Ka
 ----
 
 
-=== KSQL
+=== ksqlDB
 
-With data flowing in, now it's time to build your stream processing apps! The KSQL applications apply a schema to the data, set the data types, and extract fields such as the device/sender ID. 
+With data flowing in, now it's time to build your stream processing apps! The ksqlDB applications apply a schema to the data, set the data types, and extract fields such as the device/sender ID. 
 
-* Confluent Cloud - launch the KSQL page, and paste in the contents of the `mqtt.ksql` file. 
+* Confluent Cloud - launch the ksqlDB page, and paste in the contents of the `mqtt.ksql` file. 
 * Local
-** Run KSQL CLI
+** Run ksqlDB CLI
 +
 [source,bash]
 ----
-docker exec -it ksql-cli bash -c 'echo -e "\n\n⏳ Waiting for KSQL to be available before launching CLI\n"; while : ; do curl_status=$(curl -s -o /dev/null -w %{http_code} http://ksql-server:8088/info) ; echo -e $(date) " KSQL server listener HTTP state: " $curl_status " (waiting for 200)" ; if [ $curl_status -eq 200 ] ; then  break ; fi ; sleep 5 ; done ; ksql http://ksql-server:8088'
+docker exec -it ksqldb-cli bash -c 'echo -e "\n\n⏳ Waiting for ksqlDB to be available before launching CLI\n"; while : ; do curl_status=$(curl -s -o /dev/null -w %{http_code} http://ksqldb-server:8088/info) ; echo -e $(date) " ksqlDB server listener HTTP state: " $curl_status " (waiting for 200)" ; if [ $curl_status -eq 200 ] ; then  break ; fi ; sleep 5 ; done ; ksql http://ksqlDB-server:8088'
 ----
 ** Run script
 +
@@ -157,7 +159,9 @@ Depending on whether you are sending data up to Confluent Cloud or to a local Ka
 
 === Kafka Connect Elasticsearch sink
 
-1. You need to create an Elasticsearch dynamic mapping template so that geopoint fields and dates are correctly picked up. Run : 
+1. You need to create an Elasticsearch dynamic mapping template so that geopoint fields and dates are correctly picked up. 
++
+**If running using Docker Compose this has already been done for you**. If using a hosted Elasticsearch then run : 
 +
 [source,bash]
 ----

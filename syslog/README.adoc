@@ -1,113 +1,38 @@
-= Confluent Kafka Connect syslog connector - example
+= Processing and Analysing syslog with ksqlDB
 
-You can either run this on bare-metal, or using the provided Docker Compose config.
+See https://rmoff.net/2019/12/18/detecting-and-analysing-ssh-attacks-with-ksqldb/
 
-== Bare metal
+== Setup
 
-Install the connector: 
-
+* Clone the git repo
++
 [source,bash]
 ----
-confluent-hub install --no-prompt confluentinc/kafka-connect-syslog:1.0.0-preview
+git clone https://github.com/confluentinc/demo-scene.git
 ----
 
-Run Kafka Connect. Wait for it to be available, and then create the connector: 
-
+* Launch the stack
++
 [source,bash]
 ----
-curl -i -X POST -H "Accept:application/json" \
-                        -H  "Content-Type:application/json" \
-                        http://localhost:8083/connectors/ \
-                        -d @syslog_udp_config.json
-----
-
-Where the config looks like: 
-
-[source,json]
-----
-{
-  "name": "syslog-udp",
-  "config": {
-    "tasks.max": "1",
-    "connector.class": "io.confluent.connect.syslog.SyslogSourceConnector",
-    "topic.prefix": "syslog",
-    "syslog.port": "42514",
-    "syslog.listener": "UDP",
-    "syslog.reverse.dns.remote.ip": "true"
-  }
-}
-----
-
-== Docker Compose
-
-Make sure you're in the same folder as `docker-compose.yml`, and then run 
-
-[source,bash]
-----
+cd syslog
 docker-compose up -d
 ----
 
-This will bring up the necessary Confluent Platform stack, and once Kafka Connect has started, create the connector using the config in `syslog_udp_config.json`.
+== ksqlDB
 
-== Testing the connector
-
-Send some test syslog data to the connector: 
+To start with, get a ksqlDB prompt:
 
 [source,bash]
 ----
-logger -n 127.0.0.1 -P 42514 I ❤️  logs
+docker exec -it ksqldb-cli bash -c 'ksql http://ksqldb-server:8088'
 ----
 
-See the data in the Kafka topic: 
+== syslog
 
-[source,bash]
-----
-$ kafka-avro-console-consumer \
-    --bootstrap-server localhost:9092 \
-    --property schema.registry.url=http://localhost:8081 \
-    --topic syslog --from-beginning|jq '.'
-{
-  "name": null,
-  "type": "RFC3164",
-  "message": {
-    "string": "I ❤️ logs\u0000"
-  },
-  "host": {
-    "string": "rmoff:"
-  },
-  "version": null,
-  "level": {
-    "int": 5
-  },
-  "tag": null,
-  "extension": null,
-  "severity": null,
-  "appName": null,
-  "facility": {
-    "int": 0
-  },
-  "remoteAddress": {
-    "string": "192.168.240.1"
-  },
-  "rawMessage": {
-    "string": "<5>Nov  9 13:59:50 rmoff: I ❤️ logs\u0000"
-  },
-  "processId": null,
-  "messageId": null,
-  "structuredData": null,
-  "deviceVendor": null,
-  "deviceProduct": null,
-  "deviceVersion": null,
-  "deviceEventClassId": null,
-  "date": 1541771990000
-}
-----
-
-== Interested to see what you can do with Kafka and syslog data? Check out these blogs!
-
-image::https://www.confluent.io/wp-content/uploads/ksql_syslog01-1024x258.png[]
+image::syslog.png[]
+== See also…
 
 * https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-part-1-filtering[We ❤️ syslogs: Real-time syslog Processing with Apache Kafka and KSQL – Part 1: Filtering]
 * https://www.confluent.io/blog/real-time-syslog-processing-with-apache-kafka-and-ksql-part-2-event-driven-alerting-with-slack/[We ❤ syslogs: Real-time syslog Processing with Apache Kafka and KSQL – Part 2: Event-Driven Alerting with Slack]
-* https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-enriching-events-with-external-data/[We ❤️ syslogs: Real-time syslog processing with Apache Kafka and KSQL – Part 3: Enriching events with external data
-]
+* https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-enriching-events-with-external-data/[We ❤️ syslogs: Real-time syslog processing with Apache Kafka and KSQL – Part 3: Enriching events with external data]

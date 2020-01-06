@@ -1,0 +1,54 @@
+= Distributed Tracing for Stream Processing 
+Viktor Gamov <viktor@confluent.io>, © 2019 Confluent, Inc.
+2019-09-13
+:revdate: 2019-09-13 14:53:28 -0600
+:linkattrs:
+:ast: &ast;
+:y: &#10003;
+:n: &#10008;
+:y: icon:check-sign[role="green"]
+:n: icon:check-minus[role="red"]
+:c: icon:file-text-alt[role="blue"]
+:toc: auto
+:toc-placement: auto
+:toc-position: auto
+:toc-title: Table of content
+:toclevels: 3
+:idprefix:
+:idseparator: -
+:sectanchors:
+:icons: font
+:source-highlighter: highlight.js
+:highlightjs-theme: idea
+:experimental:
+
+Preamble of a document - TBD
+
+toc::[]
+
+== Prep, download and Build everything
+
+[source,bash]
+.Make
+----
+make    #<1>
+----
+<1> this command will create directories, build producer/consumer  app and download tracing interceptors from  https://github.com/riferrei/kafka-tracing-support[riferrei/kafka-tracing-support]
+
+
+== Producer app
+
+== KSQL Server 
+
+[source, properties]
+----
+producer.interceptor.classes=io.confluent.devx.util.KafkaTracingProducerInterceptor
+consumer.interceptor.classes=io.confluent.devx.util.KafkaTracingConsumerInterceptor
+----
+
+
+`export JAEGER_SERVICE_NAME=DemoInterceptors`
+
+or
+
+`export INTERCEPTORS_CONFIG_FILE=/etc/jaeger/ext/interceptorsConfig.json`

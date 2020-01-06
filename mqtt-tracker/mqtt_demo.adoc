@@ -1,6 +1,6 @@
 = Building a Stream Processing pipeline with MQTT, Apache Kafka, and KSQL
 Robin Moffatt <robin@confluent.io>
-v1.00, 29 September 2019
+v1.01, 6 November 2019
 
 == Overview
 
@@ -56,7 +56,14 @@ docker exec -it mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
 ----
 ./load_sample_data.sh
 ----
-
++
+or
++
+[source,bash]
+----
+kafkacat -b localhost:9092 -t data_mqtt -K: -P -T -l ./data/dummy_data.kcat
+kafkacat -b localhost:9092 -t data_mqtt -K: -P -T -l ./data/tmp.kcat
+----
 * Option 2 : live pull from CCloud
 
 ** Replicator
@@ -81,15 +88,22 @@ kafkacat -b $CCLOUD_BROKER_HOST \
     -X auto.offset.reset=earliest \
     -G copy_to_local_01 data_mqtt -K: | \
 kafkacat -b localhost:9092,localhost:19092,localhost:29092 \
-    -t data_mqtt-import \
+    -t data_mqtt \
     -K: -P 
+----
+
+* Option 3 : stream from MQTT source
++
+[source,bash]
+----
+./create_mqtt_source_local.sh
 ----
 
 Check there's data on the topic: 
 
 [source,bash]
 ----
-kafkacat -b localhost:9092 -t data_mqtt-import -o beginning -C
+kafkacat -b localhost:9092 -t data_mqtt -o beginning -C
 ----
 
 == Demo
@@ -119,17 +133,27 @@ CREATE STREAM MQTT_RAW
      TST  BIGINT,  ALT  INTEGER, COG       INTEGER, VEL  INTEGER,
      P    DOUBLE,  BS   INTEGER, CONN      VARCHAR, ACC  INTEGER,
      T    VARCHAR, VAC  INTEGER, INREGIONS VARCHAR, TYPE VARCHAR) 
-WITH (KAFKA_TOPIC = 'data_mqtt-import', VALUE_FORMAT='JSON');
+WITH (KAFKA_TOPIC = 'data_mqtt', VALUE_FORMAT='JSON');
 ----
 
 image::images/mqtt_kafka_04.png[]
 
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(TST*1000, 'MMM-dd HH:mm:ss','America/Los_Angeles') as TS, 
+SELECT TIMESTAMPTOSTRING(TST*1000, 'MMM-dd HH:mm:ss','Europe/London') as TS, 
        TID, 
        BATT,
        BS 
+  FROM MQTT_RAW; 
+----
+
+[source,sql]
+----
+SELECT TIMESTAMPTOSTRING(TST*1000, 'MMM-dd HH:mm:ss','Europe/London') as TS, 
+       TID, 
+       BATT,
+       BS, 
+       GEO_DISTANCE(LAT,LON,51.4965005,-0.2106881,'KM') AS DISTANCE_FROM_VENUE
   FROM MQTT_RAW; 
 ----
 
@@ -137,13 +161,13 @@ Now let's do something more than just write this to the screen. Let's write it t
 
 [source,sql]
 ----
-CREATE STREAM RUNNER_LOCATION_00
+CREATE STREAM PHONE_DATA
     WITH (VALUE_FORMAT='AVRO') AS
     SELECT SPLIT(ROWKEY, '/')[2] AS WHO
             , TST * 1000 AS EVENT_TIME_EPOCH_MS_TS
-            , TIMESTAMPTOSTRING(TST*1000,'yyyy-MM-dd HH:mm:ss','America/Los_Angeles') AS EVENT_TIME
+            , TIMESTAMPTOSTRING(TST*1000,'yyyy-MM-dd HH:mm:ss','Europe/London') AS EVENT_TIME
             , CASE WHEN LAT IS NULL OR LON IS NULL THEN CAST(NULL AS VARCHAR) 
-            	   ELSE CAST(LAT AS VARCHAR) ||','||CAST(LON AS VARCHAR) 
+            	   ELSE CAST(LAT AS VARCHAR) +','+CAST(LON AS VARCHAR) 
               END AS LOCATION
             , ACC AS LOCATION_ACCURACY_M
             , ALT AS ALTITUDE_M
@@ -168,13 +192,14 @@ CREATE STREAM RUNNER_LOCATION_00
             , VAC AS VERTICAL_ACCURACY_M
             , VEL AS VELOCITY_KMH
             , P AS PRESSURE_KPA
-            , CASE WHEN CONN='w' THEN 'WiFI'
+            , CASE WHEN CONN='w' THEN 'WiFi'
                    WHEN CONN='o' THEN 'Offline'
                    WHEN CONN='m' THEN 'Mobile'
                    ELSE '[unknown]'
               END AS CONNECTIVITY_STATUS
             , INREGIONS AS REGIONS
-            , LAT, LON
+            , LAT, LON,
+            GEO_DISTANCE(LAT,LON,51.4965005,-0.2106881,'KM') AS DISTANCE_FROM_VENUE
         FROM MQTT_RAW;
 ----
 
@@ -182,38 +207,37 @@ Show it worked:
 
 [source,sql]
 ----
-SELECT EVENT_TIME, 
+SELECT WHO, 
+       EVENT_TIME, 
        TRACKER_ID, 
        BATTERY_PCT, 
-       BATTERY_STATUS 
-  FROM RUNNER_LOCATION_00; 
+       BATTERY_STATUS,
+       CONNECTIVITY_STATUS
+  FROM PHONE_DATA; 
 ----
 
 image::images/mqtt_kafka_03.png[]
 
 Since this is just a Kafka topic we can use and consume it just like any other. In this example, streaming the data to Elasticsearch.  
 
-* Create a dynamic mapping to pick up geopoint field
-+
-[source,bash]
+[source,sql]
 ----
-curl -XPUT "http://localhost:9200/_template/kafkaconnect/?include_type_name=true" -H 'Content-Type: application/json' -d'
-{
-            "template": "*",
-            "settings": { "number_of_shards": 1, "number_of_replicas": 0 },
-            "mappings": { "_default_" : {
-                "dynamic_templates": [
-                    { "dates": { "match": "*_TS", "mapping": { "type": "date" } } },
-                    { "heights": { "match": "HEIGHT", "mapping": { "type": "float" } } },
-                    { "locations": { "match": "LOCATION", "mapping": { "type": "geo_point" } } }
-                ] } } }'
-----
+CREATE SINK CONNECTOR sink_elastic_phone_data_00 WITH (
+  'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+  'connection.url' = '${file:/data/credentials.properties:ELASTIC_URL}',
+  'connection.username' = '${file:/data/credentials.properties:ELASTIC_USERNAME}',
+  'connection.password' = '${file:/data/credentials.properties:ELASTIC_PASSWORD}',
+  'type.name' = '',
+  'behavior.on.malformed.documents' = 'warn',
+  'errors.tolerance' = 'all',
+  'errors.log.enable' = 'true',
+  'errors.log.include.messages' = 'true',
+  'topics.regex' = 'PHONE_.*',
+  'key.ignore' = 'true',
+  'schema.ignore' = 'true',
+  'key.converter' = 'org.apache.kafka.connect.storage.StringConverter'
+);
 
-* Create the sink
-+
-[source,bash]
-----
-./create_es_sink.sh
 ----
 
 * Check it's running
@@ -227,7 +251,7 @@ curl -s "http://localhost:8083/connectors?expand=info&expand=status" | \
 +
 [source,bash]
 ----
-sink  |  sink-elastic-runner_location-00  |  RUNNING  |  RUNNING  |  io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
+sink    |  sink-elastic-phone_data-00      |  RUNNING  |  RUNNING  |  io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
 ----
 
 * Set up Kibana
@@ -235,22 +259,13 @@ sink  |  sink-elastic-runner_location-00  |  RUNNING  |  RUNNING  |  io.confluen
 [source,bash]
 ----
 echo -e "\n--\n+> Opt out of Kibana telemetry"
-curl 'http://localhost:5601/api/telemetry/v1/optIn' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'content-type: application/json' -H 'accept: application/json' --data-binary '{"enabled":false}' --compressed
+curl 'http://localhost:5601/api/telemetry/v2/optIn' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'content-type: application/json' -H 'accept: application/json' --data-binary '{"enabled":false}' --compressed
 
-echo -e "\n--\n+> Create Kibana index patterns"
-curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/runner_location_idx' \
-    -H 'kbn-xsrf: nevergonnagiveyouup' \
-    -H 'Content-Type: application/json' \
-    -d '{"attributes":{"title":"runner_location*","timeFieldName":"EVENT_TIME_EPOCH_MS_TS"}}'
-
-echo -e "\n--\n+> Set default Kibana index"
-curl -XPOST 'http://localhost:5601/api/kibana/settings' \
-    -H 'kbn-xsrf: nevergonnagiveyouup' \
-    -H 'content-type: application/json' \
-    -d '{"changes":{"defaultIndex":"runner_location_idx"}}'
+echo -e "Import objects"
+curl 'http://localhost:5601/api/saved_objects/_import?overwrite=true' -H 'Connection: keep-alive' -H 'Origin: http://localhost:5601' -H 'kbn-version: 7.5.0' --form file=@data/kibana.ndjson
 ----
 
-* Show Kibana http://localhost:5601/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-7d,mode:quick,to:now))&_a=(columns:!(WHO,CONNECTIVITY_STATUS,BATTERY_PCT,BATTERY_STATUS),index:runner_location_idx,interval:auto,query:(language:lucene,query:''),sort:!(EVENT_TIME_EPOCH_MS_TS,desc))[discovery view] & http://localhost:5601/app/kibana#/visualize/create?type=tile_map&indexPattern=runner_location_idx&_g=(refreshInterval:(pause:!t,value:0),time:(from:now-7d,mode:quick,to:now))&_a=(filters:!(),linked:!f,query:(language:lucene,query:''),uiState:(),vis:(aggs:!((enabled:!t,id:'1',params:(),schema:metric,type:count),(enabled:!t,id:'2',params:(autoPrecision:!t,field:LOCATION,isFilteredByCollar:!t,mapCenter:!(0,0),mapZoom:2,precision:2,useGeocentroid:!t),schema:segment,type:geohash_grid)),params:(addTooltip:!t,colorSchema:'Yellow%20to%20Red',heatClusterSize:1.5,isDesaturated:!t,legendPosition:bottomright,mapCenter:!(0,0),mapType:'Shaded%20Circle%20Markers',mapZoom:2,wms:(enabled:!f,options:(format:image%2Fpng,transparent:!t),selectedTmsLayer:(attribution:'%3Cp%3E%26%23169;%20%3Ca%20href%3D%22https:%2F%2Fwww.openstreetmap.org%2Fcopyright%22%3EOpenStreetMap%20contributors%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fopenmaptiles.org%22%3EOpenMapTiles%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fwww.maptiler.com%22%3EMapTiler%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fwww.elastic.co%2Felastic-maps-service%22%3EElastic%20Maps%20Service%3C%2Fa%3E%3C%2Fp%3E%26%2310;',id:road_map,maxZoom:18,minZoom:0,origin:elastic_maps_service))),title:'New%20Visualization',type:tile_map))[map viz]
+* Show Kibana http://localhost:5601/app/kibana#/discover?_g=(refreshInterval:(pause:!f,value:1000),time:(from:now-24h,to:now))&_a=(columns:!(WHO,CONNECTIVITY_STATUS,BATTERY_PCT,BATTERY_STATUS,DISTANCE_FROM_VENUE),index:phone_data_idx,interval:auto,query:(language:lucene,query:''),sort:!(!(EVENT_TIME_EPOCH_MS_TS,desc)))[discovery view] & http://localhost:5601/app/kibana#/visualize/create?type=tile_map&indexPattern=phone_data_idx&_g=(refreshInterval:(pause:!t,value:0),time:(from:now-7d,mode:quick,to:now))&_a=(filters:!(),linked:!f,query:(language:lucene,query:''),uiState:(),vis:(aggs:!((enabled:!t,id:'1',params:(),schema:metric,type:count),(enabled:!t,id:'2',params:(autoPrecision:!t,field:LOCATION,isFilteredByCollar:!t,mapCenter:!(0,0),mapZoom:2,precision:2,useGeocentroid:!t),schema:segment,type:geohash_grid)),params:(addTooltip:!t,colorSchema:'Yellow%20to%20Red',heatClusterSize:1.5,isDesaturated:!t,legendPosition:bottomright,mapCenter:!(0,0),mapType:'Shaded%20Circle%20Markers',mapZoom:2,wms:(enabled:!f,options:(format:image%2Fpng,transparent:!t),selectedTmsLayer:(attribution:'%3Cp%3E%26%23169;%20%3Ca%20href%3D%22https:%2F%2Fwww.openstreetmap.org%2Fcopyright%22%3EOpenStreetMap%20contributors%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fopenmaptiles.org%22%3EOpenMapTiles%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fwww.maptiler.com%22%3EMapTiler%3C%2Fa%3E%7C%3Ca%20href%3D%22https:%2F%2Fwww.elastic.co%2Felastic-maps-service%22%3EElastic%20Maps%20Service%3C%2Fa%3E%3C%2Fp%3E%26%2310;',id:road_map,maxZoom:18,minZoom:0,origin:elastic_maps_service))),title:'New%20Visualization',type:tile_map))[map viz]
 
 
 
@@ -276,6 +291,31 @@ SELECT USERID, EMAIL, SHARE_LOCATION_OPTIN FROM USERS;
 +--------+------------------+----------------------+ 
 ----
 
+Ingest the data into ksqlDB
+
+[source,sql]
+----
+CREATE SOURCE CONNECTOR source_debezium_mysql_users_00 WITH (
+  'connector.class' = 'io.debezium.connector.mysql.MySqlConnector',
+  'database.hostname' = 'mysql',
+  'database.port' = '3306',
+  'database.user' = 'debezium',
+  'database.password' = 'dbz',
+  'database.server.id' = '42',
+  'database.server.name' = 'asgard',
+  'table.whitelist' = 'demo.USERS',
+  'database.history.kafka.bootstrap.servers' = 'kafka-1:39092',
+  'database.history.kafka.topic' = 'dbhistory.demo' ,
+  'decimal.handling.mode' = 'double',
+  'include.schema.changes' = 'true',
+  'transforms' = 'unwrap,addTopicPrefix',
+  'transforms.unwrap.type' = 'io.debezium.transforms.UnwrapFromEnvelope',
+  'transforms.addTopicPrefix.type' = 'org.apache.kafka.connect.transforms.RegexRouter',
+  'transforms.addTopicPrefix.regex' = '(.*)',
+  'transforms.addTopicPrefix.replacement' = 'mysql2-$1'
+);
+----
+
 Declare the KSQL table on the topic populated from the database: 
 
 [source,sql]
@@ -283,9 +323,12 @@ Declare the KSQL table on the topic populated from the database:
 SET 'auto.offset.reset' = 'earliest';
 
 CREATE STREAM USERS_STREAM WITH (KAFKA_TOPIC='mysql-asgard.demo.USERS', VALUE_FORMAT='AVRO');
-CREATE STREAM USERS_REKEY WITH (PARTITIONS=6) AS SELECT * FROM USERS_STREAM PARTITION BY USERID;
-PRINT USERS_REKEY LIMIT 1;
-CREATE TABLE USERS WITH (KAFKA_TOPIC='USERS_REKEY', VALUE_FORMAT='AVRO'); 
+CREATE STREAM USERS_REKEY_P6 WITH (PARTITIONS=6) AS SELECT * FROM USERS_STREAM PARTITION BY USERID;
+CREATE STREAM USERS_REKEY_P1 WITH (PARTITIONS=1) AS SELECT * FROM USERS_STREAM PARTITION BY USERID;
+PRINT USERS_REKEY_P6 LIMIT 1;
+CREATE TABLE USERS WITH (KAFKA_TOPIC='USERS_REKEY_P6', VALUE_FORMAT='AVRO'); 
+-- CREATE TABLE USERS WITH (KAFKA_TOPIC='USERS_REKEY_P1', VALUE_FORMAT='AVRO'); 
+-- DROP TABLE USERS;
 ----
 
 Examine the data: 
@@ -294,12 +337,13 @@ Examine the data:
 ----
 SET 'auto.offset.reset' = 'latest';
 
-SELECT TIMESTAMPTOSTRING(R.ROWTIME, 'MMM-dd HH:mm:ss','America/Los_Angeles') AS TS,
+SELECT TIMESTAMPTOSTRING(R.ROWTIME, 'MMM-dd HH:mm:ss','Europe/London') AS TS,
        R.WHO, 
        U.EMAIL, 
        U.SHARE_LOCATION_OPTIN, 
-       R.BATTERY_STATUS
-    FROM RUNNER_LOCATION_00 R
+       R.LAT,
+       R.LON
+    FROM PHONE_DATA R
            LEFT JOIN USERS U
            ON R.WHO = U.ROWKEY ;
 ----
@@ -324,28 +368,18 @@ Set datagen running
 
 [source,sql]
 ----
-SET 'auto.offset.reset' = 'earliest';
-
-CREATE STREAM RUNNER_LOCATION_OPTIN AS
-  SELECT  WHO
-          ,EVENT_TIME_EPOCH_MS_TS
-          ,CASE WHEN U.SHARE_LOCATION_OPTIN = 1 THEN LOCATION 
-             ELSE CAST(NULL AS VARCHAR) 
-           END AS LOCATION
-          ,BATTERY_PCT
-          ,BATTERY_STATUS
-          ,U.EMAIL AS EMAIL
-    FROM RUNNER_LOCATION_00 R 
-           LEFT JOIN USERS U 
-           ON R.WHO = U.ROWKEY;
-----
-
-[source,sql]
-----
 SET 'auto.offset.reset' = 'latest';
 
-SELECT TIMESTAMPTOSTRING(ROWTIME, 'MMM-dd HH:mm:ss','America/Los_Angeles'),WHO, LOCATION, BATTERY_STATUS, BATTERY_PCT
-    FROM RUNNER_LOCATION_OPTIN;
+SELECT  TIMESTAMPTOSTRING(R.ROWTIME, 'MMM-dd HH:mm:ss','Europe/London') AS TS,
+         WHO
+        ,U.EMAIL AS EMAIL
+        ,CASE WHEN U.SHARE_LOCATION_OPTIN = 1 THEN LOCATION 
+            ELSE CAST(NULL AS VARCHAR) 
+          END AS LOCATION
+  FROM PHONE_DATA R 
+          LEFT JOIN USERS U 
+          ON R.WHO = U.ROWKEY
+  WHERE WHO='ivor';
 ----
 
 In a new terminal, show MySQL with KSQL still visible.
@@ -365,7 +399,64 @@ UPDATE USERS SET SHARE_LOCATION_OPTIN=TRUE WHERE USERID='ivor';
 UPDATE USERS SET SHARE_LOCATION_OPTIN=FALSE WHERE USERID='ivor';
 ----
 
-''''
+Looking at the data in MySQL in more detail, we can see each user can optionally specify a _privacy zone_ within which their data won't be shared, but outside of which it can. 
+
+[source,sql]
+----
+SELECT * FROM USERS WHERE USERID='rmoff' \G 
+----
+
+[source,sql]
+----
+*************************** 1. row ***************************
+              USERID: rmoff
+               EMAIL: robin@rmoff.net
+SHARE_LOCATION_OPTIN: 1
+PRIVACY_LOCATION_LAT: 53.924729
+PRIVACY_LOCATION_LON: -1.804453
+     PRIVACY_ZONE_KM: 1
+           CREATE_TS: 2019-11-14 06:54:38
+           UPDATE_TS: 2019-11-14 06:54:38
+1 row in set (0.00 sec) 
+----
+
+We can apply this logic in the SQL as part of the streaming application: 
+
+[source,sql]
+----
+CREATE STREAM PHONE_LOCATION_OPTIN AS
+  SELECT WHO,
+         EVENT_TIME_EPOCH_MS_TS,
+         CASE 
+            WHEN U.SHARE_LOCATION_OPTIN = 1 THEN 
+              CASE 
+                WHEN GEO_DISTANCE (LAT,LON,PRIVACY_LOCATION_LAT,PRIVACY_LOCATION_LON,'KM') > PRIVACY_ZONE_KM 
+                  THEN LOCATION 
+                ELSE '<Private>'
+              END
+            WHEN U.SHARE_LOCATION_OPTIN = 0 THEN '<Opted out>'
+            ELSE '<No user record>' 
+         END AS LOCATION, 
+         GEO_DISTANCE (LAT,LON,PRIVACY_LOCATION_LAT,PRIVACY_LOCATION_LON,'KM') AS DISTANCE_KM_FROM_PRIVACY_ZONE,
+         PRIVACY_ZONE_KM AS PRIVACY_ZONE_THRESHOLD_KM
+         BATTERY_PCT,
+         BATTERY_STATUS,
+         U.EMAIL AS EMAIL
+  FROM   PHONE_DATA R
+         LEFT JOIN USERS U
+         ON R.WHO = U.ROWKEY;
+----
+
+[source,sql]
+----
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'MMM-dd HH:mm:ss','Europe/London') AS TS,
+       WHO,
+       LOCATION,
+       DISTANCE_KM_FROM_PRIVACY_ZONE,
+       PRIVACY_ZONE_THRESHOLD_KM
+  FROM PHONE_LOCATION_OPTIN
+  WHERE WHO='rmoff';
+----
 
 == MOAR derived streams
 
@@ -373,18 +464,20 @@ You can also use KSQL to create a subset of the data so that other teams could u
 
 [source,sql]
 ----
-CREATE STREAM MQTT_BATTERY_DATA AS
+SET 'auto.offset.reset' = 'earliest';
+
+CREATE STREAM PHONE_BATTERY_DATA AS
   SELECT WHO, BATTERY_PCT, BATTERY_STATUS, CONNECTIVITY_STATUS 
-    FROM RUNNER_LOCATION_00;
+    FROM PHONE_DATA;
 ----
 
 Aggregate the data to show connectivity type per day: 
 
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(windowstart(), 'yyyy-MM-dd HH:mm:ss'),
+SELECT TIMESTAMPTOSTRING(windowstart(), 'yyyy-MM-dd HH:mm:ss') AS TS,
        CONNECTIVITY_STATUS, COUNT(*) 
-  FROM MQTT_BATTERY_DATA 
+  FROM PHONE_BATTERY_DATA 
         WINDOW TUMBLING (SIZE 1 DAY) 
 GROUP BY CONNECTIVITY_STATUS; 
 ----
@@ -495,28 +588,7 @@ SELECT BS,
 
 
 
-EOFEOFEOF
-
-== Scrap notes
-
-
-
-CREATE STREAM RUNNER_LOCATION 
-    WITH (TIMESTAMP='EVENT_TIME_EPOCH_MS') AS
-    SELECT *
-    FROM RUNNER_LOCATION_00
-PARTITION BY WHO;
-
-CREATE TABLE RUNNER_STATUS AS 
-    SELECT WHO, 
-           MIN(VELOCITY_KMH) AS MIN_SPEED, 
-           MAX(VELOCITY_KMH) AS MAX_SPEED, 
-           COUNT(*) AS NUM_EVENTS, 
-           MAX(ROWTIME) AS LAST_EVENT_TS,
-           MIN(GEO_DISTANCE(LAT, LON, 53.925915, -1.823168, 'KM')) AS DIST_TO_ILKLEY
-     FROM RUNNER_LOCATION 
-            WINDOW TUMBLING (SIZE 5 MINUTE) 
-    GROUP BY WHO;
+`EOFEOFEOF`
 
 == Appendix
 
@@ -526,7 +598,7 @@ CREATE TABLE RUNNER_STATUS AS
 ----
 kafkacat -b localhost:9092 \
   -o beginning -K: -e -q \
-  -t data_mqtt2 \
+  -t data_mqtt \
   > data/export_20190929.kcat
 ----
 

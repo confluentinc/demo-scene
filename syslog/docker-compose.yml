@@ -1,105 +1,226 @@
 ---
-version: '2'
+version: '3'
 services:
   zookeeper:
-    image: "confluentinc/cp-zookeeper:5.0.1"
+    image: confluentinc/cp-zookeeper:5.4.0-beta1
+    container_name: syslog_zookeeper
+    hostname: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    # volumes: 
+    #   - ./data/container_data/zk-data:/var/lib/zookeeper/data
+    #   - ./data/container_data/zk-txn-logs:/var/lib/zookeeper/log
 
   kafka:
-    image: "confluentinc/cp-enterprise-kafka:5.0.1"
-    ports:
-      - '9092:9092'
+    image: confluentinc/cp-enterprise-kafka:5.4.0-beta1
+    container_name: syslog_kafka
+    hostname: kafka
     depends_on:
       - zookeeper
+    # ports:
+    #   - 9092:9092
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,HOST://localhost:9092
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092
-      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
-      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
-      CONFLUENT_METRICS_ENABLE: 'true'
-      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+    # volumes: 
+    #   - ./data/container_data/kafka-data:/var/lib/kafka/data
 
   schema-registry:
-    image: "confluentinc/cp-schema-registry:5.0.1"
-    depends_on:
-      - zookeeper
-      - kafka
+    image: confluentinc/cp-schema-registry:5.4.0-beta1
     ports:
-      - '8081:8081'
+      - 8081:8081
+    container_name: syslog_schema-registry
+    hostname: schema-registry
+    depends_on:
+      - kafka
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:29092
+      SCHEMA_REGISTRY_CUB_KAFKA_TIMEOUT: 300
 
-  ksql-server:
-    image: confluentinc/cp-ksql-server:5.0.1
+  ksqldb-server:
+    image: confluentinc/ksqldb-server:0.6.0
+    hostname: ksqldb-server
+    container_name: syslog_ksqldb-server
     depends_on:
       - kafka
-      - schema-registry
-    environment:
-      KSQL_BOOTSTRAP_SERVERS: kafka:29092
-      KSQL_LISTENERS: http://0.0.0.0:8088
-      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
-
-  kafka-connect-syslog:
-    image: confluentinc/kafka-connect-syslog:1.0.0-preview
-    build:
-      context: .
-      dockerfile: Dockerfile-syslog
+      - kafka-connect-01
     ports:
-      - "8083:8083"
-      - "42514:42514/udp"
-      - "42515:42515"
+      - "18088:8088"
     environment:
-      CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
-      CONNECT_REST_PORT: 8083
-      CONNECT_GROUP_ID: connect-syslog
-      CONNECT_CONFIG_STORAGE_TOPIC: connect-syslog-configs
-      CONNECT_OFFSET_STORAGE_TOPIC: connect-syslog-offsets
-      CONNECT_STATUS_STORAGE_TOPIC: connect-syslog-status
-      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
-      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
-      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-syslog"
-      CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
-      CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
-      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
-      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
-      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+      KSQL_LISTENERS: http://0.0.0.0:8088
+      KSQL_BOOTSTRAP_SERVERS: kafka:29092
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+      KSQL_KSQL_CONNECT_URL: http://kafka-connect-01:8083
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+
+  ksqldb-cli:
+    image: confluentinc/ksqldb-cli:0.6.0
+    container_name: syslog_ksqldb-cli
+    hostname: ksqldb-cli
     depends_on:
-      - zookeeper
+      - ksqldb-server
+    entrypoint: /bin/sh
+    tty: true
+
+  kafka-connect-01:
+    image: confluentinc/cp-kafka-connect:5.4.0-beta1
+    container_name: syslog_kafka-connect-01
+    hostname: kafka-connect-01
+    depends_on:
       - kafka
       - schema-registry
+    ports:
+      # - 8083:8083
+      - 42514:42514/udp
+    environment:
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
+      CONNECT_CUB_KAFKA_TIMEOUT: 300
+      CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
+      CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect-01'
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: kafka-connect-group-01
+      CONNECT_CONFIG_STORAGE_TOPIC: _kafka-connect-group-01-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _kafka-connect-group-01-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _kafka-connect-group-01-status
+      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
+      CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
+#      CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR,org.eclipse.jetty.server=DEBUG'
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/,/data/connect-jars'
+      # External secrets config
+      # See https://docs.confluent.io/current/connect/security.html#externalizing-secrets
+      CONNECT_CONFIG_PROVIDERS: 'file'
+      CONNECT_CONFIG_PROVIDERS_FILE_CLASS: 'org.apache.kafka.common.config.provider.FileConfigProvider'
+    volumes:
+      - ${PWD}/credentials.properties:/data/credentials.properties
+    command: 
+      # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
+      - bash 
+      - -c 
+      - |
+        echo "Installing connector plugins"
+        confluent-hub install --no-prompt confluentinc/kafka-connect-syslog:1.2.6
+        confluent-hub install --no-prompt neo4j/kafka-connect-neo4j:1.0.2
+        confluent-hub install --no-prompt debezium/debezium-connector-mongodb:0.10.0
+        confluent-hub install --no-prompt mongodb/kafka-connect-mongodb:0.2
+        #
+        echo "Launching Kafka Connect worker"
+        /etc/confluent/docker/run & 
+        #
+        echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT ⏳"
+        while : ; do
+          curl_status=$$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors)
+          echo -e $$(date) " Kafka Connect listener HTTP state: " $$curl_status " (waiting for 200)"
+          if [ $$curl_status -eq 200 ] ; then
+            break
+          fi
+          sleep 5 
+        done
+        #
+        sleep infinity
+
+  mongodb:
+    # *-----------------------------*
+    # To connect to mongoDB
+    #   docker exec --interactive --tty syslog_mongodb mongo localhost:27017
+    # *-----------------------------*
+    image: mongo:4.2.2
+    container_name: syslog_mongodb
+    hostname: mongodb
+    ports: 
+    - "27017:27017"
     command: 
       - bash 
       - -c 
       - |
-        /etc/confluent/docker/run & 
-        echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) -ne 200 ] ; do 
-          echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors) " (waiting for 200)"
+        # Launch mongodb
+        mongod --replSet replSet01 --bind_ip_all &
+        # Wait for Mongo to be available 
+        # Based on https://stackoverflow.com/questions/16542372/shell-script-check-mongod-server-is-running
+        while : ; do
+          mongo_status=$$(mongo --eval "db.stats()" > /dev/null; echo $$?)
+          echo -e $$(date) " Mongo RC: " $$mongo_status " (waiting for 0)"
+          if [ $$mongo_status -eq 0 ] ; then
+            break
+          fi
           sleep 5 
         done
-        nc -vz $$CONNECT_REST_ADVERTISED_HOST_NAME $$CONNECT_REST_PORT
-        echo -e "\n--\n+> Creating Kafka Connect connector"
-        curl -i -X POST -H "Accept:application/json" \
-                        -H  "Content-Type:application/json" \
-                        http://localhost:8083/connectors/ \
-                        -d @/data/syslog_udp_config.json
+        # Init the replicaset
+        mongo admin --eval "rs.initiate();"
         sleep infinity
-      
-    volumes:
-      - $PWD:/data
+
+  neo4j:
+    image: neo4j:3.5-enterprise
+    container_name: syslog_neo4j
+    hostname: neo4j
+    ports:
+    - "17474:7474"
+    - "17687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/connect
+      NEO4J_dbms_memory_heap_max__size: 8G
+      NEO4J_ACCEPT_LICENSE_AGREEMENT: 'yes'
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.0
+    container_name: syslog_elasticsearch
+    hostname: elasticsearch
+    # ports:
+    #   - 9200:9200
+    environment:
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+      discovery.type: "single-node"
+    # volumes: 
+    #   - ./data/container_data/elasticserarch:/usr/share/elasticsearch/data
+    command: 
+      - bash 
+      - -c 
+      - |
+        /usr/local/bin/docker-entrypoint.sh & 
+        echo "Waiting for Elasticsearch to start ⏳"
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://localhost:9200/) -eq 000 ] ; do 
+          echo -e $$(date) " Elasticsearch listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://localhost:9200/) " (waiting for != 000)"
+          sleep 5 
+        done
+
+        curl -XPUT "http://localhost:9200/_template/kafkaconnect/" -H 'Content-Type: application/json' -d'
+          {
+            "index_patterns": "*",
+            "settings": { "number_of_shards": 1, "number_of_replicas": 0 },
+            "mappings": { "dynamic_templates": [
+                { "dates1": { "match": "date", "mapping": { "type": "date" } } },
+                { "dates2": { "match": "DATE", "mapping": { "type": "date" } } },
+                { "dates3": { "match": "*_TS", "mapping": { "type": "date" } } }
+            ] } }'        
+
+        sleep infinity
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.5.0
+    container_name: syslog_kibana
+    hostname: kibana
+    depends_on:
+      - elasticsearch
+    ports:
+      - 15601:5601
+    environment:
+      xpack.security.enabled: "false"
+      discovery.type: "single-node"

@@ -1,0 +1,18 @@
+= ksqlDB Twitter demo
+
+1. Get your API credentials from https://developer.twitter.com/
+2. Copy `credentials.properties.example` to `credentials.properties` and update it with your API credentials
+3. `docker-compose up -d`
+4. See <blog> for details. 
+
+ksqlDB CLI: 
+
+    docker exec -it ksqldb-cli bash -c 'ksql http://ksqldb-server:8088'
+
+Postgres CLI: 
+
+    docker exec -it postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+
+Neo4j GUI: 
+
+    http://localhost:7474/browser/

@@ -1,0 +1,109 @@
+SET 'auto.offset.reset' = 'earliest';
+
+CREATE STREAM MQTT_RAW
+    (TID VARCHAR, 
+     BATT INTEGER, 
+     LON DOUBLE, 
+     LAT DOUBLE, 
+     TST BIGINT, 
+     ALT INTEGER, 
+     COG INTEGER, 
+     VEL INTEGER,
+     P DOUBLE,
+     BS INTEGER,
+     CONN VARCHAR,
+     ACC INTEGER,
+     T VARCHAR, 
+     VAC INTEGER,
+     INREGIONS VARCHAR,
+     TYPE VARCHAR) 
+WITH (KAFKA_TOPIC = 'data_mqtt', VALUE_FORMAT='JSON');
+
+SELECT ROWKEY, SPLIT(ROWKEY, '/')[2] AS WHO FROM MQTT_RAW EMIT CHANGES LIMIT 5;
+
+SELECT LAT, LON, CAST(LAT AS VARCHAR) + ',' + CAST(LON AS VARCHAR) AS LOCATION FROM MQTT_RAW EMIT CHANGES LIMIT 5;
+
+SELECT BS FROM MQTT_RAW EMIT CHANGES LIMIT 10;
+
+SELECT BS, CASE WHEN BS=0 THEN 'Unknown' 
+                   WHEN BS=1 THEN 'Unplugged'
+                   WHEN BS=2 THEN 'Charging'
+                   WHEN BS=3 THEN 'Full' 
+                   ELSE '[unknown]'
+              END AS BATTERY_STATUS, BATT FROM MQTT_RAW EMIT CHANGES LIMIT 10;
+
+CREATE STREAM RUNNER_LOCATION_00
+    WITH (VALUE_FORMAT='AVRO') AS
+    SELECT SPLIT(ROWKEY, '/')[2] AS WHO
+            , TST * 1000 AS EVENT_TIME
+            , CASE WHEN LAT IS NULL OR LON IS NULL THEN CAST(NULL AS VARCHAR) 
+            	   ELSE CAST(LAT AS VARCHAR) +','+CAST(LON AS VARCHAR) 
+              END AS LOCATION
+            , ACC AS LOCATION_ACCURACY_M
+            , ALT AS ALTITUDE_M
+            , BATT AS BATTERY_PCT
+            , CASE WHEN BS=0 THEN 'Unknown' 
+                   WHEN BS=1 THEN 'Unplugged'
+                   WHEN BS=2 THEN 'Charging'
+                   WHEN BS=3 THEN 'Full' 
+                   ELSE '[unknown]'
+              END AS BATTERY_STATUS
+            , COG AS COURSE_OVER_GROUN
+            , CASE WHEN T='p' THEN 'ping issued randomly by background task'
+                   WHEN T='c' THEN 'circular region enter/leave event'
+                   WHEN T='b' THEN 'beacon region enter/leave event'
+                   WHEN T='r' THEN 'response to a reportLocation cmd message'
+                   WHEN T='u' THEN 'manual publish requested by the user'
+                   WHEN T='t' THEN 'timer based publish in move'
+                   WHEN T='v' THEN 'updated by Settings/Privacy/Locations Services/System Services/Frequent Locations monitoring'
+                   ELSE '[unknown]'
+              END AS REPORT_TRIGGER
+            , TID AS TRACKER_ID
+            , VAC AS VERTICAL_ACCURACY_M
+            , VEL AS VELOCITY_KMH
+            , P AS PRESSURE_KPA
+            , CASE WHEN CONN='w' THEN 'WiFI'
+                   WHEN CONN='o' THEN 'Offline'
+                   WHEN CONN='m' THEN 'Mobile'
+                   ELSE '[unknown]'
+              END AS CONNECTIVITY_STATUS
+            , INREGIONS AS REGIONS
+            , LAT, LON
+        FROM MQTT_RAW;
+
+SELECT WHO, REPORT_TRIGGER, CONNECTIVITY_STATUS, BATTERY_PCT, BATTERY_STATUS FROM RUNNER_LOCATION_00 EMIT CHANGES LIMIT 10;
+SELECT ROWTIME, EVENT_TIME FROM RUNNER_LOCATION_00 EMIT CHANGES;
+
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss'), TIMESTAMPTOSTRING(EVENT_TIME, 'yyyy-MM-dd HH:mm:ss') FROM RUNNER_LOCATION_00 EMIT CHANGES;
+
+CREATE STREAM RUNNER_LOCATION 
+    WITH (TIMESTAMP='EVENT_TIME') AS
+    SELECT *
+    FROM RUNNER_LOCATION_00
+PARTITION BY WHO;
+
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss'), TIMESTAMPTOSTRING(EVENT_TIME, 'yyyy-MM-dd HH:mm:ss') FROM RUNNER_LOCATION EMIT CHANGES;
+
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss'), WHO, REPORT_TRIGGER, CONNECTIVITY_STATUS, BATTERY_PCT, BATTERY_STATUS FROM RUNNER_LOCATION_00 EMIT CHANGES LIMIT 10;
+
+
+CREATE TABLE RUNNER_STATUS AS 
+    SELECT WHO, 
+           MIN(VELOCITY_KMH) AS MIN_SPEED, 
+           MAX(VELOCITY_KMH) AS MAX_SPEED, 
+           COUNT(*) AS NUM_EVENTS, 
+           MAX(ROWTIME) AS LAST_EVENT_TS,
+           MIN(GEO_DISTANCE(LAT, LON, 53.925915, -1.823168, 'KM')) AS DIST_TO_ILKLEY
+     FROM RUNNER_LOCATION 
+            WINDOW TUMBLING (SIZE 5 MINUTE) 
+    GROUP BY WHO;
+
+CREATE TABLE RUNNER_STATUS_ALL AS 
+    SELECT WHO, 
+           MIN(VELOCITY_KMH) AS MIN_SPEED, 
+           MAX(VELOCITY_KMH) AS MAX_SPEED, 
+           COUNT(*) AS NUM_EVENTS, 
+           MAX(ROWTIME) AS LAST_EVENT_TS,
+           MIN(GEO_DISTANCE(LAT, LON, 53.925915, -1.823168, 'KM')) AS DIST_TO_ILKLEY
+     FROM RUNNER_LOCATION 
+    GROUP BY WHO;

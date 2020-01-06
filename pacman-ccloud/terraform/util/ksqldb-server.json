@@ -1,0 +1,93 @@
+[
+  {
+    "essential": true,
+    "image": "${ksqldb_server_image}",
+    "name": "ksqldb_server",
+    "portMappings": [
+      {
+        "hostPort": 8088,
+        "protocol": "tcp",
+        "containerPort": 8088
+      }
+    ],
+    "environment": [
+      {
+        "name": "KSQL_KSQL_SERVICE_ID",
+        "value": "ksql_server_custom"
+      },
+      {
+        "name": "KSQL_BOOTSTRAP_SERVERS",
+        "value": "${bootstrap_server}"
+      },
+      {
+        "name": "KSQL_LISTENERS",
+        "value": "http://0.0.0.0:8088"
+      },
+      {
+        "name": "KSQL_SASL_MECHANISM",
+        "value": "PLAIN"
+      },
+      {
+        "name": "KSQL_SECURITY_PROTOCOL",
+        "value": "SASL_SSL"
+      },
+      {
+        "name": "KSQL_SASL_JAAS_CONFIG",
+        "value": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${cluster_api_key}\" password=\"${cluster_api_secret}\";"
+      },
+      {
+        "name": "KSQL_KSQL_SCHEMA_REGISTRY_URL",
+        "value": "${schema_registry_url}"
+      },
+      {
+        "name": "KSQL_KSQL_SCHEMA_REGISTRY_BASIC_AUTH_CREDENTIALS_SOURCE",
+        "value": "USER_INFO"
+      },
+      {
+        "name": "KSQL_KSQL_SCHEMA_REGISTRY_BASIC_AUTH_USER_INFO",
+        "value": "${schema_registry_basic_auth}"
+      },
+      {
+        "name": "KSQL_KSQL_INTERNAL_TOPIC_REPLICAS",
+        "value": "3"
+      },
+      {
+        "name": "KSQL_KSQL_STREAMS_REPLICATION_FACTOR",
+        "value": "3"
+      },
+      {
+        "name": "KSQL_KSQL_SINK_REPLICAS",
+        "value": "3"
+      },
+      {
+        "name": "KSQL_KSQL_LOGGING_PROCESSING_TOPIC_REPLICATION_FACTOR",
+        "value": "3"
+      },
+      {
+        "name": "KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE",
+        "value": "true"
+      },
+      {
+        "name": "KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE",
+        "value": "true"
+      },
+      {
+        "name": "KSQL_KSQL_STREAMS_NUM_STREAM_THREADS",
+        "value": "4"
+      },
+      {
+        "name": "KSQL_KSQL_STREAMS_CACHE_MAX_BYTES_BUFFERING",
+        "value": "20000000"
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-create-group": "true",
+        "awslogs-group": "/ecs/ksqldb_server",
+        "awslogs-region": "${logs_region}",
+        "awslogs-stream-prefix": "ecs"
+      }
+    }
+  }
+]

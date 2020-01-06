@@ -1,0 +1,19 @@
+{
+    "name": "SolaceSourceConnector",
+    "connector.class": "io.confluent.connect.solace.SolaceSourceConnector",
+    "tasks.max": "1",
+    "kafka.topic": "from-solace-messages",
+    "solace.host": "smf://solace:55555",
+    "solace.username": "admin",
+    "solace.password": "admin",
+    "jms.destination.type": "queue",
+    "jms.destination.name": "connector-quickstart",
+    "key.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "key.converter.schema.registry.url": "http://schema-registry:8081",
+    "value.converter.schema.registry.url": "http://schema-registry:8081",
+    "schema.registry.url": "http://schema-registry:8081",
+    "confluent.topic.bootstrap.servers": "broker:29092",
+    "confluent.topic.replication.factor": "1"
+  }
+  
