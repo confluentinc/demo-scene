@@ -1,0 +1,113 @@
+curl -i -X PUT -H  "Content-Type:application/json" \
+    http://localhost:8083/connectors/source-rabbitmq-string_converter-00/config \
+    -d '{
+        "connector.class" : "io.confluent.connect.rabbitmq.RabbitMQSourceConnector",
+        "kafka.topic" : "rabbit-test-string-00",
+        "rabbitmq.queue" : "test-queue-01",
+        "rabbitmq.username": "guest",
+        "rabbitmq.password": "guest",
+        "rabbitmq.host": "rabbitmq",
+        "rabbitmq.port": "5672",
+        "rabbitmq.virtual.host": "/",
+        "confluent.license":"",
+        "confluent.topic.bootstrap.servers":"kafka:29092",
+        "confluent.topic.replication.factor":1,
+        "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+        "key.converter": "org.apache.kafka.connect.storage.StringConverter"
+    } '
+
+[B@10c495e9
+
+----    
+
+curl -i -X PUT -H  "Content-Type:application/json" \
+    http://localhost:8083/connectors/source-rabbitmq-avro_converter-00/config \
+    -d '{
+        "connector.class" : "io.confluent.connect.rabbitmq.RabbitMQSourceConnector",
+        "kafka.topic" : "rabbit-test-avro-00",
+        "rabbitmq.queue" : "test-queue-01",
+        "rabbitmq.username": "guest",
+        "rabbitmq.password": "guest",
+        "rabbitmq.host": "rabbitmq",
+        "rabbitmq.port": "5672",
+        "rabbitmq.virtual.host": "/",
+        "confluent.license":"",
+        "confluent.topic.bootstrap.servers":"kafka:29092",
+        "confluent.topic.replication.factor":1,
+        "value.converter": "io.confluent.connect.avro.AvroConverter",
+        "value.converter.schema.registry.url": "http://schema-registry:8081",
+        "key.converter": "org.apache.kafka.connect.storage.StringConverter"             
+    } '
+
+"¶\u0001{\"transaction\": \"PAYMENT\", \"amount\": \"$182.3\", \"timestamp\": \"Wed 8 Jan 2020 13:22:19 GMT\" }"
+
+----
+
+
+curl -i -X PUT -H  "Content-Type:application/json" \
+    http://localhost:8083/connectors/source-rabbitmq-json_converter-00/config \
+    -d '{
+        "connector.class" : "io.confluent.connect.rabbitmq.RabbitMQSourceConnector",
+        "kafka.topic" : "rabbit-test-json-00",
+        "rabbitmq.queue" : "test-queue-01",
+        "rabbitmq.username": "guest",
+        "rabbitmq.password": "guest",
+        "rabbitmq.host": "rabbitmq",
+        "rabbitmq.port": "5672",
+        "rabbitmq.virtual.host": "/",
+        "confluent.license":"",
+        "confluent.topic.bootstrap.servers":"kafka:29092",
+        "confluent.topic.replication.factor":1,
+        "value.converter" : "org.apache.kafka.connect.json.JsonConverter",
+        "value.converter.schemas.enable" : "true",
+        "key.converter" : "org.apache.kafka.connect.storage.StringConverter"
+    } '
+
+{"schema":{"type":"bytes","optional":false},"payload":"eyJ0cmFuc2FjdGlvbiI6ICJQQVlNRU5UIiwgImFtb3VudCI6ICIkMTg2LjciLCAidGltZXN0YW1wIjogIldlZCA4IEphbiAyMDIwIDEyOjUzOjI3IEdNVCIgfQ=="}
+
+
+----
+
+
+curl -i -X PUT -H  "Content-Type:application/json" \
+    http://localhost:8083/connectors/source-rabbitmq-json_converter-01/config \
+    -d '{
+        "connector.class" : "io.confluent.connect.rabbitmq.RabbitMQSourceConnector",
+        "kafka.topic" : "rabbit-test-json-01",
+        "rabbitmq.queue" : "test-queue-01",
+        "rabbitmq.username": "guest",
+        "rabbitmq.password": "guest",
+        "rabbitmq.host": "rabbitmq",
+        "rabbitmq.port": "5672",
+        "rabbitmq.virtual.host": "/",
+        "confluent.license":"",
+        "confluent.topic.bootstrap.servers":"kafka:29092",
+        "confluent.topic.replication.factor":1,
+        "value.converter" : "org.apache.kafka.connect.json.JsonConverter",
+        "value.converter.schemas.enable" : "false",
+        "key.converter" : "org.apache.kafka.connect.storage.StringConverter"
+    } '
+
+"eyJ0cmFuc2FjdGlvbiI6ICJQQVlNRU5UIiwgImFtb3VudCI6ICIkNDcuMyIsICJ0aW1lc3RhbXAiOiAiV2VkIDggSmFuIDIwMjAgMTM6MDE6MjEgR01UIiB9"
+
+----
+
+curl -i -X PUT -H  "Content-Type:application/json" \
+    http://localhost:8083/connectors/source-rabbitmq-byte_converter-00/config \
+    -d '{
+        "connector.class" : "io.confluent.connect.rabbitmq.RabbitMQSourceConnector",
+        "kafka.topic" : "rabbit-test-byte-00",
+        "rabbitmq.queue" : "test-queue-01",
+        "rabbitmq.username": "guest",
+        "rabbitmq.password": "guest",
+        "rabbitmq.host": "rabbitmq",
+        "rabbitmq.port": "5672",
+        "rabbitmq.virtual.host": "/",
+        "confluent.license":"",
+        "confluent.topic.bootstrap.servers":"kafka:29092",
+        "confluent.topic.replication.factor":1,
+        "value.converter": "org.apache.kafka.connect.converters.ByteArrayConverter",
+        "key.converter": "org.apache.kafka.connect.storage.StringConverter"
+    } '
+
+{"transaction": "PAYMENT", "amount": "$173.3", "timestamp": "Wed 8 Jan 2020 12:28:49 GMT" }
