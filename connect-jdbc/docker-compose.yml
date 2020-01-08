@@ -3,12 +3,14 @@ version: '2'
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:5.4.0-beta1
+    container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
     image: confluentinc/cp-enterprise-kafka:5.4.0-beta1
+    container_name: kafka
     depends_on:
       - zookeeper
     ports:
@@ -34,6 +36,7 @@ services:
 
   schema-registry:
     image: confluentinc/cp-schema-registry:5.4.0-beta1
+    container_name: schema-registry
     ports:
       - 8081:8081
     depends_on:
@@ -43,8 +46,9 @@ services:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
-  kafka-connect:
+  kafka-connect-01:
     image: confluentinc/cp-kafka-connect:5.4.0-beta1
+    container_name: kafka-connect-01
     depends_on:
       - zookeeper
       - kafka
@@ -52,8 +56,10 @@ services:
     ports:
       - 8083:8083
     environment:
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
       CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
       CONNECT_REST_PORT: 8083
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-01"
       CONNECT_GROUP_ID: compose-connect-group
       CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
       CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-offsets
@@ -64,7 +70,6 @@ services:
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
       CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
       CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
@@ -92,29 +97,31 @@ services:
         sleep infinity &
         /etc/confluent/docker/run 
 
-  ksql-server:
-    image: confluentinc/cp-ksql-server:5.4.0-beta1
+  ksqldb-server:
+    image: confluentinc/ksqldb-server:0.6.0
+    hostname: ksqldb-server
+    container_name: ksqldb-server
     depends_on:
       - kafka
-      - schema-registry
+      - kafka-connect-01
+    ports:
+      - "8088:8088"
     environment:
-      KSQL_CUB_KAFKA_TIMEOUT: 120
-      KSQL_BOOTSTRAP_SERVERS: kafka:29092
       KSQL_LISTENERS: http://0.0.0.0:8088
+      KSQL_BOOTSTRAP_SERVERS: kafka:29092
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+      KSQL_KSQL_CONNECT_URL: http://kafka-connect-01:8083
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
 
-  ksql-cli:
-    # *-----------------------------*
-    # To connect to the KSQL CLI: 
-    #   docker-compose exec ksql-cli ksql http://ksql-server:8088
-    # *-----------------------------*
-    image: confluentinc/cp-ksql-cli:5.4.0-beta1
+  ksqldb-cli:
+    image: confluentinc/ksqldb-cli:0.6.0
+    container_name: ksqldb-cli
     depends_on:
-      - ksql-server
+      - ksqldb-server
     entrypoint: /bin/sh
     tty: true
-      
+
 # Other systems
   mysql:
     # *-----------------------------*
@@ -122,6 +129,7 @@ services:
     #   docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
     # *-----------------------------*
     image: mysql
+    container_name: mysql
     ports:
       - 3306:3306
     environment:
@@ -137,6 +145,7 @@ services:
     #   docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
     # *-----------------------------*
     image: postgres:11
+    container_name: postgres
     environment:
      - POSTGRES_USER=postgres
      - POSTGRES_PASSWORD=postgres
@@ -149,6 +158,7 @@ services:
     #   docker-compose exec mssql bash -c '/opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -U sa -P $SA_PASSWORD'
     # *-----------------------------*
     image: mcr.microsoft.com/mssql/server:2017-latest
+    container_name: mssql
     environment: 
       - SA_PASSWORD=Admin123
       - ACCEPT_EULA=Y
@@ -189,6 +199,7 @@ services:
     #   docker-compose exec oracle bash -c 'sleep 1;rlwrap sqlplus sys/$ORACLE_PWD@localhost:1521/ORCLCDB as sysdba'
     # *-----------------------------*
     image: oracle/database:12.2.0.1-ee
+    container_name: oracle
     environment:
       - ORACLE_PWD=Admin123
     ports:

@@ -20,35 +20,35 @@ The associated blog article can be found at https://www.confluent.io/blog/kafka-
 +
 [source,bash]
 ----
-docker-compose exec ksql-cli ksql http://ksql-server:8088
+docker exec --tty --interactive ksql-cli ksql http://ksql-server:8088
 ----
 
 * MySQL
 +
 [source,bash]
 ----
-docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
+docker exec --tty --interactive mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
 ----
 
 * Postgres
 +
 [source,bash]
 ----
-docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+docker exec --tty --interactive postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
 ----
 
 * Oracle
 +
 [source,bash]
 ----
-docker-compose exec oracle bash -c 'sqlplus sys/$ORACLE_PWD@localhost:1521/ORCLCDB as sysdba'
+docker exec --tty --interactive oracle bash -c 'sqlplus sys/$ORACLE_PWD@localhost:1521/ORCLCDB as sysdba'
 ----
 
 * MS SQL Server
 +
 [source,bash]
 ----
-docker-compose exec mssql bash -c '/opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -U sa -P $SA_PASSWORD'
+docker exec --tty --interactive mssql bash -c '/opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -U sa -P $SA_PASSWORD'
 ----
 
 
