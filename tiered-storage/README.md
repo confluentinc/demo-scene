@@ -4,7 +4,7 @@ This demo showcases Confluent's Tiered Storage capability built into Confluent S
 
 In Confluent Platform 5.4, Tiered Storage is in preview and are not intended for production. There are several limitations of the preview since not all features are yet supported. For more information:
 
-* [Link to documentation (PR for now)](https://github.com/confluentinc/docs/pull/2884/files)
+* [Link to documentation](https://docs.confluent.io/current/kafka/tiered-storage-preview.html)
 
 ## Concepts
 
@@ -21,11 +21,7 @@ In Confluent Platform 5.4, Tiered Storage is in preview and are not intended for
 
 ### Start a Broker with Tiered Storage Enabled
 
-1. Build the docker image
-
-`$ docker build -it tiered-storage-demo /bin/bash`
-
-2. Set the following environment variables
+1. Set the following environment variables
 
 ```
 export AWS_ACCESS_KEY_ID=<AWS ACCESS KEY>
@@ -34,10 +30,8 @@ export BUCKET_NAME=<S3 BUCKET NAME>
 export REGION=<REGION>
 ```
 
-3. Run docker compose
+2. Run docker compose
 `$ docker-compose up`
-
-
 
 
 ## Create a Topic
@@ -136,6 +130,3 @@ Completed partition deletion for cnHmnjURSwuq_yqRvv6Xow-test-topic-0 (kafka.tier
 Stopping deletion process for cnHmnjURSwuq_yqRvv6Xow-test-topic-0 after task completion (kafka.tier.tasks.delete.DeletionTask)
 Completed deleting segments for cnHmnjURSwuq_yqRvv6Xow-test-topic-0 (kafka.tier.TierDeletedPartitionsCoordinator)
 ```
-
-
-Docs: https://github.com/confluentinc/docs/pull/2884/files
