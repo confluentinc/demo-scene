@@ -24,14 +24,16 @@ In Confluent Platform 5.4, Tiered Storage is in preview and are not intended for
 1. Set the following environment variables
 
 ```
-export AWS_ACCESS_KEY_ID=<AWS ACCESS KEY>
-export AWS_SECRET_ACCESS_KEY=<AWS SECRET KEY>
+export AWS_ACCESS_KEY_ID=<YOUR AWS ACCESS KEY>
+export AWS_SECRET_ACCESS_KEY=<YOUR AWS SECRET>
 export BUCKET_NAME=<S3 BUCKET NAME>
-export REGION=<REGION>
+export REGION=<S3 REGION>
 ```
 
 2. Run docker compose
-`$ docker-compose up`
+```
+docker-compose up
+```
 
 
 ## Create a Topic
@@ -39,7 +41,7 @@ export REGION=<REGION>
 To observe the results of the demo within a reasonable time frame, we create a topic with a short hotset (1 minute), a short retention period (10 minutes), and smaller log segments (100 MB). These configurations were passed to the broker through the [docker-compose.yml](docker-compose.yml) file. Messages that are produced to this topic will be uploaded to the specified S3 bucket.
 
 ```
- kafka-topics \
+docker-compose exec broker kafka-topics \
     --bootstrap-server localhost:9092 \
     --create \
     --topic test-topic \
@@ -51,7 +53,7 @@ To observe the results of the demo within a reasonable time frame, we create a t
 After creating the topic, we should produce enough messages to the topic to ensure that log segments will fill to the 100MB limit and be uploaded to the S3 bucket.
 
 ```
-kafka-producer-perf-test --topic test-topic \
+docker-compose exec broker kafka-producer-perf-test --topic test-topic \
     --num-records 5000000 \
     --record-size 5000 \
     --throughput -1 \
@@ -89,7 +91,7 @@ Finalized UploadComplete(2569b931-7bed-462a-a048-413f27c43ea3) for VPTViNheT4mUB
 Because the topic has a short hotset period, log segments that are uploaded to the S3 bucket will not remain on disk for long. The log segments with the earliest offsets will start to be deleted from disk, since a copy of them resides in object storage. We can still consume these messages that now reside only in the S3 bucket. We can create a consumer that is configured to read messages from the beginning of the topic:
 
 ```
-kafka-consumer-perf-test --topic multi-region-async \
+docker-compose exec broker kafka-consumer-perf-test --topic test-topic \
     --messages 5000 \
     --threads 1 \
     --broker-list localhost:9092 \
@@ -112,7 +114,7 @@ The log segment files will remain in the S3 bucket for the duration of the topic
 Alternatively, if we delete the topic from the broker, the broker will delete the topic's log segments from the S3 bucket before the retention period has finished. The broker scans for log segments that need to be deleted on a time interval, which was configured to 5 minutes for this demo (default interval is 3 hours). We can run the following command to delete the topic:
 
 ```
- kafka-topics \
+docker-compose exec broker kafka-topics \
     --bootstrap-server localhost:9092 \
     --delete \
     --topic test-topic
