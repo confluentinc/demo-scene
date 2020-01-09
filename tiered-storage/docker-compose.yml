@@ -1,0 +1,42 @@
+version: '3'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:5.4.0
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+        ZOOKEEPER_SERVER_ID: 1
+        ZOOKEEPER_CLIENT_PORT: 2181
+        ZOOKEEPER_SERVERS: zookeeper:2888:3888
+
+  broker:
+    image: confluentinc/cp-server:5.4.0
+    hostname: broker
+    container_name: broker
+    ports:
+      - "9091:9091"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_CONFLUENT_TIER_FEATURE: 'true'
+      KAFKA_CONFLUENT_TIER_ENABLE: 'true'
+      KAFKA_CONFLUENT_TIER_BACKEND: S3
+      KAFKA_CONFLUENT_TIER_S3_BUCKET: ${BUCKET_NAME}
+      KAFKA_CONFLUENT_TIER_S3_REGION: ${REGION}
+      KAFKA_CONFLUENT_TIER_S3_AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      KAFKA_CONFLUENT_TIER_S3_AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      KAFKA_CONFLUENT_TIER_LOCAL_HOTSET_MS: 60000 # hotset of 1 minute
+      KAFKA_CONFLUENT_TIER_TOPIC_DELETE_CHECK_INTERVAL: 300000 # check every 5 min for topic deletion
+      KAFKA_CONFLUENT_TIER_METADATA_REPLICATION_FACTOR: 1 # only one broker, so replication factor is one
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://broker:19091,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9091
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LOG_SEGMENT_BYTES: 104857600 # 100 MB log segments
+      KAFKA_LOG_RETENTION_MS: 600000 # 10 minute retention
+      KAFKA_JMX_PORT: 8091
+    depends_on:
+      - zookeeper
