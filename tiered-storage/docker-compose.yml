@@ -2,7 +2,7 @@ version: '3'
 
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.4.0-SNAPSHOT
+    image: confluentinc/cp-zookeeper:5.4.0
     hostname: zookeeper
     container_name: zookeeper
     ports:
@@ -13,7 +13,7 @@ services:
         ZOOKEEPER_SERVERS: zookeeper:2888:3888
 
   broker:
-    image: confluentinc/cp-server:5.4.0-SNAPSHOT
+    image: confluentinc/cp-server:5.4.0
     hostname: broker
     container_name: broker
     ports:
