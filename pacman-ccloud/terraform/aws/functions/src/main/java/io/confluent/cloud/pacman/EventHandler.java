@@ -39,15 +39,23 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
             (Map<String, Object>) request.get(HEADERS_KEY);
 
         if (requestHeaders.containsKey(ORIGIN_KEY)) {
+
             String origin = (String) requestHeaders.get(ORIGIN_KEY);
             if (origin.equals(ORIGIN_ALLOWED)) {
                 if (request.containsKey(QUERY_PARAMS_KEY) && request.containsKey(BODY_KEY)) {
         
                     String event = (String) request.get(BODY_KEY);
-                    Map<String, String> queryParams =
-                        (Map<String, String>) request.get(QUERY_PARAMS_KEY);
+                    Map<String, String> queryParams = (Map<String, String>)
+                        request.get(QUERY_PARAMS_KEY);
                     
                     if (event != null && queryParams != null) {
+
+                        final Map<String, Object> responseHeaders = new HashMap<>();
+                        responseHeaders.put("Access-Control-Allow-Headers", "*");
+                        responseHeaders.put("Access-Control-Request-Methods", POST_METHOD);
+                        responseHeaders.put("Access-Control-Allow-Origin", ORIGIN_ALLOWED);
+                        response.put(HEADERS_KEY, responseHeaders);
+
                         String topic = queryParams.get(TOPIC_KEY);
                         producer.send(new ProducerRecord<String, String>(topic, event), new Callback() {
                             public void onCompletion(final RecordMetadata metadata, final Exception ex) {
@@ -59,13 +67,13 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
                             }
                         });
                         producer.flush();
+
                     }
         
                 }
                 
             }
         }
-
         return response;
 
     }
@@ -75,6 +83,7 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
     private static final String ORIGIN_KEY = "origin";
     private static final String HEADERS_KEY = "headers";
     private static final String QUERY_PARAMS_KEY = "queryStringParameters";
+    private static final String POST_METHOD = "POST";
     private static final String USER_GAME_TOPIC = "USER_GAME";
     private static final String USER_LOSSES_TOPIC = "USER_LOSSES";
     private static final String BOOTSTRAP_SERVERS = System.getenv("BOOTSTRAP_SERVERS");
