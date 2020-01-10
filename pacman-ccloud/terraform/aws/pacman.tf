@@ -107,6 +107,7 @@ resource "aws_s3_bucket_object" "js_files" {
 data "template_file" "game_js" {
   template = file("../../pacman/game/js/game.js")
   vars = {
+    ksqldb_query_api = "http://${aws_alb.ksqldb_lbr.dns_name}/query"
     event_handler_api = "${aws_api_gateway_deployment.event_handler_v1.invoke_url}${aws_api_gateway_resource.event_handler_resource.path}"
     cloud_provider = "AWS"
   }

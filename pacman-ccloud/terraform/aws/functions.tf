@@ -23,31 +23,31 @@ resource "aws_api_gateway_resource" "event_handler_resource" {
   path_part = "event"
 }
 
-resource "aws_api_gateway_method" "post_method" {
+resource "aws_api_gateway_method" "event_handler_post_method" {
   rest_api_id = aws_api_gateway_rest_api.event_handler_api.id
   resource_id = aws_api_gateway_resource.event_handler_resource.id
   http_method = "POST"
   authorization = "NONE"
 }
 
-resource "aws_api_gateway_method_response" "post_method_response" {
+resource "aws_api_gateway_integration" "event_handler_post_integration" {
   rest_api_id = aws_api_gateway_rest_api.event_handler_api.id
   resource_id = aws_api_gateway_resource.event_handler_resource.id
-  http_method = aws_api_gateway_method.post_method.http_method
-  status_code = "200"
-}
-
-resource "aws_api_gateway_integration" "post_integration" {
-  rest_api_id = aws_api_gateway_rest_api.event_handler_api.id
-  resource_id = aws_api_gateway_resource.event_handler_resource.id
-  http_method = aws_api_gateway_method.post_method.http_method
-  integration_http_method = aws_api_gateway_method.post_method.http_method
+  http_method = aws_api_gateway_method.event_handler_post_method.http_method
+  integration_http_method = aws_api_gateway_method.event_handler_post_method.http_method
   uri = aws_lambda_function.event_handler_function.invoke_arn
   type = "AWS_PROXY"
 }
 
+resource "aws_api_gateway_method_response" "event_handler_post_method_response" {
+  rest_api_id = aws_api_gateway_rest_api.event_handler_api.id
+  resource_id = aws_api_gateway_resource.event_handler_resource.id
+  http_method = aws_api_gateway_method.event_handler_post_method.http_method
+  status_code = "200"
+}
+
 resource "aws_api_gateway_deployment" "event_handler_v1" {
-  depends_on = [aws_api_gateway_integration.post_integration]
+  depends_on = [aws_api_gateway_integration.event_handler_post_integration]
   rest_api_id = aws_api_gateway_rest_api.event_handler_api.id
   stage_name = "v1"
 }

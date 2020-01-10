@@ -1,3 +1,5 @@
+const PROVIDER = "${cloud_provider}";
+
 var KEYDOWN = false;
 var PAUSE = false;
 var LOCK = false;
@@ -32,7 +34,45 @@ function blinkHelp() {
 	}
 }
 
-function initGame(newgame) { 
+function initGame(newgame) {
+
+	if (PROVIDER == "GCP" || PROVIDER == "AZR") {
+		doInitGame(newgame, 0, 0);
+		return;
+	}
+
+	var highestScore = 0;
+	var highestLevel = 0;
+
+	var ksqlQuery = {};
+	ksqlQuery.ksql =
+		"SELECT HIGHEST_SCORE, HIGHEST_LEVEL " +
+		"FROM STATS_PER_USER WHERE ROWKEY = '" +
+		window.name + "';"
+
+	var request = new XMLHttpRequest();
+    request.onreadystatechange = function() {
+        if (this.readyState == 4) {
+			if (this.status == 200) {
+				var result = JSON.parse(this.responseText);
+				if (result[1] != undefined || result[1] != null) {
+					var row = result[1].row;
+					highestScore = row.columns[0];
+					highestLevel = row.columns[1];
+				}
+			}
+			doInitGame(newgame, highestScore, highestLevel);
+		}
+	};
+	
+	request.open('POST', '${ksqldb_query_api}', true);
+	request.setRequestHeader('Accept', 'application/vnd.ksql.v1+json');
+	request.setRequestHeader('Content-Type', 'application/vnd.ksql.v1+json');
+	request.send(JSON.stringify(ksqlQuery));
+	
+}
+
+function doInitGame(newgame, highestScore, highestLevel) {
 
 	if (newgame) { 
 		stopPresentation();
@@ -43,7 +83,8 @@ function initGame(newgame) {
 
 		$('#help').fadeOut("slow");
 		
-		score(0);
+		score(highestScore);
+		LEVEL = highestLevel;
 		clearMessage();
 		$("#home").hide();
 		$("#panel").show();
@@ -75,28 +116,21 @@ function initGame(newgame) {
 		ctx.fill();
 		ctx.closePath();
 	}
-
 	initBoard();
 	drawBoard();
 	drawBoardDoor();
-	
 	initPaths();
 	drawPaths();
-	
 	initBubbles();
 	drawBubbles();
-	
 	initFruits();
-	
 	initPacman();
 	drawPacman();
-	
 	initGhosts();
 	drawGhosts();
-	
 	lifes();
-	
 	ready();
+
 }
 
 function win() { 
@@ -384,7 +418,6 @@ function score(s, type) {
 
 function produceRecord(topic, record) {
 
-	const PROVIDER = "${cloud_provider}";
 	var contentType = "application/json";
 	var url = "${event_handler_api}?topic=" + topic;
 	var json = JSON.stringify(record);

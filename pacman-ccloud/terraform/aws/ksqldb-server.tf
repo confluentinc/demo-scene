@@ -64,6 +64,9 @@ data "template_file" "ksqldb_server_definition" {
     ksqldb_server_image = var.ksqldb_server_image
     logs_region = local.region
     global_prefix = var.global_prefix
+    access_control_allow_origin = "http://${aws_s3_bucket.pacman.website_endpoint}"
+    access_control_allow_methods = "OPTIONS,POST"
+    access_control_allow_headers = "*"
   }
 }
 
@@ -80,7 +83,7 @@ resource "aws_ecs_task_definition" "ksqldb_server_task" {
 
 resource "aws_ecs_service" "ksqldb_server_service" {
   depends_on = [
-    aws_alb_listener.listener,
+    aws_alb_listener.ksqldb_lbr_listener,
     aws_nat_gateway.default
   ]
   name = "${var.global_prefix}-ksqldb-server-service"
@@ -93,7 +96,7 @@ resource "aws_ecs_service" "ksqldb_server_service" {
     subnets = aws_subnet.private_subnet[*].id
   }
   load_balancer {
-    target_group_arn = aws_alb_target_group.ksqldb_server_target_group.id
+    target_group_arn = aws_alb_target_group.ksqldb_target_group.id
     container_name = "ksqldb_server"
     container_port = "8088"
   }
@@ -179,10 +182,10 @@ resource "aws_cloudwatch_metric_alarm" "ksqldb_server_cpu_low_alarm" {
 }
 
 ###########################################
-################ ksqlDB LBR ###############
+########### ksqlDB Load Balancer ##########
 ###########################################
 
-resource "aws_alb" "ksqldb_server" {
+resource "aws_alb" "ksqldb_lbr" {
   name = "pacman${random_string.random_string.result}-ksqldb"
   subnets = aws_subnet.public_subnet[*].id
   security_groups = [aws_security_group.load_balancer.id]
@@ -191,7 +194,7 @@ resource "aws_alb" "ksqldb_server" {
   }
 }
 
-resource "aws_alb_target_group" "ksqldb_server_target_group" {
+resource "aws_alb_target_group" "ksqldb_target_group" {
   name = "${var.global_prefix}-ksdb-target-group"
   port = "8088"
   protocol = "HTTP"
@@ -207,12 +210,12 @@ resource "aws_alb_target_group" "ksqldb_server_target_group" {
   }
 }
 
-resource "aws_alb_listener" "listener" {
-  load_balancer_arn = aws_alb.ksqldb_server.arn
+resource "aws_alb_listener" "ksqldb_lbr_listener" {
+  load_balancer_arn = aws_alb.ksqldb_lbr.arn
   protocol = "HTTP"
   port = "80"
   default_action {
-    target_group_arn = aws_alb_target_group.ksqldb_server_target_group.arn
+    target_group_arn = aws_alb_target_group.ksqldb_target_group.arn
     type = "forward"
   }
 }
