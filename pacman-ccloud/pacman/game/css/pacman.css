@@ -36,7 +36,7 @@ body {
 }
 
 
-#score, #highscore  { 
+#score, #highscore, #level  { 
 	position: absolute;
 	display: inline;
 	top: 70px;
@@ -44,10 +44,19 @@ body {
 	padding: 0px;
 	width: 160px;
 }
-#highscore { 
-	left: 180px;
+#score { 
+	left: 0px;
+	width: 120px;
 }
-#score h2, #score span, #highscore h2, #highscore span { 
+#highscore { 
+	left: 150px;
+	width: 150px;
+}
+#level {
+	left: 350px;
+	width: 50px;
+}
+#score h2, #score span, #highscore h2, #highscore span, #level h2, #level span { 
 	display: block;
 	text-transform: uppercase;
 	font-weight: normal;

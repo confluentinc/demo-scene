@@ -88,7 +88,8 @@ function doInitGame(newGame, highestScore, highestLevel) {
 		
 		score(highestScore);
 		LEVEL = highestLevel;
-		$('#score h2').html(LEVEL + "UP");
+		$('#level span').html(LEVEL + "UP");
+
 		clearMessage();
 		$("#home").hide();
 		$("#panel").show();
@@ -185,8 +186,8 @@ function nextLevel() {
 	TIME_LIFE = 0;
 	TIME_FRUITS = 0;
 
-	$('#score h2').html(LEVEL + "UP");
-	
+	$('#level span').html(LEVEL + "UP");
+
 }
 
 
