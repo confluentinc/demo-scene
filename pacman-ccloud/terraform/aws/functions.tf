@@ -151,7 +151,7 @@ resource "aws_lambda_function" "event_handler_function" {
     null_resource.build_functions,
     aws_iam_role.event_handler_role]
   function_name = "event_handler"
-  filename = "functions/deploy/aws-event-handler-1.0.jar"
+  filename = "functions/deploy/aws-functions-1.0.jar"
   handler = "io.confluent.cloud.pacman.EventHandler"
   role = aws_iam_role.event_handler_role.arn
   runtime = "java11"

@@ -6,4 +6,4 @@ mkdir -p deploy
 mvn clean
 mvn compile
 mvn package
-mv target/aws-event-handler-1.0.jar deploy/aws-event-handler-1.0.jar
+mv target/aws-functions-1.0.jar deploy/aws-functions-1.0.jar
