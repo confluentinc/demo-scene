@@ -34,15 +34,18 @@ function blinkHelp() {
 	}
 }
 
-function initGame(newgame) {
-
-	if (PROVIDER == "GCP" || PROVIDER == "AZR") {
-		doInitGame(newgame, 0, 0);
-		return;
-	}
+function initGame(newGame) {
 
 	var highestScore = 0;
 	var highestLevel = 0;
+
+	// Temporary workaround for GCP and Azure
+	// while their implementations are not using
+	// ksqlDB and thus don't support pull queries.
+	if (PROVIDER == "GCP" || PROVIDER == "AZR") {
+		doInitGame(newGame, highestScore, highestLevel);
+		return;
+	}
 
 	var ksqlQuery = {};
 	ksqlQuery.ksql =
@@ -61,7 +64,7 @@ function initGame(newgame) {
 					highestLevel = row.columns[1];
 				}
 			}
-			doInitGame(newgame, highestScore, highestLevel);
+			doInitGame(newGame, highestScore, highestLevel);
 		}
 	};
 	
@@ -72,9 +75,9 @@ function initGame(newgame) {
 	
 }
 
-function doInitGame(newgame, highestScore, highestLevel) {
+function doInitGame(newGame, highestScore, highestLevel) {
 
-	if (newgame) { 
+	if (newGame) { 
 		stopPresentation();
 		stopTrailer();
 	
