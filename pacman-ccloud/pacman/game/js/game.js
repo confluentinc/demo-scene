@@ -38,7 +38,7 @@ function blinkHelp() {
 function initGame(newGame) {
 
 	var lastScore = 0;
-	var lastLevel = 1;
+	var lastLevel = 0;
 
 	// Temporary workaround for GCP and Azure
 	// while their implementations are not using
@@ -63,9 +63,6 @@ function initGame(newGame) {
 					var row = result[1].row;
 					lastScore = row.columns[0];
 					lastLevel = row.columns[1];
-					if (lastLevel == 0) {
-						lastLevel = 1;
-					}
 				}
 			}
 			doInitGame(newGame, lastScore, lastLevel);
@@ -81,8 +78,8 @@ function initGame(newGame) {
 function doInitGame(newGame, lastScore, lastLevel) {
 
 	// Retrieve the highest score so the current
-	// player knows how far behind he/she is when
-	// compared to the best player.
+	// player knows how far behind he/she might
+	// be if compared to the best player.
 	var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (this.readyState == 4) {
@@ -120,6 +117,9 @@ function doInitGame(newGame, lastScore, lastLevel) {
 		
 		score(lastScore);
 		LEVEL = lastLevel;
+		if (LEVEL == 0) {
+			LEVEL = 1;
+		}
 		$('#level span').html(LEVEL + "UP");
 
 		clearMessage();
