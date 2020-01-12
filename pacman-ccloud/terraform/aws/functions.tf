@@ -1,3 +1,7 @@
+###########################################
+############ Common Artifacts #############
+###########################################
+
 resource "null_resource" "build_functions" {
   provisioner "local-exec" {
     command = "sh build.sh"
