@@ -38,7 +38,7 @@ function blinkHelp() {
 function initGame(newGame) {
 
 	var lastScore = 0;
-	var lastLevel = 0;
+	var lastLevel = 1;
 
 	// Temporary workaround for GCP and Azure
 	// while their implementations are not using
@@ -63,6 +63,9 @@ function initGame(newGame) {
 					var row = result[1].row;
 					lastScore = row.columns[0];
 					lastLevel = row.columns[1];
+					if (lastLevel == 0) {
+						lastLevel = 1;
+					}
 				}
 			}
 			doInitGame(newGame, lastScore, lastLevel);
