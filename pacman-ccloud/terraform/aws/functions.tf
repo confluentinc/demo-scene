@@ -94,6 +94,18 @@ resource "aws_api_gateway_method_response" "event_handler_options_method_respons
   }
 }
 
+resource "aws_api_gateway_integration_response" "event_handler_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.event_handler_api.id
+  resource_id = aws_api_gateway_resource.event_handler_resource.id
+  http_method = aws_api_gateway_method.event_handler_options_method.http_method
+  status_code = aws_api_gateway_method_response.event_handler_options_method_response.status_code
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'*'"
+    "method.response.header.Access-Control-Allow-Methods" = "'POST'"
+    "method.response.header.Access-Control-Allow-Origin" = "'http://${aws_s3_bucket.pacman.website_endpoint}'"
+  }
+}
+
 ###########################################
 ######### Event Handler Function ##########
 ###########################################
