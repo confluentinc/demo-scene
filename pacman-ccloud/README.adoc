@@ -29,7 +29,7 @@ As mentioned before, the application is based on clusters running on Confluent C
 
 The application is essentially a set of link:pacman/[HTML/CSS/JS files] that forms a microsite that can be hosted statically anywhere. But for the sake of coolness -- we will deploy this microsite in a storage service from the chosen cloud provider. A bucket will be created and the microsite will be copied there. This bucket will be created in the very same region selected for the Confluent Cloud cluster, to ensure that the application will be co-located. The application will emit events that will be processed by a event handler API implemented as a serverless application. This event handler API receives the events and writes them into the respective Kafka topics.
 
-image::application.png[align="left"]
+image::pac-man-arch.png[align="left"]
 
 Please note that during deployment, the API takes care of creating the required Kafka topics. Therefore, there is no need to manually create them.
 
