@@ -4,20 +4,14 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import java.util.Map;
+import java.util.Arrays;
 import java.util.Properties;
 import java.time.Duration;
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -25,9 +19,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.ListTopicsResult;
-import org.apache.kafka.clients.admin.NewTopic;
 
 import static io.confluent.cloud.pacman.Constants.*;
 import static io.confluent.cloud.pacman.KafkaUtils.*;
@@ -58,7 +49,7 @@ public class HighestScore implements RequestHandler<Map<String, Object>, Map<Str
         ConsumerRecords<String, String> records = null;
         records = consumer.poll(Duration.ofMillis(timeout));
         for (ConsumerRecord<String, String> record : records) {
-            JsonObject root = jsonParser.parse(record.value()).getAsJsonObject();
+            JsonObject root = JsonParser.parseString(record.value()).getAsJsonObject();
             int score = root.get("HIGHEST_SCORE").getAsInt();
             if (score > highestScore) {
                 highestScore = score;
@@ -68,11 +59,10 @@ public class HighestScore implements RequestHandler<Map<String, Object>, Map<Str
     }
 
     private static final String SCOREBOARD_TOPIC = "SCOREBOARD";
-    private static final JsonParser jsonParser = new JsonParser();
     private static KafkaConsumer<String, String> consumer;
 
     static {
-        createTopicsIfNeeded();
+        createTopics(Map.of(SCOREBOARD_TOPIC, 6));
         initializeConsumer();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             if (consumer != null) {
@@ -95,18 +85,6 @@ public class HighestScore implements RequestHandler<Map<String, Object>, Map<Str
             // from the beginning of the log. It may take a while.
             fetchCurrentHighestScore(60000);
         }
-    }
-
-    private static void createTopicsIfNeeded() {
-        try (AdminClient adminClient = AdminClient.create(getConnectProperties())) {
-            ListTopicsResult listTopics = adminClient.listTopics();
-            Set<String> existingTopics = listTopics.names().get();
-            List<NewTopic> topicsToCreate = new ArrayList<>();
-            if (!existingTopics.contains(SCOREBOARD_TOPIC)) {
-                topicsToCreate.add(new NewTopic(SCOREBOARD_TOPIC, 6, (short) 3));
-            }
-            adminClient.createTopics(topicsToCreate);
-        } catch (InterruptedException | ExecutionException ex) {}
     }
 
 }
