@@ -22,21 +22,21 @@ import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 
+import static io.confluent.cloud.pacman.Constants.*;
+import static io.confluent.cloud.pacman.KafkaUtils.*;
+
 public class EventHandler implements RequestHandler<Map<String, Object>, Map<String, Object>> {
 
     public Map<String, Object> handleRequest(final Map<String, Object> request, final Context context) {
-
-        final LambdaLogger logger = context.getLogger();
+        
+        final Map<String, Object> requestHeaders =
+            (Map<String, Object>) request.get(HEADERS_KEY);
         final Map<String, Object> response = new HashMap<>();
-        logger.log("Request Content: " + request);
 
         if (!request.containsKey(HEADERS_KEY)) {
             response.put(BODY_KEY, "Thanks for waking me up");
             return response;
         }
-
-        final Map<String, Object> requestHeaders =
-            (Map<String, Object>) request.get(HEADERS_KEY);
 
         if (requestHeaders.containsKey(ORIGIN_KEY)) {
 
@@ -50,12 +50,6 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
                     
                     if (event != null && queryParams != null) {
 
-                        final Map<String, Object> responseHeaders = new HashMap<>();
-                        responseHeaders.put("Access-Control-Allow-Headers", "*");
-                        responseHeaders.put("Access-Control-Request-Methods", POST_METHOD);
-                        responseHeaders.put("Access-Control-Allow-Origin", ORIGIN_ALLOWED);
-                        response.put(HEADERS_KEY, responseHeaders);
-
                         String topic = queryParams.get(TOPIC_KEY);
                         producer.send(new ProducerRecord<String, String>(topic, event), new Callback() {
                             public void onCompletion(final RecordMetadata metadata, final Exception ex) {
@@ -68,6 +62,12 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
                         });
                         producer.flush();
 
+                        final Map<String, Object> responseHeaders = new HashMap<>();
+                        responseHeaders.put("Access-Control-Allow-Headers", "*");
+                        responseHeaders.put("Access-Control-Allow-Methods", POST_METHOD);
+                        responseHeaders.put("Access-Control-Allow-Origin", ORIGIN_ALLOWED);
+                        response.put(HEADERS_KEY, responseHeaders);
+
                     }
         
                 }
@@ -78,23 +78,13 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
 
     }
 
-    private static final String TOPIC_KEY = "topic";
-    private static final String BODY_KEY = "body";
-    private static final String ORIGIN_KEY = "origin";
-    private static final String HEADERS_KEY = "headers";
-    private static final String QUERY_PARAMS_KEY = "queryStringParameters";
-    private static final String POST_METHOD = "POST";
     private static final String USER_GAME_TOPIC = "USER_GAME";
     private static final String USER_LOSSES_TOPIC = "USER_LOSSES";
-    private static final String BOOTSTRAP_SERVERS = System.getenv("BOOTSTRAP_SERVERS");
-    private static final String CLUSTER_API_KEY = System.getenv("CLUSTER_API_KEY");
-    private static final String CLUSTER_API_SECRET = System.getenv("CLUSTER_API_SECRET");
-    private static final String ORIGIN_ALLOWED = System.getenv("ORIGIN_ALLOWED");
     private static KafkaProducer<String, String> producer;
 
     static {
-        initializeProducer();
         createTopicsIfNeeded();
+        initializeProducer();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             if (producer != null) {
                 producer.close();
@@ -124,24 +114,6 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
             }
             adminClient.createTopics(topicsToCreate);
         } catch (InterruptedException | ExecutionException ex) {}
-    }
-
-    private static Properties getConnectProperties() {
-        Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", BOOTSTRAP_SERVERS);
-        properties.setProperty("ssl.endpoint.identification.algorithm", "https");
-        properties.setProperty("sasl.mechanism", "PLAIN");
-        properties.setProperty("security.protocol", "SASL_SSL");
-        properties.setProperty("sasl.jaas.config", getJaaSConfig());
-        return properties;
-    }
-
-    private static String getJaaSConfig() {
-        final StringBuilder jaasConfig = new StringBuilder();
-        jaasConfig.append("org.apache.kafka.common.security.plain.PlainLoginModule ");
-        jaasConfig.append("required username=\"").append(CLUSTER_API_KEY).append("\" ");
-        jaasConfig.append("password=\"").append(CLUSTER_API_SECRET).append("\"; ");
-        return jaasConfig.toString();
     }
 
 }

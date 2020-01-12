@@ -109,6 +109,7 @@ data "template_file" "game_js" {
   vars = {
     ksqldb_query_api = "http://${aws_alb.ksqldb_lbr.dns_name}/query"
     event_handler_api = "${aws_api_gateway_deployment.event_handler_v1.invoke_url}${aws_api_gateway_resource.event_handler_resource.path}"
+    highest_score_api = "${aws_api_gateway_deployment.highest_score_v1.invoke_url}${aws_api_gateway_resource.highest_score_resource.path}"
     cloud_provider = "AWS"
   }
 }
@@ -118,6 +119,20 @@ resource "aws_s3_bucket_object" "game_js" {
   key = "game/js/game.js"
   content_type = "text/javascript"
   content = data.template_file.game_js.rendered
+}
+
+data "template_file" "highscore_js" {
+  template = file("../../pacman/game/js/highscore.js")
+  vars = {
+    highest_score_api = "${aws_api_gateway_deployment.highest_score_v1.invoke_url}${aws_api_gateway_resource.highest_score_resource.path}"
+  }
+}
+
+resource "aws_s3_bucket_object" "highscore_js" {
+  bucket = aws_s3_bucket.pacman.bucket
+  key = "game/js/highscore.js"
+  content_type = "text/javascript"
+  content = data.template_file.highscore_js.rendered
 }
 
 ###########################################
