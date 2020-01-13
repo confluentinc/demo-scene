@@ -20,6 +20,7 @@ data "template_file" "wake_up_function" {
 
 resource "aws_api_gateway_rest_api" "event_handler_api" {
   name = "event_handler_api"
+  description = "Event Handler API"
   endpoint_configuration {
     types = ["REGIONAL"]
   }
@@ -210,6 +211,7 @@ resource "aws_cloudwatch_event_target" "event_handler_every_five_minutes" {
 
 resource "aws_api_gateway_rest_api" "highest_score_api" {
   name = "highest_score_api"
+  description = "Highest Score API"
   endpoint_configuration {
     types = ["REGIONAL"]
   }
