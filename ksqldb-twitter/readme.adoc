@@ -11,7 +11,7 @@ ksqlDB CLI:
 
 Postgres CLI: 
 
-    docker exec -it postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+    docker exec -it ksqldb-twitter_postgres_1 bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
 
 Neo4j GUI: 
 
