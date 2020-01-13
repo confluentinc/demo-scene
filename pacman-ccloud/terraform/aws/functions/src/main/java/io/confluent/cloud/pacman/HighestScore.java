@@ -29,7 +29,7 @@ public class HighestScore implements RequestHandler<Map<String, Object>, Map<Str
 
     public Map<String, Object> handleRequest(final Map<String, Object> request, final Context context) {
 
-        fetchCurrentHighestScore(100);
+        setCurrentHighestScore(100);
         JsonObject jsonResp = new JsonObject();
         jsonResp.addProperty("highestScore", highestScore);
         Map<String, Object> response = new HashMap<>();
@@ -45,17 +45,20 @@ public class HighestScore implements RequestHandler<Map<String, Object>, Map<Str
 
     }
 
-    private static void fetchCurrentHighestScore(long timeout) {
-        ConsumerRecords<String, String> records = null;
-        records = consumer.poll(Duration.ofMillis(timeout));
-        for (ConsumerRecord<String, String> record : records) {
-            JsonObject root = JsonParser.parseString(record.value()).getAsJsonObject();
-            int score = root.get("HIGHEST_SCORE").getAsInt();
-            if (score > highestScore) {
-                highestScore = score;
+    private static void setCurrentHighestScore(long timeout) {
+        ConsumerRecords<String, String> records =
+            consumer.poll(Duration.ofMillis(timeout));
+        try {
+            for (ConsumerRecord<String, String> record : records) {
+                JsonObject root = JsonParser.parseString(record.value()).getAsJsonObject();
+                int score = root.get("HIGHEST_SCORE").getAsInt();
+                if (score > highestScore) {
+                    highestScore = score;
+                }
             }
+        } finally {
+            consumer.commitAsync();
         }
-        consumer.commitAsync();
     }
 
     private static final String SCOREBOARD_TOPIC = "SCOREBOARD";
@@ -83,7 +86,7 @@ public class HighestScore implements RequestHandler<Map<String, Object>, Map<Str
             consumer.subscribe(Arrays.asList(SCOREBOARD_TOPIC));
             // Wait up to one minute since we're fetching records
             // from the beginning of the log. It may take a while.
-            fetchCurrentHighestScore(60000);
+            setCurrentHighestScore(60000);
         }
     }
 
