@@ -205,6 +205,7 @@ resource "aws_cloudwatch_event_target" "event_handler_every_five_minutes" {
     input = data.template_file.wake_up_function.rendered
 }
 
+/*
 ###########################################
 ########### Highest Score API #############
 ###########################################
@@ -372,7 +373,7 @@ resource "aws_lambda_permission" "highest_score_api_gateway_trigger" {
   action = "lambda:InvokeFunction"
   principal = "apigateway.amazonaws.com"
   function_name = aws_lambda_function.highest_score_function.function_name
-  source_arn = "${aws_api_gateway_rest_api.highest_score_api.execution_arn}/${aws_api_gateway_deployment.highest_score_v1.stage_name}/*/*"
+  source_arn = "${aws_api_gateway_rest_api.highest_score_api.execution_arn}/${aws_api_gateway_deployment.highest_score_v1.stage_name}/* /*"
 }
 
 resource "aws_lambda_permission" "highest_score_cloudwatch_trigger" {
@@ -395,3 +396,4 @@ resource "aws_cloudwatch_event_target" "highest_score_every_one_minute" {
     arn = aws_lambda_function.highest_score_function.arn
     input = data.template_file.wake_up_function.rendered
 }
+*/

@@ -5,7 +5,7 @@ var PAUSE = false;
 var LOCK = false;
 
 var HIGHSCORE = 0;
-var HIGHSCORE_WORKER;
+var highScoreWorker;
 var SCORE = 0;
 var SCORE_BUBBLE = 10;
 var SCORE_SUPER_BUBBLE = 50;
@@ -36,6 +36,44 @@ function blinkHelp() {
 }
 
 function initGame(newGame) {
+
+	// Retrieve the highest score so the current
+	// player knows how far behind he/she might
+	// be if compared to the best player.
+
+	var ksqlQuery = {};
+	ksqlQuery.ksql =
+		"SELECT HIGHEST_SCORE FROM HIGHEST_SCORE " +
+		"WHERE ROWKEY = 'HIGHEST_SCORE_KEY';";
+
+	var request = new XMLHttpRequest();
+    request.onreadystatechange = function() {
+        if (this.readyState == 4) {
+			if (this.status == 200) {
+				var result = JSON.parse(this.responseText);
+				if (result[1] != undefined || result[1] != null) {
+					var row = result[1].row;
+					HIGHSCORE = row.columns[0];
+					if (HIGHSCORE === 0) {
+						$('#highscore span').html("00");
+					} else { 
+						$('#highscore span').html(HIGHSCORE);
+					}
+				}
+            }
+		}
+	};
+	request.open('POST', '${ksqldb_query_api}', true);
+	request.setRequestHeader('Accept', 'application/vnd.ksql.v1+json');
+	request.setRequestHeader('Content-Type', 'application/vnd.ksql.v1+json');
+	request.send(JSON.stringify(ksqlQuery));
+
+	// Creates a web worker that continuously update
+	// the value of the highest score every five seconds.
+	highScoreWorker = new Worker("/game/js/highscore.js");
+	highScoreWorker.onmessage = function(event) {
+		HIGHSCORE = event.data;
+	};
 
 	var lastScore = 0;
 	var lastLevel = 0;
@@ -76,35 +114,6 @@ function initGame(newGame) {
 }
 
 function doInitGame(newGame, lastScore, lastLevel) {
-
-	// Retrieve the highest score so the current
-	// player knows how far behind he/she might
-	// be if compared to the best player.
-	var request = new XMLHttpRequest();
-    request.onreadystatechange = function() {
-        if (this.readyState == 4) {
-			if (this.status == 200) {
-                var result = JSON.parse(this.responseText);
-				HIGHSCORE = result.highestScore;
-				if (HIGHSCORE === 0) {
-					$('#highscore span').html("00");
-				} else { 
-					$('#highscore span').html(HIGHSCORE);
-				}
-            }
-		}
-	};
-	request.open('POST', '${highest_score_api}', true);
-	request.setRequestHeader('Accept', 'application/vnd.ksql.v1+json');
-	request.setRequestHeader('Content-Type', 'application/vnd.ksql.v1+json');
-    request.send(JSON.stringify({}));
-
-	// Creates a worker that continuously update
-	// the highest score every five seconds.
-	HIGHSCORE_WORKER = new Worker("/game/js/highscore.js");
-	HIGHSCORE_WORKER.onmessage = function(event) {
-		HIGHSCORE = event.data;
-	};
 
 	if (newGame) { 
 		stopPresentation();
@@ -392,6 +401,10 @@ function gameover() {
 	var record = {};
 	record.user = window.name;
 	produceRecord('USER_LOSSES', record);
+
+	// Terminate the web worker that
+	// updates the highest score value
+	highScoreWorker.terminate();
 
 }
 
