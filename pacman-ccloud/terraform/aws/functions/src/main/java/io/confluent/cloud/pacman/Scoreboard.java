@@ -3,6 +3,7 @@ package io.confluent.cloud.pacman;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -33,7 +34,7 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
 
     private static final ConcurrentHashMap<String, UserData> scoreboard = new ConcurrentHashMap<>();
 
-    public Map<String, Object> handleRequest(final Map<String, Object> request, final Context context) {
+    public Map<String, Object> handleRequest(Map<String, Object> request, Context context) {
 
         updateScoreboard(100);
         final Map<String, Object> response = new HashMap<>();
@@ -70,30 +71,63 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
 
     }
 
-    private static void updateScoreboard(final long timeout) {
+    private static void updateScoreboard(long timeout) {
         final ConsumerRecords<String, String> records =
             consumer.poll(Duration.ofMillis(timeout));
         try {
-            for (final ConsumerRecord<String, String> record : records) {
-                final UserData userData = getUserData(record.value());
-                scoreboard.put(userData.getUser(), userData);
+            for (ConsumerRecord<String, String> record : records) {
+                UserData userData = getUserData(record.value());
+                if (userData != null) {
+                    scoreboard.put(userData.getUser(), userData);
+                }
             }
         } finally {
             consumer.commitAsync();
         }
     }
 
-    private static UserData getUserData(final String payload) {
-        final JsonElement rootElement = JsonParser.parseString(payload);
-        final JsonObject rootObject = rootElement.getAsJsonObject();
-        return new UserData(
-            rootObject.get("USER").getAsString(),
-            rootObject.get("HIGHEST_SCORE").getAsInt(),
-            rootObject.get("HIGHEST_LEVEL").getAsInt(),
-            rootObject.get("TOTAL_LOSSES").getAsInt());
+    private static UserData getUserData(String payload) {
+        JsonElement rootElement = JsonParser.parseString(payload);
+        JsonObject rootObject = rootElement.getAsJsonObject();
+        JsonElement element = null;
+        String user = null;
+        if (rootObject.has(USER_FIELD)) {
+            element = rootObject.get(USER_FIELD);
+            if (element instanceof JsonNull == false) {
+                user = element.getAsString();
+            } else {
+                return null;
+            }
+        }
+        int score = 0;
+        if (rootObject.has(HIGHEST_SCORE_FIELD)) {
+            element = rootObject.get(HIGHEST_SCORE_FIELD);
+            if (element instanceof JsonNull == false) {
+                score = element.getAsInt();
+            }
+        }
+        int level = 0;
+        if (rootObject.has(HIGHEST_LEVEL_FIELD)) {
+            element = rootObject.get(HIGHEST_LEVEL_FIELD);
+            if (element instanceof JsonNull == false) {
+                level = element.getAsInt();
+            }
+        }
+        int losses = 0;
+        if (rootObject.has(TOTAL_LOSSES_FIELD)) {
+            element = rootObject.get(TOTAL_LOSSES_FIELD);
+            if (element instanceof JsonNull == false) {
+                losses = element.getAsInt();
+            }
+        }
+        return new UserData(user, score, level, losses);
     }
 
     private static final String SCOREBOARD_TOPIC = "SCOREBOARD";
+    private static final String HIGHEST_SCORE_FIELD = "HIGHEST_SCORE";
+    private static final String HIGHEST_LEVEL_FIELD = "HIGHEST_LEVEL";
+    private static final String TOTAL_LOSSES_FIELD = "TOTAL_LOSSES";
+    private static final String USER_FIELD = "USER";
     private static KafkaConsumer<String, String> consumer;
 
     static {
@@ -124,16 +158,16 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
 
     private static class UserData implements Comparable<UserData> {
 
-        private final String user;
-        private final int score;
-        private final int level;
-        private final int losses;
+        private String user;
+        private int score;
+        private int level;
+        private int losses;
 
         public UserData(
-            final String user,
-            final int score,
-            final int level,
-            final int losses) {
+            String user,
+            int score,
+            int level,
+            int losses) {
             this.user = user;
             this.score = score;
             this.level = level;

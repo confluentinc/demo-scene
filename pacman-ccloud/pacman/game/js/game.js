@@ -1,5 +1,3 @@
-const PROVIDER = "${cloud_provider}";
-
 var KEYDOWN = false;
 var PAUSE = false;
 var LOCK = false;
@@ -63,14 +61,14 @@ function initGame(newGame) {
             }
 		}
 	};
-	request.open('POST', '${ksqldb_query_api}', true);
+	request.open('POST', KSQLDB_QUERY_API, true);
 	request.setRequestHeader('Accept', 'application/vnd.ksql.v1+json');
 	request.setRequestHeader('Content-Type', 'application/vnd.ksql.v1+json');
 	request.send(JSON.stringify(ksqlQuery));
 
 	// Creates a web worker that continuously update
 	// the value of the highest score every five seconds.
-	highScoreWorker = new Worker("/game/js/highscore.js");
+	highScoreWorker = new Worker("/game/js/shared.js");
 	highScoreWorker.onmessage = function(event) {
 		HIGHSCORE = event.data;
 	};
@@ -81,7 +79,7 @@ function initGame(newGame) {
 	// Temporary workaround for GCP and Azure
 	// while their implementations are not using
 	// ksqlDB and thus don't support pull queries.
-	if (PROVIDER == "GCP" || PROVIDER == "AZR") {
+	if (CLOUD_PROVIDER == "GCP" || CLOUD_PROVIDER == "AZR") {
 		doInitGame(newGame, lastScore, lastLevel);
 		return;
 	}
@@ -106,7 +104,7 @@ function initGame(newGame) {
 			doInitGame(newGame, lastScore, lastLevel);
 		}
 	};
-	request.open('POST', '${ksqldb_query_api}', true);
+	request.open('POST', KSQLDB_QUERY_API, true);
 	request.setRequestHeader('Accept', 'application/vnd.ksql.v1+json');
 	request.setRequestHeader('Content-Type', 'application/vnd.ksql.v1+json');
 	request.send(JSON.stringify(ksqlQuery));
@@ -471,7 +469,7 @@ function score(s, type) {
 function produceRecord(topic, record) {
 
 	var contentType = "application/json";
-	var url = "${event_handler_api}?topic=" + topic;
+	var url = EVENT_HANDLER_API + "?topic=" + topic;
 	var json = JSON.stringify(record);
 
 	// The verification below is only
@@ -481,13 +479,13 @@ function produceRecord(topic, record) {
 	// rely on REST Proxy to emmit the
 	// game events.
 	
-	if (PROVIDER == "GCP" || PROVIDER == "AZR") {
+	if (CLOUD_PROVIDER == "GCP" || CLOUD_PROVIDER == "AZR") {
 
 		// Fallback to the format that REST Proxy
 		// requires in order to emmit the events.
 
 		contentType = "application/vnd.kafka.json.v2+json";
-		url = "${event_handler_api}/topics/" + topic;
+		url = EVENT_HANDLER_API + "/topics/" + topic;
 
 		var recordHolder = {};
 		recordHolder.value = record;

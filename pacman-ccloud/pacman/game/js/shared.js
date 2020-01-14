@@ -1,3 +1,6 @@
+var CLOUD_PROVIDER = "${cloud_provider}"
+var EVENT_HANDLER_API = "${event_handler_api}"
+var KSQLDB_QUERY_API = "${ksqldb_query_api}"
 var highestScore = 0;
 
 function getHighestScore() {
@@ -20,7 +23,7 @@ function getHighestScore() {
             postMessage(highestScore);
 		}
 	};
-	request.open('POST', '${ksqldb_query_api}', true);
+	request.open('POST', KSQLDB_QUERY_API, true);
 	request.setRequestHeader('Accept', 'application/vnd.ksql.v1+json');
 	request.setRequestHeader('Content-Type', 'application/vnd.ksql.v1+json');
 	request.send(JSON.stringify(ksqlQuery));
