@@ -58,15 +58,15 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
         Collections.sort(users);
         for (final UserData user : users) {
             final JsonObject userEntry = new JsonObject();
-            userEntry.addProperty("user", user.getUser());
-            userEntry.addProperty("score", user.getScore());
-            userEntry.addProperty("level", user.getLevel());
-            userEntry.addProperty("losses", user.getLosses());
+            userEntry.addProperty(UserData.USER, user.getUser());
+            userEntry.addProperty(UserData.SCORE, user.getScore());
+            userEntry.addProperty(UserData.LEVEL, user.getLevel());
+            userEntry.addProperty(UserData.LOSSES, user.getLosses());
             entries.add(userEntry);
         }
 
         final JsonObject rootObject = new JsonObject();
-        rootObject.add("scoreboard", entries);
+        rootObject.add(SCOREBOARD_FIELD, entries);
         return new Gson().toJson(rootObject);
 
     }
@@ -123,6 +123,7 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
         return new UserData(user, score, level, losses);
     }
 
+    private static final String SCOREBOARD_FIELD = "scoreboard";
     private static final String SCOREBOARD_TOPIC = "SCOREBOARD";
     private static final String HIGHEST_SCORE_FIELD = "HIGHEST_SCORE";
     private static final String HIGHEST_LEVEL_FIELD = "HIGHEST_LEVEL";
@@ -157,6 +158,11 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
     }
 
     private static class UserData implements Comparable<UserData> {
+
+        private static final String USER = "user";
+        private static final String SCORE = "score";
+        private static final String LEVEL = "level";
+        private static final String LOSSES = "losses";
 
         private String user;
         private int score;
