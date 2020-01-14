@@ -1,5 +1,5 @@
 /**********************************************/
-/**************** REUSING DATA ****************/
+/*************** Resetting Data ***************/
 /**********************************************/
 
 SET 'auto.offset.reset' = 'earliest';
@@ -18,15 +18,29 @@ WITH (KAFKA_TOPIC='USER_LOSSES', VALUE_FORMAT='JSON', PARTITIONS=6, REPLICAS=3);
 /***************** Scoreboard *****************/
 /**********************************************/
 
+CREATE TABLE STATS_PER_USER AS
+	SELECT
+		USER AS USER,
+		MAX(GAME->SCORE) AS HIGHEST_SCORE,
+		MAX(GAME->LEVEL) AS HIGHEST_LEVEL
+	FROM USER_GAME
+	GROUP BY USER;
+
+CREATE TABLE LOSSES_PER_USER AS
+	SELECT
+		USER AS USER,
+		COUNT(USER) AS TOTAL_LOSSES
+	FROM USER_LOSSES
+	GROUP BY USER;
+
 CREATE TABLE SCOREBOARD AS
 	SELECT
-		UG.USER AS USER,
-		MAX(UG.GAME->SCORE) AS HIGHEST_SCORE,
-		MAX(UG.GAME->LEVEL) AS HIGHEST_LEVEL,
-		COUNT(UL.USER) AS TOTAL_LOSSES
-	FROM USER_GAME UG LEFT JOIN USER_LOSSES UL
-	WITHIN 10 SECONDS ON UG.USER = UL.USER
-	GROUP BY UG.USER;
+		SPU.USER AS USER,
+		SPU.HIGHEST_SCORE AS HIGHEST_SCORE,
+		SPU.HIGHEST_LEVEL AS HIGHEST_LEVEL,
+		LPU.TOTAL_LOSSES AS TOTAL_LOSSES
+	FROM STATS_PER_USER SPU LEFT JOIN
+	LOSSES_PER_USER LPU ON SPU.USER = LPU.USER;
 
 /**********************************************/
 /**************** Highest Score ***************/

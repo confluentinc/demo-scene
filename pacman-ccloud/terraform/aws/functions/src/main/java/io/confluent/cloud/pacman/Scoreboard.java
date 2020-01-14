@@ -1,0 +1,179 @@
+package io.confluent.cloud.pacman;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import java.util.Map;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Properties;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.StringDeserializer;
+
+import static io.confluent.cloud.pacman.Constants.*;
+import static io.confluent.cloud.pacman.KafkaUtils.*;
+
+public class Scoreboard implements RequestHandler<Map<String, Object>, Map<String, Object>> {
+
+    private static final ConcurrentHashMap<String, UserData> scoreboard = new ConcurrentHashMap<>();
+
+    public Map<String, Object> handleRequest(final Map<String, Object> request, final Context context) {
+
+        updateScoreboard(100);
+        final Map<String, Object> response = new HashMap<>();
+        response.put(BODY_KEY, getScoreboard());
+
+        final Map<String, Object> responseHeaders = new HashMap<>();
+        responseHeaders.put("Access-Control-Allow-Headers", "*");
+        responseHeaders.put("Access-Control-Allow-Methods", POST_METHOD);
+        responseHeaders.put("Access-Control-Allow-Origin", ORIGIN_ALLOWED);
+        response.put(HEADERS_KEY, responseHeaders);
+
+        return response;
+
+    }
+
+    private static String getScoreboard() {
+
+        final JsonArray entries = new JsonArray(scoreboard.size());
+        final Enumeration<UserData> _users = scoreboard.elements();
+        final List<UserData> users = Collections.list(_users);
+        Collections.sort(users);
+        for (final UserData user : users) {
+            final JsonObject userEntry = new JsonObject();
+            userEntry.addProperty("user", user.getUser());
+            userEntry.addProperty("score", user.getScore());
+            userEntry.addProperty("level", user.getLevel());
+            userEntry.addProperty("losses", user.getLosses());
+            entries.add(userEntry);
+        }
+
+        final JsonObject rootObject = new JsonObject();
+        rootObject.add("scoreboard", entries);
+        return new Gson().toJson(rootObject);
+
+    }
+
+    private static void updateScoreboard(final long timeout) {
+        final ConsumerRecords<String, String> records =
+            consumer.poll(Duration.ofMillis(timeout));
+        try {
+            for (final ConsumerRecord<String, String> record : records) {
+                final UserData userData = getUserData(record.value());
+                scoreboard.put(userData.getUser(), userData);
+            }
+        } finally {
+            consumer.commitAsync();
+        }
+    }
+
+    private static UserData getUserData(final String payload) {
+        final JsonElement rootElement = JsonParser.parseString(payload);
+        final JsonObject rootObject = rootElement.getAsJsonObject();
+        return new UserData(
+            rootObject.get("USER").getAsString(),
+            rootObject.get("HIGHEST_SCORE").getAsInt(),
+            rootObject.get("HIGHEST_LEVEL").getAsInt(),
+            rootObject.get("TOTAL_LOSSES").getAsInt());
+    }
+
+    private static final String SCOREBOARD_TOPIC = "SCOREBOARD";
+    private static KafkaConsumer<String, String> consumer;
+
+    static {
+        createTopics(Map.of(SCOREBOARD_TOPIC, 6));
+        initializeConsumer();
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (consumer != null) {
+                consumer.close();
+            }
+        }));
+    }
+
+    private static void initializeConsumer() {
+        if (consumer == null) {
+            final Properties properties = getConnectProperties();
+            properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+            properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+            properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
+            properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+            properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+            consumer = new KafkaConsumer<>(properties);
+            consumer.subscribe(Arrays.asList(SCOREBOARD_TOPIC));
+            // Wait up to one minute since we're fetching records
+            // from the beginning of the log. It may take a while.
+            updateScoreboard(60000);
+        }
+    }
+
+    private static class UserData implements Comparable<UserData> {
+
+        private final String user;
+        private final int score;
+        private final int level;
+        private final int losses;
+
+        public UserData(
+            final String user,
+            final int score,
+            final int level,
+            final int losses) {
+            this.user = user;
+            this.score = score;
+            this.level = level;
+            this.losses = losses;
+        }
+
+        public String getUser() {
+            return user;
+        }
+    
+        public int getScore() {
+            return score;
+        }
+    
+        public int getLevel() {
+            return level;
+        }
+
+        public int getLosses() {
+            return losses;
+        }
+
+        public int compareTo(UserData other) {
+            if (this.getScore() > other.getScore()) {
+                return -1;
+            } else if (this.getScore() < other.getScore()) {
+                return 1;
+            } else {
+                if (this.getLevel() > other.getLevel()) {
+                    return -1;
+                } else if (this.getLevel() < other.getLevel()) {
+                    return 1;
+                }
+            }
+            if (this.getLosses() < other.getLosses()) {
+                return -1;
+            }
+            return 0;
+        }
+    
+    }
+
+}
