@@ -6,12 +6,12 @@ import java.util.Properties;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 
-import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.StringSerializer;
 
 import static io.confluent.cloud.pacman.Constants.*;
@@ -43,14 +43,16 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
                     if (event != null && queryParams != null) {
 
                         final String topic = queryParams.get(TOPIC_KEY);
-                        producer.send(new ProducerRecord<String, String>(topic, event), new Callback() {
-                            public void onCompletion(final RecordMetadata metadata, final Exception ex) {
-                                final StringBuilder message = new StringBuilder();
-                                message.append("Event sent successfully to topic '");
-                                message.append(metadata.topic()).append("' on the ");
-                                message.append("partition ").append(metadata.partition());
-                                response.put(BODY_KEY, message.toString());
-                            }
+                        final String user = extractUserFromEvent(event);
+
+                        ProducerRecord<String, String> record =
+                            new ProducerRecord<>(topic, user, event);
+                        producer.send(record, (metadata, exception) -> {
+                            final StringBuilder message = new StringBuilder();
+                            message.append("Event sent successfully to topic '");
+                            message.append(metadata.topic()).append("' on the ");
+                            message.append("partition ").append(metadata.partition());
+                            response.put(BODY_KEY, message.toString());
                         });
                         producer.flush();
 
@@ -68,6 +70,11 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
         }
         return response;
 
+    }
+
+    private String extractUserFromEvent(String payload) {
+        JsonElement root = JsonParser.parseString(payload);
+        return root.getAsJsonObject().get("user").getAsString();
     }
 
     private static final String USER_GAME_TOPIC = "USER_GAME";
