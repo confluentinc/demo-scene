@@ -23,6 +23,13 @@ resource "aws_s3_bucket_object" "start" {
   source = "../../pacman/start.html"
 }
 
+resource "aws_s3_bucket_object" "scoreboard" {
+  bucket = aws_s3_bucket.pacman.bucket
+  key = "scoreboard.html"
+  content_type = "text/html"
+  source = "../../pacman/scoreboard.html"
+}
+
 ###########################################
 ################### CSS ###################
 ###########################################
@@ -85,6 +92,7 @@ variable "js_files" {
     "game/js/bubbles.js",
     "game/js/fruits.js",
     "game/js/game.js",
+    "game/js/scoreboard.js",
     "game/js/ghosts.js",
     "game/js/home.js",
     "game/js/jquery-buzz.js",
@@ -111,6 +119,7 @@ data "template_file" "shared_js" {
     cloud_provider = "AWS"
     event_handler_api = "${aws_api_gateway_deployment.event_handler_v1.invoke_url}${aws_api_gateway_resource.event_handler_resource.path}"
     ksqldb_query_api = "http://${aws_alb.ksqldb_lbr.dns_name}/query"
+    scoreboard_api = "${aws_api_gateway_deployment.scoreboard_v1.invoke_url}${aws_api_gateway_resource.scoreboard_resource.path}"
   }
 }
 

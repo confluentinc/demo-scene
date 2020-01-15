@@ -78,6 +78,12 @@
 						}
 					}
 				});
+
+				$(".scoreboard-button").click(function(e) { 
+					e.stopPropagation();
+
+					window.location.href='scoreboard.html';
+				});
 				
 				$(".github,.putchu").click(function(e) { 
 					e.stopPropagation();
@@ -211,6 +217,7 @@
 			<div id="score"><h2>Score</h2><span>00</span></div>
 			<div id="highscore"><h2>High Score</h2><span>00</span></div>
 			<div id="level"><h2>Level</h2><span>1UP</span></div>
+			<div id="rank"><h2>RANK</h2><span>-</span></div>
 			<div id="board">
 				<canvas id="canvas-board"></canvas>
 				<canvas id="canvas-paths"></canvas>
@@ -238,6 +245,7 @@
 			<canvas id="canvas-level-fruits"></canvas>
 			<div id="message"></div>
 			<div class="help-button">- help -</div>
+			<div class="scoreboard-button">score board</div>
 			<a class="sound" href="javascript:void(0);" data-sound="on"><img src="game/img/sound-on.png" alt="" border="0"></a>
 		</div>
 	
