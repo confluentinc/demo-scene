@@ -37,10 +37,10 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
     public Map<String, Object> handleRequest(Map<String, Object> request, Context context) {
 
         updateScoreboard(100);
-        final Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new HashMap<>();
         response.put(BODY_KEY, getScoreboard());
 
-        final Map<String, Object> responseHeaders = new HashMap<>();
+        Map<String, Object> responseHeaders = new HashMap<>();
         responseHeaders.put("Access-Control-Allow-Headers", "*");
         responseHeaders.put("Access-Control-Allow-Methods", POST_METHOD);
         responseHeaders.put("Access-Control-Allow-Origin", ORIGIN_ALLOWED);
@@ -52,12 +52,12 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
 
     private static String getScoreboard() {
 
-        final JsonArray entries = new JsonArray(scoreboard.size());
-        final Enumeration<UserData> _users = scoreboard.elements();
-        final List<UserData> users = Collections.list(_users);
+        JsonArray entries = new JsonArray(scoreboard.size());
+        Enumeration<UserData> _users = scoreboard.elements();
+        List<UserData> users = Collections.list(_users);
         Collections.sort(users);
-        for (final UserData user : users) {
-            final JsonObject userEntry = new JsonObject();
+        for (UserData user : users) {
+            JsonObject userEntry = new JsonObject();
             userEntry.addProperty(UserData.USER, user.getUser());
             userEntry.addProperty(UserData.SCORE, user.getScore());
             userEntry.addProperty(UserData.LEVEL, user.getLevel());
@@ -65,14 +65,14 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
             entries.add(userEntry);
         }
 
-        final JsonObject rootObject = new JsonObject();
+        JsonObject rootObject = new JsonObject();
         rootObject.add(SCOREBOARD_FIELD, entries);
         return new Gson().toJson(rootObject);
 
     }
 
     private static void updateScoreboard(long timeout) {
-        final ConsumerRecords<String, String> records =
+        ConsumerRecords<String, String> records =
             consumer.poll(Duration.ofMillis(timeout));
         try {
             for (ConsumerRecord<String, String> record : records) {
@@ -143,7 +143,7 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
 
     private static void initializeConsumer() {
         if (consumer == null) {
-            final Properties properties = getConnectProperties();
+            Properties properties = getConnectProperties();
             properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
             properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
             properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
