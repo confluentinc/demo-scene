@@ -31,6 +31,12 @@ function blinkHelp() {
 	} else { 
 		$('.help-button').addClass("yo");
 	}
+
+	if ( $('.scoreboard-button').attr("class").indexOf("yo") > -1 ) { 
+		$('.scoreboard-button').removeClass("yo");
+	} else { 
+		$('.scoreboard-button').addClass("yo");
+	}
 }
 
 function initGame(newGame) {
