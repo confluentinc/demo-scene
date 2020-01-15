@@ -1,36 +1,16 @@
 function loadScoreboardPage(){
-	getScoreboardJson();
+	getScoreboardJson(function(playersScores){
+		var headers = ["Rank","Name", "Score", "Level", "Losses"];
+		document.getElementById('scoreboard').innerHTML = json2table(playersScores, 'table', headers);
+		window.localStorage.setItem("playersScores", JSON.stringify(playersScores));
+	
+	});
+			
 }
 
-function getScoreboardJson() {
 
-	var contentType = "application/json";
-	var url = SCOREBOARD_API;
-	
-	if (CLOUD_PROVIDER == "GCP" || CLOUD_PROVIDER == "AZR") {
-		// NOT IMPLEMENTED
-	}
-
-	const request = new XMLHttpRequest();
-	request.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var result = JSON.parse(this.responseText);
-			console.log(result);
-		   //document.getElementById("demo").innerHTML = xhttp.responseText;
-		}
-	};
-
-	
-	request.open("GET", url, true);
-	request.setRequestHeader("Content-Type", contentType);
-	request.send();
-
-	return 
-
-}
 
 function json2table(json, classes, headers) {
-	var cols = Object.keys(json[0]);
 
 	var headerRow = '';
 	var bodyRows = '';
@@ -48,9 +28,11 @@ function json2table(json, classes, headers) {
 	json.forEach((row, index) => {
 		bodyRows += '<tr>';
 		bodyRows += '<td>#' + (index+1) + '</td>';
-		row.row.columns.forEach((column) => {
-			bodyRows += '<td>' + column + '</td>';
-		})
+		
+		bodyRows += '<td>' + row.user + '</td>';
+		bodyRows += '<td>' + row.score + '</td>';
+		bodyRows += '<td>' + row.level + '</td>';
+		bodyRows += '<td>' + row.losses + '</td>';
 
 		bodyRows += '</tr>';
 	});

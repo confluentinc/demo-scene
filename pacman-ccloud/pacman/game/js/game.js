@@ -4,6 +4,8 @@ var LOCK = false;
 
 var HIGHSCORE = 0;
 var highScoreWorker;
+var RANKING = 0;
+var rankingWorker;
 var SCORE = 0;
 var SCORE_BUBBLE = 10;
 var SCORE_SUPER_BUBBLE = 50;
@@ -45,38 +47,45 @@ function initGame(newGame) {
 	// player knows how far behind he/she might
 	// be if compared to the best player.
 
-	var ksqlQuery = {};
-	ksqlQuery.ksql =
-		"SELECT HIGHEST_SCORE FROM HIGHEST_SCORE " +
-		"WHERE ROWKEY = 'HIGHEST_SCORE';";
-
-	var request = new XMLHttpRequest();
-    request.onreadystatechange = function() {
-        if (this.readyState == 4) {
-			if (this.status == 200) {
-				var result = JSON.parse(this.responseText);
-				if (result[1] != undefined || result[1] != null) {
-					var row = result[1].row;
-					HIGHSCORE = row.columns[0];
-					if (HIGHSCORE === 0) {
-						$('#highscore span').html("00");
-					} else { 
-						$('#highscore span').html(HIGHSCORE);
-					}
-				}
-            }
+	loadHighestScore(function(hgs){
+		
+		HIGHSCORE = hgs?hgs:HIGHSCORE;
+		if (HIGHSCORE === 0) {
+			$('#highscore span').html("00");
+		} else { 
+			$('#highscore span').html(HIGHSCORE);
 		}
-	};
-	request.open('POST', KSQLDB_QUERY_API, true);
-	request.setRequestHeader('Accept', 'application/vnd.ksql.v1+json');
-	request.setRequestHeader('Content-Type', 'application/vnd.ksql.v1+json');
-	request.send(JSON.stringify(ksqlQuery));
+		
+	});
+
+	getScoreboardJson(function(sc){
+		
+		SCOREBOARD = sc?sc:SCOREBOARD;
+		RANKING = calcRankingFromScoreboard(SCOREBOARD, window.name);
+
+		if (RANKING === 0) {
+			$('#rank span').html("-");
+		} else { 
+			$('#rank span').html(RANKING);
+		}
+		
+	});
 
 	// Creates a web worker that continuously update
 	// the value of the highest score every five seconds.
-	highScoreWorker = new Worker("/game/js/shared.js");
+	highScoreWorker = new Worker("/game/js/highscore-worker.js");
 	highScoreWorker.onmessage = function(event) {
 		HIGHSCORE = event.data;
+	};
+
+	// Creates a web worker that continuously update
+	// the value of the ranking every five seconds.
+	scoreboardWorker = new Worker("/game/js/scoreboard-worker.js");
+	scoreboardWorker.onmessage = function(event) {
+		SCOREBOARD = event.data;
+		window.localStorage.setItem("playersScores", JSON.stringify(SCOREBOARD));
+		RANKING = calcRankingFromScoreboard(SCOREBOARD, window.name);
+
 	};
 
 	var lastScore = 0;
@@ -410,6 +419,8 @@ function gameover() {
 	// updates the highest score value
 	highScoreWorker.terminate();
 
+	scoreboardWorker.terminate();
+
 }
 
 function message(m) { 
@@ -445,6 +456,12 @@ function score(s, type) {
 		$('#highscore span').html("00");
 	} else { 
 		$('#highscore span').html(HIGHSCORE);
+	}
+
+	if (RANKING === 0) {
+		$('#rank span').html("-");
+	} else { 
+		$('#rank span').html(RANKING);
 	}
 	
 	if (type && (type === "clyde" || type === "pinky" || type === "inky" || type === "blinky") ) { 
