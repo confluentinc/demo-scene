@@ -36,31 +36,28 @@ body {
 }
 
 
-#score, #highscore, #level, #rank  { 
+#score, #highscore, #level { 
 	position: absolute;
 	display: inline;
 	top: 70px;
 	margin: 0px;
 	padding: 0px;
+	width: 160px;
 }
 #score { 
 	left: 0px;
 	width: 120px;
 }
 #highscore { 
-	left: 130px;
+	left: 150px;
 	width: 150px;
 }
-#rank { 
-	left: 370px;
-	width: 50px;
-}
 #level {
-	left: 290px;
+	left: 350px;
 	width: 50px;
 }
 #score h2, #score span, #highscore h2, #highscore span, #level h2, #level span,
-#rank h2, #rank span, #scoreboard h2, #scoreboard span { 
+#scoreboard h2, #scoreboard span { 
 	display: block;
 	text-transform: uppercase;
 	font-weight: normal;

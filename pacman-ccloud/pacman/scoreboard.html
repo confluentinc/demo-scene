@@ -37,16 +37,6 @@
 			$(document).ready(function() { 
 				//$.mobile.loading().hide();
 				loadScoreboardPage();
-				var playersScores = JSON.parse(window.localStorage.getItem("playersScores"));
-				if(playersScores){
-					//loading fro browser cache, will be faster
-					var headers = ["Rank","Name", "Score", "Level", "Losses"];
-
-					document.getElementById('scoreboard').innerHTML = json2table(playersScores, 'table', headers);
-
-				}else{
-					loadScoreboardPage()
-				}
 
 				var ctx = null;
 				var canvas = document.getElementById('canvas-panel-title-pacman');

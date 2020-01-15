@@ -4,8 +4,6 @@ var LOCK = false;
 
 var HIGHSCORE = 0;
 var highScoreWorker;
-var RANKING = 0;
-var rankingWorker;
 var SCORE = 0;
 var SCORE_BUBBLE = 10;
 var SCORE_SUPER_BUBBLE = 50;
@@ -58,34 +56,12 @@ function initGame(newGame) {
 		
 	});
 
-	getScoreboardJson(function(sc){
-		
-		SCOREBOARD = sc?sc:SCOREBOARD;
-		RANKING = calcRankingFromScoreboard(SCOREBOARD, window.name);
-
-		if (RANKING === 0) {
-			$('#rank span').html("-");
-		} else { 
-			$('#rank span').html(RANKING);
-		}
-		
-	});
 
 	// Creates a web worker that continuously update
 	// the value of the highest score every five seconds.
 	highScoreWorker = new Worker("/game/js/highscore-worker.js");
 	highScoreWorker.onmessage = function(event) {
 		HIGHSCORE = event.data;
-	};
-
-	// Creates a web worker that continuously update
-	// the value of the ranking every five seconds.
-	scoreboardWorker = new Worker("/game/js/scoreboard-worker.js");
-	scoreboardWorker.onmessage = function(event) {
-		SCOREBOARD = event.data;
-		window.localStorage.setItem("playersScores", JSON.stringify(SCOREBOARD));
-		RANKING = calcRankingFromScoreboard(SCOREBOARD, window.name);
-
 	};
 
 	var lastScore = 0;
@@ -419,8 +395,6 @@ function gameover() {
 	// updates the highest score value
 	highScoreWorker.terminate();
 
-	scoreboardWorker.terminate();
-
 }
 
 function message(m) { 
@@ -456,12 +430,6 @@ function score(s, type) {
 		$('#highscore span').html("00");
 	} else { 
 		$('#highscore span').html(HIGHSCORE);
-	}
-
-	if (RANKING === 0) {
-		$('#rank span').html("-");
-	} else { 
-		$('#rank span').html(RANKING);
 	}
 	
 	if (type && (type === "clyde" || type === "pinky" || type === "inky" || type === "blinky") ) { 
