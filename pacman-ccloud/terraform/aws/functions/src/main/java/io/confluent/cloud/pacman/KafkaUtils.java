@@ -15,6 +15,21 @@ import static io.confluent.cloud.pacman.Constants.*;
 
 public class KafkaUtils {
 
+    public static void createTopic(String topic, int numPartitions,
+        short replicationFactor, Map<String, String> configs) {
+        try (AdminClient adminClient = AdminClient.create(getConnectProperties())) {
+            ListTopicsResult listTopics = adminClient.listTopics();
+            Set<String> existingTopics = listTopics.names().get();
+            List<NewTopic> topicsToCreate = new ArrayList<>();
+            if (!existingTopics.contains(topic)) {
+                NewTopic newTopic = new NewTopic(topic, numPartitions, replicationFactor);
+                newTopic = newTopic.configs(configs);
+                topicsToCreate.add(newTopic);
+            }
+            adminClient.createTopics(topicsToCreate);
+        } catch (InterruptedException | ExecutionException ex) {}
+    }
+
     public static void createTopics(Map<String, Integer> topics) {
         try (AdminClient adminClient = AdminClient.create(getConnectProperties())) {
             ListTopicsResult listTopics = adminClient.listTopics();

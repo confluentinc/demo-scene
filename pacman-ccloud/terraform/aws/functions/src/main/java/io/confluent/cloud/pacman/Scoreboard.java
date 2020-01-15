@@ -132,7 +132,10 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
     private static KafkaConsumer<String, String> consumer;
 
     static {
-        createTopics(Map.of(SCOREBOARD_TOPIC, 6));
+        Map<String, String> configs = new HashMap<>();
+        configs.put("cleanup.policy", "compact");
+        configs.put("delete.retention.ms", "100");
+        createTopic(SCOREBOARD_TOPIC, 6, (short) 3, configs);
         initializeConsumer();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             if (consumer != null) {
