@@ -42,7 +42,7 @@ function initGame(newGame) {
 	var ksqlQuery = {};
 	ksqlQuery.ksql =
 		"SELECT HIGHEST_SCORE FROM HIGHEST_SCORE " +
-		"WHERE ROWKEY = 'HIGHEST_SCORE_KEY';";
+		"WHERE ROWKEY = 'HIGHEST_SCORE';";
 
 	var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
