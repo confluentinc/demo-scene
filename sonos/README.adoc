@@ -1,0 +1,181 @@
+SET 'auto.offset.reset' = 'earliest';
+
+CREATE STREAM SONOS_RAW (ZPINFO STRING, DATA ARRAY<VARCHAR>,RAWDATA STRING) WITH (KAFKA_TOPIC='sonos-metrics', VALUE_FORMAT='JSON');
+
+SELECT ZPINFO, CAST(SUBSTRING(DATA[0],14,4) AS DOUBLE) AS NOISE_FLOOR_DBM0, CAST(SUBSTRING(DATA[1],14,4) AS DOUBLE) AS NOISE_FLOOR_DBM1, CAST(SUBSTRING(DATA[2],14,4) AS DOUBLE) AS NOISE_FLOOR_DBM2, DATA[3], DATA[4]
+FROM SONOS_RAW WHERE ZPINFO='Kitchen'
+EMIT CHANGES LIMIT 5;
+
+CREATE STREAM SONOS_EXPLODE AS SELECT ZPINFO,EXPLODE(DATA) AS DATA, RAWDATA FROM SONOS_RAW PARTITION BY ZPINFO;
+
+ksql> SELECT ZPINFO, data,CAST(SUBSTRING(DATA,14,4) AS DOUBLE) AS NOISE_FLOOR_DBM , CAST(SUBSTRING(DATA,30,1) AS INT) AS NOISE_FLOOR_CHAIN_CTL  FROM SONOS_EXPLODE WHERE DATA LIKE 'Noise Floor%' EMIT CHANGES LIMIT 20;
++--------------------------------------------+--------------------------------------------+--------------------------------------------+--------------------------------------------+
+|ZPINFO                                      |DATA                                        |NOISE_FLOOR_DBM                             |NOISE_FLOOR_CHAIN_CTL                       |
++--------------------------------------------+--------------------------------------------+--------------------------------------------+--------------------------------------------+
+|Dining Room                                 |Noise Floor:    0 dBm (chain 0 ctl)         |0.0                                         |0                                           |
+|Dining Room                                 |Noise Floor:    0 dBm (chain 1 ctl)         |0.0                                         |1                                           |
+|Dining Room                                 |Noise Floor:    0 dBm (chain 2 ctl)         |0.0                                         |2                                           |
+|Sitting Room                                |Noise Floor:    0 dBm (chain 0 ctl)         |0.0                                         |0                                           |
+|Dining Room                                 |Noise Floor:    0 dBm (chain 3 ctl)         |0.0                                         |3                                           |
+|Sitting Room                                |Noise Floor:    0 dBm (chain 1 ctl)         |0.0                                         |1                                           |
+|Dining Room                                 |Noise Floor:    0 dBm (chain 0 ctl)         |0.0                                         |0                                           |
+|Sitting Room                                |Noise Floor:    0 dBm (chain 2 ctl)         |0.0                                         |2                                           |
+|Dining Room                                 |Noise Floor:    0 dBm (chain 1 ctl)         |0.0                                         |1                                           |
+|Sitting Room                                |Noise Floor:    0 dBm (chain 3 ctl)         |0.0                                         |3                                           |
+|Dining Room                                 |Noise Floor:    0 dBm (chain 2 ctl)         |0.0                                         |2                                           |
+|Bedroom                                     |Noise Floor: -106 dBm (chain 0 ctl)         |-106.0                                      |0                                           |
+|Dining Room                                 |Noise Floor:    0 dBm (chain 3 ctl)         |0.0                                         |3                                           |
+|Bedroom                                     |Noise Floor: -104 dBm (chain 1 ctl)         |-104.0                                      |1                                           |
+|Bedroom                                     |Noise Floor: -100 dBm (chain 2 ctl)         |-100.0                                      |2                                           |
+|Bedroom                                     |Noise Floor: -105 dBm (chain 0 ctl)         |-105.0                                      |0                                           |
+|Bedroom                                     |Noise Floor: -104 dBm (chain 1 ctl)         |-104.0                                      |1                                           |
+|Bedroom                                     |Noise Floor: -100 dBm (chain 2 ctl)         |-100.0                                      |2                                           |
+|Bedroom                                     |Noise Floor: -105 dBm (chain 0 ctl)         |-105.0                                      |0                                           |
+|Bedroom                                     |Noise Floor: -104 dBm (chain 1 ctl)         |-104.0                                      |1                                           |
+Limit Reached
+Query terminated
+
+
+ksql> SELECT ZPINFO, data,CAST(SUBSTRING(DATA,17,2) AS INT) AS OFDM_ANI_LEVEL FROM SONOS_EXPLODE2 WHERE DATA LIKE 'OFDM%' EMIT CHANGES LIMIT 10;
++-----------------------------------------------------------+-----------------------------------------------------------+-----------------------------------------------------------+
+|ZPINFO                                                     |DATA                                                       |OFDM_ANI_LEVEL                                             |
++-----------------------------------------------------------+-----------------------------------------------------------+-----------------------------------------------------------+
+|Bedroom                                                    |OFDM ANI level: 4                                          |4                                                          |
+|Bedroom                                                    |OFDM ANI level: 5                                          |5                                                          |
+|Bedroom                                                    |OFDM ANI level: 5                                          |5                                                          |
+|Bedroom                                                    |OFDM ANI level: 5                                          |5                                                          |
+|Bedroom                                                    |OFDM ANI level: 5                                          |5                                                          |
+|Bedroom                                                    |OFDM ANI level: 5                                          |5                                                          |
+|Bedroom                                                    |OFDM ANI level: 4                                          |4                                                          |
+|Bedroom                                                    |OFDM ANI level: 4                                          |4                                                          |
+|Bedroom                                                    |OFDM ANI level: 5                                          |5                                                          |
+|Bedroom                                                    |OFDM ANI level: 4                                          |4                                                          |
+Limit Reached
+Query terminated
+ksql>
+
+
+ksql> SELECT ZPINFO, data,cast(split(DATA,' ')[5] AS INT) AS PHY_ERRORS FROM SONOS_EXPLODE2 WHERE DATA like 'PHY error%' EMIT CHANGES LIMIT 10;
++-----------------------------------------------------------+-----------------------------------------------------------+-----------------------------------------------------------+
+|ZPINFO                                                     |DATA                                                       |PHY_ERRORS                                                 |
++-----------------------------------------------------------+-----------------------------------------------------------+-----------------------------------------------------------+
+|Bedroom                                                    |PHY errors since last reading/reset: 14962                 |14962                                                      |
+|Bedroom                                                    |PHY errors since last reading/reset: 74468                 |74468                                                      |
+|Bedroom                                                    |PHY errors since last reading/reset: 65119                 |65119                                                      |
+|Dining Room                                                |PHY errors since last reading/reset: 77861                 |77861                                                      |
+|Bedroom                                                    |PHY errors since last reading/reset: 55628                 |55628                                                      |
+|Dining Room                                                |PHY errors since last reading/reset: 64452                 |64452                                                      |
+|Bedroom                                                    |PHY errors since last reading/reset: 56758                 |56758                                                      |
+|Dining Room                                                |PHY errors since last reading/reset: 50138                 |50138                                                      |
+|Sitting Room                                               |PHY errors since last reading/reset: 105397                |105397                                                     |
+|Dining Room                                                |PHY errors since last reading/reset: 54165                 |54165                                                      |
+Limit Reached
+Query terminated
+
+
+
+-- ksqlDB 0.6
+
+CREATE STREAM SONOS_HEALTH_METRICS WITH (VALUE_FORMAT='AVRO', KAFKA_TOPIC='sonos_metrics_01') AS 
+    SELECT ZPINFO,
+           (( (CAST(SUBSTRING(DATA[0],14,4) AS DOUBLE) + CAST(SUBSTRING(DATA[1],14,4) AS DOUBLE) +  CAST(SUBSTRING(DATA[2],14,4) AS DOUBLE)) /3 )*-1) AS AVG_NOISE_FLOOR_DBM,
+           CAST(SUBSTRING(DATA[0],14,4) AS DOUBLE) AS NOISE_FLOOR_DBM0, 
+           CAST(SUBSTRING(DATA[1],14,4) AS DOUBLE) AS NOISE_FLOOR_DBM1, 
+           CAST(SUBSTRING(DATA[2],14,4) AS DOUBLE) AS NOISE_FLOOR_DBM2, 
+           CAST(SUBSTRING(DATA[4],17,2) AS INT) AS OFDM_ANI_LEVEL, 
+           (12-CAST(SUBSTRING(DATA[4],17,2) AS INT))/2 OFDM_ANI_LEVEL_ADJUSTED, 
+           DATA,
+           RAWDATA
+    FROM   SONOS_RAW 
+    WHERE  CAST(SUBSTRING(DATA[0],14,4) AS DOUBLE) <0
+    EMIT CHANGES;
+
+
+
+-- ksqlDB 0.7 (master as of 2020-01-15 14:37:20)
+CREATE STREAM SONOS_HEALTH_METRICS WITH (VALUE_FORMAT='AVRO', KAFKA_TOPIC='sonos_metrics_01') AS 
+    SELECT STRUCT(DEVICE := ZPINFO) AS TAGS,
+           (( (CAST(SUBSTRING(DATA[1],14,4) AS DOUBLE) + CAST(SUBSTRING(DATA[2],14,4) AS DOUBLE) +  CAST(SUBSTRING(DATA[3],14,4) AS DOUBLE)) /3 )*-1) AS AVG_NOISE_FLOOR_DBM,
+           CAST(SUBSTRING(DATA[1],14,4) AS DOUBLE) AS NOISE_FLOOR_DBM0, 
+           CAST(SUBSTRING(DATA[2],14,4) AS DOUBLE) AS NOISE_FLOOR_DBM1, 
+           CAST(SUBSTRING(DATA[3],14,4) AS DOUBLE) AS NOISE_FLOOR_DBM2, 
+           CAST(SUBSTRING(DATA[5],17,2) AS INT) AS OFDM_ANI_LEVEL, 
+           (12-CAST(SUBSTRING(DATA[5],17,2) AS INT))/2 OFDM_ANI_LEVEL_ADJUSTED
+    FROM   SONOS_RAW 
+    WHERE  CAST(SUBSTRING(DATA[1],14,4) AS DOUBLE) <0
+    EMIT CHANGES;
+
+
+
+ksql> describe SONOS_HEALTH_METRICS;
+
+Name                 : SONOS_HEALTH_METRICS
+ Field                   | Type
+----------------------------------------------------------
+ ROWTIME                 | BIGINT           (system)
+ ROWKEY                  | VARCHAR(STRING)  (system)
+ TAGS                    | STRUCT<DEVICE VARCHAR(STRING)>
+ AVG_NOISE_FLOOR_DBM     | DOUBLE
+ NOISE_FLOOR_DBM0        | DOUBLE
+ NOISE_FLOOR_DBM1        | DOUBLE
+ NOISE_FLOOR_DBM2        | DOUBLE
+ OFDM_ANI_LEVEL          | INTEGER
+ OFDM_ANI_LEVEL_ADJUSTED | INTEGER
+ DATA                    | ARRAY<VARCHAR(STRING)>
+ RAWDATA                 | VARCHAR(STRING)
+----------------------------------------------------------
+For runtime statistics and query details run: DESCRIBE EXTENDED <Stream,Table>;
+ksql>
+
+
+
+SELECT  AVG_NOISE_FLOOR_DBM, 
+        OFDM_ANI_LEVEL_ADJUSTED,
+        CASE WHEN AVG_NOISE_FLOOR_DBM > 94 AND OFDM_ANI_LEVEL_ADJUSTED > 4 THEN 'GREEN'
+            WHEN AVG_NOISE_FLOOR_DBM > 89 AND OFDM_ANI_LEVEL_ADJUSTED > 3 THEN 'YELLOW'
+            WHEN AVG_NOISE_FLOOR_DBM > 84 AND OFDM_ANI_LEVEL_ADJUSTED > 2 THEN 'ORANGE'
+            ELSE 'RED' 
+        END AS STATUS 
+FROM SONOS_HEALTH_METRICS 
+EMIT CHANGES;
+
+
+		if( nf > 94 && ofdm > 4 )
+			td.style.background = "rgb(32,190,32)"; // GREEN
+		else if( nf > 89 && ofdm > 3 )
+			td.style.background = "rgb(255,255,32)"; // YELLOW
+		else if( nf > 84 && ofdm > 2 )
+			td.style.background = "rgb(255,159,32)"; // ORANGE
+		else
+			td.style.background = "rgb(255,32,32)"; // RED
+
+
+DROP CONNECTOR SINK_INFLUX;
+CREATE SINK CONNECTOR SINK_INFLUX WITH (
+    'connector.class'     = 'io.confluent.influxdb.InfluxDBSinkConnector',
+    'topics'              = 'sonos_metrics_01',
+    'influxdb.url' =  'http://influxdb:8086',
+    'influxdb.db' = 'my_db',
+    'measurement.name.format' = 'sonos01'
+  );             
+
+
+CREATE SINK CONNECTOR SINK_INFLUX_04 WITH (
+    'connector.class'     = 'io.confluent.influxdb.InfluxDBSinkConnector',
+    'value.converter' = 'org.apache.kafka.connect.json.JsonConverter',
+    'value.converter.schemas.enable'='false',
+    'key.converter' = 'org.apache.kafka.connect.storage.StringConverter',
+    'topics'              = 'influxtest',
+    'influxdb.url' =  'http://influxdb:8086',
+    'influxdb.db' = 'my_db');
+
+
+Fails
+
+    Caused by: java.lang.ClassCastException: java.util.HashMap cannot be cast to org.apache.kafka.connect.data.Struct
+    at io.confluent.influxdb.sink.InfluxDBSinkTask.writeRecordsToDB(InfluxDBSinkTask.java:230)
+    at io.confluent.influxdb.sink.InfluxDBSinkTask.put(InfluxDBSinkTask.java:112)
+    at org.apache.kafka.connect.runtime.WorkerSinkTask.deliverMessages(WorkerSinkTask.java:539)
+
+
+{ "measurement": "cpu", "cpu1": 10, "cpu2": 5, "cpu3": 15 }
