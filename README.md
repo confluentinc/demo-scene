@@ -50,6 +50,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - [Topic Tailer](topic-tailer), stream topics to the browser using websockets
   - [KPay payment processing example](scalable-payment-processing)
   - [Industry themes (e.g. banking Next Best Offer)](industry-themes)
+  - [Tiered Storage Demo](tiered-storage-demo)
 
 
 ## Feedback & Questions

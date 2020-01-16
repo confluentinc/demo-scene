@@ -5,11 +5,16 @@
 	<head>
 
 		<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+		<link rel="apple-touch-icon" sizes="180x180" href="game/img/apple-touch-icon.png">
+		<link rel="icon" type="image/png" sizes="32x32" href="game/img/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="game/img/favicon-16x16.png">
+		<link rel="manifest" href="/site.webmanifest">
 		<link rel="stylesheet" type="text/css" href="game/css/pacman.css" />
 		<link rel="stylesheet" type="text/css" href="game/css/pacman-home.css" />
 	
 		<script type="text/javascript" src="game/js/jquery.js"></script>
 		<script type="text/javascript" src="game/js/jquery-buzz.js"></script>
+		<script type="text/javascript" src="game/js/shared.js"></script>
 		<script type="text/javascript" src="game/js/game.js"></script>
 		<script type="text/javascript" src="game/js/tools.js"></script>
 		<script type="text/javascript" src="game/js/board.js"></script>
@@ -76,6 +81,12 @@
 							$(".help-button").show();
 						}
 					}
+				});
+
+				$(".scoreboard-button").click(function(e) { 
+					e.stopPropagation();
+
+					window.location.href='scoreboard.html';
 				});
 				
 				$(".github,.putchu").click(function(e) { 
@@ -207,8 +218,9 @@
 		<div id="panel">
 			<h1>Pac-Man</h1>
 			<canvas id="canvas-panel-title-pacman"></canvas>
-			<div id="score"><h2>1UP</h2><span>00</span></div>
+			<div id="score"><h2>Score</h2><span>00</span></div>
 			<div id="highscore"><h2>High Score</h2><span>00</span></div>
+			<div id="level"><h2>Level</h2><span>1UP</span></div>
 			<div id="board">
 				<canvas id="canvas-board"></canvas>
 				<canvas id="canvas-paths"></canvas>
@@ -236,6 +248,7 @@
 			<canvas id="canvas-level-fruits"></canvas>
 			<div id="message"></div>
 			<div class="help-button">- help -</div>
+			<div class="scoreboard-button">score board</div>
 			<a class="sound" href="javascript:void(0);" data-sound="on"><img src="game/img/sound-on.png" alt="" border="0"></a>
 		</div>
 	

@@ -7,5 +7,5 @@ output "Pacman" {
 }
 
 output "ksqlDB" {
-  value = "http://${aws_alb.ksqldb_server.dns_name}"
+  value = "http://${aws_alb.ksqldb_lbr.dns_name}"
 }

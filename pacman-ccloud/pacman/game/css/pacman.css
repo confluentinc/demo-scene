@@ -36,7 +36,7 @@ body {
 }
 
 
-#score, #highscore  { 
+#score, #highscore, #level { 
 	position: absolute;
 	display: inline;
 	top: 70px;
@@ -44,10 +44,20 @@ body {
 	padding: 0px;
 	width: 160px;
 }
-#highscore { 
-	left: 180px;
+#score { 
+	left: 0px;
+	width: 120px;
 }
-#score h2, #score span, #highscore h2, #highscore span { 
+#highscore { 
+	left: 150px;
+	width: 150px;
+}
+#level {
+	left: 350px;
+	width: 50px;
+}
+#score h2, #score span, #highscore h2, #highscore span, #level h2, #level span,
+#scoreboard h2, #scoreboard span { 
 	display: block;
 	text-transform: uppercase;
 	font-weight: normal;
@@ -227,7 +237,10 @@ span.combo, span.fruits {
 	background-image: url('../img/move-right-big.png');
 }
 
+#panel.scoreboardPage h1 { 
+	margin: 0px 0px 20px 0px;
 
+}
 
 h1 { 
 	margin: 0px 0px 74px 0px;
@@ -290,7 +303,7 @@ h3 {
 	padding: 10px 25px 30px 65px;
 }
 
-.help-button { 
+.help-button, .scoreboard-button { 
 	position: absolute;
 	text-align: center;
 	bottom: 8px;
@@ -304,12 +317,32 @@ h3 {
 	color: #78abf7;
 	transition: color 1.5s;
 }
-.help-button.yo { 
+
+.scoreboard-button{
+	text-transform: uppercase;
+}
+
+.help-button.yo, .scoreboard-button.yo { 
 	color: #333;
 }
+
+
+
 #panel .help-button { 
 	top: -510px;
 	height: 25px;
+}
+
+#panel .scoreboard-button{
+	top: -635px;
+	height: 25px;
+	width:150px;
+	text-transform: uppercase;
+}
+
+#panel.scoreboardPage h1 { 
+	margin: 0px 0px 20px 0px;
+
 }
 
 #help h2 { 
@@ -361,6 +394,39 @@ h3 {
 	-ms-user-select: none;
 	user-select: none;
 	-webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+#scoreboard table {
+	border-collapse: collapse;
+}
+
+#scoreboard table,#scoreboard tr, #scoreboard td {
+	border: 1px solid white
+}
+
+#scoreboard table th, #scoreboard table td {
+    padding: 5px 20px;
+}
+
+#scoreboard table th {
+	color: rgb(190, 221, 12);
+	text-transform: uppercase;
+}
+
+.back-button {
+    top: 0px;
+    height: 25px;
+    position: absolute;
+    text-align: center;
+    right: 55px;
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    color: #78abf7;
+    transition: color 1.5s;
+    width: 200px;
 }
 
 

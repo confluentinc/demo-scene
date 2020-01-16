@@ -29,6 +29,19 @@ type UserStatistic struct {
 
 func main() {
 
+	// Try to read if the user specified how
+	// many records will be shown after the
+	// scoreboard computes the order.
+	var count int = -1
+	if len(os.Args) > 1 {
+		value, err := strconv.Atoi(os.Args[1])
+		if err == nil {
+			count = value
+		} else {
+			panic(fmt.Sprintf("Invalid parameter provided %s", err))
+		}
+	}
+
 	// Create a local cache of the statistics
 	// computed by the pipeline. Data coming
 	// from the 'SCOREBOARD' topic will be used
@@ -86,13 +99,13 @@ func main() {
 			switch e := event.(type) {
 			case kafka.OffsetsCommitted:
 				rewindPeriod = false
-				printStatistics(stats)
+				printStatistics(stats, count)
 			case *kafka.Message:
 				userStat := new(UserStatistic)
 				json.Unmarshal(e.Value, userStat)
 				stats[userStat.User] = userStat
 				if !rewindPeriod {
-					printStatistics(stats)
+					printStatistics(stats, count)
 				}
 			case kafka.Error:
 				fmt.Fprintf(os.Stderr, "%% Error: %v: %v\n", e.Code(), e)
@@ -127,7 +140,7 @@ func loadProperties() map[string]string {
 	return props
 }
 
-func printStatistics(stats map[string]*UserStatistic) {
+func printStatistics(stats map[string]*UserStatistic, count int) {
 
 	// Clear the screen and calculate who
 	// from the list has the biggest name.
@@ -184,6 +197,9 @@ func printStatistics(stats map[string]*UserStatistic) {
 	formatExp = "|  %-3d|  %-" + strconv.Itoa(length+1) + "v|     %-16d|       %-10d|       %-9d|\n"
 	for i, user := range users {
 		fmt.Printf(formatExp, i+1, user.User, user.HighestScore, user.HighestLevel, user.TotalLosses)
+		if i+1 == count {
+			break
+		}
 	}
 
 	// Print the footer for each column.

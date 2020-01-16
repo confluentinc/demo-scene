@@ -78,6 +78,18 @@
       {
         "name": "KSQL_KSQL_STREAMS_CACHE_MAX_BYTES_BUFFERING",
         "value": "20000000"
+      },
+      {
+        "name": "KSQL_ACCESS_CONTROL_ALLOW_ORIGIN",
+        "value": "${access_control_allow_origin}"
+      },
+      {
+        "name": "KSQL_ACCESS_CONTROL_ALLOW_METHODS",
+        "value": "${access_control_allow_methods}"
+      },
+      {
+        "name": "KSQL_ACCESS_CONTROL_ALLOW_HEADERS",
+        "value": "${access_control_allow_headers}"
       }
     ],
     "logConfiguration": {

@@ -3,6 +3,7 @@ var PAUSE = false;
 var LOCK = false;
 
 var HIGHSCORE = 0;
+var highScoreWorker;
 var SCORE = 0;
 var SCORE_BUBBLE = 10;
 var SCORE_SUPER_BUBBLE = 50;
@@ -30,11 +31,77 @@ function blinkHelp() {
 	} else { 
 		$('.help-button').addClass("yo");
 	}
+
+	if ( $('.scoreboard-button').attr("class").indexOf("yo") > -1 ) { 
+		$('.scoreboard-button').removeClass("yo");
+	} else { 
+		$('.scoreboard-button').addClass("yo");
+	}
 }
 
-function initGame(newgame) { 
+function initGame(newGame) {
 
-	if (newgame) { 
+	// Retrieve the highest score so the current
+	// player knows how far behind he/she might
+	// be if compared to the best player.
+
+	loadHighestScore(function(hgs) {
+		HIGHSCORE = hgs?hgs:HIGHSCORE;
+		if (HIGHSCORE === 0) {
+			$('#highscore span').html("00");
+		} else { 
+			$('#highscore span').html(HIGHSCORE);
+		}
+	});
+
+	// Creates a web worker that continuously update
+	// the value of the highest score every five seconds.
+	highScoreWorker = new Worker("/game/js/highscore-worker.js");
+	highScoreWorker.onmessage = function(event) {
+		HIGHSCORE = event.data;
+	};
+
+	var lastScore = 0;
+	var lastLevel = 0;
+
+	// Temporary workaround for GCP and Azure
+	// while their implementations are not using
+	// ksqlDB and thus don't support pull queries.
+	if (CLOUD_PROVIDER == "GCP" || CLOUD_PROVIDER == "AZR") {
+		doInitGame(newGame, lastScore, lastLevel);
+		return;
+	}
+
+	var ksqlQuery = {};
+	ksqlQuery.ksql =
+		"SELECT HIGHEST_SCORE, HIGHEST_LEVEL " +
+		"FROM STATS_PER_USER WHERE ROWKEY = '" +
+		window.name + "';"
+
+	var request = new XMLHttpRequest();
+    request.onreadystatechange = function() {
+        if (this.readyState == 4) {
+			if (this.status == 200) {
+				var result = JSON.parse(this.responseText);
+				if (result[1] != undefined || result[1] != null) {
+					var row = result[1].row;
+					lastScore = row.columns[0];
+					lastLevel = row.columns[1];
+				}
+			}
+			doInitGame(newGame, lastScore, lastLevel);
+		}
+	};
+	request.open('POST', KSQLDB_QUERY_API, true);
+	request.setRequestHeader('Accept', 'application/vnd.ksql.v1+json');
+	request.setRequestHeader('Content-Type', 'application/vnd.ksql.v1+json');
+	request.send(JSON.stringify(ksqlQuery));
+	
+}
+
+function doInitGame(newGame, lastScore, lastLevel) {
+
+	if (newGame) { 
 		stopPresentation();
 		stopTrailer();
 	
@@ -43,7 +110,13 @@ function initGame(newgame) {
 
 		$('#help').fadeOut("slow");
 		
-		score(0);
+		score(lastScore);
+		LEVEL = lastLevel;
+		if (LEVEL == 0) {
+			LEVEL = 1;
+		}
+		$('#level span').html(LEVEL + "UP");
+
 		clearMessage();
 		$("#home").hide();
 		$("#panel").show();
@@ -75,28 +148,21 @@ function initGame(newgame) {
 		ctx.fill();
 		ctx.closePath();
 	}
-
 	initBoard();
 	drawBoard();
 	drawBoardDoor();
-	
 	initPaths();
 	drawPaths();
-	
 	initBubbles();
 	drawBubbles();
-	
 	initFruits();
-	
 	initPacman();
 	drawPacman();
-	
 	initGhosts();
 	drawGhosts();
-	
 	lifes();
-	
 	ready();
+
 }
 
 function win() { 
@@ -146,7 +212,9 @@ function nextLevel() {
 	TIME_LEVEL = 0;
 	TIME_LIFE = 0;
 	TIME_FRUITS = 0;
-	
+
+	$('#level span').html(LEVEL + "UP");
+
 }
 
 
@@ -175,6 +243,7 @@ function ready() {
 	playReadySound();
 	setTimeout("go()", "4100");
 }
+
 function go() { 
 	playSirenSound();
 
@@ -189,11 +258,13 @@ function go() {
 
 	moveGhosts();
 }
+
 function startTimes() { 
 	if (TIME_GENERAL_TIMER === -1) { 
 		TIME_GENERAL_TIMER = setInterval("times()", 1000);
 	}
 }
+
 function times() { 
 	TIME_GAME ++;
 	TIME_LEVEL ++;
@@ -202,6 +273,7 @@ function times() {
 	
 	fruit();
 }
+
 function pauseTimes() { 
 	if (TIME_GENERAL_TIMER != -1) { 
 		clearInterval(TIME_GENERAL_TIMER);
@@ -209,10 +281,12 @@ function pauseTimes() {
 	}
 	if (FRUIT_CANCEL_TIMER != null) FRUIT_CANCEL_TIMER.pause();
 }
+
 function resumeTimes() { 
 	startTimes();
 	if (FRUIT_CANCEL_TIMER != null) FRUIT_CANCEL_TIMER.resume();
 }
+
 function stopTimes() { 
 	if (TIME_GENERAL_TIMER != -1) { 
 		clearInterval(TIME_GENERAL_TIMER);
@@ -239,6 +313,7 @@ function pauseGame() {
 		stopBlinkSuperBubbles();
 	}
 }
+
 function resumeGame() { 
 	if (PAUSE) { 
 		testStateGhosts();
@@ -320,12 +395,17 @@ function gameover() {
 	record.user = window.name;
 	produceRecord('USER_LOSSES', record);
 
+	// Terminate the web worker that
+	// updates the highest score value
+	highScoreWorker.terminate();
+
 }
 
 function message(m) { 
 	$("#message").html(m);
 	if (m === "game over") $("#message").addClass("red");
 }
+
 function clearMessage() { 
 	$("#message").html("");
 	$("#message").removeClass("red");
@@ -346,15 +426,15 @@ function score(s, type) {
 	if (scoreAfter > scoreBefore) { 
 		lifes( +1 );
 	}
-
 	
-	if (SCORE > HIGHSCORE) { 
+	if (SCORE > HIGHSCORE) {
 		HIGHSCORE = SCORE;
-		if (HIGHSCORE === 0) { 
-			$('#highscore span').html("00");
-		} else { 
-			$('#highscore span').html(HIGHSCORE);
-		}
+	}
+
+	if (HIGHSCORE === 0) {
+		$('#highscore span').html("00");
+	} else { 
+		$('#highscore span').html(HIGHSCORE);
 	}
 	
 	if (type && (type === "clyde" || type === "pinky" || type === "inky" || type === "blinky") ) { 
@@ -384,9 +464,8 @@ function score(s, type) {
 
 function produceRecord(topic, record) {
 
-	const PROVIDER = "${cloud_provider}";
 	var contentType = "application/json";
-	var url = "${event_handler_api}?topic=" + topic;
+	var url = EVENT_HANDLER_API + "?topic=" + topic;
 	var json = JSON.stringify(record);
 
 	// The verification below is only
@@ -396,13 +475,13 @@ function produceRecord(topic, record) {
 	// rely on REST Proxy to emmit the
 	// game events.
 	
-	if (PROVIDER == "GCP" || PROVIDER == "AZR") {
+	if (CLOUD_PROVIDER == "GCP" || CLOUD_PROVIDER == "AZR") {
 
 		// Fallback to the format that REST Proxy
 		// requires in order to emmit the events.
 
 		contentType = "application/vnd.kafka.json.v2+json";
-		url = "${event_handler_api}/topics/" + topic;
+		url = EVENT_HANDLER_API + "/topics/" + topic;
 
 		var recordHolder = {};
 		recordHolder.value = record;
