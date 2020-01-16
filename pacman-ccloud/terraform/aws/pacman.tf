@@ -70,12 +70,12 @@ variable "img_files" {
     "game/img/sound-off.png",
     "game/img/sound-on.png",
     "game/img/pac-man-logo.png",
-    "android-chrome-192x192.png",
-    "android-chrome-512x512.png",
-    "apple-touch-icon.png",
-    "favicon-16x16.png",
-    "favicon-32x32.png",
-    "favicon.ico"
+    "game/img/android-chrome-192x192.png",
+    "game/img/android-chrome-512x512.png",
+    "game/img/apple-touch-icon.png",
+    "game/img/favicon-16x16.png",
+    "game/img/favicon-32x32.png",
+    "game/img/favicon.ico"
   ]
 }
 

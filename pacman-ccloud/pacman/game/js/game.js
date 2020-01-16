@@ -45,17 +45,14 @@ function initGame(newGame) {
 	// player knows how far behind he/she might
 	// be if compared to the best player.
 
-	loadHighestScore(function(hgs){
-		
+	loadHighestScore(function(hgs) {
 		HIGHSCORE = hgs?hgs:HIGHSCORE;
 		if (HIGHSCORE === 0) {
 			$('#highscore span').html("00");
 		} else { 
 			$('#highscore span').html(HIGHSCORE);
 		}
-		
 	});
-
 
 	// Creates a web worker that continuously update
 	// the value of the highest score every five seconds.
@@ -246,6 +243,7 @@ function ready() {
 	playReadySound();
 	setTimeout("go()", "4100");
 }
+
 function go() { 
 	playSirenSound();
 
@@ -260,11 +258,13 @@ function go() {
 
 	moveGhosts();
 }
+
 function startTimes() { 
 	if (TIME_GENERAL_TIMER === -1) { 
 		TIME_GENERAL_TIMER = setInterval("times()", 1000);
 	}
 }
+
 function times() { 
 	TIME_GAME ++;
 	TIME_LEVEL ++;
@@ -273,6 +273,7 @@ function times() {
 	
 	fruit();
 }
+
 function pauseTimes() { 
 	if (TIME_GENERAL_TIMER != -1) { 
 		clearInterval(TIME_GENERAL_TIMER);
@@ -280,10 +281,12 @@ function pauseTimes() {
 	}
 	if (FRUIT_CANCEL_TIMER != null) FRUIT_CANCEL_TIMER.pause();
 }
+
 function resumeTimes() { 
 	startTimes();
 	if (FRUIT_CANCEL_TIMER != null) FRUIT_CANCEL_TIMER.resume();
 }
+
 function stopTimes() { 
 	if (TIME_GENERAL_TIMER != -1) { 
 		clearInterval(TIME_GENERAL_TIMER);
@@ -310,6 +313,7 @@ function pauseGame() {
 		stopBlinkSuperBubbles();
 	}
 }
+
 function resumeGame() { 
 	if (PAUSE) { 
 		testStateGhosts();
@@ -401,6 +405,7 @@ function message(m) {
 	$("#message").html(m);
 	if (m === "game over") $("#message").addClass("red");
 }
+
 function clearMessage() { 
 	$("#message").html("");
 	$("#message").removeClass("red");

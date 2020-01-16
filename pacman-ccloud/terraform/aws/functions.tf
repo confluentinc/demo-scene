@@ -19,6 +19,7 @@ data "template_file" "wake_up_function" {
 ###########################################
 
 resource "aws_api_gateway_rest_api" "event_handler_api" {
+  depends_on = [aws_lambda_function.event_handler_function]
   name = "event_handler_api"
   description = "Event Handler API"
   endpoint_configuration {
@@ -100,6 +101,7 @@ resource "aws_api_gateway_method_response" "event_handler_options_method_respons
 }
 
 resource "aws_api_gateway_integration_response" "event_handler_options_integration_response" {
+  depends_on = [aws_s3_bucket.pacman]
   rest_api_id = aws_api_gateway_rest_api.event_handler_api.id
   resource_id = aws_api_gateway_resource.event_handler_resource.id
   http_method = aws_api_gateway_method.event_handler_options_method.http_method
@@ -158,7 +160,8 @@ EOF
 resource "aws_lambda_function" "event_handler_function" {
   depends_on = [
     null_resource.build_functions,
-    aws_iam_role.event_handler_role]
+    aws_iam_role.event_handler_role,
+    aws_s3_bucket.pacman]
   function_name = "event_handler"
   filename = "functions/deploy/aws-functions-1.0.jar"
   handler = "io.confluent.cloud.pacman.EventHandler"
@@ -210,6 +213,7 @@ resource "aws_cloudwatch_event_target" "event_handler_every_five_minutes" {
 ###########################################
 
 resource "aws_api_gateway_rest_api" "scoreboard_api" {
+  depends_on = [aws_lambda_function.scoreboard_function]
   name = "scoreboard_api"
   description = "Scoreboard API"
   endpoint_configuration {
@@ -291,6 +295,7 @@ resource "aws_api_gateway_method_response" "scoreboard_options_method_response" 
 }
 
 resource "aws_api_gateway_integration_response" "highest_score_options_integration_response" {
+  depends_on = [aws_s3_bucket.pacman]
   rest_api_id = aws_api_gateway_rest_api.scoreboard_api.id
   resource_id = aws_api_gateway_resource.scoreboard_resource.id
   http_method = aws_api_gateway_method.scoreboard_options_method.http_method
@@ -349,7 +354,8 @@ EOF
 resource "aws_lambda_function" "scoreboard_function" {
   depends_on = [
     null_resource.build_functions,
-    aws_iam_role.scoreboard_role]
+    aws_iam_role.scoreboard_role,
+    aws_s3_bucket.pacman]
   function_name = "scoreboard"
   filename = "functions/deploy/aws-functions-1.0.jar"
   handler = "io.confluent.cloud.pacman.Scoreboard"

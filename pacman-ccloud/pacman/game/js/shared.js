@@ -49,24 +49,19 @@ function getScoreboardJson(callback) {
 				var res=0
 				if (a.score > b.score) res = 1;
 				if (b.score > a.score) res = -1;
-
 				if (a.score == b.score){
 					if (a.level > b.level) res = 1;
 					if (b.level > a.level) res = -1;
-
 					if (a.level == b.level){
 						if (a.losses < b.losses) res = 1;
 						if (b.losses > a.losses) res = -1;
 					} 
 				} 
-			  
 				return res * -1;
 			  });;
 			callback(playersScores);
-	
 		}
 	};
-
 	
 	request.open(method, url, true);
 	request.setRequestHeader("Content-Type", contentType);
@@ -78,8 +73,7 @@ function calcRankingFromScoreboard(scoreboard,username){
 	var ranking;
 	for (var i = 0, l = scoreboard.length; i < l; i++) {
 		var player = scoreboard[i];
-		if(player.user===username) { 
-	
+		if(player.user === username) {
 			ranking = i+1 ;
 			break;
 		}
