@@ -5,6 +5,10 @@
 	<head>
 
 		<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+		<link rel="manifest" href="/site.webmanifest">
 		<link rel="stylesheet" type="text/css" href="game/css/pacman.css" />
 		<link rel="stylesheet" type="text/css" href="game/css/pacman-home.css" />
 	
@@ -77,6 +81,12 @@
 							$(".help-button").show();
 						}
 					}
+				});
+
+				$(".scoreboard-button").click(function(e) { 
+					e.stopPropagation();
+
+					window.location.href='scoreboard.html';
 				});
 				
 				$(".github,.putchu").click(function(e) { 
@@ -238,6 +248,7 @@
 			<canvas id="canvas-level-fruits"></canvas>
 			<div id="message"></div>
 			<div class="help-button">- help -</div>
+			<div class="scoreboard-button">score board</div>
 			<a class="sound" href="javascript:void(0);" data-sound="on"><img src="game/img/sound-on.png" alt="" border="0"></a>
 		</div>
 	

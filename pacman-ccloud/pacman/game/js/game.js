@@ -31,6 +31,12 @@ function blinkHelp() {
 	} else { 
 		$('.help-button').addClass("yo");
 	}
+
+	if ( $('.scoreboard-button').attr("class").indexOf("yo") > -1 ) { 
+		$('.scoreboard-button').removeClass("yo");
+	} else { 
+		$('.scoreboard-button').addClass("yo");
+	}
 }
 
 function initGame(newGame) {
@@ -39,36 +45,21 @@ function initGame(newGame) {
 	// player knows how far behind he/she might
 	// be if compared to the best player.
 
-	var ksqlQuery = {};
-	ksqlQuery.ksql =
-		"SELECT HIGHEST_SCORE FROM HIGHEST_SCORE " +
-		"WHERE ROWKEY = 'HIGHEST_SCORE';";
-
-	var request = new XMLHttpRequest();
-    request.onreadystatechange = function() {
-        if (this.readyState == 4) {
-			if (this.status == 200) {
-				var result = JSON.parse(this.responseText);
-				if (result[1] != undefined || result[1] != null) {
-					var row = result[1].row;
-					HIGHSCORE = row.columns[0];
-					if (HIGHSCORE === 0) {
-						$('#highscore span').html("00");
-					} else { 
-						$('#highscore span').html(HIGHSCORE);
-					}
-				}
-            }
+	loadHighestScore(function(hgs){
+		
+		HIGHSCORE = hgs?hgs:HIGHSCORE;
+		if (HIGHSCORE === 0) {
+			$('#highscore span').html("00");
+		} else { 
+			$('#highscore span').html(HIGHSCORE);
 		}
-	};
-	request.open('POST', KSQLDB_QUERY_API, true);
-	request.setRequestHeader('Accept', 'application/vnd.ksql.v1+json');
-	request.setRequestHeader('Content-Type', 'application/vnd.ksql.v1+json');
-	request.send(JSON.stringify(ksqlQuery));
+		
+	});
+
 
 	// Creates a web worker that continuously update
 	// the value of the highest score every five seconds.
-	highScoreWorker = new Worker("/game/js/shared.js");
+	highScoreWorker = new Worker("/game/js/highscore-worker.js");
 	highScoreWorker.onmessage = function(event) {
 		HIGHSCORE = event.data;
 	};

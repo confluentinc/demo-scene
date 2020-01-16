@@ -23,6 +23,13 @@ resource "aws_s3_bucket_object" "start" {
   source = "../../pacman/start.html"
 }
 
+resource "aws_s3_bucket_object" "scoreboard" {
+  bucket = aws_s3_bucket.pacman.bucket
+  key = "scoreboard.html"
+  content_type = "text/html"
+  source = "../../pacman/scoreboard.html"
+}
+
 ###########################################
 ################### CSS ###################
 ###########################################
@@ -62,7 +69,13 @@ variable "img_files" {
     "game/img/move-up.png",
     "game/img/sound-off.png",
     "game/img/sound-on.png",
-    "game/img/pac-man-logo.png"
+    "game/img/pac-man-logo.png",
+    "android-chrome-192x192.png",
+    "android-chrome-512x512.png",
+    "apple-touch-icon.png",
+    "favicon-16x16.png",
+    "favicon-32x32.png",
+    "favicon.ico"
   ]
 }
 
@@ -85,6 +98,9 @@ variable "js_files" {
     "game/js/bubbles.js",
     "game/js/fruits.js",
     "game/js/game.js",
+    "game/js/scoreboard.js",
+    "game/js/highscore-worker.js",
+    "game/js/scoreboard-worker.js",
     "game/js/ghosts.js",
     "game/js/home.js",
     "game/js/jquery-buzz.js",
@@ -93,7 +109,8 @@ variable "js_files" {
     "game/js/pacman.js",
     "game/js/paths.js",
     "game/js/sound.js",
-    "game/js/tools.js"
+    "game/js/tools.js",
+    "site.webmanifest"
   ]
 }
 
@@ -111,6 +128,7 @@ data "template_file" "shared_js" {
     cloud_provider = "AWS"
     event_handler_api = "${aws_api_gateway_deployment.event_handler_v1.invoke_url}${aws_api_gateway_resource.event_handler_resource.path}"
     ksqldb_query_api = "http://${aws_alb.ksqldb_lbr.dns_name}/query"
+    scoreboard_api = "${aws_api_gateway_deployment.scoreboard_v1.invoke_url}${aws_api_gateway_resource.scoreboard_resource.path}"
   }
 }
 
