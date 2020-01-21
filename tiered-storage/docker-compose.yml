@@ -22,6 +22,7 @@ services:
       - n1
     ports:
       - "9091:9091"
+      - "8091:8091"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_CONFLUENT_TIER_FEATURE: 'true'
