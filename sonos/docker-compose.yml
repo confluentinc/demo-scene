@@ -84,7 +84,7 @@ services:
       SCHEMA_REGISTRY_CUB_KAFKA_TIMEOUT: 300
 
   ksqldb-server:
-    image: confluentinc/ksqldb-server:0.6.0
+    image: rmoff/ksqldb-server:master-20200121-f608d84cc
     hostname: ksqldb-server
     container_name: ksqldb-server
     depends_on:
@@ -101,14 +101,14 @@ services:
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
 
   ksqldb-cli:
-    image: confluentinc/ksqldb-cli:0.6.0
+    image: rmoff/ksqldb-cli:master-20200121-f608d84cc
     container_name: ksqldb-cli
     depends_on:
       - ksqldb-server
     entrypoint: /bin/sh
     tty: true
-    volumes:
-      - ./data:/data
+    # volumes:
+    #   - ./data:/data
 
   kafka-connect-01:
     image: confluentinc/cp-kafka-connect:5.4.0
@@ -146,8 +146,8 @@ services:
       # See https://docs.confluent.io/current/connect/security.html#externalizing-secrets
       CONNECT_CONFIG_PROVIDERS: 'file'
       CONNECT_CONFIG_PROVIDERS_FILE_CLASS: 'org.apache.kafka.common.config.provider.FileConfigProvider'
-    volumes:
-      - ${PWD}/.env:/data/credentials.properties
+    # volumes:
+    #   - ${PWD}/.env:/data/credentials.properties
     command: 
       # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
       - bash 
@@ -177,37 +177,37 @@ services:
         #      
         sleep infinity
 
-  replicator:
-    image: confluentinc/cp-enterprise-replicator:5.4.0
-    container_name: replicator
-    depends_on:
-      - kafka-1
-      - kafka-2
-      - kafka-3
-      - schema-registry
-    ports:
-      - 58083:58083
-    environment:
-      CONNECT_BOOTSTRAP_SERVERS: 'kafka-1:39092,kafka-2:49092,kafka-3:59092'
-      CONNECT_REST_ADVERTISED_HOST_NAME: 'replicator'
-      CONNECT_REST_PORT: 58083
-      CONNECT_GROUP_ID: compose-replicator
-      CONNECT_CONFIG_STORAGE_TOPIC: _replicator-configs
-      CONNECT_OFFSET_STORAGE_TOPIC: _replicator-offsets
-      CONNECT_STATUS_STORAGE_TOPIC: _replicator-status
-      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
-      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
-      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-      CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
-      CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
-      CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
-      CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
-      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
-      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
-      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
-      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/'
-      CONNECT_CONNECTOR_CLIENT_CONFIG_OVERRIDE_POLICY: 'All'
+  # replicator:
+  #   image: confluentinc/cp-enterprise-replicator:5.4.0
+  #   container_name: replicator
+  #   depends_on:
+  #     - kafka-1
+  #     - kafka-2
+  #     - kafka-3
+  #     - schema-registry
+  #   ports:
+  #     - 58083:58083
+  #   environment:
+  #     CONNECT_BOOTSTRAP_SERVERS: 'kafka-1:39092,kafka-2:49092,kafka-3:59092'
+  #     CONNECT_REST_ADVERTISED_HOST_NAME: 'replicator'
+  #     CONNECT_REST_PORT: 58083
+  #     CONNECT_GROUP_ID: compose-replicator
+  #     CONNECT_CONFIG_STORAGE_TOPIC: _replicator-configs
+  #     CONNECT_OFFSET_STORAGE_TOPIC: _replicator-offsets
+  #     CONNECT_STATUS_STORAGE_TOPIC: _replicator-status
+  #     CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+  #     CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+  #     CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+  #     CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+  #     CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+  #     CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+  #     CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
+  #     CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
+  #     CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
+  #     CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
+  #     CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
+  #     CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/'
+  #     CONNECT_CONNECTOR_CLIENT_CONFIG_OVERRIDE_POLICY: 'All'
 
   influxdb:
     image: influxdb:1.7.9
@@ -226,3 +226,13 @@ services:
     container_name: grafana
     ports:
       - "3000:3000"
+
+  kafkacat:
+    image: edenhill/kafkacat:1.5.0
+    container_name: kafkacat
+    entrypoint: 
+      - /bin/sh 
+      - -c 
+      - |
+        apk add jq; 
+        while [ 1 -eq 1 ];do sleep 60;done
