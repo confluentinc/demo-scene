@@ -1,0 +1,25 @@
+== What is this? 
+
+See https://rmoff.net/2020/01/21/monitoring-sonos-with-ksqldb-influxdb-and-grafana/
+
+== How do I use it?
+
+Grab the https://github.com/confluentinc/demo-scene/blob/master/sonos[Docker Compose from here], and give it a whirl. 
+
+1. You need to find the IP of your Sonos device (e.g. from the Sonos mobile app `About My System`), and put this in the `log-sonos-to-kafka.sh` file and then execute it: 
++
+[source,bash]
+----
+./log-sonos-to-kafka.sh
+----
+
+2. Launch ksqlDB CLI: 
++
+[source,bash]
+----
+docker exec -it ksqldb-cli bash -c 'echo -e "\n\n⏳ Waiting for ksqlDB to be available before launching CLI\n"; while : ; do curl_status=$(curl -s -o /dev/null -w %{http_code} http://ksqldb-server:8088/info) ; echo -e $(date) " ksqlDB server listener HTTP state: " $curl_status " (waiting for 200)" ; if [ $curl_status -eq 200 ] ; then  break ; fi ; sleep 5 ; done ; ksql http://ksqldb-server:8088'
+----
+
+Then run through the article as shown, and enjoy! 
+
+You'll find Grafana at http://localhost:3000 (login `admin`/`admin`) and Chronograf at http://localhost:8888/.
