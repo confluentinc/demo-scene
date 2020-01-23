@@ -5,6 +5,8 @@ services:
     image: confluentinc/cp-zookeeper:5.4.0
     hostname: zookeeper
     container_name: zookeeper
+    networks:
+      - n1
     ports:
       - "2181:2181"
     environment:
@@ -16,8 +18,11 @@ services:
     image: confluentinc/cp-server:5.4.0
     hostname: broker
     container_name: broker
+    networks:
+      - n1
     ports:
       - "9091:9091"
+      - "8091:8091"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_CONFLUENT_TIER_FEATURE: 'true'
@@ -35,8 +40,12 @@ services:
       KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://broker:19091,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9091
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_LOG_SEGMENT_BYTES: 104857600 # 100 MB log segments
       KAFKA_LOG_RETENTION_MS: 600000 # 10 minute retention
       KAFKA_JMX_PORT: 8091
     depends_on:
       - zookeeper
+
+networks:
+  n1:

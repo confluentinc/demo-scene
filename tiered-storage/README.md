@@ -42,7 +42,7 @@ To observe the results of the demo within a reasonable time frame, we create a t
 
 ```
 docker-compose exec broker kafka-topics \
-    --bootstrap-server localhost:9092 \
+    --bootstrap-server localhost:9091 \
     --create \
     --topic test-topic \
     --partitions 1
@@ -59,7 +59,7 @@ docker-compose exec broker kafka-producer-perf-test --topic test-topic \
     --throughput -1 \
     --producer-props \
         acks=all \
-        bootstrap.servers=localhost:9092 \
+        bootstrap.servers=localhost:9091 \
         batch.size=8196
 ```
 
@@ -94,7 +94,7 @@ Because the topic has a short hotset period, log segments that are uploaded to t
 docker-compose exec broker kafka-consumer-perf-test --topic test-topic \
     --messages 5000 \
     --threads 1 \
-    --broker-list localhost:9092 \
+    --broker-list localhost:9091 \
     --timeout 20000 \
     --consumer.config config/consumer.config
 ```
@@ -115,7 +115,7 @@ Alternatively, if we delete the topic from the broker, the broker will delete th
 
 ```
 docker-compose exec broker kafka-topics \
-    --bootstrap-server localhost:9092 \
+    --bootstrap-server localhost:9091 \
     --delete \
     --topic test-topic
 ```
