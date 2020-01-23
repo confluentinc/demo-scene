@@ -23,6 +23,13 @@ resource "aws_s3_bucket_object" "start" {
   source = "../../pacman/start.html"
 }
 
+resource "aws_s3_bucket_object" "webmanifest" {
+  bucket = aws_s3_bucket.pacman.bucket
+  key = "site.webmanifest"
+  content_type = "application/manifest+json"
+  source = "../../pacman/site.webmanifest"
+}
+
 resource "aws_s3_bucket_object" "scoreboard" {
   bucket = aws_s3_bucket.pacman.bucket
   key = "scoreboard.html"
@@ -34,92 +41,36 @@ resource "aws_s3_bucket_object" "scoreboard" {
 ################### CSS ###################
 ###########################################
 
-variable "css_files" {
-  type = list(string)
-  default = [
-    "game/css/pacman-home.css",
-    "game/css/pacman.css",
-    "game/css/Quadrit.ttf",
-  ]
-}
-
 resource "aws_s3_bucket_object" "css_files" {
-  count = length(var.css_files)
+  for_each = fileset(path.module, "../../pacman/game/css/*.*")
   bucket = aws_s3_bucket.pacman.bucket
-  key = var.css_files[count.index]
+  key = replace(each.key, "../../pacman/", "")
   content_type = "text/css"
-  source = "../../pacman/${var.css_files[count.index]}"
+  source = each.value
 }
 
 ###########################################
 ################### IMG ###################
 ###########################################
 
-variable "img_files" {
-  type = list(string)
-  default = [
-    "game/img/github.png",
-    "game/img/move-down-big.png",
-    "game/img/move-down.png",
-    "game/img/move-left-big.png",
-    "game/img/move-left.png",
-    "game/img/move-right-big.png",
-    "game/img/move-right.png",
-    "game/img/move-up-big.png",
-    "game/img/move-up.png",
-    "game/img/sound-off.png",
-    "game/img/sound-on.png",
-    "game/img/pac-man-logo.png",
-    "game/img/android-chrome-192x192.png",
-    "game/img/android-chrome-512x512.png",
-    "game/img/apple-touch-icon.png",
-    "game/img/favicon-16x16.png",
-    "game/img/favicon-32x32.png",
-    "game/img/favicon.ico"
-  ]
-}
-
 resource "aws_s3_bucket_object" "img_files" {
-  count = length(var.img_files)
+  for_each = fileset(path.module, "../../pacman/game/img/*.*")
   bucket = aws_s3_bucket.pacman.bucket
-  key = var.img_files[count.index]
+  key = replace(each.key, "../../pacman/", "")
   content_type = "images/png"
-  source = "../../pacman/${var.img_files[count.index]}"
+  source = each.value
 }
 
 ###########################################
 ################### JS ####################
 ###########################################
 
-variable "js_files" {
-  type = list(string)
-  default = [
-    "game/js/board.js",
-    "game/js/bubbles.js",
-    "game/js/fruits.js",
-    "game/js/game.js",
-    "game/js/scoreboard.js",
-    "game/js/highscore-worker.js",
-    "game/js/scoreboard-worker.js",
-    "game/js/ghosts.js",
-    "game/js/home.js",
-    "game/js/jquery-buzz.js",
-    "game/js/jquery-mobile.js",
-    "game/js/jquery.js",
-    "game/js/pacman.js",
-    "game/js/paths.js",
-    "game/js/sound.js",
-    "game/js/tools.js",
-    "site.webmanifest"
-  ]
-}
-
 resource "aws_s3_bucket_object" "js_files" {
-  count = length(var.js_files)
+  for_each = fileset(path.module, "../../pacman/game/js/*.*")
   bucket = aws_s3_bucket.pacman.bucket
-  key = var.js_files[count.index]
+  key = replace(each.key, "../../pacman/", "")
   content_type = "text/javascript"
-  source = "../../pacman/${var.js_files[count.index]}"
+  source = each.value
 }
 
 data "template_file" "shared_js" {
@@ -133,6 +84,7 @@ data "template_file" "shared_js" {
 }
 
 resource "aws_s3_bucket_object" "shared_js" {
+  depends_on = [aws_s3_bucket_object.js_files]
   bucket = aws_s3_bucket.pacman.bucket
   key = "game/js/shared.js"
   content_type = "text/javascript"
@@ -143,26 +95,10 @@ resource "aws_s3_bucket_object" "shared_js" {
 ################# Sounds ##################
 ###########################################
 
-variable "snd_files" {
-  type = list(string)
-  default = [
-    "game/sound/die.mp3",
-    "game/sound/eat-fruit.mp3",
-    "game/sound/eat-ghost.mp3",
-    "game/sound/eat-pill.mp3",
-    "game/sound/eating.mp3",
-    "game/sound/extra-life.mp3",
-    "game/sound/ghost-eaten.mp3",
-    "game/sound/ready.mp3",
-    "game/sound/siren.mp3",
-    "game/sound/waza.mp3"
-  ]
-}
-
 resource "aws_s3_bucket_object" "snd_files" {
-  count = length(var.snd_files)
+  for_each = fileset(path.module, "../../pacman/game/sound/*.*")
   bucket = aws_s3_bucket.pacman.bucket
-  key = var.snd_files[count.index]
+  key = replace(each.key, "../../pacman/", "")
   content_type = "audio/mpeg"
-  source = "../../pacman/${var.snd_files[count.index]}"
+  source = each.value
 }

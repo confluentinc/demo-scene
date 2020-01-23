@@ -68,15 +68,3 @@ function getScoreboardJson(callback) {
 	request.send(); 
 
 }
-
-function calcRankingFromScoreboard(scoreboard,username){
-	var ranking;
-	for (var i = 0, l = scoreboard.length; i < l; i++) {
-		var player = scoreboard[i];
-		if(player.user === username) {
-			ranking = i+1 ;
-			break;
-		}
-	}
-	return ranking;
-}
