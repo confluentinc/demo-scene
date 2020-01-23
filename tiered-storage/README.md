@@ -96,7 +96,7 @@ docker-compose exec broker kafka-consumer-perf-test --topic test-topic \
     --threads 1 \
     --broker-list localhost:9091 \
     --timeout 20000 \
-    --consumer.config config/consumer.config
+    --consumer.config /etc/kafka/demo/consumer.config
 ```
 
 ## Monitor JMX Metrics
