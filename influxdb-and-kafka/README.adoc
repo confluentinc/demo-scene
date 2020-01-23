@@ -1,6 +1,6 @@
 = Getting data into InfluxDB from Kafka with Kafka Connect
 
-See blog post: 
+See blog post: https://rmoff.net/2020/01/23/notes-on-getting-data-into-influxdb-from-kafka-with-kafka-connect/ for details. 
 
 == JSON, using embedded Kafka Connect schema and a `map` field type for `tags`. 
 
