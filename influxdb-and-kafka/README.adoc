@@ -37,7 +37,6 @@ curl -i -X PUT -H "Content-Type:application/json" \
             "measurement.name.format"       : "${topic}"
         }'
 ----
-{{< /highlight >}}
 
 Make sure that the connector's running
 
