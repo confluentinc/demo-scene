@@ -161,8 +161,6 @@ services:
       - ksqldb-server
     entrypoint: /bin/sh
     tty: true
-    # volumes:
-    #   - ./data:/data
 
 # Other systems
   mysql:
