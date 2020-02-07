@@ -2,14 +2,14 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.4.0-beta1
+    image: confluentinc/cp-zookeeper:5.4.0
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.4.0-beta1
+    image: confluentinc/cp-enterprise-kafka:5.4.0
     container_name: kafka
     depends_on:
       - zookeeper
@@ -41,6 +41,8 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
       CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092
       CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -49,55 +51,63 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.4.0-beta1
+    image: confluentinc/cp-schema-registry:5.4.0
     container_name: schema-registry
     depends_on:
       - zookeeper
       - kafka
+    ports:
+      - 8081:8081
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
-  kafka-connect:
-    image: confluentinc/cp-kafka-connect:5.4.0-beta1
-    container_name: kafka-connect
+  kafka-connect-01:
+    image: confluentinc/cp-kafka-connect:5.4.0
+    container_name: kafka-connect-01
     depends_on:
       - zookeeper
       - kafka
       - schema-registry
     ports:
-      - 18083:18083
+      - 8083:8083
     environment:
       CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
-      CONNECT_REST_PORT: 18083
-      CONNECT_GROUP_ID: kafka-connect
-      CONNECT_CONFIG_STORAGE_TOPIC: docker-kafka-connect-configs
-      CONNECT_OFFSET_STORAGE_TOPIC: docker-kafka-connect-offsets
-      CONNECT_STATUS_STORAGE_TOPIC: docker-kafka-connect-status
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-01"
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: kafka-connect-01
+      CONNECT_CONFIG_STORAGE_TOPIC: _kafka-connect-01-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _kafka-connect-01-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _kafka-connect-01-status
       CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
       CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
       CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
-      CONNECT_PLUGIN_PATH: '/usr/share/java'
-      # # Interceptor config
-      # CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
-      # CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-      # CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.4.0-beta1.jar
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/,/connectors/'
+    # If you want to use the Confluent Hub installer to d/l component, but make them available
+    # when running this offline, spin up the stack once and then run : 
+    #   docker cp kafka-connect-01:/usr/share/confluent-hub-components ./connectors
+    #   mv ./connectors/confluent-hub-components/* ./connectors
+    #   rm -rf ./connectors/confluent-hub-components
+  
     volumes:
-      - $PWD/scripts:/scripts
+      - $PWD/connectors:/connectors
     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
     command: 
       - bash 
       - -c 
       - |
+        echo "Installing connector plugins"
+        confluent-hub install --no-prompt debezium/debezium-connector-mysql:1.0.0
+        confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.2.0
+        #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 
         #
@@ -111,173 +121,77 @@ services:
           sleep 5 
         done
 
-        echo -e "\n--\n+> Creating Kafka Connect Elasticsearch sink"
-        /scripts/create-es-sink.sh 
+        echo -e "\n--\n+> Creating Data Generator source"
+        curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/source-datagen-01/config \
+            -d '{
+            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+            "kafka.topic": "ratings",
+            "max.interval":750,
+            "quickstart": "ratings",
+            "tasks.max": 1
+        }'
         sleep infinity
 
-  ksql-server:
-    image: confluentinc/cp-ksql-server:5.4.0-beta1
-    container_name: ksql-server
-    ports:
-      - 8088:8088
+  ksqldb-server:
+#    image: confluentinc/ksqldb-server:0.6.0
+    image: rmoff/ksqldb-server:master-20200207-f8bb986
+    hostname: ksqldb-server
+    container_name: ksqldb-server
     depends_on:
       - kafka
-      - schema-registry
+      - kafka-connect-01
+    ports:
+      - "8088:8088"
     environment:
-      KSQL_BOOTSTRAP_SERVERS: kafka:29092
       KSQL_LISTENERS: http://0.0.0.0:8088
-      KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
-      KSQL_CUB_KAFKA_TIMEOUT: 300
+      KSQL_BOOTSTRAP_SERVERS: kafka:29092
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+      KSQL_KSQL_CONNECT_URL: http://kafka-connect-01:8083
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
-      # Useful settings for development/laptop use - modify as needed for Prod
-      KSQL_KSQL_COMMIT_INTERVAL_MS: 2000
-      KSQL_KSQL_SINK_PARTITIONS: 1
-      KSQL_KSQL_CACHE_MAX_BYTES_BUFFERING: 10000000
-      KSQL_KSQL_STREAMS_AUTO_OFFSET_RESET: earliest
-      # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
-      # Producer Confluent Monitoring Interceptors for Control Center streams monitoring
-      KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
-      KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
+      KSQL_KSQL_HIDDEN_TOPICS: '^_.*'
 
-  ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.4.0-beta1
-    container_name: ksql-cli
+  ksqldb-cli:
+#    image: confluentinc/ksqldb-cli:0.6.0
+    image: rmoff/ksqldb-cli:master-20200207-f8bb986
+    container_name: ksqldb-cli
     depends_on:
-      - ksql-server
+      - ksqldb-server
     entrypoint: /bin/sh
     tty: true
+    # volumes:
+    #   - ./data:/data
 
-  control-center:
-    image: confluentinc/cp-enterprise-control-center:5.4.0-beta1
-    container_name: control-center
-    depends_on:
-      - zookeeper
-      - kafka
-      - schema-registry
-    ports:
-      - "9021:9021"
-    environment:
-      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
-      CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      CONTROL_CENTER_CONNECT_CLUSTER01-ES-SINK_CLUSTER: 'kafka-connect:18083'
-      CONTROL_CENTER_CONNECT_CLUSTER02-DEBEZIUM_CLUSTER: 'connect-debezium:8083'
-      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-      # The advertised URL needs to be the URL on which the browser
-      #  can access the KSQL server (e.g. http://localhost:8088/info)
-      CONTROL_CENTER_KSQL_KSQL01_URL: "http://ksql-server:8088"
-      CONTROL_CENTER_KSQL_KSQL01_ADVERTISED_URL: "http://localhost:8088"
-      # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
-      # Useful settings for development/laptop use - modify as needed for Prod
-      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
-      CONTROL_CENTER_REPLICATION_FACTOR: 1
-      CONTROL_CENTER_COMMAND_TOPIC_REPLICATION: 1
-      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_REPLICATION: 1
-      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
-      CONTROL_CENTER_INTERNAL_TOPICS_REPLICATION: 1
-      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
-      CONTROL_CENTER_STREAMS_NUM_STREAM_THREADS: 1
-      CONTROL_CENTER_STREAMS_CACHE_MAX_BYTES_BUFFERING: 104857600
-    command:
-      - bash
-      - -c 
-      - |
-        echo "Waiting two minutes for Kafka brokers to start and 
-               necessary topics to be available"
-        sleep 120  
-        /etc/confluent/docker/run
-
-  # kafkacat:
-  #   image: edenhill/kafkacat:1.5.0
-  #   container_name: kafkacat
-  #   depends_on:
-  #     - kafka
-  #   entrypoint: sleep infinity
-
-  # Runs the Kafka KSQL data generator for ratings
-  datagen-ratings:
-    image: confluentinc/ksql-examples:5.4.0-beta1
-    container_name: datagen-ratings
-    depends_on:
-      - kafka
-      - schema-registry
-    command: "bash -c 'echo Waiting for Kafka to be ready... && \
-                       cub kafka-ready -b kafka:29092 1 300 && \
-                       echo Waiting for Confluent Schema Registry to be ready... && \
-                       cub sr-ready schema-registry 8081 300 && \
-                       echo Waiting a few seconds for topic creation to finish... && \
-                       sleep 20 && \
-                       ksql-datagen \
-                          quickstart=ratings \
-                          format=avro \
-                          topic=ratings \
-                          maxInterval=750 \
-                          bootstrap-server=kafka:29092 \
-                          schemaRegistryUrl=http://schema-registry:8081'"
-
-  # Other systems
+# Other systems
   mysql:
     # *-----------------------------*
     # To connect to the DB: 
-    #   docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
+    #   docker exec -it mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
+    # or
+    #   docker exec -it mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
     # *-----------------------------*
-    image: debezium/example-mysql:0.9
+    image: mysql:8.0
     container_name: mysql
     ports:
       - 3306:3306
     environment:
-     - MYSQL_ROOT_PASSWORD=debezium
-     - MYSQL_USER=mysqluser
-     - MYSQL_PASSWORD=mysqlpw
+     - MYSQL_ROOT_PASSWORD=Admin123
+     - MYSQL_USER=connect_user
+     - MYSQL_PASSWORD=asgard
     volumes:
-      - ./customers.sql:/docker-entrypoint-initdb.d/z99_dump.sql
-
-  connect-debezium:
-    image: debezium/connect:0.9.3.Final
-    container_name: connect-debezium
-    depends_on:
-      - kafka
-      - mysql
-      - schema-registry
-    ports:
-      - 8083:8083
-    environment:
-      BOOTSTRAP_SERVERS: kafka:29092
-      GROUP_ID: connect-debezium
-      CONFIG_STORAGE_TOPIC: docker-connect-debezium-configs
-      OFFSET_STORAGE_TOPIC: docker-connect-debezium-offsets
-      STATUS_STORAGE_TOPIC: docker-connect-debezium-status
-      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-    volumes:
-     - $PWD/scripts:/scripts
-    command: 
-      - bash 
-      - -c 
-      - |
-        /docker-entrypoint.sh start & 
-        echo "Waiting for Kafka Connect to start listening on connect-debezium ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://connect-debezium:8083/connectors) -ne 200 ] ; do 
-          echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://connect-debezium:8083/connectors) " (waiting for 200)"
-          sleep 5 
-        done
-        echo "Waiting for Schema Registry to start listening on schema-registry:8081 ⏳"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) -eq 000 ] ; do 
-          echo -e $$(date) " Schema Registry listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://schema-registry:8081) " (waiting for != 000)"
-          sleep 5 
-        done
-        echo -e "\n--\n+> Creating Kafka Connect Debezium source"
-        /scripts/create-mysql-source.sh 
-        sleep infinity
+     - ./customers.sql:/docker-entrypoint-initdb.d/z99_dump.sql
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.7.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.0
     container_name: elasticsearch
     ports:
       - 9200:9200
     environment:
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+      discovery.type: "single-node"
     volumes:
      - ${PWD}/scripts:/scripts
     command: 
@@ -293,31 +207,31 @@ services:
         echo -e "\n--\n+> Creating Elasticsearch dynamic mapping"
         /scripts/create-dynamic-mapping.sh
 
-        echo -e "\n--\n+> Setting up Elasticsearch dummy data"
-        curl -XPOST "http://localhost:9200/kafka-ratings-enriched-2018-08/type.name=kafkaconnect" -H 'Content-Type: application/json' -d'{
-                  "RATING_ID": 15486,
-                  "MESSAGE": "thank you for the most friendly, helpful experience today at your new lounge",
-                  "STARS": 4,
-                  "CHANNEL": "iOS",
-                  "ID": 8,
-                  "FULL_NAME": "Patti Rosten",
-                  "CLUB_STATUS": "silver",
-                  "EMAIL": "prosten7@ihg.com",
-                  "EXTRACT_TS": 1
-                }'
-        curl -XPOST "http://localhost:9200/unhappy_platinum_customers/type.name=kafkaconnect" -H 'Content-Type: application/json' -d'{
-                  "FULL_NAME": "Laney Toopin",
-                  "MESSAGE": "more peanuts please",
-                  "STARS": 1,
-                  "EXTRACT_TS": 1532507457763,
-                  "CLUB_STATUS": "platinum",
-                  "EMAIL": "ltoopinc@icio.us"
-                }'
+        # echo -e "\n--\n+> Setting up Elasticsearch dummy data"
+        # curl -XPOST "http://localhost:9200/ratings-enriched-2018-08/type.name=kafkaconnect" -H 'Content-Type: application/json' -d'{
+        #           "RATING_ID": 15486,
+        #           "MESSAGE": "thank you for the most friendly, helpful experience today at your new lounge",
+        #           "STARS": 4,
+        #           "CHANNEL": "iOS",
+        #           "ID": 8,
+        #           "FULL_NAME": "Patti Rosten",
+        #           "CLUB_STATUS": "silver",
+        #           "EMAIL": "prosten7@ihg.com",
+        #           "EXTRACT_TS": 1
+        #         }'
+        # curl -XPOST "http://localhost:9200/unhappy_platinum_customers/type.name=kafkaconnect" -H 'Content-Type: application/json' -d'{
+        #           "FULL_NAME": "Laney Toopin",
+        #           "MESSAGE": "more peanuts please",
+        #           "STARS": 1,
+        #           "EXTRACT_TS": 1532507457763,
+        #           "CLUB_STATUS": "platinum",
+        #           "EMAIL": "ltoopinc@icio.us"
+        #         }'
 
           sleep infinity
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:6.7.0
+    image: docker.elastic.co/kibana/kibana:7.5.0
     container_name: kibana
     depends_on:
       - elasticsearch
@@ -347,25 +261,30 @@ services:
 
         echo -e "\n--\n+> Opt out of Kibana telemetry"
         curl 'http://localhost:5601/api/kibana/settings' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'content-type: application/json' -H 'accept: application/json' --data-binary '{"changes":{"telemetry:optIn":false}}' --compressed
+        curl 'http://localhost:5601/api/telemetry/v2/userHasSeenNotice' -X PUT -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Length: 0' 
 
         echo -e "\n--\n+> Register Kibana indices"
-        #curl 'http://localhost:5601/api/saved_objects/index-pattern/ratings-enriched' -X DELETE -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' 
-        curl -s 'http://localhost:5601/api/saved_objects/index-pattern/ratings-enriched' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"kafka-ratings-enriched-*","timeFieldName":"EXTRACT_TS"}}' --compressed 
-        curl -s 'http://localhost:5601/api/saved_objects/index-pattern/unhappy_platinum_customers' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"unhappy_platinum_customers","timeFieldName":"EXTRACT_TS"}}' --compressed 
-
-        echo -e "\n--\n+> Set default Kibana index"
-        curl -s 'http://localhost:5601/api/kibana/settings' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"changes":{"defaultIndex":"ratings-enriched"}}' --compressed
+        curl -s 'http://localhost:5601/api/saved_objects/index-pattern/ratings-enriched' -H 'kbn-version: 7.5.0' -H 'Content-Type: application/json' -H 'Sec-Fetch-Site: same-origin' -H 'Sec-Fetch-Mode: cors' --data-binary '{"attributes":{"title":"ratings-enriched","timeFieldName":"EXTRACT_TS","fields":"[]"}}' --compressed
+        curl -s 'http://localhost:5601/api/saved_objects/index-pattern/unhappy_platinum_customers' -H 'kbn-version: 7.5.0' -H 'Content-Type: application/json' -H 'Sec-Fetch-Site: same-origin' -H 'Sec-Fetch-Mode: cors' --data-binary '{"attributes":{"title":"unhappy_platinum_customers","timeFieldName":"EXTRACT_TS","fields":"[]"}}' --compressed
 
         echo -e "\n--\n+> Import Kibana objects"
         curl -s 'http://localhost:5601/api/saved_objects/search/2f3d2290-6ff0-11e8-8fa0-279444e59a8f?overwrite=true' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"Unhappy Platinum Customers","description":"","hits":0,"columns":["EMAIL","MESSAGE","STARS"],"sort":["EXTRACT_TS","desc"],"version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"unhappy_platinum_customers\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"}}}' --compressed 
         curl -s 'http://localhost:5601/api/saved_objects/search/11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97?overwrite=true' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"Ratings detail","description":"","hits":0,"columns":["FULL_NAME","EMAIL","CLUB_STATUS","STARS","MESSAGE","CHANNEL"],"sort":["_score","desc"],"version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"ratings-enriched\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"}}}' --compressed 
         curl -s 'http://localhost:5601/api/saved_objects/visualization/5ef922e0-6ff0-11e8-8fa0-279444e59a8f?overwrite=true' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"Unhappy Platinum Customers","visState":"{\"title\":\"Unhappy Platinum Customers\",\"type\":\"metric\",\"params\":{\"addTooltip\":true,\"addLegend\":false,\"type\":\"metric\",\"metric\":{\"percentageMode\":false,\"useRanges\":false,\"colorSchema\":\"Green to Red\",\"metricColorMode\":\"None\",\"colorsRange\":[{\"from\":0,\"to\":10000}],\"labels\":{\"show\":false},\"invertColors\":false,\"style\":{\"bgFill\":\"#000\",\"bgColor\":false,\"labelColor\":false,\"subText\":\"\",\"fontSize\":60}}},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}}]}","uiStateJSON":"{\"spy\":null}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"unhappy_platinum_customers\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"}}}' --compressed 
-        curl -s 'http://localhost:5601/api/saved_objects/visualization/c6344a70-6ff0-11e8-8fa0-279444e59a8f?overwrite=true' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"Median Rating, by Club Status","visState":"{\"title\":\"Median Rating, by Club Status\",\"type\":\"area\",\"params\":{\"type\":\"area\",\"grid\":{\"categoryLines\":false,\"style\":{\"color\":\"#eee\"}},\"categoryAxes\":[{\"id\":\"CategoryAxis-1\",\"type\":\"category\",\"position\":\"bottom\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\"},\"labels\":{\"show\":true,\"truncate\":100},\"title\":{}}],\"valueAxes\":[{\"id\":\"ValueAxis-1\",\"name\":\"LeftAxis-1\",\"type\":\"value\",\"position\":\"left\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\",\"mode\":\"normal\"},\"labels\":{\"show\":true,\"rotate\":0,\"filter\":false,\"truncate\":100},\"title\":{\"text\":\"Median STARS\"}}],\"seriesParams\":[{\"show\":\"true\",\"type\":\"area\",\"mode\":\"stacked\",\"data\":{\"label\":\"Median STARS\",\"id\":\"1\"},\"drawLinesBetweenPoints\":true,\"showCircles\":true,\"interpolate\":\"linear\",\"valueAxis\":\"ValueAxis-1\"}],\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"times\":[],\"addTimeMarker\":false},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"median\",\"schema\":\"metric\",\"params\":{\"field\":\"STARS\",\"percents\":[50]}},{\"id\":\"2\",\"enabled\":true,\"type\":\"date_histogram\",\"schema\":\"segment\",\"params\":{\"field\":\"EXTRACT_TS\",\"interval\":\"auto\",\"customInterval\":\"2h\",\"min_doc_count\":1,\"extended_bounds\":{}}},{\"id\":\"3\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"group\",\"params\":{\"field\":\"CLUB_STATUS\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"_term\"}}]}","uiStateJSON":"{\"vis\":{\"colors\":{\"gold\":\"#E5AC0E\",\"bronze\":\"#99440A\",\"silver\":\"#806EB7\",\"platinum\":\"#DEDAF7\"}}}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"ratings-enriched\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"}}}' --compressed 
-        curl -s 'http://localhost:5601/api/saved_objects/visualization/0c118530-31d5-11e8-a6be-09f3e3eb4b97?overwrite=true' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"Ratings by Channel","visState":"{\"title\":\"Ratings by Channel\",\"type\":\"histogram\",\"params\":{\"type\":\"histogram\",\"grid\":{\"categoryLines\":false,\"style\":{\"color\":\"#eee\"}},\"categoryAxes\":[{\"id\":\"CategoryAxis-1\",\"type\":\"category\",\"position\":\"bottom\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\"},\"labels\":{\"show\":true,\"truncate\":100},\"title\":{}}],\"valueAxes\":[{\"id\":\"ValueAxis-1\",\"name\":\"LeftAxis-1\",\"type\":\"value\",\"position\":\"left\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\",\"mode\":\"normal\"},\"labels\":{\"show\":true,\"rotate\":0,\"filter\":false,\"truncate\":100},\"title\":{\"text\":\"Count\"}}],\"seriesParams\":[{\"show\":\"true\",\"type\":\"histogram\",\"mode\":\"stacked\",\"data\":{\"label\":\"Count\",\"id\":\"1\"},\"valueAxis\":\"ValueAxis-1\",\"drawLinesBetweenPoints\":true,\"showCircles\":true}],\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"times\":[],\"addTimeMarker\":false},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"date_histogram\",\"schema\":\"segment\",\"params\":{\"field\":\"EXTRACT_TS\",\"interval\":\"auto\",\"customInterval\":\"2h\",\"min_doc_count\":1,\"extended_bounds\":{}}},{\"id\":\"3\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"group\",\"params\":{\"field\":\"CHANNEL\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\"}}]}","uiStateJSON":"{}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"ratings-enriched\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"}}}' --compressed 
-        curl -s 'http://localhost:5601/api/saved_objects/visualization/39803a20-31d5-11e8-a6be-09f3e3eb4b97?overwrite=true' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"Ratings per Person","visState":"{\"title\":\"Ratings per Person\",\"type\":\"metric\",\"params\":{\"addTooltip\":true,\"addLegend\":false,\"type\":\"metric\",\"metric\":{\"percentageMode\":false,\"useRanges\":false,\"colorSchema\":\"Green to Red\",\"metricColorMode\":\"None\",\"colorsRange\":[{\"from\":0,\"to\":10000}],\"labels\":{\"show\":true},\"invertColors\":false,\"style\":{\"bgFill\":\"#000\",\"bgColor\":false,\"labelColor\":false,\"subText\":\"\",\"fontSize\":60}}},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"group\",\"params\":{\"field\":\"FULL_NAME\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\"}}]}","uiStateJSON":"{}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"ratings-enriched\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"}}}' --compressed 
+        curl -s 'http://localhost:5601/api/saved_objects/visualization/c6344a70-6ff0-11e8-8fa0-279444e59a8f?overwrite=true' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"Median Rating, by Club Status","visState":"{\"title\":\"Median Rating, by Club Status\",\"type\":\"area\",\"params\":{\"type\":\"area\",\"grid\":{\"categoryLines\":false,\"style\":{\"color\":\"#eee\"}},\"categoryAxes\":[{\"id\":\"CategoryAxis-1\",\"type\":\"category\",\"position\":\"bottom\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\"},\"labels\":{\"show\":true,\"truncate\":100},\"title\":{}}],\"valueAxes\":[{\"id\":\"ValueAxis-1\",\"name\":\"LeftAxis-1\",\"type\":\"value\",\"position\":\"left\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\",\"mode\":\"normal\"},\"labels\":{\"show\":true,\"rotate\":0,\"filter\":false,\"truncate\":100},\"title\":{\"text\":\"Median STARS\"}}],\"seriesParams\":[{\"show\":\"true\",\"type\":\"area\",\"mode\":\"stacked\",\"data\":{\"label\":\"Median STARS\",\"id\":\"1\"},\"drawLinesBetweenPoints\":true,\"showCircles\":true,\"interpolate\":\"linear\",\"valueAxis\":\"ValueAxis-1\"}],\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"times\":[],\"addTimeMarker\":false},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"median\",\"schema\":\"metric\",\"params\":{\"field\":\"STARS\",\"percents\":[50]}},{\"id\":\"2\",\"enabled\":true,\"type\":\"date_histogram\",\"schema\":\"segment\",\"params\":{\"field\":\"EXTRACT_TS\",\"interval\":\"auto\",\"customInterval\":\"2h\",\"min_doc_count\":1,\"extended_bounds\":{}}},{\"id\":\"3\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"group\",\"params\":{\"field\":\"CLUB_STATUS.keyword\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"_term\"}}]}","uiStateJSON":"{\"vis\":{\"colors\":{\"gold\":\"#E5AC0E\",\"bronze\":\"#99440A\",\"silver\":\"#806EB7\",\"platinum\":\"#DEDAF7\"}}}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"ratings-enriched\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"}}}' --compressed 
+        curl -s 'http://localhost:5601/api/saved_objects/visualization/0c118530-31d5-11e8-a6be-09f3e3eb4b97?overwrite=true' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"Ratings by Channel","visState":"{\"title\":\"Ratings by Channel\",\"type\":\"histogram\",\"params\":{\"type\":\"histogram\",\"grid\":{\"categoryLines\":false,\"style\":{\"color\":\"#eee\"}},\"categoryAxes\":[{\"id\":\"CategoryAxis-1\",\"type\":\"category\",\"position\":\"bottom\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\"},\"labels\":{\"show\":true,\"truncate\":100},\"title\":{}}],\"valueAxes\":[{\"id\":\"ValueAxis-1\",\"name\":\"LeftAxis-1\",\"type\":\"value\",\"position\":\"left\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\",\"mode\":\"normal\"},\"labels\":{\"show\":true,\"rotate\":0,\"filter\":false,\"truncate\":100},\"title\":{\"text\":\"Count\"}}],\"seriesParams\":[{\"show\":\"true\",\"type\":\"histogram\",\"mode\":\"stacked\",\"data\":{\"label\":\"Count\",\"id\":\"1\"},\"valueAxis\":\"ValueAxis-1\",\"drawLinesBetweenPoints\":true,\"showCircles\":true}],\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"times\":[],\"addTimeMarker\":false},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"date_histogram\",\"schema\":\"segment\",\"params\":{\"field\":\"EXTRACT_TS\",\"interval\":\"auto\",\"customInterval\":\"2h\",\"min_doc_count\":1,\"extended_bounds\":{}}},{\"id\":\"3\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"group\",\"params\":{\"field\":\"CHANNEL.keyword\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\"}}]}","uiStateJSON":"{}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"ratings-enriched\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"}}}' --compressed 
+        curl -s 'http://localhost:5601/api/saved_objects/visualization/39803a20-31d5-11e8-a6be-09f3e3eb4b97?overwrite=true' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"Ratings per Person","visState":"{\"title\":\"Ratings per Person\",\"type\":\"metric\",\"params\":{\"addTooltip\":true,\"addLegend\":false,\"type\":\"metric\",\"metric\":{\"percentageMode\":false,\"useRanges\":false,\"colorSchema\":\"Green to Red\",\"metricColorMode\":\"None\",\"colorsRange\":[{\"from\":0,\"to\":10000}],\"labels\":{\"show\":true},\"invertColors\":false,\"style\":{\"bgFill\":\"#000\",\"bgColor\":false,\"labelColor\":false,\"subText\":\"\",\"fontSize\":60}}},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"group\",\"params\":{\"field\":\"FULL_NAME.keyword\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\"}}]}","uiStateJSON":"{}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"ratings-enriched\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"}}}' --compressed 
         curl -s 'http://localhost:5601/api/saved_objects/dashboard/mysql-ksql-kafka-es?overwrite=true' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"Ratings Data","hits":0,"description":"","panelsJSON":"[{\"gridData\":{\"h\":15,\"i\":\"1\",\"w\":24,\"x\":0,\"y\":10},\"id\":\"0c118530-31d5-11e8-a6be-09f3e3eb4b97\",\"panelIndex\":\"1\",\"type\":\"visualization\",\"version\":\"6.3.0\"},{\"gridData\":{\"h\":10,\"i\":\"2\",\"w\":48,\"x\":0,\"y\":35},\"id\":\"39803a20-31d5-11e8-a6be-09f3e3eb4b97\",\"panelIndex\":\"2\",\"type\":\"visualization\",\"version\":\"6.3.0\"},{\"gridData\":{\"h\":10,\"i\":\"4\",\"w\":8,\"x\":0,\"y\":0},\"id\":\"5ef922e0-6ff0-11e8-8fa0-279444e59a8f\",\"panelIndex\":\"4\",\"type\":\"visualization\",\"version\":\"6.3.0\"},{\"gridData\":{\"h\":10,\"i\":\"5\",\"w\":40,\"x\":8,\"y\":0},\"id\":\"2f3d2290-6ff0-11e8-8fa0-279444e59a8f\",\"panelIndex\":\"5\",\"type\":\"search\",\"version\":\"6.3.0\"},{\"gridData\":{\"h\":15,\"i\":\"6\",\"w\":24,\"x\":24,\"y\":10},\"id\":\"c6344a70-6ff0-11e8-8fa0-279444e59a8f\",\"panelIndex\":\"6\",\"type\":\"visualization\",\"version\":\"6.3.0\"},{\"embeddableConfig\":{},\"gridData\":{\"h\":10,\"i\":\"7\",\"w\":48,\"x\":0,\"y\":25},\"id\":\"11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97\",\"panelIndex\":\"7\",\"type\":\"search\",\"version\":\"6.3.0\",\"sort\":[\"EXTRACT_TS\",\"desc\"]}]","optionsJSON":"{\"darkTheme\":false,\"hidePanelTitles\":false,\"useMargins\":true}","version":1,"timeRestore":false,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[],\"highlightAll\":true,\"version\":true}"}}}' --compressed 
 
 
         sleep infinity
-    volumes:
-     - $PWD/scripts:/scripts
+
+  kafkacat:
+    image: edenhill/kafkacat:1.5.0
+    container_name: kafkacat
+    entrypoint: 
+      - /bin/sh 
+      - -c 
+      - |
+        apk add jq; 
+        while [ 1 -eq 1 ];do sleep 60;done
