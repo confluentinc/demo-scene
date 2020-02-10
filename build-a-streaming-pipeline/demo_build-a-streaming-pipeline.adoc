@@ -119,7 +119,7 @@ SET 'auto.offset.reset' = 'latest';
 PRINT 'POOR_RATINGS';
 
 -- You can use SELECT too, but PRINT makes it clearer that it's coming from a topic
-SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TIMESTAMP, STARS, CHANNEL FROM POOR_RATINGS;
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TIMESTAMP, STARS, CHANNEL FROM POOR_RATINGS EMIT CHANGES;
 ----
 
 ---
@@ -296,6 +296,9 @@ UPDATE CUSTOMERS SET CLUB_STATUS = 'bronze' where ID=42;
 UPDATE CUSTOMERS SET CLUB_STATUS = 'platinum' where ID=42;
 ----
 
+==== [Optional] Demonstrate Stream / Table difference
+
+Check the data in ksqlDB: 
 
 Here's the table - the latest value for a given key
 [source,sql]
@@ -318,8 +321,6 @@ SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS EVENT_TS,
 |15:43:58  |42  |Rick       |Astley    |rick@example.com |platinum    |
 ^CQuery terminated
 ----
-
-==== [Optional] Demonstrate Stream / Table difference
 
 Here's the stream - every event, which in this context is every change event on the source database: 
 
@@ -427,7 +428,7 @@ SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS EVENT_TS,
 In mysql, make a change to ID 2
 [source,sql]
 ----
-mysql> UPDATE CUSTOMERS SET CLUB_STATUS = 'bronze' WHERE ID=2;
+UPDATE CUSTOMERS SET CLUB_STATUS = 'bronze' WHERE ID=2;
 ----
 
 Observe in the continuous ksqlDB query that the customer name has now changed.
