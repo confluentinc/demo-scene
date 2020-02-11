@@ -398,6 +398,7 @@ Persist this stream of data
 
 [source,sql]
 ----
+SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM RATINGS_WITH_CUSTOMER_DATA 
        WITH (KAFKA_TOPIC='ratings-enriched') 
        AS 
@@ -498,7 +499,7 @@ ratings-enriched               3699
 
 Tested on Elasticsearch 7.5.0
 
-http://localhost:5601/app/kibana#/dashboard/mysql-ksql-kafka-es?_g=(refreshInterval%3A('%24%24hashKey'%3A'object%3A229'%2Cdisplay%3A'30%20seconds'%2Cpause%3A!f%2Csection%3A1%2Cvalue%3A30000)%2Ctime%3A(from%3Anow-15m%2Cmode%3Aquick%2Cto%3Anow))
+http://localhost:5601/app/kibana#/dashboard/mysql-ksql-kafka-es
 
 image:images/es01.png[Kibana]
 
