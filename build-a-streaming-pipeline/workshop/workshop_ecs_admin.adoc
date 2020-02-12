@@ -1,0 +1,126 @@
+= Notes for running this as a workshop on ECS
+Robin Moffatt <robin@confluent.io>
+v1.00 12 February 2020
+
+== Configure ecs-cli
+
+[source,bash]
+----
+ecs-cli configure profile --access-key xxx --secret-key yyy
+----
+
+== Spin-up
+
+=== Create keypair
+
+[source,bash]
+----
+aws2 ec2 create-key-pair --key-name qcon-ldn-workshop
+----
+
+Take the SSH private key, split the `\n` into actual line breaks, and write this to a file that all the students can access. 
+
+=== Provision clusters
+
+[source,bash]
+----
+for i in {01..02}; do 
+ecs-cli up --cluster qcon-ldn-workshop-$i --keypair qcon-ldn-workshop --capability-iam --instance-type m5.xlarge --port 22 --tags owner=rmoff,workshop=qcon_london,deleteafter=20200305 --launch-type EC2
+done
+----
+
+=== Open port up for Kibana on each security group
+
+*This produces no output*
+
+[source,bash]
+----
+aws2 ec2 describe-security-groups \
+    --filters Name=tag:workshop,Values=qcon_london | jq '.SecurityGroups[].GroupId' | xargs -Isg \
+    aws2 ec2 authorize-security-group-ingress \
+        --group-id sg \
+        --protocol tcp \
+        --port 5601 \
+        --cidr 0.0.0.0/0 | jq '.'
+----
+
+=== Run stack
+
+[source,bash]
+----
+cd ~/git/demo-scene/build-a-streaming-pipeline
+for i in {01..02}; do 
+ecs-cli compose up --cluster qcon-ldn-workshop-$i
+done
+----
+
+=== Get a list of all EC2 IPs and healthcheck
+
+[source,bash]
+----
+#!/bin/zsh
+
+for i in {01..02}; do 
+    ip=$(aws2 ecs list-container-instances --cluster qcon-ldn-workshop-$i|jq '.containerInstanceArns[]'|\
+    xargs -IFOO aws2 ecs describe-container-instances --container-instances FOO --cluster qcon-ldn-workshop-$i|jq '.containerInstances[].ec2InstanceId'|\
+    xargs -IFOO aws2 ec2 describe-instances --filter "Name=instance-id,Values=FOO" | jq -r '.Reservations[].Instances[].PublicIpAddress')
+
+    echo -e "\n👾 IP: " $ip
+    ssh_alive=$(nc -vz -G 10 $ip 22)
+    ssh_alive_result=$?
+    if [ $ssh_alive_result -eq 0 ]; then
+        echo $ip " ✅UP ssh (22) " $ssh_alive
+    else
+        echo $ip " ❌DOWN ssh (22) " $ssh_alive
+    fi
+
+    kibana_alive=$(nc -vz -G 10 $ip 5601)
+    kibana_alive_result=$?
+    if [ $kibana_alive_result -eq 0 ]; then
+        echo $ip " ✅UP kibana (5601) " $kibana_alive_result
+
+        kibana_api_status=$(curl -s http://$ip:5601/api/kibana/settings)
+        if [[ $kibana_api_status == 'Kibana server is not ready yet' ]] ; then 
+            echo $ip " ❌DOWN kibana (api) " $kibana_api_status
+        else
+            echo $ip " ✅UP kibana (api) " 
+        fi
+    else
+        echo $ip " ❌DOWN kibana (5601) " $kibana_alive
+    fi
+done
+----
+
+=== List clusters
+
+[source,bash]
+----
+aws2 ecs list-clusters|jq '.clusterArns[] | select(. | contains("qcon-ldn-workshop"))' 
+----
+
+
+== Tear-down
+
+=== List all clusters
+
+[source,bash]
+----
+aws2 ecs list-clusters|jq '.clusterArns[]'|\
+    xargs -IFOO aws2 ecs describe-clusters --clusters FOO|\
+    jq '.clusters[].clusterName'
+
+"default"
+"qcon-ldn-workshop"
+"qcon-ldn-workshop-01"
+"qcon-ldn-workshop-02"
+----
+
+=== Remove all workshop clusters 
+
+[source,bash]
+----
+aws2 ecs list-clusters|jq '.clusterArns[]'|\
+    xargs -IFOO aws2 ecs describe-clusters --clusters FOO| \
+    jq '.clusters[].clusterName | select(. | contains("qcon-ldn-workshop"))' | \
+    xargs -IFOO ecs-cli down --force --cluster FOO
+----
