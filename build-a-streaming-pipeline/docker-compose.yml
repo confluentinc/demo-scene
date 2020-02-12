@@ -252,8 +252,6 @@ services:
       ES_JAVA_OPTS: "-Xms1g -Xmx1g"
       discovery.type: "single-node"
       node.store.allow_mmap: "false"
-    volumes:
-     - ${PWD}/scripts:/scripts
     command: 
       - bash 
       - -c 
