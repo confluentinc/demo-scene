@@ -1,0 +1,21 @@
+version: 1
+task_definition:
+  services:
+    elasticsearch:
+      mem_limit: 2g
+    kafka:
+      mem_limit: 2g
+    kafka-connect-01:
+      mem_limit: 2g
+    kafkacat:
+      mem_limit: 1g
+    kibana:
+      mem_limit: 1g
+    ksqldb:
+      mem_limit: 2g
+    mysql:
+      mem_limit: 1g
+    schema-registry:
+      mem_limit: 1g
+    zookeeper:
+      mem_limit: 1g

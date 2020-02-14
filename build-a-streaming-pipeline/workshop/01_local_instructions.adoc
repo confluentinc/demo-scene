@@ -1,0 +1,218 @@
+= ksqlDB workshop - provisioning a local environment
+Robin Moffatt <robin@confluent.io>
+v1.20, 12 February 2020
+
+NOTE: Do not try to follow this if you're going to make use of the remotely-provisioned environment. 
+
+[NOTE]
+====
+Successfully tested on: 
+
+[options="header"]
+|=================================================================================
+|Host OS|Docker|Docker Compose
+|Mac 10.13.6|18.09.2|1.24.0-rc1, build 0f3d4dda
+|Fedora 28|18.06.1-ce, build e68fc7a|1.22.0, build f46880fe
+|Ubuntu 18.04| 18.06.1-ce, build e68fc7a|1.22.0, build f46880fe
+|Windows 10| ? | ?
+====
+
+== Pre-requisites
+
+* Docker
+* Docker Compose
+* 8GB+ RAM
+* Clone github repository
+* Pull required docker images
+
+IMPORTANT: *THIS MUST BE DONE _BEFORE_ THE WORKSHOP - The docker images are large and will take time to download. Please don't wait until the workshop as the wi-fi will not cope!*
+
+1. Install https://docs.docker.com/compose/install/[Docker Compose] on your system. There are Mac, Windows, and Linux options available at the link.
+
+0. Mac/Windows only:
++
+In Docker’s advanced settings, increase the memory dedicated to Docker to at least 8GB.
+
+1. Confirm that Docker has at least 8GB of memory available to it: 
++
+[source,bash]
+----
+docker system info | grep Memory 
+----
++
+Should return a value greater than 8GB - if not, the Kafka stack will probably not work. 
+
+1. Clone the workshop repo to your local machine:
++
+[source,bash]
+----
+git clone https://github.com/confluentinc/demo-scene.git
+----
+
+3. Change to the ksqlDB workshop folder
++
+[source,bash]
+----
+cd demo-scene/build-a-streaming-pipeline
+----
+
+3. Pull all required docker images—this will take a while!
++
+[source,bash]
+----
+docker-compose pull
+----
+
+0. Did you check that Docker has at least 8GB of memory available?
+** You really do need to do this
+
+3. You may find it useful to have `jq` installed
++
+* Mac: `brew install jq`
+* RHEL-based: `sudo yum install -y jq`
+* Debian-based: `sudo apt install -y jq`
+
+== Start the workshop environment
+
+NOTE: Make sure that Docker has at least 8GB of memory available (check with `docker system info | grep Memory`)
+
+NOTE: For Windows instructions, please see link:ksql-workshop-windows.adoc[]
+
+Make sure you're in the `demo-scene/build-a-streaming-pipeline` folder, and then launch the stack: 
+
+[source,bash]
+----
+docker-compose up -d
+docker-compose logs -f kafka|grep "INFO Kafka version"
+----
+
+Once you see output, then it means Kafka is running and you can proceed
+
+[source,bash]
+----
+kafka               | [2020-02-12 11:34:12,924] INFO Kafka version: 5.4.0-ccs (org.apache.kafka.common.utils.AppInfoParser)
+----
+
+Press btn:[Ctrl-C] twice to exit the `docker-compose logs` command
+
+Run `docker-compose ps` to confirm that all components are running:
+
+[source,bash]
+----
+$ docker-compose ps
+
+      Name                    Command                  State                     Ports
+----------------------------------------------------------------------------------------------------
+elasticsearch      /usr/local/bin/docker-entr ...   Up             0.0.0.0:9200->9200/tcp, 9300/tcp
+kafka              bash -c echo '127.0.0.1 ka ...   Up             0.0.0.0:9092->9092/tcp
+kafka-connect-01   bash -c echo "Installing c ...   Up (healthy)   0.0.0.0:8083->8083/tcp, 9092/tcp
+kafkacat           /bin/sh -c apk add jq;           Up
+                   wh ...
+kibana             /usr/local/bin/dumb-init - ...   Up             0.0.0.0:5601->5601/tcp
+ksqldb             /usr/bin/docker/run              Up             0.0.0.0:8088->8088/tcp
+mysql              docker-entrypoint.sh bash  ...   Up             0.0.0.0:3306->3306/tcp, 33060/tcp
+schema-registry    /etc/confluent/docker/run        Up             0.0.0.0:8081->8081/tcp
+zookeeper          /etc/confluent/docker/run        Up             2181/tcp, 2888/tcp, 3888/tcp
+----
+
+IMPORTANT: If any components do not show "Up" under the `State` column (e.g., they say "Exit") then you must rectify this before continuing.
+As a first solution, try re-issuing the `docker-compose up -d` command.
+
+Now follow the instructions below **ksqlDB prompt**, and then open a second terminal window and start a **MySQL prompt** following the separate instructions below. 
+
+== Start your ksqlDB prompt
+
+From a new shell session, run the following: 
+
+[source,bash]
+----
+docker exec -it ksqldb ksql http://localhost:8088
+----
+
+This will take you to the ksqlDB prompt: 
+
+[source,bash]
+----
+                  ===========================================
+                  =       _              _ ____  ____       =
+                  =      | | _____  __ _| |  _ \| __ )      =
+                  =      | |/ / __|/ _` | | | | |  _ \      =
+                  =      |   <\__ \ (_| | | |_| | |_) |     =
+                  =      |_|\_\___/\__, |_|____/|____/      =
+                  =                   |_|                   =
+                  =  Event Streaming Database purpose-built =
+                  =        for stream processing apps       =
+                  ===========================================
+
+Copyright 2017-2019 Confluent Inc.
+
+CLI v6.0.0-SNAPSHOT, Server v6.0.0-SNAPSHOT located at http://localhost:8088
+
+Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
+
+ksql>
+----
+
+== Start a MySQL prompt
+
+From a new shell session, run the following: 
+
+[source,bash]
+----
+docker exec -it mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
+----
+
+This will take you to the MySQL prompt: 
+
+[source,bash]
+----
+
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 8
+Server version: 8.0.19 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql>
+----
+
+
+== Shutting down the environment
+
+Once you've finished with the workshop, terminate the workshop environment by running  `docker-compose down`:
+
+[source,bash]
+----
+$ docker-compose down
+Stopping ksqldb           ... done
+Stopping kafka-connect-01 ... done
+Stopping kafkacat         ... done
+Stopping schema-registry  ... done
+Stopping kibana           ... done
+Stopping kafka            ... done
+Stopping elasticsearch    ... done
+Stopping zookeeper        ... done
+Stopping mysql            ... done
+Removing ksqldb           ... done
+Removing kafka-connect-01 ... done
+Removing kafkacat         ... done
+Removing schema-registry  ... done
+Removing kibana           ... done
+Removing kafka            ... done
+Removing elasticsearch    ... done
+Removing zookeeper        ... done
+Removing mysql            ... done
+Removing network build-a-streaming-pipeline_default
+----
+
+_If you want to preserve the state of all containers, run `docker-compose stop` instead._
