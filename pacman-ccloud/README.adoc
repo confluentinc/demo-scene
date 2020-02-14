@@ -413,9 +413,9 @@ image::create-pipeline.png[]
 
 13. Click on 'Run' to create the pipeline
 
-== 4) Executing the Scoreboard Program
+== Scoreboard Program written in Go
 
-In order to verify if the pipeline is working as expected, you can execute a program written in Go that displays the content of the scoreboard. Because tables in KSQL ultimately create topics, this program subscribes to the 'SCOREBOARD' topic and updates the display as new records arrive. Moreover, this program sorts the data based on each user's game to simulate a real game scoreboard.
+In order to verify if the pipeline is working as expected, you can execute a program written in Go that displays the content of the scoreboard. Because tables in KSQL ultimately are topics, this program subscribes to the 'SCOREBOARD' topic and updates the display as new records arrive. Moreover, this program sorts the data based on each user's game to simulate a real game scoreboard.
 
 1. Enter the folder that contains the code
 +
