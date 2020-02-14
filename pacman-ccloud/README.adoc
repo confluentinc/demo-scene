@@ -2,22 +2,18 @@
 
 :imagesdir: images/
 
-*Pac-Man with Confluent Cloud* is the funniest application that you ever see while applying principles of stream processing using https://kafka.apache.org[Apache Kafka]. Built around the famous Pac-Man game, this application allows you to capture and store events from the game into Kafka topics, as well as process them in near real-time using https://www.confluent.io/product/ksql/[KSQL]. In order to keep you focused on the fun and interesting part, the application is based on clusters running on https://www.confluent.io/confluent-cloud/[Confluent Cloud] -- a fully managed service that offers Apache Kafka as a serverless application.
+*Pac-Man with Confluent Cloud* is the funniest application that you ever see while applying principles of stream processing using https://kafka.apache.org[Apache Kafka]. Built around the famous Pac-Man game, this application allows you to capture and store events from the game into Kafka topics, as well as process them in near real-time using https://ksqldb.io/[ksqlDB]. In order to keep you focused on the fun and interesting part, the application is based on clusters running on https://www.confluent.io/confluent-cloud/[Confluent Cloud] -- a fully managed service that offers Apache Kafka as a serverless application.
 
 image::pacman-game.png[]
 
-To apply principles of stream processing in the game, you are going to build a link:pipeline/queries.sql[scoreboard using KSQL]. The scoreboard will be based on a table that holds aggregated metrics of the players such as their highest score, the highest level achieved, and the number of times that the player loses (a.k.a game-over). As the events keep coming from the game, this scoreboard gets updated instantly by the continuous queries that keep processing those events as they happen. link:scoreboard/scoreboard.go[A program written in Go] can be used to display this table in near real-time.
-
-image::scoreboard.png[]
-
-This program subscribes to a Kafka topic that acts as the sink of the table, therefore has all the data that is the result of the computation done by the continuous queries. As new data arrives, the table automatically reorder the players based on their performance. Because of this behavior; you can use this program to display the performance of the players as they play with the game, and have all sorts of fun doing it!
+To apply principles of stream processing in the game, you are going to build a link:pipeline/queries.sql[scoreboard using KSQL]. The scoreboard will be based on a table that holds aggregated metrics of the players such as their highest score, the highest level achieved, and the number of times that the player loses (a.k.a game-over). As the events keep coming from the game, this scoreboard gets updated instantly by the continuous queries that keep processing those events as they happen.
 
 == What you are Going to Need?
 
 * *Confluent Cloud* - You need to have an active account with https://www.confluent.io/confluent-cloud/[Confluent Cloud] to be able to spin up environments with the services required for this application. At a very minimum, you will need a Kafka cluster where your topics will be created and an managed Schema Registry. Optionally, you may want to create KSQL applications to implement the scoreboard pipeline.
-* *Terraform* - The application is automatically created using https://www.terraform.io[Terraform]. The cloud providers supported are https://aws.amazon.com[AWS], https://cloud.google.com[GCP], and https://azure.microsoft.com[Azure]. Besides having Terraform installed locally, will need to provide your cloud provider credentials so Terraform can create and manage the resources for you.
-* *Java and Maven* - If you intend to use the AWS implementation then you will need to have https://openjdk.java.net/[Java] and https://maven.apache.org/[Maven] installed. The AWS implementation uses a serverless approach for all its layers, and the event handler that processes the events from the application is implemented as a Lambda function written in Java.
-* *Go Compiler* - The program that displays the performance of the players as they play is written in https://golang.org[Go] and thus, you will need to have the compiler installed to build a native executable.
+* *Terraform* - The application is automatically created using https://www.terraform.io[Terraform]. The default cloud provider supported is https://aws.amazon.com[AWS], but there are implementations for https://cloud.google.com[GCP] and https://azure.microsoft.com[Azure] as well. Besides having Terraform installed locally, will need to provide your cloud provider credentials so Terraform can create and manage the resources for you.
+* *Java and Maven* - The game use two APIs that are implemented using https://openjdk.java.net/[Java], thus you will need to have Java installed to build the source-code. The build itseld is implemented using https://maven.apache.org/[Maven], and it is triggered automatically by Terraform.
+* *Go Compiler (Optional)* - There is a program written in https://golang.org[Go] that implement a local client for the scoreboard where the players are sorted based on the same criteria that is used on the server-side scoreboard. Thus, you will need to have the Go compiler installed locally if you intend to build this program.
 * *Confluent Cloud CLI (Optional)* - During the creation of the pipeline, if you choose to implement it using a KSQL application, then you will need to have the Confluent Cloud CLI installed locally to set up access permissions to the topics. You can find instructions about how to install it https://docs.confluent.io/current/cloud/cli/index.html[here].
 * *Confluent Platform (Optional)* - During the creation of the pipeline, if you choose to implement it using a KSQL Server, then you will need to have the Confluent Platform installed locally to be able to spin up your own KSQL Server or use the KSQL CLI. You can find instructions about how to install it https://www.confluent.io/product/confluent-platform/[here].
 
@@ -33,7 +29,7 @@ image::pac-man-arch.png[align="left"]
 
 Please note that during deployment, the API takes care of creating the required Kafka topics. Therefore, there is no need to manually create them.
 
-=== Option: Deploying the Application on AWS
+=== Deploying on AWS (Recommended)
 
 1. Enter the folder that contains the AWS code
 +
@@ -107,7 +103,7 @@ Pacman = http://pacman000000000000000.s3-website-region.amazonaws.com
 terraform destroy -auto-approve
 ----
 
-=== Option: Deploying the Application on GCP
+=== Deploying on GCP
 
 1. Enter the folder that contains the GCP code
 +
@@ -195,7 +191,7 @@ Pacman = http://0.0.0.0
 terraform destroy -auto-approve
 ----
 
-=== Option: Deploying the Application on Azure
+=== Deploying on Azure
 
 1. Enter the folder that contains the Azure code
 +
