@@ -1,0 +1,21 @@
+= Workshop: Apache Kakfa and ksqlDB in Action: Let's Build a Streaming Data Pipeline!
+Robin Moffatt <robin@confluent.io>
+v1.00, 12 February 2020
+
+== Provisioning instructions
+
+You have two options: 
+
+1. Run the stack *locally on your laptop*. You need to have at least 8GB available, and already have Docker and Docker Compose running. The workshop has been tested thoroughly on the Mac. Linux and Windows users may encounter problems. 
++
+Follow *these instructions*
+
+2. Connect to the stack running remotely. You just need an SSH client.
++
+Follow *these instructions*
+
+Please decide which of these you will do, and follow the respective instructions linked above. 
+
+== Workshop instructions
+
+Once you have successfully provisioned your local environment, or connected to the remote one, please continue to the *main workshop instructions*. 

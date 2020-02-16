@@ -1,9 +1,13 @@
-GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'replicator' IDENTIFIED BY 'replpass';
-GRANT SELECT, RELOAD, SHOW DATABASES, REPLICATION SLAVE, REPLICATION CLIENT  ON *.* TO 'debezium' IDENTIFIED BY 'dbz';
+CREATE USER 'debezium'@'%' IDENTIFIED WITH mysql_native_password BY 'dbz';
+CREATE USER 'replicator'@'%' IDENTIFIED BY 'replpass';
 
-# Create the database that we'll use to populate data and watch the effect in the binlog
-CREATE DATABASE demo;
-GRANT ALL PRIVILEGES ON demo.* TO 'mysqluser'@'%';
+GRANT SELECT, RELOAD, SHOW DATABASES, REPLICATION SLAVE, REPLICATION CLIENT  ON *.* TO 'debezium';
+GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'replicator';
+
+create database demo;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON demo.* TO connect_user;
+GRANT ALL PRIVILEGES ON demo.* TO 'debezium'@'%';
 
 use demo;
 

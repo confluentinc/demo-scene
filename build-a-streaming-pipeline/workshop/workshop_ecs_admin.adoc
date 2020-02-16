@@ -1,0 +1,134 @@
+= Notes for running this as a workshop on ECS
+Robin Moffatt <robin@confluent.io>
+v1.00 12 February 2020
+
+== Configure ecs-cli
+
+[source,bash]
+----
+ecs-cli configure profile --access-key xxx --secret-key yyy
+----
+
+== Spin-up
+
+=== Create keypair
+
+Create the SSH private key, split the `\n` into actual line breaks:
+
+[source,bash]
+----
+# aws2 ec2 delete-key-pair --key-name qcon-ldn-workshop 
+aws2 ec2 create-key-pair --key-name qcon-ldn-workshop|jq '.KeyMaterial'|sed 's/\\n/\
+/g'
+----
+
+Write this to a file that all the students can access. 
+
+=== Provision clusters
+
+1. Spin up ECS cluster per student
++
+[source,bash]
+----
+for i in {01..10}; do 
+ecs-cli up --cluster qcon-ldn-workshop-$i --keypair qcon-ldn-workshop --capability-iam --instance-type m5.xlarge --port 22 --tags owner=rmoff,workshop=qcon_london,deleteafter=20200305 --launch-type EC2 &
+done
+----
+
+2. List CloudFormation stacks:
+[source,bash]
+----
+aws2 cloudformation list-stacks |jq '.StackSummaries[]|select (.StackName | contains("amazon-ecs-cli-setup-qcon-ldn-workshop"))|[.CreationTime, .StackName, .StackStatus]|@csv'|column -t -s,| sed 's/\"//g'| sed 's/\\//g' | sort
+----
++
+NOTE: Wait here until all stacks are CREATE_COMPLETE
+
+3. Open port up for Kibana on each security group
++
+NOTE: *This produces no output*
++
+[source,bash]
+----
+aws2 ec2 describe-security-groups \
+    --filters Name=tag:workshop,Values=qcon_london | jq '.SecurityGroups[].GroupId' | xargs -Isg \
+    aws2 ec2 authorize-security-group-ingress \
+        --group-id sg \
+        --protocol tcp \
+        --port 5601 \
+        --cidr 0.0.0.0/0 | jq '.'
+----
+
+4. Deploy the workshop environment
++
+[source,bash]
+----
+cd ~/git/demo-scene/build-a-streaming-pipeline
+for i in {01..10}; do 
+ecs-cli compose up --cluster qcon-ldn-workshop-$i &
+done
+----
+
+=== Get a list of all EC2 IPs and healthcheck
+
+[source,bash]
+----
+./workshop/check_health.sh
+----
+
+=== List task status on a specific cluster 
+
+[source,bash]
+----
+ecs-cli compose ps --cluster qcon-ldn-workshop-01
+Name                                                   State    Ports                        TaskDefinition                 Health
+c3783383-375c-4bf0-a4f4-dc59dbd6d2cf/schema-registry   RUNNING  3.93.143.126:8081->8081/tcp  build-a-streaming-pipeline:62  UNKNOWN
+c3783383-375c-4bf0-a4f4-dc59dbd6d2cf/mysql             RUNNING  3.93.143.126:3306->3306/tcp  build-a-streaming-pipeline:62  UNKNOWN
+c3783383-375c-4bf0-a4f4-dc59dbd6d2cf/kafka             RUNNING  3.93.143.126:9092->9092/tcp  build-a-streaming-pipeline:62  UNKNOWN
+c3783383-375c-4bf0-a4f4-dc59dbd6d2cf/ksqldb            RUNNING  3.93.143.126:8088->8088/tcp  build-a-streaming-pipeline:62  UNKNOWN
+c3783383-375c-4bf0-a4f4-dc59dbd6d2cf/kafka-connect-01  RUNNING  3.93.143.126:8083->8083/tcp  build-a-streaming-pipeline:62  UNKNOWN
+c3783383-375c-4bf0-a4f4-dc59dbd6d2cf/kibana            RUNNING  3.93.143.126:5601->5601/tcp  build-a-streaming-pipeline:62  UNKNOWN
+c3783383-375c-4bf0-a4f4-dc59dbd6d2cf/kafkacat          RUNNING                               build-a-streaming-pipeline:62  UNKNOWN
+c3783383-375c-4bf0-a4f4-dc59dbd6d2cf/zookeeper         RUNNING                               build-a-streaming-pipeline:62  UNKNOWN
+c3783383-375c-4bf0-a4f4-dc59dbd6d2cf/elasticsearch     RUNNING  3.93.143.126:9200->9200/tcp  build-a-streaming-pipeline:62  UNKNOWN
+----
+
+=== Start up tasks on a specific cluster 
+
+[source,bash]
+----
+ecs-cli compose up --cluster qcon-ldn-workshop-01
+----
+
+
+
+== Tear-down
+
+=== List clusters
+
+[source,bash]
+----
+aws2 ecs list-clusters|jq '.clusterArns[] | select(. | contains("qcon-ldn-workshop"))' 
+----
+
+=== Remove all workshop clusters 
+
+(this runs serially and takes a while; wonder if there's a more efficient way with `ecs` vs `ecs-cli`? )
+
+[source,bash]
+----
+aws2 ecs list-clusters|jq '.clusterArns[] | select(. | contains("qcon-ldn-workshop"))' |\
+    xargs -IFOO aws2 ecs describe-clusters --clusters FOO| \
+    jq '.clusters[].clusterName' | \
+    xargs -IFOO ecs-cli down --force --cluster FOO
+----
+
+Check all are gone: 
+
+[source,bash]
+----
+aws2 cloudformation list-stacks |jq '.StackSummaries[]|select (.StackName | contains("amazon-ecs-cli-setup-qcon-ldn-workshop"))|[.CreationTime, .StackName, .StackStatus]|@csv'|column -t -s,| sed 's/\"//g'| sed 's/\\//g' | sort
+
+2020-02-10T18:36:53.954000+00:00  amazon-ecs-cli-setup-qcon-ldn-workshop     DELETE_COMPLETE
+2020-02-11T16:00:08.760000+00:00  amazon-ecs-cli-setup-qcon-ldn-workshop     DELETE_COMPLETE
+2020-02-11T16:59:37.206000+00:00  amazon-ecs-cli-setup-qcon-ldn-workshop-01  DELETE_COMPLETE
+----
