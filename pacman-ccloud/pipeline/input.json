@@ -1,0 +1,51 @@
+{
+    "inputs": [
+      {
+        "topic": "USER_GAME",
+        "key": "riferrei",
+        "value": {
+          "user": "riferrei",
+          "game": {
+            "score": 10,
+            "lives": 2,
+            "level": 1
+          }
+        },
+        "timestamp": 0
+      },
+      {
+        "topic": "USER_GAME",
+        "key": "riferrei",
+        "value": {
+          "user": "riferrei",
+          "game": {
+            "score": 20,
+            "lives": 2,
+            "level": 1
+          }
+        },
+        "timestamp": 0
+      },
+      {
+        "topic": "USER_LOSSES",
+        "key": "riferrei",
+        "value": {
+          "user": "riferrei"
+        },
+        "timestamp": 0
+      },
+      {
+        "topic": "USER_GAME",
+        "key": "riferrei",
+        "value": {
+          "user": "riferrei",
+          "game": {
+            "score": 30,
+            "lives": 2,
+            "level": 2
+          }
+        },
+        "timestamp": 0
+      }
+    ]
+  }

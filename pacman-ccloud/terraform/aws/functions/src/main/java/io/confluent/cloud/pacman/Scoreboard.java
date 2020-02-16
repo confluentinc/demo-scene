@@ -36,10 +36,9 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
 
     public Map<String, Object> handleRequest(Map<String, Object> request, Context context) {
 
-        updateScoreboard(100);
-        Map<String, Object> response = new HashMap<>();
+        final Map<String, Object> response = new HashMap<>();
+        
         response.put(BODY_KEY, getScoreboard());
-
         Map<String, Object> responseHeaders = new HashMap<>();
         responseHeaders.put("Access-Control-Allow-Headers", "*");
         responseHeaders.put("Access-Control-Allow-Methods", POST_METHOD);
@@ -52,6 +51,8 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
 
     private static String getScoreboard() {
 
+        updateScoreboard(0);
+        
         JsonArray entries = new JsonArray(scoreboard.size());
         Enumeration<UserData> _users = scoreboard.elements();
         List<UserData> users = Collections.list(_users);

@@ -1,8 +1,14 @@
 /**********************************************/
-/*************** Resetting Data ***************/
+/*                                            */
+/*  Before running this script, it is a good  */
+/*  idea to set the position of the offset to */
+/*  the earliest position to load all data.   */
+/*                                            */
 /**********************************************/
-
-SET 'auto.offset.reset' = 'earliest';
+/*                                            */
+/*   SET 'auto.offset.reset' = 'earliest';    */
+/*                                            */
+/**********************************************/
 
 /**********************************************/
 /*************** Stream Sources ***************/
