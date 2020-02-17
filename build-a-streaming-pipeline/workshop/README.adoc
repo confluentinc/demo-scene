@@ -8,11 +8,11 @@ You have two options:
 
 1. Run the stack *locally on your laptop*. You need to have at least 8GB available, and already have Docker and Docker Compose running. The workshop has been tested thoroughly on the Mac. Linux and Windows users may encounter problems. 
 +
-Follow *these instructions*
+Follow link:01_local_instructions.adoc[*these instructions*]
 
 2. Connect to the stack running remotely. You just need an SSH client.
 +
-Follow *these instructions*
+Follow link:01_remote_instructions.adoc[*these instructions*]
 
 Please decide which of these you will do, and follow the respective instructions linked above. 
 
