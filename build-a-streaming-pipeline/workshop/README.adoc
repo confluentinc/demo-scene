@@ -18,4 +18,4 @@ Please decide which of these you will do, and follow the respective instructions
 
 == Workshop instructions
 
-Once you have successfully provisioned your local environment, or connected to the remote one, please continue to the *main workshop instructions*. 
+Once you have successfully provisioned your local environment, or connected to the remote one, please continue to the link:02_workshop.adoc[*main workshop instructions*].
