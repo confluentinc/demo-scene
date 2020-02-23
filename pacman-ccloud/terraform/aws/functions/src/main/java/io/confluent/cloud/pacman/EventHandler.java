@@ -21,34 +21,34 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
 
     public Map<String, Object> handleRequest(final Map<String, Object> request, final Context context) {
         
-        final Map<String, Object> requestHeaders =
-            (Map<String, Object>) request.get(HEADERS_KEY);
-        final Map<String, Object> response = new HashMap<>();
-
+        Map<String, Object> response = new HashMap<>();
         if (!request.containsKey(HEADERS_KEY)) {
             response.put(BODY_KEY, "Thanks for waking me up");
             return response;
         }
 
+        Map<String, Object> requestHeaders =
+            (Map<String, Object>) request.get(HEADERS_KEY);
+
         if (requestHeaders.containsKey(ORIGIN_KEY)) {
 
-            final String origin = (String) requestHeaders.get(ORIGIN_KEY);
+            String origin = (String) requestHeaders.get(ORIGIN_KEY);
+
             if (origin.equals(ORIGIN_ALLOWED)) {
+
                 if (request.containsKey(QUERY_PARAMS_KEY) && request.containsKey(BODY_KEY)) {
-        
-                    final String event = (String) request.get(BODY_KEY);
-                    final Map<String, String> queryParams =
-                        (Map<String, String>) request.get(QUERY_PARAMS_KEY);
-                    
+
+                    String event = (String) request.get(BODY_KEY);
+                    Map<String, String> queryParams = (Map<String, String>) request.get(QUERY_PARAMS_KEY);
+
                     if (event != null && queryParams != null) {
 
-                        final String topic = queryParams.get(TOPIC_KEY);
-                        final String user = extractUserFromEvent(event);
+                        String topic = queryParams.get(TOPIC_KEY);
+                        String user = extractUserFromEvent(event);
 
-                        ProducerRecord<String, String> record =
-                            new ProducerRecord<>(topic, user, event);
+                        ProducerRecord<String, String> record = new ProducerRecord<>(topic, user, event);
                         producer.send(record, (metadata, exception) -> {
-                            final StringBuilder message = new StringBuilder();
+                            StringBuilder message = new StringBuilder();
                             message.append("Event sent successfully to topic '");
                             message.append(metadata.topic()).append("' on the ");
                             message.append("partition ").append(metadata.partition());
@@ -56,7 +56,7 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
                         });
                         producer.flush();
 
-                        final Map<String, Object> responseHeaders = new HashMap<>();
+                        Map<String, Object> responseHeaders = new HashMap<>();
                         responseHeaders.put("Access-Control-Allow-Headers", "*");
                         responseHeaders.put("Access-Control-Allow-Methods", POST_METHOD);
                         responseHeaders.put("Access-Control-Allow-Origin", ORIGIN_ALLOWED);
@@ -67,7 +67,9 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
                 }
                 
             }
+            
         }
+        
         return response;
 
     }
@@ -94,7 +96,7 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
 
     private static void initializeProducer() {
         if (producer == null) {
-            final Properties properties = getConnectProperties();
+            Properties properties = getConnectProperties();
             properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
             properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
             producer = new KafkaProducer<>(properties);
