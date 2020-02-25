@@ -1,6 +1,6 @@
 = From Zero to Hero with Kafka Connect - demo script
 Robin Moffatt <robin@confluent.io>
-v1.11, 11 Jul 2019
+v1.15, 25 February 2020
 :toc:
 
 == Running the test rig
