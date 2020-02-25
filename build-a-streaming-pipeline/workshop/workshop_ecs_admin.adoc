@@ -30,12 +30,16 @@ Write this to a file that all the students can access.
 +
 [source,bash]
 ----
-for i in {01..10}; do 
+for i in {01..02}; do 
 ecs-cli up --cluster qcon-ldn-workshop-$i --keypair qcon-ldn-workshop --capability-iam --instance-type m5.xlarge --port 22 --tags owner=rmoff,workshop=qcon_london,deleteafter=20200305 --launch-type EC2 &
+sleep 2
 done
 ----
++
+The `sleep` is necessary to avoid `ThrottlingException: Rate exceeded`. 
 
 2. List CloudFormation stacks:
++
 [source,bash]
 ----
 aws2 cloudformation list-stacks |jq '.StackSummaries[]|select (.StackName | contains("amazon-ecs-cli-setup-qcon-ldn-workshop"))|[.CreationTime, .StackName, .StackStatus]|@csv'|column -t -s,| sed 's/\"//g'| sed 's/\\//g' | sort
@@ -63,8 +67,9 @@ aws2 ec2 describe-security-groups \
 [source,bash]
 ----
 cd ~/git/demo-scene/build-a-streaming-pipeline
-for i in {01..10}; do 
+for i in {01..02}; do 
 ecs-cli compose up --cluster qcon-ldn-workshop-$i &
+sleep 2
 done
 ----
 
@@ -73,6 +78,21 @@ done
 [source,bash]
 ----
 ./workshop/check_health.sh
+----
+(takes 5m39s for 60 machines)
+
+
+Get IPs only:
+
+[source,bash]
+----
+for i in {01..60}; do
+    ip=$(aws2 ecs list-container-instances --cluster qcon-ldn-workshop-$i|jq '.containerInstanceArns[]'|\
+    xargs -IFOO aws2 ecs describe-container-instances --container-instances FOO --cluster qcon-ldn-workshop-$i|jq '.containerInstances[].ec2InstanceId'|\
+    xargs -IFOO aws2 ec2 describe-instances --filter "Name=instance-id,Values=FOO" | jq -r '.Reservations[].Instances[].PublicIpAddress')
+
+    echo -e "\n👾 IP: " $ip " (cluster "$i")"
+done
 ----
 
 === List task status on a specific cluster 
@@ -112,6 +132,18 @@ aws2 ecs list-clusters|jq '.clusterArns[] | select(. | contains("qcon-ldn-worksh
 
 === Remove all workshop clusters 
 
+==== Option 1 - iterate fixed list
+
+[source,bash]
+----
+for i in {01..02}; do 
+ecs-cli down --force --cluster qcon-ldn-workshop-$i &
+sleep 2
+done
+----
+
+==== Option 2 - pattern match
+
 (this runs serially and takes a while; wonder if there's a more efficient way with `ecs` vs `ecs-cli`? )
 
 [source,bash]
@@ -122,7 +154,7 @@ aws2 ecs list-clusters|jq '.clusterArns[] | select(. | contains("qcon-ldn-worksh
     xargs -IFOO ecs-cli down --force --cluster FOO
 ----
 
-Check all are gone: 
+==== Check all are gone
 
 [source,bash]
 ----
