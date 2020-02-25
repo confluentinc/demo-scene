@@ -709,6 +709,11 @@ INSERT INTO MOVEMENTS VALUES ('robin', 'London');</code></pre>
 </div>
 <div class="listingblock">
 <div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">docker exec -it postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
 <pre class="highlight"><code class="language-sql" data-lang="sql">SELECT * FROM "PERSON_STATS";</code></pre>
 </div>
 </div>
@@ -769,7 +774,7 @@ docker exec -t ksqldb curl -s -X "POST" "http://localhost:8088/ksql" \
 <div id="footer">
 <div id="footer-text">
 Version 1.00<br>
-Last updated 2020-02-25 16:35:39 +0100
+Last updated 2020-02-25 16:41:04 +0100
 </div>
 </div>
 </body>

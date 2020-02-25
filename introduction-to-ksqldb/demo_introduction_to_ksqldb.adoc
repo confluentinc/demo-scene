@@ -209,6 +209,11 @@ CREATE SINK CONNECTOR SINK_POSTGRES WITH (
 
 Show the data in Postgres
 
+[source,bash]
+----
+docker exec -it postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+----
+
 [source,sql]
 ----
 SELECT * FROM "PERSON_STATS";
