@@ -64,7 +64,6 @@ services:
       KSQL_BOOTSTRAP_SERVERS: kafka:29092
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
-      KSQL_KSQL_CONNECT_URL: http://kafka-connect-01:8083
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       KSQL_KSQL_HIDDEN_TOPICS: '^_.*'
       # Setting KSQL_KSQL_CONNECT_WORKER_CONFIG enables embedded Kafka Connect
@@ -86,14 +85,28 @@ services:
       KSQL_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
       KSQL_CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
       KSQL_CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/,/data/connect-jars'
+    # If you want to use the Confluent Hub installer to d/l component, but make them available
+    # when running this offline, spin up the stack once and then run : 
+    #   docker cp ksqldb:/usr/share/confluent-hub-components ./data/connect-jars
+    volumes:
+      - $PWD/data:/data
     command: 
       # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
       - bash 
       - -c 
       - |
+        # Manually install the Confluent Hub client
+        # This is ugly af but works
+        cd ~
+        rm confluent-hub-client-latest.tar.gz
+        wget http://client.hub.confluent.io/confluent-hub-client-latest.tar.gz
+        tar xf confluent-hub-client-latest.tar.gz
+        export PATH=$PATH:~/bin/
+        #
         echo "Installing connector plugins"
-        confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.2.0
-        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:5.4.0
+        mkdir -p /usr/share/confluent-hub-components/
+        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-datagen:0.2.0
+        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-jdbc:5.4.0
         #
         echo "Launching ksqlDB"
         /usr/bin/docker/run & 
