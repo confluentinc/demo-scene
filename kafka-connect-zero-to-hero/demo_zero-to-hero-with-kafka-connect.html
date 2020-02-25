@@ -733,7 +733,8 @@ curl -s "http://localhost:8083/connectors?expand=info&amp;expand=status" | \
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-sql" data-lang="sql">SHOW TOPICS;
+<pre class="highlight"><code class="language-sql" data-lang="sql">SET 'auto.offset.reset' = 'earliest';
+SHOW TOPICS;
 CREATE STREAM ORDERS WITH (KAFKA_TOPIC='mysql-debezium-asgard.demo.ORDERS', VALUE_FORMAT='AVRO');
 DESCRIBE ORDERS;
 SELECT ID, MAKE, MODEL, CREATE_TS FROM ORDERS EMIT CHANGES;</code></pre>
@@ -744,7 +745,8 @@ SELECT ID, MAKE, MODEL, CREATE_TS FROM ORDERS EMIT CHANGES;</code></pre>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-sql" data-lang="sql">SELECT ID, MAKE, MODEL, CREATE_TS FROM ORDERS WHERE MAKE='Ford' EMIT CHANGES;</code></pre>
+<pre class="highlight"><code class="language-sql" data-lang="sql">SET 'auto.offset.reset' = 'earliest';
+SELECT ID, MAKE, MODEL, CREATE_TS FROM ORDERS WHERE MAKE='Ford' EMIT CHANGES;</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -752,9 +754,15 @@ SELECT ID, MAKE, MODEL, CREATE_TS FROM ORDERS EMIT CHANGES;</code></pre>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-sql" data-lang="sql">SELECT MAKE, COUNT(*), SUM(ORDER_TOTAL_USD) FROM ORDERS GROUP BY MAKE EMIT CHANGES;
-SET 'auto.offset.reset' = 'earliest';
-SELECT TIMESTAMPTOSTRING(WINDOWSTART,'yyyy-MM-dd''T''HH:mm:ssZ','Europe/London') AS WINDOW_START_TS, MAKE, COUNT(*) AS ORDER_COUNT, SUM(ORDER_TOTAL_USD) AS TOTAL_VALUE_USD FROM ORDERS WINDOW TUMBLING (SIZE 5 MINUTES) GROUP BY MAKE EMIT CHANGES;</code></pre>
+<pre class="highlight"><code class="language-sql" data-lang="sql">SELECT MAKE, COUNT(*), SUM(CAST(ORDER_TOTAL_USD AS DECIMAL(13,2)))
+  FROM ORDERS
+  GROUP BY MAKE EMIT CHANGES;
+
+SELECT TIMESTAMPTOSTRING(WINDOWSTART,'HH:mm:ssZ','Europe/Brussels') AS WINDOW_START_TS,
+       MAKE, COUNT(*) AS ORDER_COUNT, SUM(CAST(ORDER_TOTAL_USD AS DECIMAL(13,2))) AS TOTAL_VALUE_USD
+  FROM ORDERS WINDOW TUMBLING (SIZE 5 MINUTES)
+  WHERE MAKE='Ford'
+  GROUP BY MAKE EMIT CHANGES;</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -762,8 +770,22 @@ SELECT TIMESTAMPTOSTRING(WINDOWSTART,'yyyy-MM-dd''T''HH:mm:ssZ','Europe/London')
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-sql" data-lang="sql">CREATE TABLE ORDERS_BY_HOUR AS SELECT TIMESTAMPTOSTRING(WINDOWSTART,'yyyy-MM-dd''T''HH:mm:ssZ','Europe/London') AS WINDOW_START_TS, MAKE, COUNT(*) AS ORDER_COUNT, SUM(ORDER_TOTAL_USD) AS TOTAL_VALUE_USD FROM ORDERS WINDOW TUMBLING (SIZE 1 HOUR) GROUP BY MAKE EMIT CHANGES;
-SELECT TIMESTAMPTOSTRING(WINDOWSTART,'yyyy-MM-dd HH:mm:ss','Europe/London') AS TS, MAKE, ORDER_COUNT, TOTAL_VALUE_USD FROM ORDERS_BY_HOUR WHERE ROWKEY='Ford';</code></pre>
+<pre class="highlight"><code class="language-sql" data-lang="sql">CREATE TABLE ORDERS_BY_HOUR AS
+    SELECT TIMESTAMPTOSTRING(WINDOWSTART,'yyyy-MM-dd''T''HH:mm:ssZ','Europe/London') AS WINDOW_START_TS,
+           MAKE, COUNT(*) AS ORDER_COUNT, SUM(ORDER_TOTAL_USD) AS TOTAL_VALUE_USD
+      FROM ORDERS WINDOW TUMBLING (SIZE 1 HOUR)
+      GROUP BY MAKE EMIT CHANGES;
+
+-- Push query
+SELECT TIMESTAMPTOSTRING(WINDOWSTART,'HH:mm:ssZ','Europe/Brussels') AS TS, MAKE, ORDER_COUNT, TOTAL_VALUE_USD
+  FROM ORDERS_BY_HOUR
+  WHERE ROWKEY='Ford'
+  EMIT CHANGES;
+
+-- Pull query
+SELECT TIMESTAMPTOSTRING(WINDOWSTART,'HH:mm:ssZ','Europe/Brussels') AS TS, MAKE, ORDER_COUNT, TOTAL_VALUE_USD
+  FROM ORDERS_BY_HOUR
+  WHERE ROWKEY='Ford';</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -801,7 +823,7 @@ SHOW CONNECTORS;</code></pre>
 <div id="footer">
 <div id="footer-text">
 Version 1.11<br>
-Last updated 2020-02-24 18:43:47 +0100
+Last updated 2020-02-24 22:39:35 +0100
 </div>
 </div>
 </body>
