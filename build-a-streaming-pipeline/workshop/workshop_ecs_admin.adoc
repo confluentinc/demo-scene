@@ -31,7 +31,7 @@ Write this to a file that all the students can access.
 [source,bash]
 ----
 for i in {01..02}; do 
-ecs-cli up --cluster qcon-ldn-workshop-$i --keypair qcon-ldn-workshop --capability-iam --instance-type m5.xlarge --port 22 --tags owner=rmoff,workshop=qcon_london,deleteafter=20200305 --launch-type EC2 &
+ecs-cli up --cluster qcon-ldn-workshop-$i --keypair qcon-ldn-workshop --capability-iam --instance-type m5.xlarge --port 22 --tags owner=rmoff,project=workshops,team=devx,workshop=qcon_london,deleteafter=20200305 --launch-type EC2 &
 sleep 2
 done
 ----
