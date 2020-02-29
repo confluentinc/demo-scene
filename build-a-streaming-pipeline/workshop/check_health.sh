@@ -1,11 +1,11 @@
 #!/bin/zsh
 
-for i in {01..10}; do
+for i in {01..60}; do
     ip=$(aws2 ecs list-container-instances --cluster qcon-ldn-workshop-$i|jq '.containerInstanceArns[]'|\
     xargs -IFOO aws2 ecs describe-container-instances --container-instances FOO --cluster qcon-ldn-workshop-$i|jq '.containerInstances[].ec2InstanceId'|\
     xargs -IFOO aws2 ec2 describe-instances --filter "Name=instance-id,Values=FOO" | jq -r '.Reservations[].Instances[].PublicIpAddress')
 
-    echo -e "\n👾 IP: " $ip " (cluster "$i")"
+    echo -e "\n👾 Cluster "$i"  IP: " $ip 
     ssh_alive=$(nc -vz -G 10 $ip 22 2>&1)
     ssh_alive_result=$?
     if [ $ssh_alive_result -eq 0 ]; then

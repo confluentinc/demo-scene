@@ -1,6 +1,6 @@
 = From Zero to Hero with Kafka Connect - demo script
 Robin Moffatt <robin@confluent.io>
-v1.11, 11 Jul 2019
+v1.15, 25 February 2020
 :toc:
 
 == Running the test rig
@@ -27,7 +27,6 @@ while [ $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors)
   sleep 5  
 done
 echo -e $(date) "\n\n--------------\n\o/ Kafka Connect is ready! Listener HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) "\n--------------\n"
-docker-compose logs -f kafka-connect-01
 '
 ----
 
@@ -47,11 +46,11 @@ Expect:
 "streams.kafka.connect.sink.Neo4jSinkConnector"
 ----
 
-3. Get a MySQL prompt
+4. Get a MySQL prompt
 +
 [source,bash]
 ----
-docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD demo'
+docker exec -it mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD demo'
 ----
 
 
@@ -126,28 +125,19 @@ Output should be
 
 [source,bash]
 ----
-source-debezium-orders-00  |  RUNNING  |  RUNNING
+source  |  source-debezium-orders-00  |  RUNNING  |  RUNNING  |  io.debezium.connector.mysql.MySqlConnector
 ----
 
-http://localhost:9021/[View the topic in Confluent Control Center] or from the CLI: 
+View the topic in the CLI: 
 
 [source,bash]
 ----
-docker run --net host --rm edenhill/kafkacat:1.5.0 \
-        -b localhost:9092 \
-        -r http://localhost:8081\
+docker exec kafkacat kafkacat \
+        -b kafka:29092 \
+        -r http://schema-registry:8081 \
         -s avro \
         -t mysql-debezium-asgard.demo.ORDERS \
-        -C -o -10 -q | jq '.'
-----
-
-[source,bash]
-----
-docker exec -t kafka-connect-01 \
-            kafka-avro-console-consumer \
-            --bootstrap-server kafka:29092 \
-            --property schema.registry.url=http://schema-registry:8081 \
-            --topic mysql-debezium-asgard.demo.ORDERS | jq '.'
+        -C -o -10 -q | jq '.id, .CREATE_TS.string'
 ----
 
 Show Kafka Consumer and MySQL side by side. 
@@ -197,14 +187,14 @@ curl -i -X PUT -H  "Content-Type:application/json" \
 === View in Elasticsearch
 
 
-http://localhost:5601/app/kibana#/discover?_g=(refreshInterval:(pause:!f,value:5000),time:(from:now-15m,mode:quick,to:now))&_a=(columns:!(order_id,customer_id,delivery_address,delivery_city,delivery_company,make,model,order_total_usd),index:mysql-debezium-asgard.demo.orders,interval:auto,query:(language:lucene,query:''),sort:!(CREATE_TS,desc))[Inspect the data in Kibana] or from CLI: 
+http://localhost:5601/app/kibana#/discover?_g=(refreshInterval:(pause:!f,value:5000),time:(from:now-15m,mode:quick,to:now))&_a=(columns:!(id,delivery_address,delivery_city,delivery_company,make,model,order_total_usd),index:mysql-debezium-asgard.demo.orders,interval:auto,query:(language:lucene,query:''),sort:!(CREATE_TS,desc))[Inspect the data in Kibana] or from CLI: 
 
 [source,bash]
 ----
 curl -s http://localhost:9200/mysql-debezium-asgard.demo.orders/_search \
     -H 'content-type: application/json' \
-    -d '{ "size": 1, "sort": [ { "CREATE_TS": { "order": "desc" } } ] }' |\
-    jq '.hits.hits[]._source'
+    -d '{ "size": 5, "sort": [ { "CREATE_TS": { "order": "desc" } } ] }' |\
+    jq '.hits.hits[]._source | .id, .CREATE_TS'
 ----
 
 [NOTE]
@@ -225,3 +215,91 @@ If you want to set the Elasticsearch document id to match the key of the source 
 
 View in http://localhost:7474/browser/[Neo4j browser] (login `neo4j`/`connect`)
 
+
+== [Optional] Show off ksqlDB
+
+[source,bash]
+----
+docker exec -it ksqldb ksql http://localhost:8088
+----
+
+[source,sql]
+----
+SET 'auto.offset.reset' = 'earliest';
+SHOW TOPICS;
+CREATE STREAM ORDERS WITH (KAFKA_TOPIC='mysql-debezium-asgard.demo.ORDERS', VALUE_FORMAT='AVRO');
+DESCRIBE ORDERS;
+SELECT ID, MAKE, MODEL, CREATE_TS FROM ORDERS EMIT CHANGES;
+----
+
+Filter
+
+[source,sql]
+----
+SET 'auto.offset.reset' = 'earliest';
+SELECT ID, MAKE, MODEL, CREATE_TS FROM ORDERS WHERE MAKE='Ford' EMIT CHANGES;
+----
+
+Aggregates
+
+[source,sql]
+----
+SELECT MAKE, COUNT(*), SUM(CAST(ORDER_TOTAL_USD AS DECIMAL(13,2))) 
+  FROM ORDERS 
+  GROUP BY MAKE EMIT CHANGES;
+
+SELECT TIMESTAMPTOSTRING(WINDOWSTART,'HH:mm:ssZ','Europe/Brussels') AS WINDOW_START_TS, 
+       MAKE, COUNT(*) AS ORDER_COUNT, SUM(CAST(ORDER_TOTAL_USD AS DECIMAL(13,2))) AS TOTAL_VALUE_USD 
+  FROM ORDERS WINDOW TUMBLING (SIZE 5 MINUTES) 
+  WHERE MAKE='Ford'
+  GROUP BY MAKE EMIT CHANGES;
+----
+
+"Pull" query
+
+[source,sql]
+----
+CREATE TABLE ORDERS_BY_HOUR AS 
+    SELECT TIMESTAMPTOSTRING(WINDOWSTART,'yyyy-MM-dd''T''HH:mm:ssZ','Europe/London') AS WINDOW_START_TS, 
+           MAKE, COUNT(*) AS ORDER_COUNT, SUM(ORDER_TOTAL_USD) AS TOTAL_VALUE_USD 
+      FROM ORDERS WINDOW TUMBLING (SIZE 1 HOUR) 
+      GROUP BY MAKE EMIT CHANGES;
+
+-- Push query
+SELECT TIMESTAMPTOSTRING(WINDOWSTART,'HH:mm:ssZ','Europe/Brussels') AS TS, MAKE, ORDER_COUNT, TOTAL_VALUE_USD 
+  FROM ORDERS_BY_HOUR 
+  WHERE ROWKEY='Ford' 
+  EMIT CHANGES;
+
+-- Pull query
+SELECT TIMESTAMPTOSTRING(WINDOWSTART,'HH:mm:ssZ','Europe/Brussels') AS TS, MAKE, ORDER_COUNT, TOTAL_VALUE_USD 
+  FROM ORDERS_BY_HOUR 
+  WHERE ROWKEY='Ford';
+----
+
+REST API
+
+[source,sql]
+----
+docker exec -t ksqldb curl -s -X "POST" "http://localhost:8088/query" \
+     -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
+     -d '{"ksql":"SELECT TIMESTAMPTOSTRING(WINDOWSTART,'\''yyyy-MM-dd HH:mm:ss'\'','\''Europe/London'\'') AS TS, MAKE, ORDER_COUNT, TOTAL_VALUE_USD FROM ORDERS_BY_HOUR WHERE ROWKEY='\''Ford'\'';"}'|jq -c '.'
+----
+
+Connector creation
+
+[source,sql]
+----
+SHOW CONNECTORS;
+
+CREATE SINK CONNECTOR SINK_ES_AGG WITH (
+    'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+    'topics'          = 'ORDERS_BY_HOUR',
+    'connection.url'  = 'http://elasticsearch:9200',
+    'type.name'       = 'type.name=kafkaconnect',
+    'key.ignore'      = 'false',
+    'schema.ignore'   = 'true'
+);
+
+SHOW CONNECTORS;
+----
