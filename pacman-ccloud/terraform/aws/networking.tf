@@ -21,7 +21,7 @@ resource "aws_eip" "default" {
   depends_on = [aws_internet_gateway.default]
   vpc = true
   tags = {
-    Name = var.global_prefix
+    Name = "${var.global_prefix}-default"
   }
 }
 
@@ -141,6 +141,33 @@ resource "aws_security_group" "load_balancer" {
   }
   tags = {
     Name = "${var.global_prefix}-load-balancer"
+  }
+}
+
+resource "aws_security_group" "cache_server" {
+  name = "${var.global_prefix}-cache-server"
+  description = "Cache server for the APIs"
+  vpc_id = aws_vpc.default.id
+  ingress {
+    from_port = 6379
+    to_port   = 6379
+    protocol  = "tcp"
+    security_groups = [aws_security_group.ecs_tasks.id]
+  }
+  ingress {
+    from_port = 6379
+    to_port   = 6379
+    protocol  = "tcp"
+    cidr_blocks = var.private_cidr_blocks
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name = "${var.global_prefix}-cache-server"
   }
 }
 

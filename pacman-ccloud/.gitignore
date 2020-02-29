@@ -3,6 +3,7 @@
 terraform/aws/cert.pem
 terraform/aws/ccloud.auto.tfvars
 terraform/aws/cloud.auto.tfvars
+terraform/aws/alexa.auto.tfvars
 terraform/aws/.terraform
 terraform/aws/terraform.tfstate
 terraform/aws/terraform.tfstate.backup

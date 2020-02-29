@@ -1,0 +1,18 @@
+{
+    "version": "1.0",
+    "context": {
+        "System": {
+            "device": {
+                "supportedInterfaces": {}
+            },
+            "apiEndpoint": "https://api.amazonalexa.com"
+        }
+    },
+    "request": {
+        "type": "IntentRequest",
+        "intent": {
+            "name": "BestPlayerIntent",
+            "confirmationStatus": "NONE"
+        }
+    }
+}

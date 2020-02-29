@@ -1,0 +1,62 @@
+[
+  {
+    "essential": true,
+    "image": "${redis_sink_image}",
+    "name": "redis_sink",
+    "environment": [
+      {
+        "name": "BOOTSTRAP_SERVER",
+        "value": "${bootstrap_server}"
+      },
+      {
+        "name": "CLUSTER_API_KEY",
+        "value": "${cluster_api_key}"
+      },
+      {
+        "name": "CLUSTER_API_SECRET",
+        "value": "${cluster_api_secret}"
+      },
+      {
+        "name": "AUTO_CREATE_TOPIC",
+        "value": "${auto_create_topic}"
+      },
+      {
+        "name": "NUM_PARTITIONS",
+        "value": "${num_partitions}"
+      },
+      {
+        "name": "REPLICATION_FACTOR",
+        "value": "${replication_factor}"
+      },
+      {
+        "name": "TOPIC_NAME",
+        "value": "${topic_name}"
+      },
+      {
+        "name": "GROUP_ID",
+        "value": "${group_id}"
+      },
+      {
+        "name": "REDIS_HOST",
+        "value": "${redis_host}"
+      },
+      {
+        "name": "REDIS_PORT",
+        "value": "${redis_port}"
+      },
+      {
+        "name": "PRINT_VARS",
+        "value": "${print_vars}"
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-create-group": "true",
+        "awslogs-group": "/ecs/redis_sink",
+        "awslogs-region": "${logs_region}",
+        "awslogs-stream-prefix": "ecs"
+      }
+    }
+  }
+]

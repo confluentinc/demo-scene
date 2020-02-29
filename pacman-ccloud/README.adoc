@@ -12,10 +12,10 @@ To apply principles of stream processing in the game, you are going to build a l
 
 * *Confluent Cloud* - You need to have an active account with https://www.confluent.io/confluent-cloud/[Confluent Cloud] to be able to spin up environments with the services required for this application. At a very minimum, you will need a Kafka cluster where your topics will be created and an managed Schema Registry. Optionally, you may want to create KSQL applications to implement the scoreboard pipeline.
 * *Terraform* - The application is automatically created using https://www.terraform.io[Terraform]. The default cloud provider supported is https://aws.amazon.com[AWS], but there are implementations for https://cloud.google.com[GCP] and https://azure.microsoft.com[Azure] as well. Besides having Terraform installed locally, will need to provide your cloud provider credentials so Terraform can create and manage the resources for you.
-* *Java and Maven* - The game use two APIs that are implemented using https://openjdk.java.net/[Java], thus you will need to have Java installed to build the source-code. The build itseld is implemented using https://maven.apache.org/[Maven], and it is triggered automatically by Terraform.
-* *Go Compiler (Optional)* - There is a program written in https://golang.org[Go] that implement a local client for the scoreboard where the players are sorted based on the same criteria that is used on the server-side scoreboard. Thus, you will need to have the Go compiler installed locally if you intend to build this program.
-* *Confluent Cloud CLI (Optional)* - During the creation of the pipeline, if you choose to implement it using a KSQL application, then you will need to have the Confluent Cloud CLI installed locally to set up access permissions to the topics. You can find instructions about how to install it https://docs.confluent.io/current/cloud/cli/index.html[here].
-* *Confluent Platform (Optional)* - During the creation of the pipeline, if you choose to implement it using a KSQL Server, then you will need to have the Confluent Platform installed locally to be able to spin up your own KSQL Server or use the KSQL CLI. You can find instructions about how to install it https://www.confluent.io/product/confluent-platform/[here].
+* *Java and Maven* - The UI layer of the application relies on two APIs that are implemented using https://openjdk.java.net/[Java], therefore you will need to have Java installed to build the source-code. The build itseld is implemented using https://maven.apache.org/[Maven], and it is triggered automatically by Terraform.
+* *Docker (Optional)* - The backend of some APIs are based on a Redis cache server. In order for this cache server be up-to-date with the data contained in Kafka, the application uses a cache sink implemented as a Docker application. Its Docker image has been published on https://hub.docker.com/r/riferrei/redis-sink[Docker Hub] so there is no need for you to worry about this. However, if you want to use your own Docker image -- you will need to build a new image using this link:redis-sink/[code] and push it to some Docker repository. Also, you will need to modify the Terraform variable named `redis_sink_image`.
+* *Confluent Cloud CLI (Optional)* - During the creation of the pipeline, if you choose to implement it using Confluent Cloud managed KSQL then you will need to have the Confluent Cloud CLI installed locally to set up access permissions to the topics. You can find instructions about how to install it https://docs.confluent.io/current/cloud/cli/index.html[here].
+* *Confluent Platform (Optional)* - The pipeline implementation has some example events that can be used to test the code before you deploy it. This can be acomplished by using the https://docs.confluent.io/current/ksql/docs/developer-guide/ksql-testing-tool.html[KSQL Testing Tool] that is part of Confluent Platform. You can find instructions about how to install it https://www.confluent.io/product/confluent-platform/[here].
 
 == 1) Setting Up Confluent Cloud
 
@@ -273,15 +273,14 @@ When users play with the Pac-Man game -- two types of events will be generated. 
 
 image::pipeline.png[]
 
-To implement the pipeline you will be using KSQL. The link:pipeline/queries.sql[code for this pipeline has been written for you] and the only thing you need to do is to execute them into a full-fledged KSQL Server. Therefore, you need to decide which KSQL Server you are going to use. There are three options:
+To implement the pipeline you will be using KSQL. The link:pipeline/queries.sql[code for this pipeline has been written for you] and the only thing you need to do is to deploy it into a full-fledged ksqlDB Server. Therefore, you need to decide which ksqlDB server you are going to use. There are two options:
 
 1. Using the KSQL Server created by Terraform
-2. Using your own KSQL Server running locally
-3. Using Confluent Cloud KSQL (Managed Service)
+2. Using Confluent Cloud KSQL (Managed Service)
 
-Whatever option you pick, the KSQL Server will be pointing to the Kafka cluster running on Confluent Cloud. You can even mix and match options to showcase the fact that all options are handling data coming from the single-source-of-truth which is Apache Kafka.
+Whatever option you pick, the ksqlDB server will be pointing to the Kafka cluster running on Confluent Cloud. You can even mix and match options to showcase the fact that all options are handling data coming from the single-source-of-truth which is Apache Kafka.
 
-=== Option: KSQL Server created by Terraform
+=== Option: ksqlDB Server created by Terraform
 
 1. Enter the folder that contains the AWS/GCP/Azure code
 +
@@ -297,9 +296,9 @@ cd terraform/<provider>
 terraform output
 ----
 
-3. Select and copy the KSQL Server endpoint
+3. Select and copy the ksqlDB Server endpoint
 
-4. Enter the folder that contains the KSQL code
+4. Enter the folder that contains the code
 +
 [source,bash]
 ----
@@ -319,38 +318,6 @@ ksql <ENDPOINT_COPIED_ON_STEP_THREE>
 ----
 RUN SCRIPT 'queries.sql';
 ----
-
-=== Option: Own KSQL Server running locally
-
-1. Enter the folder that contains the KSQL code
-+
-[source,bash]
-----
-cd pipeline
-----
-
-2. Start a new KSQL Server instance
-+
-[source,bash]
-----
-ksql-server-start ksql-server.properties
-----
-
-3. Start a new session of the KSQL CLI:
-+
-[source,bash]
-----
-ksql http://localhost:8088
-----
-
-4. Run the queries in the KSQL CLI session:
-+
-[source,bash]
-----
-RUN SCRIPT 'queries.sql';
-----
-
-*Note:* The file 'ksql-server.properties' is generated by Terraform during deployment.
 
 === Option: Confluent Cloud KSQL
 
@@ -413,9 +380,9 @@ image::create-pipeline.png[]
 
 13. Click on 'Run' to create the pipeline
 
-== Scoreboard Program written in Go
+== Appendix: Viewing the scoreboard locally
 
-In order to verify if the pipeline is working as expected, you can execute a program written in Go that displays the content of the scoreboard. Because tables in KSQL ultimately are topics, this program subscribes to the 'SCOREBOARD' topic and updates the display as new records arrive. Moreover, this program sorts the data based on each user's game to simulate a real game scoreboard.
+In order to verify if the pipeline is working as expected, you can execute a program written in Go that displays the content of the scoreboard. Because tables in KSQL ultimately are topics, this program subscribes to the `SCOREBOARD` topic and updates the display as new records arrive. Moreover, this program sorts the data based on each user's game to simulate a real game scoreboard.
 
 1. Enter the folder that contains the code
 +
