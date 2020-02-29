@@ -89,8 +89,8 @@ public class AlexaDetailsHandler implements IntentRequestHandler {
             Player player = players.get(position);
             speechText.append(getPlayerDetails(player));
         } else {
-            speechText.append("Sorry but I couldn't find ");
-            speechText.append("anyone under this position.");
+            speechText.append("Sorry but this position ");
+            speechText.append("doesn't exist yet.");
         }
 
         return speechText.toString();
@@ -120,46 +120,81 @@ public class AlexaDetailsHandler implements IntentRequestHandler {
         final StringBuilder speechText = new StringBuilder();
         speechText.append("Here is the latest about '");
         speechText.append(player.getUser()).append("': ");
-        speechText.append("current score is ");
+        speechText.append("their current score is ");
         speechText.append(player.getScore());
         speechText.append(" while playing on level ");
         speechText.append(player.getLevel());
+        maybeSaySomethingElse(player, CommentTypes.ABOUT_PERFORMANCE, speechText);
         
         switch (player.getLosses()) {
             case 0:
-                speechText.append(". Interestingly, ").append(player.getUser());
-                speechText.append("didn't die not even once");
-                speechText.append(maybeSaySomethingFunny());
+                speechText.append(". ").append(player.getUser());
+                speechText.append("didn't die not even once. ");
+                maybeSaySomethingElse(player, CommentTypes.ABOUT_NEVER_DYING, speechText);
                 break;
             case 1:
                 speechText.append(". Also, ").append(player.getUser());
-                speechText.append(" died just once.");
+                speechText.append(" died just once. ");
+                maybeSaySomethingElse(player, CommentTypes.ABOUT_DYING_ONCE, speechText);
                 break;
             default:
-                speechText.append(player.getUser());
+                speechText.append(". ").append(player.getUser());
                 speechText.append(" had ").append(player.getLosses());
-                speechText.append(" so far.");
+                speechText.append(" losses so far.");
                 break;
         }
         
         return speechText.toString();
     }
 
-    private String maybeSaySomethingFunny() {
-        if (RANDOM.nextInt(10) > 7) {
-            int index = RANDOM.nextInt(FUNNY_COMMENTS_DIE.length - 1);
-            return FUNNY_COMMENTS_DIE[index];
+    private void maybeSaySomethingElse(Player player, CommentTypes commentsTypes,
+        StringBuilder speechText) {
+        if (RANDOM.nextInt(10) > 5) {
+            int index = 0;
+            switch (commentsTypes) {
+                case ABOUT_PERFORMANCE:
+                    if (player.getScore() > 30000 || player.getLevel() > 5) {
+                        index = RANDOM.nextInt(COMMENTS_ABOUT_PERFORMANCE.length - 1);
+                        speechText.append(COMMENTS_ABOUT_PERFORMANCE[index]);
+                    }
+                    break;
+                case ABOUT_DYING_ONCE:
+                    index = RANDOM.nextInt(COMMENTS_ABOUT_DYING_ONCE.length - 1);
+                    speechText.append(COMMENTS_ABOUT_DYING_ONCE[index]);
+                    break;
+                case ABOUT_NEVER_DYING:
+                    index = RANDOM.nextInt(COMMENTS_ABOUT_NEVER_DYING.length - 1);
+                    speechText.append(COMMENTS_ABOUT_NEVER_DYING[index]);
+                    break;
+            }
         }
-        return "";
     }
 
-    private static final Random RANDOM = new Random();
-    private static final String[] FUNNY_COMMENTS_DIE = {
-        ". That is what I would call <break time=\"10ms\"/> 'Die Hard'.",
-        ". I guess we have a HighLander in the room, <break time=\"500ms\"/> right?",
-        ". I supposed these ghosts should try a little harder."
+    private enum CommentTypes {
+        ABOUT_PERFORMANCE,
+        ABOUT_NEVER_DYING,
+        ABOUT_DYING_ONCE
+    }
+
+    private final String[] COMMENTS_ABOUT_PERFORMANCE = {
+        "Damn <break time=\"50ms\"/> this is an amazing performance right there.",
+        "Someone please call the fire department because this person is on fire.",
+        "Can I just say that <break time=\"50ms\"/> this performance is amazing?",
     };
 
+    private final String[] COMMENTS_ABOUT_DYING_ONCE = {
+        "Don't worry about it. <break time=\"10ms\"/> You can always try again.",
+        "There is a first time for everything, <break time=\"500ms\"/> right?",
+        "Brave people always take changes. <break time=\"500ms\"/> Keep going!"
+    };
+    
+    private final String[] COMMENTS_ABOUT_NEVER_DYING = {
+        "That is what I would call <break time=\"10ms\"/> 'Die Hard'.",
+        "I guess we have a HighLander in the room, <break time=\"500ms\"/> right?",
+        "I supposed these ghosts should try a little harder."
+    };
+
+    private static final Random RANDOM = new Random();
     private static final String CACHE_SERVER_HOST = System.getenv("CACHE_SERVER_HOST");
     private static final String CACHE_SERVER_PORT = System.getenv("CACHE_SERVER_PORT");
     private static Jedis cacheServer;

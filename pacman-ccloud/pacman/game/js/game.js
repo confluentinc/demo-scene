@@ -85,7 +85,8 @@ function initGame(newGame) {
 			doInitGame(newGame, lastScore, lastLevel);
 		}
 	};
-	var uri = SCOREBOARD_API + '?player=' + window.name
+	var player = window.name.toLowerCase();
+	var uri = SCOREBOARD_API + '?player=' + player
 	request.open('POST', uri, true);
 	request.send();
 	

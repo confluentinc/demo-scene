@@ -73,9 +73,9 @@ public class AlexaPlayersHandler implements IntentRequestHandler {
         Collections.sort(players);
 
         Player userData = players.get(0);
-        speechText.append("Right now '");
+        speechText.append("The best player is ");
         speechText.append(userData.getUser());
-        speechText.append("' is the best player.");
+        speechText.append(".");
 
         return speechText.toString();
 
