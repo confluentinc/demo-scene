@@ -1,28 +1,23 @@
-FROM ubuntu:latest
+FROM fedora:latest
 
 LABEL maintainer="Ricardo Ferreira <riferrei@riferrei.net>"
 
 # Install pre-reqs
-RUN apt-get update
-RUN apt-get install -y software-properties-common apt-utils
-RUN apt-get install -y wget
+RUN dnf install wget -y
+RUN dnf install gcc -y
 
-# Confluent Golang
-RUN wget -qO - https://packages.confluent.io/deb/5.4/archive.key | apt-key add -
-RUN add-apt-repository "deb [arch=amd64] https://packages.confluent.io/deb/5.4 stable main"
-RUN apt-get install -y pkg-config
-RUN apt-get install -y libsasl2-dev
-RUN apt-get install -y librdkafka-dev
+# Install librdkafka
+RUN rpm --import https://packages.confluent.io/rpm/5.4/archive.key
+COPY confluent.repo /etc/yum.repos.d
+RUN dnf install librdkafka-devel -y
 
-# Get Golang 1.13
-RUN wget https://dl.google.com/go/go1.13.linux-amd64.tar.gz
-RUN tar -xvf go1.13.linux-amd64.tar.gz
-RUN rm go1.13.linux-amd64.tar.gz
+# Install Go v1.14
+RUN wget https://dl.google.com/go/go1.14.linux-amd64.tar.gz && tar -xvf go1.14.linux-amd64.tar.gz && rm go1.14.linux-amd64.tar.gz
 RUN mv go /usr/local
 ENV GOROOT=/usr/local/go
 ENV PATH="${GOROOT}/bin:${PATH}"
 
-# Build the app
+# Build the application
 WORKDIR /redis-sink
 COPY go.mod .
 COPY redis-sink.go .

@@ -17,8 +17,20 @@
         "value": "${cluster_api_secret}"
       },
       {
-        "name": "AUTO_CREATE_TOPIC",
-        "value": "${auto_create_topic}"
+        "name": "SASL_MECHANISM",
+        "value": "${sasl_mechanism}"
+      },
+      {
+        "name": "SECURITY_PROTOCOL",
+        "value": "${security_protocol}"
+      },
+      {
+        "name": "SESSION_TIMEOUT",
+        "value": "${session_timeout}"
+      },
+      {
+        "name": "AUTO_OFFSET_RESET",
+        "value": "${auto_offset_reset}"
       },
       {
         "name": "NUM_PARTITIONS",
@@ -31,6 +43,10 @@
       {
         "name": "TOPIC_NAME",
         "value": "${topic_name}"
+      },
+      {
+        "name": "AUTO_CREATE_TOPIC",
+        "value": "${auto_create_topic}"
       },
       {
         "name": "GROUP_ID",

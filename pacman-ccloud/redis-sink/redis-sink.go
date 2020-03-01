@@ -19,6 +19,10 @@ const (
 	bootstrapServerVar   = "BOOTSTRAP_SERVER"
 	clusterAPIKeyVar     = "CLUSTER_API_KEY"
 	clusterAPISecretVar  = "CLUSTER_API_SECRET"
+	saslMechanismVar     = "SASL_MECHANISM"
+	securityProtocolVar  = "SECURITY_PROTOCOL"
+	sessionTimeoutVar    = "SESSION_TIMEOUT"
+	autoOffsetResetVar   = "AUTO_OFFSET_RESET"
 	groupIDVar           = "GROUP_ID"
 	autoCreateTopicVar   = "AUTO_CREATE_TOPIC"
 	numPartitionsVar     = "NUM_PARTITIONS"
@@ -34,17 +38,28 @@ var (
 	bootstrapServer   string = os.Getenv(bootstrapServerVar)
 	clusterAPIKey     string = os.Getenv(clusterAPIKeyVar)
 	clusterAPISecret  string = os.Getenv(clusterAPISecretVar)
+	saslMechanism     string = os.Getenv(saslMechanismVar)
+	securityProtocol  string = os.Getenv(securityProtocolVar)
 	autoCreateTopic   string = os.Getenv(autoCreateTopicVar)
 	numPartitions     string = os.Getenv(numPartitionsVar)
 	replicationFactor string = os.Getenv(replicationFactorVar)
 	topicName         string = os.Getenv(topicNameVar)
+	autoOffsetReset   string = os.Getenv(autoOffsetResetVar)
 	groupID           string = os.Getenv(groupIDVar)
 	redisHost         string = os.Getenv(redisHostVar)
 	redisPort         string = os.Getenv(redisPortVar)
+	sessionTimeout    int    = 6000
 	retryCount        int    = 5
 )
 
 func main() {
+
+	// Check if there is a custom session timeout
+	_sessionTimeout, valueSet := os.LookupEnv(sessionTimeoutVar)
+	if valueSet {
+		value, _ := strconv.Atoi(_sessionTimeout)
+		sessionTimeout = value
+	}
 
 	// Check if there is a custom retry count
 	_retryCount, valueSet := os.LookupEnv(retryCountVar)
@@ -54,8 +69,7 @@ func main() {
 	}
 
 	// Check if the user wants to print
-	// the environment variables maybe
-	// for debugging purposes.
+	// the environment variables out
 	_printVars, valueSet := os.LookupEnv(printVarsVar)
 	if valueSet {
 		printVars, _ := strconv.ParseBool(_printVars)
@@ -63,14 +77,18 @@ func main() {
 			log.Printf("%s = %s", bootstrapServerVar, bootstrapServer)
 			log.Printf("%s = %s", clusterAPIKeyVar, clusterAPIKey)
 			log.Printf("%s = %s", clusterAPISecretVar, clusterAPISecret)
+			log.Printf("%s = %s", saslMechanismVar, saslMechanism)
+			log.Printf("%s = %s", securityProtocolVar, securityProtocol)
+			log.Printf("%s = %s", sessionTimeoutVar, strconv.Itoa(sessionTimeout))
 			log.Printf("%s = %s", autoCreateTopicVar, autoCreateTopic)
 			log.Printf("%s = %s", numPartitionsVar, numPartitions)
 			log.Printf("%s = %s", replicationFactorVar, replicationFactor)
 			log.Printf("%s = %s", topicNameVar, topicName)
+			log.Printf("%s = %s", autoOffsetResetVar, autoOffsetReset)
 			log.Printf("%s = %s", groupIDVar, groupID)
 			log.Printf("%s = %s", redisHostVar, redisHost)
 			log.Printf("%s = %s", redisPortVar, redisPort)
-			log.Printf("%s = %s", retryCountVar, retryCount)
+			log.Printf("%s = %s", retryCountVar, strconv.Itoa(retryCount))
 		}
 	}
 
@@ -79,8 +97,8 @@ func main() {
 	if autoCreateTopic == "true" {
 		adminClient, err := kafka.NewAdminClient(&kafka.ConfigMap{
 			"bootstrap.servers": bootstrapServer,
-			"sasl.mechanisms":   "PLAIN",
-			"security.protocol": "SASL_SSL",
+			"sasl.mechanisms":   saslMechanism,
+			"security.protocol": securityProtocol,
 			"sasl.username":     clusterAPIKey,
 			"sasl.password":     clusterAPISecret,
 		})
@@ -109,13 +127,13 @@ func main() {
 	// Create a Kafka consumer
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers":  bootstrapServer,
-		"sasl.mechanisms":    "PLAIN",
-		"security.protocol":  "SASL_SSL",
+		"sasl.mechanisms":    saslMechanism,
+		"security.protocol":  securityProtocol,
 		"sasl.username":      clusterAPIKey,
 		"sasl.password":      clusterAPISecret,
-		"session.timeout.ms": 6000,
+		"session.timeout.ms": sessionTimeout,
 		"group.id":           groupID,
-		"auto.offset.reset":  "earliest"})
+		"auto.offset.reset":  autoOffsetReset})
 	if err != nil {
 		panic(fmt.Sprintf("Failed to create consumer %s", err))
 	}

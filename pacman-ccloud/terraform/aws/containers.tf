@@ -282,6 +282,10 @@ data "template_file" "redis_sink_definition" {
     bootstrap_server = var.bootstrap_server
     cluster_api_key = var.cluster_api_key
     cluster_api_secret = var.cluster_api_secret
+    sasl_mechanism = "PLAIN"
+    security_protocol = "SASL_SSL"
+    session_timeout = "6000"
+    auto_offset_reset = "earliest"
     auto_create_topic = "true"
     num_partitions = "6"
     replication_factor = "3"
