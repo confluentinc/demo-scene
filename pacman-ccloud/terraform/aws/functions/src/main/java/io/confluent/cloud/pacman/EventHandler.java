@@ -2,7 +2,6 @@ package io.confluent.cloud.pacman;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Properties;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -10,12 +9,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.serialization.StringSerializer;
 
-import static io.confluent.cloud.pacman.Constants.*;
-import static io.confluent.cloud.pacman.KafkaUtils.*;
+import static io.confluent.cloud.pacman.utils.Constants.*;
+import static io.confluent.cloud.pacman.utils.KafkaUtils.*;
 
 public class EventHandler implements RequestHandler<Map<String, Object>, Map<String, Object>> {
 
@@ -27,6 +24,7 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
             return response;
         }
 
+        @SuppressWarnings("unchecked")
         Map<String, Object> requestHeaders =
             (Map<String, Object>) request.get(HEADERS_KEY);
 
@@ -39,7 +37,9 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
                 if (request.containsKey(QUERY_PARAMS_KEY) && request.containsKey(BODY_KEY)) {
 
                     String event = (String) request.get(BODY_KEY);
-                    Map<String, String> queryParams = (Map<String, String>) request.get(QUERY_PARAMS_KEY);
+                    @SuppressWarnings("unchecked")
+                    Map<String, String> queryParams =
+                        (Map<String, String>) request.get(QUERY_PARAMS_KEY);
 
                     if (event != null && queryParams != null) {
 
@@ -84,23 +84,14 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
     private static KafkaProducer<String, String> producer;
 
     static {
+        producer = createProducer();
         createTopics(Map.of(USER_GAME_TOPIC, 6,
                             USER_LOSSES_TOPIC, 6));
-        initializeProducer();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             if (producer != null) {
                 producer.close();
             }
         }));
-    }
-
-    private static void initializeProducer() {
-        if (producer == null) {
-            Properties properties = getConnectProperties();
-            properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-            properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-            producer = new KafkaProducer<>(properties);
-        }
     }
 
 }

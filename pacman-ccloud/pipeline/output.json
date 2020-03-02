@@ -82,6 +82,30 @@
           "TOTAL_LOSSES": 1
         },
         "timestamp": 0
+      },
+      {
+        "topic": "HIGHEST_SCORE",
+        "key": "HIGHEST_SCORE",
+        "value": {
+          "HIGHEST_SCORE": 10
+        },
+        "timestamp": 0
+      },
+      {
+        "topic": "HIGHEST_SCORE",
+        "key": "HIGHEST_SCORE",
+        "value": {
+          "HIGHEST_SCORE": 20
+        },
+        "timestamp": 0
+      },
+      {
+        "topic": "HIGHEST_SCORE",
+        "key": "HIGHEST_SCORE",
+        "value": {
+          "HIGHEST_SCORE": 30
+        },
+        "timestamp": 0
       }
     ]
   }

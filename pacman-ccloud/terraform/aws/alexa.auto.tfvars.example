@@ -1,0 +1,7 @@
+###########################################
+################# Alexa ###################
+###########################################
+
+alexa_enabled = true
+pacman_players_skill_id = "<PACMAN_PLAYERS_SKILL_ID>"
+pacman_details_skill_id = "<PACMAN_DETAILS_SKILL_ID>"

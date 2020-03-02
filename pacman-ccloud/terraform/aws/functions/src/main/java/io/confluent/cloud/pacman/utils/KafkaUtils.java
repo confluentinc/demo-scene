@@ -1,8 +1,10 @@
-package io.confluent.cloud.pacman;
+package io.confluent.cloud.pacman.utils;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
@@ -10,8 +12,14 @@ import java.util.concurrent.ExecutionException;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 
-import static io.confluent.cloud.pacman.Constants.*;
+import static io.confluent.cloud.pacman.utils.Constants.*;
 
 public class KafkaUtils {
 
@@ -45,7 +53,27 @@ public class KafkaUtils {
         } catch (InterruptedException | ExecutionException ex) {}
     }
 
-    public static Properties getConnectProperties() {
+    public static KafkaProducer<String, String> createProducer() {
+        Properties properties = getConnectProperties();
+        properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        KafkaProducer<String, String> producer = new KafkaProducer<>(properties);
+        return producer;
+    }
+
+    public static KafkaConsumer<String, String> createConsumer(String topic, boolean autoCommitEnabled) {
+        Properties properties = getConnectProperties();
+        properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, String.valueOf(autoCommitEnabled));
+        properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
+        properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<>(properties);
+        consumer.subscribe(Arrays.asList(SCOREBOARD_TOPIC));
+        return consumer;
+    }
+
+    private static Properties getConnectProperties() {
         Properties properties = new Properties();
         properties.setProperty("bootstrap.servers", BOOTSTRAP_SERVERS);
         properties.setProperty("ssl.endpoint.identification.algorithm", "https");
@@ -55,7 +83,7 @@ public class KafkaUtils {
         return properties;
     }
 
-    public static String getJaaSConfig() {
+    private static String getJaaSConfig() {
         final StringBuilder jaasConfig = new StringBuilder();
         jaasConfig.append("org.apache.kafka.common.security.plain.PlainLoginModule ");
         jaasConfig.append("required username=\"").append(CLUSTER_API_KEY).append("\" ");

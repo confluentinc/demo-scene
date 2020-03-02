@@ -65,37 +65,30 @@ function initGame(newGame) {
 	var lastLevel = 0;
 
 	// Temporary workaround for GCP and Azure
-	// while their implementations are not using
-	// ksqlDB and thus don't support pull queries.
 	if (CLOUD_PROVIDER == "GCP" || CLOUD_PROVIDER == "AZR") {
 		doInitGame(newGame, lastScore, lastLevel);
 		return;
 	}
-
-	var ksqlQuery = {};
-	ksqlQuery.ksql =
-		"SELECT HIGHEST_SCORE, HIGHEST_LEVEL " +
-		"FROM STATS_PER_USER WHERE ROWKEY = '" +
-		window.name + "';"
 
 	var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (this.readyState == 4) {
 			if (this.status == 200) {
 				var result = JSON.parse(this.responseText);
-				if (result[1] != undefined || result[1] != null) {
-					var row = result[1].row;
-					lastScore = row.columns[0];
-					lastLevel = row.columns[1];
+				if (result != undefined || result != null) {
+					lastScore = result.scoreboard.score;
+					lastLevel = result.scoreboard.level;
 				}
 			}
+			lastScore = lastScore == undefined ? 0 : lastScore;
+			lastLevel = lastLevel == undefined ? 0 : lastLevel;
 			doInitGame(newGame, lastScore, lastLevel);
 		}
 	};
-	request.open('POST', KSQLDB_QUERY_API, true);
-	request.setRequestHeader('Accept', 'application/vnd.ksql.v1+json');
-	request.setRequestHeader('Content-Type', 'application/vnd.ksql.v1+json');
-	request.send(JSON.stringify(ksqlQuery));
+	var player = window.name.toLowerCase();
+	var uri = SCOREBOARD_API + '?player=' + player
+	request.open('POST', uri, true);
+	request.send();
 	
 }
 

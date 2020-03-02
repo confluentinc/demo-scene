@@ -33,10 +33,6 @@ function loadHighestScore(callback) {
 
 function getScoreboardJson(callback) {
 
-	var contentType = "application/json";
-	var url = SCOREBOARD_API;
-	var method = "POST";
-	
 	if (CLOUD_PROVIDER == "GCP" || CLOUD_PROVIDER == "AZR") {
 		// NOT IMPLEMENTED
 	}
@@ -63,8 +59,7 @@ function getScoreboardJson(callback) {
 		}
 	};
 	
-	request.open(method, url, true);
-	request.setRequestHeader("Content-Type", contentType);
+	request.open('POST', SCOREBOARD_API, true);
 	request.send(); 
 
 }

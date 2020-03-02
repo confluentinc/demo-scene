@@ -10,8 +10,8 @@ resource "null_resource" "build_functions" {
   }
 }
 
-data "template_file" "wake_up_function" {
-  template = file("functions/sample.json")
+data "template_file" "generic_wake_up" {
+  template = file("functions/generic-wake-up.json")
 }
 
 ###########################################
@@ -163,6 +163,7 @@ resource "aws_lambda_function" "event_handler_function" {
     aws_iam_role.event_handler_role,
     aws_s3_bucket.pacman]
   function_name = "event_handler"
+  description = "Backend function for the Event Handler API"
   filename = "functions/deploy/aws-functions-1.0.jar"
   handler = "io.confluent.cloud.pacman.EventHandler"
   role = aws_iam_role.event_handler_role.arn
@@ -188,24 +189,24 @@ resource "aws_lambda_permission" "event_handler_api_gateway_trigger" {
 }
 
 resource "aws_lambda_permission" "event_handler_cloudwatch_trigger" {
-    statement_id = "AllowExecutionFromCloudWatch"
-    action = "lambda:InvokeFunction"
-    principal = "events.amazonaws.com"
-    function_name = aws_lambda_function.event_handler_function.function_name
-    source_arn = aws_cloudwatch_event_rule.event_handler_every_five_minutes.arn
+  statement_id = "AllowExecutionFromCloudWatch"
+  action = "lambda:InvokeFunction"
+  principal = "events.amazonaws.com"
+  function_name = aws_lambda_function.event_handler_function.function_name
+  source_arn = aws_cloudwatch_event_rule.event_handler_every_minute.arn
 }
 
-resource "aws_cloudwatch_event_rule" "event_handler_every_five_minutes" {
-    name = "execute-event-handler-every-five-minutes"
-    description = "Execute the event handler function every five minutes"
-    schedule_expression = "rate(5 minutes)"
+resource "aws_cloudwatch_event_rule" "event_handler_every_minute" {
+  name = "execute-event-handler-every-minute"
+  description = "Execute the event handler function every minute"
+  schedule_expression = "rate(1 minute)"
 }
 
-resource "aws_cloudwatch_event_target" "event_handler_every_five_minutes" {
-    rule = aws_cloudwatch_event_rule.event_handler_every_five_minutes.name
-    target_id = aws_lambda_function.event_handler_function.function_name
-    arn = aws_lambda_function.event_handler_function.arn
-    input = data.template_file.wake_up_function.rendered
+resource "aws_cloudwatch_event_target" "event_handler_every_minute" {
+  rule = aws_cloudwatch_event_rule.event_handler_every_minute.name
+  target_id = aws_lambda_function.event_handler_function.function_name
+  arn = aws_lambda_function.event_handler_function.arn
+  input = data.template_file.generic_wake_up.rendered
 }
 
 ###########################################
@@ -327,6 +328,19 @@ resource "aws_iam_role_policy" "scoreboard_role_policy" {
         "logs:CreateLogStream",
         "logs:PutLogEvents"
       ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateNetworkInterface",
+        "ec2:DescribeDhcpOptions",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DeleteNetworkInterface",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeVpcs"
+      ],
+      "Resource": "*"
     }
   ]
 }
@@ -355,21 +369,26 @@ resource "aws_lambda_function" "scoreboard_function" {
   depends_on = [
     null_resource.build_functions,
     aws_iam_role.scoreboard_role,
+    aws_elasticache_replication_group.cache_server,
     aws_s3_bucket.pacman]
   function_name = "scoreboard"
+  description = "Backend function for the Scoreboard API"
   filename = "functions/deploy/aws-functions-1.0.jar"
   handler = "io.confluent.cloud.pacman.Scoreboard"
   role = aws_iam_role.scoreboard_role.arn
   runtime = "java11"
-  memory_size = 256
+  memory_size = 512
   timeout = 300
   environment {
     variables = {
-      BOOTSTRAP_SERVERS = var.bootstrap_server
-      CLUSTER_API_KEY = var.cluster_api_key
-      CLUSTER_API_SECRET = var.cluster_api_secret
       ORIGIN_ALLOWED = "http://${aws_s3_bucket.pacman.website_endpoint}"
+      CACHE_SERVER_HOST = aws_elasticache_replication_group.cache_server.primary_endpoint_address
+      CACHE_SERVER_PORT = aws_elasticache_replication_group.cache_server.port
     }
+  }
+  vpc_config {
+    security_group_ids = [aws_security_group.cache_server.id]
+    subnet_ids = aws_subnet.private_subnet[*].id
   }
 }
 
@@ -382,22 +401,153 @@ resource "aws_lambda_permission" "scoreboard_api_gateway_trigger" {
 }
 
 resource "aws_lambda_permission" "scoreboard_cloudwatch_trigger" {
-    statement_id = "AllowExecutionFromCloudWatch"
-    action = "lambda:InvokeFunction"
-    principal = "events.amazonaws.com"
-    function_name = aws_lambda_function.scoreboard_function.function_name
-    source_arn = aws_cloudwatch_event_rule.scoreboard_every_one_minute.arn
+  statement_id = "AllowExecutionFromCloudWatch"
+  action = "lambda:InvokeFunction"
+  principal = "events.amazonaws.com"
+  function_name = aws_lambda_function.scoreboard_function.function_name
+  source_arn = aws_cloudwatch_event_rule.scoreboard_every_minute.arn
 }
 
-resource "aws_cloudwatch_event_rule" "scoreboard_every_one_minute" {
-    name = "execute-scoreboard-every-one-minute"
-    description = "Execute the scoreboard function every one minute"
-    schedule_expression = "rate(1 minute)"
+resource "aws_cloudwatch_event_rule" "scoreboard_every_minute" {
+  name = "execute-scoreboard-every-minute"
+  description = "Execute the scoreboard function every minute"
+  schedule_expression = "rate(1 minute)"
 }
 
-resource "aws_cloudwatch_event_target" "scoreboard_every_one_minute" {
-    rule = aws_cloudwatch_event_rule.scoreboard_every_one_minute.name
-    target_id = aws_lambda_function.scoreboard_function.function_name
-    arn = aws_lambda_function.scoreboard_function.arn
-    input = data.template_file.wake_up_function.rendered
+resource "aws_cloudwatch_event_target" "scoreboard_every_minute" {
+  rule = aws_cloudwatch_event_rule.scoreboard_every_minute.name
+  target_id = aws_lambda_function.scoreboard_function.function_name
+  arn = aws_lambda_function.scoreboard_function.arn
+  input = data.template_file.generic_wake_up.rendered
+}
+
+###########################################
+######### Alexa Handler Function ##########
+###########################################
+
+data "template_file" "alexa_wake_up" {
+  template = file("functions/alexa-wake-up.json")
+}
+
+resource "aws_iam_role_policy" "alexa_handler_role_policy" {
+  count = var.alexa_enabled == true ? 1 : 0
+  role = aws_iam_role.alexa_handler_role[0].name
+  policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Resource": [
+        "*"
+      ],
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateNetworkInterface",
+        "ec2:DescribeDhcpOptions",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DeleteNetworkInterface",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeVpcs"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+POLICY
+}
+
+resource "aws_iam_role" "alexa_handler_role" {
+  count = var.alexa_enabled == true ? 1 : 0
+  name = "alexa_handler_role"
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_lambda_function" "alexa_handler_function" {
+  count = var.alexa_enabled == true ? 1 : 0
+  depends_on = [
+    null_resource.build_functions,
+    aws_iam_role.alexa_handler_role,
+    aws_elasticache_replication_group.cache_server]
+  function_name = "alexa_handler"
+  description = "Backend function for the Alexa Handler API"
+  filename = "functions/deploy/aws-functions-1.0.jar"
+  handler = "io.confluent.cloud.pacman.AlexaHandler"
+  role = aws_iam_role.alexa_handler_role[0].arn
+  runtime = "java11"
+  memory_size = 512
+  timeout = 300
+  environment {
+    variables = {
+      CACHE_SERVER_HOST = aws_elasticache_replication_group.cache_server.primary_endpoint_address
+      CACHE_SERVER_PORT = aws_elasticache_replication_group.cache_server.port
+    }
+  }
+  vpc_config {
+    security_group_ids = [aws_security_group.cache_server.id]
+    subnet_ids = aws_subnet.private_subnet[*].id
+  }
+}
+
+resource "aws_lambda_permission" "alexa_handler_players_trigger" {
+  count = var.alexa_enabled == true ? 1 : 0
+  statement_id = "AllowExecutionFromAlexaPlayers"
+  action = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.alexa_handler_function[0].function_name
+  principal = "alexa-appkit.amazon.com"
+  event_source_token = var.pacman_players_skill_id
+}
+
+resource "aws_lambda_permission" "alexa_handler_details_trigger" {
+  count = var.alexa_enabled == true ? 1 : 0
+  statement_id = "AllowExecutionFromAlexaDetails"
+  action = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.alexa_handler_function[0].function_name
+  principal = "alexa-appkit.amazon.com"
+  event_source_token = var.pacman_details_skill_id
+}
+
+resource "aws_lambda_permission" "alexa_winner_cloudwatch_trigger" {
+  count = var.alexa_enabled == true ? 1 : 0
+  statement_id = "AllowExecutionFromCloudWatch"
+  action = "lambda:InvokeFunction"
+  principal = "events.amazonaws.com"
+  function_name = aws_lambda_function.alexa_handler_function[0].function_name
+  source_arn = aws_cloudwatch_event_rule.alexa_handler_every_minute[0].arn
+}
+
+resource "aws_cloudwatch_event_rule" "alexa_handler_every_minute" {
+  count = var.alexa_enabled == true ? 1 : 0
+  name = "execute-alexa-handler-every-minute"
+  description = "Execute the alexa handler function every minute"
+  schedule_expression = "rate(1 minute)"
+}
+
+resource "aws_cloudwatch_event_target" "alexa_handler_every_minute" {
+  count = var.alexa_enabled == true ? 1 : 0
+  rule = aws_cloudwatch_event_rule.alexa_handler_every_minute[0].name
+  target_id = aws_lambda_function.alexa_handler_function[0].function_name
+  arn = aws_lambda_function.alexa_handler_function[0].arn
+  input = data.template_file.alexa_wake_up.rendered
 }
