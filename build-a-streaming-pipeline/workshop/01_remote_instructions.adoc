@@ -65,9 +65,7 @@ Now follow the instructions below **ksqlDB prompt**, and then open a second term
 
 === Windows
 
-Connect using the IP address given, username `ec2-user`. Provide the SSH key to your SSH client. 
-
-(screenshots to follow)
+Connect using the IP address given, username `ec2-user`. Provide the SSH key to your SSH client (see appendices below for specific instructions). 
 
 Now follow the instructions below **ksqlDB prompt**, and then open a second terminal window, repeat the above process to login to the remote server, and then start a **MySQL prompt** following the separate instructions below. 
 
@@ -174,3 +172,30 @@ Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 
 mysql>
 ----
+
+== Appendix - Using SSH keys with Windows clients
+
+=== PuTTY
+
+1. Launch PuTTY
+2. In the **Session** pane enter the IP of your server under **Host Name**
++
+image::images/putty01.png[]
+3. In the **Connection** -> **Data** pane enter `ec2-user` under **Auto-login username**
++
+image::images/putty02.png[]
+4. In the **Connection** -> **SSH** -> **Auth** pane click **Browse** to select the SSH private key that you've been provided. Make sure you use the `ppk` format one and not `rsa`.
++
+image::images/putty03.png[]
+5. Click **Open**. You will get a `PuTTY Security Alert` - click **Yes**
++
+image::images/putty04.png[]
+
+
+=== MobaXterm
+
+1. Launch MobaXterm
+2. Click the **Session** button on the toolbar, or from the menus select **Sessions** -> **New Session**
+3. Select an **SSH** session type and then fill out the **Remote host**, **Specify username** (`ec2-user`) and click **Advanced SSH settings** and **Use private key** (use the `ppk` format key)
++
+image::images/mobaxterm01.png[]
