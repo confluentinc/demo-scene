@@ -119,6 +119,17 @@ resource "aws_subnet" "public_subnet" {
   }
 }
 
+resource "aws_subnet" "cache_server_jumpbox" {
+  count = var.cache_server_jumpbox_enabled == true ? 1 : 0
+  vpc_id = aws_vpc.default.id
+  cidr_block = "10.0.17.0/24"
+  map_public_ip_on_launch = true
+  availability_zone = data.aws_availability_zones.available.names[0]
+  tags = {
+    Name = "${var.global_prefix}-cache-server-jumpbox"
+  }
+}
+
 ###########################################
 ############# Security Groups #############
 ###########################################
@@ -158,6 +169,12 @@ resource "aws_security_group" "cache_server" {
     from_port = 6379
     to_port   = 6379
     protocol  = "tcp"
+    security_groups = [aws_security_group.cache_server_jumpbox.id]
+  }
+  ingress {
+    from_port = 6379
+    to_port   = 6379
+    protocol  = "tcp"
     cidr_blocks = var.private_cidr_blocks
   }
   egress {
@@ -189,5 +206,26 @@ resource "aws_security_group" "ecs_tasks" {
   }
   tags = {
     Name = "${var.global_prefix}-ecs-tasks"
+  }
+}
+
+resource "aws_security_group" "cache_server_jumpbox" {
+  name = "${var.global_prefix}-cache-server-jumpbox"
+  description = "Cache Server Jump Box"
+  vpc_id = aws_vpc.default.id
+  ingress {
+    from_port = 22
+    to_port = 22
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name = "${var.global_prefix}-cache-server-jumpbox"
   }
 }
