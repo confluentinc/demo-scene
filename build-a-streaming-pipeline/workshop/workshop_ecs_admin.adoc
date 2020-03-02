@@ -17,12 +17,20 @@ Create the SSH private key, split the `\n` into actual line breaks:
 
 [source,bash]
 ----
+# aws2 ec2 describe-key-pairs | jq '.KeyPairs[].KeyName'
 # aws2 ec2 delete-key-pair --key-name qcon-ldn-workshop 
 aws2 ec2 create-key-pair --key-name qcon-ldn-workshop|jq '.KeyMaterial'|sed 's/\\n/\
 /g'
 ----
 
-Write this to a file that all the students can access. 
+Write the resulting private key to a file `qcon-ldn-workshop.rsa`, and then convert it to PuTTY's private key format (`brew install putty` if necessary): 
+
+[source,bash]
+----
+puttygen qcon-ldn-workshop.rsa -o qcon-ldn-workshop.ppk
+----
+
+Put both the `rsa` and `ppk` private files somewhere accessible by the workshop students (e.g. private gist) and share the URL (use a URL shortener if possible). 
 
 === Provision clusters
 
@@ -30,7 +38,7 @@ Write this to a file that all the students can access.
 +
 [source,bash]
 ----
-for i in {01..02}; do 
+for i in {01..01}; do 
 ecs-cli up --cluster qcon-ldn-workshop-$i --keypair qcon-ldn-workshop --capability-iam --instance-type m5.xlarge --port 22 --tags owner=rmoff,project=workshops,team=devx,workshop=qcon_london,deleteafter=20200305 --launch-type EC2 &
 sleep 2
 done
@@ -67,7 +75,7 @@ aws2 ec2 describe-security-groups \
 [source,bash]
 ----
 cd ~/git/demo-scene/build-a-streaming-pipeline
-for i in {01..02}; do 
+for i in {01..01}; do 
 ecs-cli compose up --cluster qcon-ldn-workshop-$i &
 sleep 2
 done
@@ -86,7 +94,7 @@ Get IPs only:
 
 [source,bash]
 ----
-for i in {01..60}; do
+for i in {01..01}; do
     ip=$(aws2 ecs list-container-instances --cluster qcon-ldn-workshop-$i|jq '.containerInstanceArns[]'|\
     xargs -IFOO aws2 ecs describe-container-instances --container-instances FOO --cluster qcon-ldn-workshop-$i|jq '.containerInstances[].ec2InstanceId'|\
     xargs -IFOO aws2 ec2 describe-instances --filter "Name=instance-id,Values=FOO" | jq -r '.Reservations[].Instances[].PublicIpAddress')
@@ -136,7 +144,7 @@ aws2 ecs list-clusters|jq '.clusterArns[] | select(. | contains("qcon-ldn-worksh
 
 [source,bash]
 ----
-for i in {01..02}; do 
+for i in {01..01}; do 
 ecs-cli down --force --cluster qcon-ldn-workshop-$i &
 sleep 2
 done
