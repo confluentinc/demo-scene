@@ -1,7 +1,6 @@
 package io.confluent.cloud.pacman.alexa;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,7 +32,7 @@ public class AlexaPlayersHandler implements IntentRequestHandler {
         cacheServer.connect();
         String speechText = null;
 
-        if (cacheServer.dbSize() == 0) {
+        if (cacheServer.zcard(SCOREBOARD_CACHE) == 0) {
             speechText = "Sorry but there are no players";
             return input.getResponseBuilder()
                 .withSpeech(speechText)
@@ -45,11 +44,11 @@ public class AlexaPlayersHandler implements IntentRequestHandler {
         } else if (input.matches(intentName(TOPN_PLAYERS_INTENT))) {
             Map<String, Slot> slots = intentRequest.getIntent().getSlots();
             Slot slot = slots.get(NUMBER_OF_PLAYERS_SLOT);
-            int numberOfPlayers = 1;
+            int topNPlayers = 0;
             try {
-                numberOfPlayers = Integer.parseInt(slot.getValue());
+                topNPlayers = Integer.parseInt(slot.getValue());
             } catch (NumberFormatException nfe) {}
-            speechText = getTopNPlayers(numberOfPlayers);
+            speechText = getTopNPlayers(topNPlayers);
         }
 
         return input.getResponseBuilder()
@@ -62,76 +61,68 @@ public class AlexaPlayersHandler implements IntentRequestHandler {
         
         final StringBuilder speechText = new StringBuilder();
 
-        int playersAvailable = cacheServer.dbSize().intValue();
-        List<Player> players = new ArrayList<>(playersAvailable);
-        Set<String> keys = cacheServer.keys("*");
-        String value = null;
-        for (String key : keys) {
-            value = cacheServer.get(key);
-            players.add(Player.getPlayer(value));
-        }
-        Collections.sort(players);
-
-        Player userData = players.get(0);
+        Set<String> bestPlayerKey = cacheServer.zrevrange(SCOREBOARD_CACHE, 0, 0);
+        String key = bestPlayerKey.iterator().next();
+        String value = cacheServer.get(key);
+        Player player = Player.getPlayer(value);
         speechText.append("The best player is ");
-        speechText.append(userData.getUser());
+        speechText.append(player.getUser());
         speechText.append(".");
 
         return speechText.toString();
 
     }
 
-    private String getTopNPlayers(int numberOfPlayers) {
+    private String getTopNPlayers(int topNPlayers) {
 
         final StringBuilder speechText = new StringBuilder();
 
-        int playersAvailable = cacheServer.dbSize().intValue();
-        List<Player> players = new ArrayList<>(playersAvailable);
-        Set<String> keys = cacheServer.keys("*");
-        String value = null;
-        for (String key : keys) {
-            value = cacheServer.get(key);
-            players.add(Player.getPlayer(value));
-        }
-        Collections.sort(players);
-
-        if (numberOfPlayers == 1) {
+        if (topNPlayers == 1) {
             return getBestPlayer();
         } else {
-            if (playersAvailable >= numberOfPlayers) {
+
+            Set<String> playerKeys = cacheServer.zrevrange(SCOREBOARD_CACHE, 0, topNPlayers - 1);
+            List<Player> players = new ArrayList<>(playerKeys.size());
+            for (String key : playerKeys) {
+                String value = cacheServer.get(key);
+                players.add(Player.getPlayer(value));
+            }
+
+            if (players.size() >= topNPlayers) {
                 speechText.append("The top ");
-                speechText.append(numberOfPlayers);
+                speechText.append(topNPlayers);
                 speechText.append(" players are ");
-                if (numberOfPlayers == 2) {
-                    Player firstWinner = players.get(0);
-                    Player secondWinner = players.get(1);
-                    speechText.append(firstWinner.getUser());
+                if (topNPlayers == 2) {
+                    Player firstPlayer = players.get(0);
+                    Player secondPlayer = players.get(1);
+                    speechText.append(firstPlayer.getUser());
                     speechText.append(" and ");
-                    speechText.append(secondWinner.getUser());
+                    speechText.append(secondPlayer.getUser());
                 } else {
-                    for (int i = 0; i < numberOfPlayers; i++) {
-                        Player userData = players.get(i);
-                        if ((i + 1) == numberOfPlayers) {
+                    for (int i = 0; i < topNPlayers; i++) {
+                        Player player = players.get(i);
+                        if ((i + 1) == topNPlayers) {
                             speechText.append("and ");
-                            speechText.append(userData.getUser());
+                            speechText.append(player.getUser());
                             speechText.append(".");
                         } else {
-                            speechText.append(userData.getUser());
+                            speechText.append(player.getUser());
                             speechText.append(", ");
                         }
                     }
                 }
             } else {
                 speechText.append("I can't tell you who are ");
-                speechText.append("the top ").append(numberOfPlayers);
+                speechText.append("the top ").append(topNPlayers);
                 speechText.append(" because currently there ");
-                if (playersAvailable == 1) {
+                if (players.size() == 1) {
                     speechText.append("is only one player available.");
                 } else {
-                    speechText.append("are only ").append(playersAvailable);
+                    speechText.append("are only ").append(players.size());
                     speechText.append(" players available.");
                 }
             }
+
         }
 
         return speechText.toString();

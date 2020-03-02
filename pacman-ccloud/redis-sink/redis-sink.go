@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -16,6 +17,7 @@ import (
 )
 
 const (
+	scoreboardCache      = "scoreboard"
 	bootstrapServerVar   = "BOOTSTRAP_SERVER"
 	clusterAPIKeyVar     = "CLUSTER_API_KEY"
 	clusterAPISecretVar  = "CLUSTER_API_SECRET"
@@ -51,6 +53,16 @@ var (
 	sessionTimeout    int    = 6000
 	retryCount        int    = 5
 )
+
+// Player is a data structure that
+// represent the users playing the
+// Pac-Man game using their devices.
+type Player struct {
+	User         string `json:"USER"`
+	HighestScore int    `json:"HIGHEST_SCORE"`
+	HighestLevel int    `json:"HIGHEST_LEVEL"`
+	TotalLosses  int    `json:"TOTAL_LOSSES"`
+}
 
 func main() {
 
@@ -161,10 +173,8 @@ func main() {
 		panic("No connection with Redis was established. Exiting...")
 	}
 
-	// Fetch all records from the Kafka
-	// topic and write them into Redis.
-	// Then, keep updating the keys as
-	// new records are written.
+	// Keep fetching records from Kafka
+	// and write them into the caches.
 	sigchan := make(chan os.Signal, 1)
 	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
 	consumer.SubscribeTopics([]string{topicName}, nil)
@@ -181,14 +191,29 @@ func main() {
 			}
 			switch e := event.(type) {
 			case *kafka.Message:
-				var retries int = 0
-				for {
-					_, err := cacheServer.Do("SET",
-						strings.ToLower(string(e.Key)),
-						string(e.Value))
-					retries++
-					if err == nil || retries >= retryCount {
-						break
+				player := new(Player)
+				err := json.Unmarshal(e.Value, player)
+				if err == nil {
+					var retries int = 0
+					for {
+						// Span a new transaction
+						_, err := cacheServer.Do("MULTI")
+						if err == nil {
+							// Create key for the record
+							key := strings.ToLower(string(e.Key))
+							// Update the details cache
+							cacheServer.Do("SET", key, string(e.Value))
+							// Update the scoreboard cache
+							cacheServer.Do("ZADD", scoreboardCache, score(player), key)
+							// Finish the transaction
+							cacheServer.Do("EXEC")
+							break
+						} else {
+							retries++
+							if retries >= retryCount {
+								break
+							}
+						}
 					}
 				}
 			case kafka.Error:
@@ -197,4 +222,8 @@ func main() {
 		}
 	}
 
+}
+
+func score(player *Player) int {
+	return (player.HighestScore + player.HighestLevel) - player.TotalLosses
 }
