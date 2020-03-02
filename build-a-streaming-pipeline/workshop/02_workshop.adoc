@@ -59,7 +59,7 @@ If you haven't already, refer to the instructions for how to link:README.adoc[pr
 
 Copyright 2017-2019 Confluent Inc.
 
-CLI v6.0.0-SNAPSHOT, Server v6.0.0-SNAPSHOT located at http://localhost:8088
+CLI v0.7.1, Server v0.7.1 located at http://localhost:8088
 
 Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
 
@@ -97,8 +97,8 @@ Note that we don't need to know the format of the data; ksqlDB introspects the d
 ----
 ksql> PRINT 'ratings';
 Format:AVRO
-2/12/20 12:35:03 PM UTC, 17466, {"rating_id": 17466, "user_id": 10, "stars": 2, "route_id": 6602, "rating_time": 209581, "channel": "iOS", "message": "worst. flight. ever. #neveragain"}
-2/12/20 12:35:03 PM UTC, 17467, {"rating_id": 17467, "user_id": 7, "stars": 3, "route_id": 9875, "rating_time": 209593, "channel": "iOS", "message": "worst. flight. ever. #neveragain"}
+rowtime: 3/2/20 11:59:25 AM UTC, key: 76, value: {"rating_id": 76, "user_id": 18, "stars": 2, "route_id": 9346, "rating_time": 901, "channel": "web", "message": "airport refurb looks great, will fly outta here more!"}
+rowtime: 3/2/20 11:59:26 AM UTC, key: 77, value: {"rating_id": 77, "user_id": 6, "stars": 1, "route_id": 1313, "rating_time": 913, "channel": "android", "message": "airport refurb looks great, will fly outta here more!"}
 ----
 
 Press Ctrl-C to cancel and return to the ksqlDB prompt.
@@ -211,7 +211,7 @@ ksql> SELECT RATING_ID, STARS, CHANNEL, MESSAGE FROM RATINGS EMIT CHANGES;
 
 You'll notice that the data keeps on coming. That is because ksqlDB is fundamentally a _streaming engine_, and the queries that you run are _continuous queries_. We specified `EMIT CHANGES` which tells ksqlDB to output the changes to the stream, which is everytime a new event arrives.
 
-_This is called a *push query*; later on we'll consider the other kind of query, the *pull query*_. 
+_This is called a *push query*; later on we'll consider the other kind of query, the *pull query*._ 
 
 Press Ctrl-C to cancel the query and return to the ksqlDB command prompt.
 
@@ -260,7 +260,12 @@ Query terminated
 
 Since Apache Kafka persists data, it is possible to use ksqlDB to query and process data from the past, as well as new events that arrive on the topic.
 
-To tell ksqlDB to process from beginning of topic run `SET 'auto.offset.reset' = 'earliest';`
+To tell ksqlDB to process from beginning of topic run 
+
+[source,sql]
+----
+SET 'auto.offset.reset' = 'earliest';
+----
 
 Run this now, so that future processing includes all existing data.
 
@@ -870,7 +875,7 @@ Since this is backed by a Kafka topic being continually popuated by ksqlDB we ca
 
 [source,sql]
 ----
-ksql> SELECT STARS, MESSAGE, EMAIL FROM UNHAPPY_PLATINUM_CUSTOMERS;
+ksql> SELECT STARS, MESSAGE, EMAIL FROM UNHAPPY_PLATINUM_CUSTOMERS EMIT CHANGES;
 1 | is this as good as it gets? really ? | aarent0@cpanel.net
 2 | airport refurb looks great, will fly outta here more! | aarent0@cpanel.net
 2 | meh | aarent0@cpanel.net
@@ -934,7 +939,7 @@ You should see a dashboard like this:
 
 image::images/kibana01.png[]
 
-Note that this is being fed with live events—if you click the *Refresh* button you'll see it updates with up-to-the-second data. 
+Note that this is being fed with live events—if you click the *Refresh* button you'll see it updates with up-to-the-second data. By default the dashboard shows the last 15 minutes of events.
 
 == Streaming Aggregates
 
@@ -1054,7 +1059,7 @@ ksql> SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_STA
              CLUB_STATUS, RATING_COUNT
         FROM RATINGS_BY_CLUB_STATUS
        WHERE ROWKEY='bronze' 
-         AND WINDOWSTART='2020-02-12T10:46:00.000';
+         AND WINDOWSTART='2020-03-05T13:46:00.000';
 
 +--------------------+-------------+--------------+
 |WINDOW_START_TS     |CLUB_STATUS  |RATING_COUNT  |
@@ -1096,7 +1101,7 @@ Then run these commands to execute a pull query against ksqlDB:
 # Store the epoch (milliseconds) one minutes ago
 PREDICATE=$(date --date '-1 min' +%s)000
 
-# Pull from ksqlDB the aggregate-by-minute for the last five minutes for a given user: 
+# Pull from ksqlDB the aggregate-by-minute for the last one minute for a given user: 
 curl -s -X "POST" "http://localhost:8088/query" \
      -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
      -d '{"ksql":"SELECT TIMESTAMPTOSTRING(WINDOWSTART, '\''yyyy-MM-dd HH:mm:ss'\'') AS WINDOW_START_TS,        CLUB_STATUS,       RATING_COUNT FROM   RATINGS_BY_CLUB_STATUS WHERE  ROWKEY='\''bronze'\''   AND  WINDOWSTART > '$PREDICATE';"}' | json_pp

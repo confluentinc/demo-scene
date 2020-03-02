@@ -44,6 +44,10 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
+      # Useful settings for development/laptop use - modify as needed for Prod
+      # This one makes ksqlDB feel a bit more responsive when queries start running
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
     command:
       - bash
       - -c 
@@ -140,8 +144,7 @@ services:
         sleep infinity
 
   ksqldb:
-#    image: confluentinc/ksqldb-server:0.6.0
-    image: rmoff/ksqldb-server:master-20200210-12f4317
+    image: confluentinc/ksqldb-server:0.7.1
     hostname: ksqldb
     container_name: ksqldb
     links:
