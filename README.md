@@ -37,16 +37,16 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
 - Kafka Connect
 
   - [From Zero to Hero with Kafka Connect](kafka-connect-zero-to-hero) ([🗣️talk](https://rmoff.dev/crunch19-zero-to-hero-kafka-connect))
-  - [Kafka Connect Converters and Serialization](connect-deepdive) ([✍️ blog](https://www.confluent.io/blog/kafka-connect-deep-dive-converters-serialization-explained/))
+  - [Kafka Connect Converters and Serialization](connect-deepdive) ([✍️ blog](https://www.confluent.io/blog/kafka-connect-deep-dive-converters-serialization-explained/?utm_campaign=rmoff&utm_source=demo-scene))
   - [Building a Kafka Connect cluster](connect-cluster)
-  - [Kafka Connect error handling](connect-error-handling) ([✍️ blog](https://www.confluent.io/blog/kafka-connect-deep-dive-error-handling-dead-letter-queues/))
+  - [Kafka Connect error handling](connect-error-handling) ([✍️ blog](https://www.confluent.io/blog/kafka-connect-deep-dive-error-handling-dead-letter-queues/?utm_campaign=rmoff&utm_source=demo-scene))
   - [Multi-node ksqlDB and Kafka Connect clusters](multi-cluster-connect-and-ksql)
   - Specific connectors
-    - [Kafka Connect JDBC Source demo environment](connect-jdbc) ([✍️ blog](https://www.confluent.io/blog/kafka-connect-deep-dive-jdbc-source-connector/))
-    - [InfluxDB & Kafka Connect](influxdb-and-kafka) ([✍️ blog](https://rmoff.net/2020/01/23/notes-on-getting-data-into-influxdb-from-kafka-with-kafka-connect/))
-    - [RabbitMQ into Kafka](rabbitmq-into-kafka) ([✍️ blog](https://rmoff.net/2020/01/08/streaming-messages-from-rabbitmq-into-kafka-with-kafka-connect/))
+    - [Kafka Connect JDBC Source demo environment](connect-jdbc) ([✍️ blog](https://www.confluent.io/blog/kafka-connect-deep-dive-jdbc-source-connector/?utm_campaign=rmoff&utm_source=demo-scene))
+    - [InfluxDB & Kafka Connect](influxdb-and-kafka) ([✍️ blog](https://rmoff.net/2020/01/23/notes-on-getting-data-into-influxdb-from-kafka-with-kafka-connect/?utm_campaign=rmoff&utm_source=demo-scene))
+    - [RabbitMQ into Kafka](rabbitmq-into-kafka) ([✍️ blog](https://rmoff.net/2020/01/08/streaming-messages-from-rabbitmq-into-kafka-with-kafka-connect/?utm_campaign=rmoff&utm_source=demo-scene))
     - [MQTT Connect Connector Demo](mqtt-connect-connector-demo)
-    - [Example Kafka Connect syslog configuration and Docker Compose](syslog) (see blog series [1](https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-part-1-filtering/)([2](https://www.confluent.io/blog/real-time-syslog-processing-with-apache-kafka-and-ksql-part-2-event-driven-alerting-with-slack/)[3](https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-enriching-events-with-external-data/) and standalone articles [here](https://rmoff.net/2019/12/20/analysing-network-behaviour-with-ksqldb-and-mongodb/) and [here](https://rmoff.net/2019/12/18/detecting-and-analysing-ssh-attacks-with-ksqldb/))
+    - [Example Kafka Connect syslog configuration and Docker Compose](syslog) (see blog series [1](https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-part-1-filtering/?utm_campaign=rmoff&utm_source=demo-scene)/[2](https://www.confluent.io/blog/real-time-syslog-processing-with-apache-kafka-and-ksql-part-2-event-driven-alerting-with-slack/?utm_campaign=rmoff&utm_source=demo-scene)/[3](https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-enriching-events-with-external-data/?utm_campaign=rmoff&utm_source=demo-scene) and standalone articles [here](https://rmoff.net/2019/12/20/analysing-network-behaviour-with-ksqldb-and-mongodb/?utm_campaign=rmoff&utm_source=demo-scene) and [here](https://rmoff.net/2019/12/18/detecting-and-analysing-ssh-attacks-with-ksqldb/?utm_campaign=rmoff&utm_source=demo-scene))
     - [Azure SQL Data Warehouse Connector Sink Demo](azure-sqldw-sink-connector)
     - [IBM MQ Connect Connector Demo](cp-all-in-one-ibmmq)
     - [Solace Sink/Source Demo](solace)
