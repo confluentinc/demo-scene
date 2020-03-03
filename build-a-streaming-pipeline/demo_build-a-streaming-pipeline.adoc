@@ -1,11 +1,11 @@
 = Streaming ETL demo - Enriching event stream data with CDC data from MySQL, stream into Elasticsearch
 :toc:
 Robin Moffatt <robin@confluent.io>
-v1.40, 7 February 2020
+v1.41, 3 March 2020
 
 image:images/ksql-debezium-es.png[Kafka Connect / ksqlDB / Elasticsearch]
 
-This is designed to be run as a step-by-step demo. The `ksql-statements.sql` should match those run in this doc end-to-end and in theory you can just run the file, but I have not tested it. PRs welcome for a one-click script that just demonstrates the end-to-end running demo :)
+This is designed to be run as a step-by-step demo. The `ksqldb-statements.sql` should match those run in this doc end-to-end and in theory you can just run the file, but I have not tested it. PRs welcome for a one-click script that just demonstrates the end-to-end running demo :)
 
 The slides that accompany this demo can be found here: https://go.rmoff.net/devoxxuk19
 
@@ -501,7 +501,9 @@ Tested on Elasticsearch 7.5.0
 
 http://localhost:5601/app/kibana#/dashboard/mysql-ksql-kafka-es
 
-image:images/es01.png[Kibana]
+image:images/es02.png[Kibana]
+
+image:images/es03.png[Kibana]
 
 ---
 
