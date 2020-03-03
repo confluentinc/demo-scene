@@ -11,33 +11,47 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
 
 - Data pipelines (Database + KSQL + Elasticsearch)
 
-  - [Rail data streaming pipeline](rail-data-streaming-pipeline)
+  - [Pipeline to the cloud](pipeline-to-the-cloud) - on-premises RDBMS to Cloud datawarehouse e.g. Snowflake ([✍️ blog](https://www.confluent.io/blog/cloud-analytics-for-on-premises-data-streams-with-kafka/?utm_campaign=rmoff&utm_source=demo-scene))
+  - [Rail data streaming pipeline](rail-data-streaming-pipeline) ([🗣️talk](https://rmoff.dev/oredev19-on-track-with-kafka))
+  - [Apache Kafka and KSQL in Action: Let’s Build a Streaming Data Pipeline!](build-a-streaming-pipeline) ([🗣️talk](https://go.rmoff.net/devoxxuk19))
   - [MySQL / Debezium CDC / KSQL / Elasticsearch](mysql-debezium-ksql-elasticsearch)
   - [Oracle CDC / KSQL / Elasticsearch](oracle-ksql-elasticsearch)
   - [Postgres / Debezium CDC / KSQL / Elasticsearch](postgres-debezium-ksql-elasticsearch)
-  - [CDC demo with MySQL](no-more-silos-mysql)
+  - [CDC demo with MySQL](no-more-silos) ([🗣️talk](http://rmoff.dev/ksny19-no-more-silos))
   - [CDC demo with Oracle](no-more-silos-oracle)
   - [Building data pipelines with Confluent Cloud and GCP (BigQuery, GCS, etc)](gcp-pipeline)
 
-- KSQL
-  - [An introduction to KSQL](ksql-intro)
-  - [Live-Coding KSQL scripts](live-coding-ksql)
+- ksqlDB (previously known as KSQL)
+  - [Introduction to ksqlDB 01](introduction-to-ksqldb) ([🗣️talk](https://rmoff.dev/ksqldb-slides))
+  - [Introduction to KSQL   02](ksql-intro)
+  - [Using Twitter data with ksqlDB](ksqldb-twitter)
   - [KSQL UDF Advanced Example](ksql-udf-advanced-example)
   - [KSQL Troubleshooting](ksql-troubleshooting)
-  - [ATM Fraud detection with Kafka and KSQL](ksql-atm-fraud-detection)
+  - [ATM Fraud detection with Kafka and KSQL](ksql-atm-fraud-detection) ([🗣️talk](https://talks.rmoff.net/Cw9hbI/atm-fraud-detection-with-apache-kafka-and-ksql))
   - [Kafka Streams/KSQL Movie Demo](streams-movie-demo)
   - [KSQL MQTT demo](mqtt-tracker)
   - [KSQL Dump Utility](ksql-dump)
+  - [KSQL workshop](ksql-workshop) (more recent version is [here](build-a-streaming-pipeline/workshop/))
+  - [Multi-node ksqlDB and Kafka Connect clusters](multi-cluster-connect-and-ksql)
 
 - Kafka Connect
 
-  - [MQTT Connect Connector Demo](mqtt-connect-connector-demo)
-  - [Kafka Connect deepdive](connect-deepdive) - understanding converters and serialization
-  - [Kafka Connect JDBC Source demo environment](connect-jdbc)
-  - [Example Kafka Connect syslog configuration and Docker Compose](syslog)
-  - [Azure SQL Data Warehouse Connector Sink Demo](azure-sqldw-sink-connector)
-  - [IBM MQ Connect Connector Demo](cp-all-in-one-ibmmq)
-  - [Solace Sink/Source Demo](solace)
+  - [From Zero to Hero with Kafka Connect](kafka-connect-zero-to-hero) ([🗣️talk](https://rmoff.dev/crunch19-zero-to-hero-kafka-connect))
+  - [Kafka Connect Converters and Serialization](connect-deepdive) ([✍️ blog](https://www.confluent.io/blog/kafka-connect-deep-dive-converters-serialization-explained/))
+  - [Building a Kafka Connect cluster](connect-cluster)
+  - [Kafka Connect error handling](connect-error-handling) ([✍️ blog](https://www.confluent.io/blog/kafka-connect-deep-dive-error-handling-dead-letter-queues/))
+  - [Multi-node ksqlDB and Kafka Connect clusters](multi-cluster-connect-and-ksql)
+  - Specific connectors
+    - [Kafka Connect JDBC Source demo environment](connect-jdbc) ([✍️ blog](https://www.confluent.io/blog/kafka-connect-deep-dive-jdbc-source-connector/))
+    - [InfluxDB & Kafka Connect](influxdb-and-kafka) ([✍️ blog](https://rmoff.net/2020/01/23/notes-on-getting-data-into-influxdb-from-kafka-with-kafka-connect/))
+    - [RabbitMQ into Kafka](rabbitmq-into-kafka) ([✍️ blog](https://rmoff.net/2020/01/08/streaming-messages-from-rabbitmq-into-kafka-with-kafka-connect/))
+    - [MQTT Connect Connector Demo](mqtt-connect-connector-demo)
+    - [Example Kafka Connect syslog configuration and Docker Compose](syslog) (see blog series [1](https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-part-1-filtering/)([2](https://www.confluent.io/blog/real-time-syslog-processing-with-apache-kafka-and-ksql-part-2-event-driven-alerting-with-slack/)[3](https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-enriching-events-with-external-data/) and standalone articles [here](https://rmoff.net/2019/12/20/analysing-network-behaviour-with-ksqldb-and-mongodb/) and [here](https://rmoff.net/2019/12/18/detecting-and-analysing-ssh-attacks-with-ksqldb/))
+    - [Azure SQL Data Warehouse Connector Sink Demo](azure-sqldw-sink-connector)
+    - [IBM MQ Connect Connector Demo](cp-all-in-one-ibmmq)
+    - [Solace Sink/Source Demo](solace)
+    - [RSS feed into Kafka](rss-feed-into-kafka)
+
 
 - Confluent Cloud
 
@@ -46,12 +60,14 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
 
 - Misc
   - [Hacky export/import between Kafka clusters](export-import-with-kafkacat) using `kafkacat`
-  - Docker Compose for just the [community licensed components of Confluent Platform](cos)
+  - Docker Compose for just the [community licensed components of Confluent Platform](community-components-only)
   - [Topic Tailer](topic-tailer), stream topics to the browser using websockets
   - [KPay payment processing example](scalable-payment-processing)
   - [Industry themes (e.g. banking Next Best Offer)](industry-themes)
   - [Tiered Storage Demo](tiered-storage-demo)
-
+  - [Distributed tracing](distributed-tracing)
+  - [Analysing Sonos data in Kafka](sonos) ([✍️ blog](https://rmoff.net/2020/01/21/monitoring-sonos-with-ksqldb-influxdb-and-grafana/))
+  - [Twitter streams](twitter-streams) and [Operator](twitter-streams-operator)
 
 ## Feedback & Questions
 
