@@ -7,7 +7,7 @@ image:images/ksql-debezium-es.png[Kafka Connect / ksqlDB / Elasticsearch]
 
 This is designed to be run as a step-by-step demo. The `ksql-statements.sql` should match those run in this doc end-to-end and in theory you can just run the file, but I have not tested it. PRs welcome for a one-click script that just demonstrates the end-to-end running demo :)
 
-The slides that accompany this demo can be found here: https://speakerdeck.com/rmoff/apache-kafka-and-ksql-in-action-lets-build-a-streaming-data-pipeline
+The slides that accompany this demo can be found here: https://go.rmoff.net/devoxxuk19
 
 == Pre-reqs
 
@@ -34,17 +34,16 @@ Optionally, use something like `screen` or `tmux` to have these both easily to h
 +
 [source,bash]
 ----
-docker exec -it ksqldb-cli bash -c 'echo -e "\n\n⏳ Waiting for ksqlDB to be available before launching CLI\n"; while : ; do curl_status=$(curl -s -o /dev/null -w %{http_code} http://ksqldb-server:8088/info) ; echo -e $(date) " ksqlDB server listener HTTP state: " $curl_status " (waiting for 200)" ; if [ $curl_status -eq 200 ] ; then  break ; fi ; sleep 5 ; done ; ksql http://ksqldb-server:8088'
+docker exec -it ksqldb bash -c 'echo -e "\n\n⏳ Waiting for ksqlDB to be available before launching CLI\n"; while : ; do curl_status=$(curl -s -o /dev/null -w %{http_code} http://ksqldb:8088/info) ; echo -e $(date) " ksqlDB server listener HTTP state: " $curl_status " (waiting for 200)" ; if [ $curl_status -eq 200 ] ; then  break ; fi ; sleep 5 ; done ; ksql http://ksqldb:8088'
 ----
 
 == Pre-flight checklist
 
-* Load http://localhost:5601/app/kibana#/dashboard/mysql-ksql-kafka-es?_g=(refreshInterval%3A('%24%24hashKey'%3A'object%3A229'%2Cdisplay%3A'30%20seconds'%2Cpause%3A!f%2Csection%3A1%2Cvalue%3A30000)%2Ctime%3A(from%3Anow-15m%2Cmode%3Aquick%2Cto%3Anow))[Kibana ratings dashboard]
+* Load http://localhost:5601/app/kibana#/dashboard/mysql-ksql-kafka-es[Kibana ratings dashboard]
 
 == Demo
 
 image:images/ksql-debezium-es.png[Kafka Connect / ksqlDB / Elasticsearch]
-
 
 == Part 01 - ksqlDB for filtering streams
 
@@ -250,10 +249,11 @@ PRINT 'asgard.demo.CUSTOMERS' FROM BEGINNING;
 
 [source,sql]
 ----
-Format:AVRO
-2/5/20 12:54:07 PM UTC, , {"id": 1, "first_name": "Rica", "last_name": "Blaisdell", "email": "rblaisdell0@rambler.ru", "gender": "Female", "club_status": "bronze", "comments": "Universal optimal hierarchy", "create_ts": "2020-02-05T12:48:46Z", "update_ts": "2020-02-05T12:48:46Z", "messagetopic": "asgard.demo.CUSTOMERS", "messagesource": "Debezium CDC from MySQL on asgard"}
-2/5/20 12:54:07 PM UTC, , {"id": 2, "first_name": "Ruthie", "last_name": "Brockherst", "email": "rbrockherst1@ow.ly", "gender": "Female", "club_status": "platinum", "comments": "Reverse-engineered tangible interface", "create_ts": "2020-02-05T12:48:46Z", "update_ts": "2020-02-05T12:48:46Z", "messagetopic": "asgard.demo.CUSTOMERS", "messagesource": "Debezium CDC from MySQL on asgard"}
-    …
+Key format: KAFKA (STRING)
+Value format: AVRO                                                                                                                           rowtime: 3/3/20 1:35:52 PM UTC, key: 1, value: {"id": 1, "first_name": "Rica", "last_name": "Blaisdell", "email": "rblaisdell0@rambler.ru", "gender": "Female", "club_status": "bronze", "comments": "Universal optimal hierarchy", "create_ts": "2020-03-03T13:32:03Z", "update_ts": "202
+0-03-03T13:32:03Z"}                                                                                                                          rowtime: 3/3/20 1:35:52 PM UTC, key: 2, value: {"id": 2, "first_name": "Ruthie", "last_name": "Brockherst", "email": "rbrockherst1@ow.ly", "gender": "Female", "club_status": "platinum", "comments": "Reverse-engineered tangible interface", "create_ts": "2020-03-03T13:32:03Z", "updat
+e_ts": "2020-03-03T13:32:03Z"}
+…
 ----
 
 Create ksqlDB stream and table
@@ -509,10 +509,6 @@ Return to slides
 
 ---
 
-#EOF
-
-== Optional
-
 === Aggregations
 
 Simple aggregation - count of ratings per person, per minute:
@@ -561,14 +557,14 @@ SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS,
        RATINGS_COUNT
 FROM   RATINGS_PER_CUSTOMER_PER_MINUTE
 WHERE  ROWKEY='Rica Blaisdell'
-  AND  WINDOWSTART > '2020-02-07T17:08:00.000';
+  AND  WINDOWSTART > '2020-03-04T12:00:00.000';
 ----
 
 Try the REST API out in bash: 
 
 [source,bash]
 ----
-docker exec -it ksqldb-cli bash
+docker exec -it ksqldb bash
 ----
 
 Copy and paste: 
@@ -579,7 +575,7 @@ Copy and paste:
 PREDICATE=$(date --date '-5 min' +%s)000
 
 # Pull from ksqlDB the aggregate-by-minute for the last five minutes for a given user: 
-curl -X "POST" "http://ksqldb-server:8088/query" \
+curl -X "POST" "http://ksqldb:8088/query" \
      -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
      -d '{"ksql":"SELECT TIMESTAMPTOSTRING(WINDOWSTART, '\''yyyy-MM-dd HH:mm:ss'\'') AS WINDOW_START_TS,        FULL_NAME,       RATINGS_COUNT FROM   RATINGS_PER_CUSTOMER_PER_MINUTE WHERE  ROWKEY='\''Rica Blaisdell'\''   AND  WINDOWSTART > '$PREDICATE';"}'
 ----
