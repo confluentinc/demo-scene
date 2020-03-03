@@ -15,6 +15,7 @@ public interface Constants {
     public static final String CLUSTER_API_SECRET = System.getenv("CLUSTER_API_SECRET");
     public static final String ORIGIN_ALLOWED = System.getenv("ORIGIN_ALLOWED");
 
+    public static final String SCOREBOARD_CACHE = "scoreboard";
     public static final String SCOREBOARD_FIELD = "scoreboard";
     public static final String SCOREBOARD_TOPIC = "SCOREBOARD";
     public static final String HIGHEST_SCORE_FIELD = "HIGHEST_SCORE";

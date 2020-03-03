@@ -6,10 +6,7 @@ import com.google.gson.JsonObject;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -50,10 +47,10 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
 
         cacheServer.connect();
         JsonObject rootObject = new JsonObject();
-        Set<String> playerIds = null;
 
         if (player != null) {
 
+            player = player.toLowerCase();
             JsonObject playerEntry = new JsonObject();
 
             if (cacheServer.exists(player)) {
@@ -69,28 +66,23 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
 
         } else {
 
-            playerIds = cacheServer.keys("*");
-            int numberOfPlayers = cacheServer.dbSize().intValue();
-            JsonArray entries = new JsonArray(numberOfPlayers);
-            List<Player> players = new ArrayList<>(numberOfPlayers);
-    
-            String value = null;
-            for (String key : playerIds) {
-                value = cacheServer.get(key);
-                players.add(Player.getPlayer(value));
-            }
-            Collections.sort(players);
-    
-            for (Player _player : players) {
-                JsonObject playerEntry = new JsonObject();
-                playerEntry.addProperty(Player.USER, _player.getUser());
-                playerEntry.addProperty(Player.SCORE, _player.getScore());
-                playerEntry.addProperty(Player.LEVEL, _player.getLevel());
-                playerEntry.addProperty(Player.LOSSES, _player.getLosses());
-                entries.add(playerEntry);
+            JsonArray playerEntries = new JsonArray();
+            long players = cacheServer.zcard(SCOREBOARD_CACHE);
+            if (players > 0) {
+                Set<String> playerKeys = cacheServer.zrevrange(SCOREBOARD_CACHE, 0, -1);
+                for (String key : playerKeys) {
+                    String value = cacheServer.get(key);
+                    Player _player = Player.getPlayer(value);
+                    JsonObject playerEntry = new JsonObject();
+                    playerEntry.addProperty(Player.USER, _player.getUser());
+                    playerEntry.addProperty(Player.SCORE, _player.getScore());
+                    playerEntry.addProperty(Player.LEVEL, _player.getLevel());
+                    playerEntry.addProperty(Player.LOSSES, _player.getLosses());
+                    playerEntries.add(playerEntry);
+                }
             }
     
-            rootObject.add(SCOREBOARD_FIELD, entries);
+            rootObject.add(SCOREBOARD_FIELD, playerEntries);
 
         }
 

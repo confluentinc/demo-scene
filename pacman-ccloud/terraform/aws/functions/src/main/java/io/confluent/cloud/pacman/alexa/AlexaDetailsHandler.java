@@ -1,8 +1,5 @@
 package io.confluent.cloud.pacman.alexa;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
@@ -33,7 +30,7 @@ public class AlexaDetailsHandler implements IntentRequestHandler {
         cacheServer.connect();
         String speechText = null;
 
-        if (cacheServer.dbSize() == 0) {
+        if (cacheServer.zcard(SCOREBOARD_CACHE) == 0) {
             speechText = "Sorry but there are no players";
             return input.getResponseBuilder()
                 .withSpeech(speechText)
@@ -60,7 +57,7 @@ public class AlexaDetailsHandler implements IntentRequestHandler {
             slotName.equals(POSITION_ABSOLUTE_SLOT)) {
             try {
                 int position = Integer.parseInt(slotValue);
-                speechText = getPlayerDetailsByPosition(--position);
+                speechText = getPlayerDetailsByPosition(position);
             } catch (NumberFormatException nfe) {}
         } else if (slotName.equals(PLAYER_NAME_SLOT)) {
             speechText = getPlayerDetailsByName(slotValue);
@@ -76,17 +73,13 @@ public class AlexaDetailsHandler implements IntentRequestHandler {
         
         final StringBuilder speechText = new StringBuilder();
 
-        int playersAvailable = cacheServer.dbSize().intValue();
-        if (position < playersAvailable) {
-            List<Player> players = new ArrayList<>(playersAvailable);
-            Set<String> keys = cacheServer.keys("*");
-            String value = null;
-            for (String key : keys) {
-                value = cacheServer.get(key);
-                players.add(Player.getPlayer(value));
-            }
-            Collections.sort(players);
-            Player player = players.get(position);
+        long playersAvailable = cacheServer.zcard(SCOREBOARD_CACHE);
+        if (position <= playersAvailable) {
+            position = position - 1;
+            Set<String> playerKey = cacheServer.zrevrange(SCOREBOARD_CACHE, position, position);
+            String key = playerKey.iterator().next();
+            String value = cacheServer.get(key);
+            Player player = Player.getPlayer(value);
             speechText.append(getPlayerDetails(player));
         } else {
             speechText.append("Sorry but this position ");
@@ -97,18 +90,18 @@ public class AlexaDetailsHandler implements IntentRequestHandler {
 
     }
 
-    private String getPlayerDetailsByName(String playerName) {
+    private String getPlayerDetailsByName(String playerKey) {
 
         final StringBuilder speechText = new StringBuilder();
 
-        String value = cacheServer.get(playerName);
-        if (value != null) {
+        if (cacheServer.exists(playerKey)) {
+            String value = cacheServer.get(playerKey);
             Player player = Player.getPlayer(value);
             speechText.append(getPlayerDetails(player));
         } else {
             speechText.append("Sorry but I couldn't find ");
             speechText.append("anyone with the name ");
-            speechText.append(playerName);
+            speechText.append(playerKey);
         }
 
         return speechText.toString();
@@ -122,7 +115,7 @@ public class AlexaDetailsHandler implements IntentRequestHandler {
         speechText.append(player.getUser()).append("': ");
         speechText.append("their current score is ");
         speechText.append(player.getScore());
-        speechText.append(" while playing on level ");
+        speechText.append(" and is currently playing on level ");
         speechText.append(player.getLevel());
         maybeSaySomethingElse(player, CommentTypes.ABOUT_PERFORMANCE, speechText);
         
