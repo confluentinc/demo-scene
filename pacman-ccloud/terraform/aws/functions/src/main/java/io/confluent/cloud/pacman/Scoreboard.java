@@ -90,8 +90,6 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
 
     }
 
-    private static final String CACHE_SERVER_HOST = System.getenv("CACHE_SERVER_HOST");
-    private static final String CACHE_SERVER_PORT = System.getenv("CACHE_SERVER_PORT");
     private static Jedis cacheServer;
 
     static {

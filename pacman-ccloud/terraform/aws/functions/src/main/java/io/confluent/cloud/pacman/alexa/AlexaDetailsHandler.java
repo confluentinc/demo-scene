@@ -2,7 +2,7 @@ package io.confluent.cloud.pacman.alexa;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
+import java.util.ResourceBundle;
 import java.util.Set;
 
 import com.amazon.ask.dispatcher.request.handler.HandlerInput;
@@ -16,6 +16,7 @@ import redis.clients.jedis.Jedis;
 
 import static com.amazon.ask.request.Predicates.intentName;
 import static io.confluent.cloud.pacman.utils.Constants.*;
+import static io.confluent.cloud.pacman.utils.SkillUtils.*;
 
 public class AlexaDetailsHandler implements IntentRequestHandler {
 
@@ -29,9 +30,11 @@ public class AlexaDetailsHandler implements IntentRequestHandler {
 
         cacheServer.connect();
         String speechText = null;
+        ResourceBundle resourceBundle =
+            getResourceBundle(input);
 
         if (cacheServer.zcard(SCOREBOARD_CACHE) == 0) {
-            speechText = "Sorry but there are no players";
+            speechText = resourceBundle.getString(NO_PLAYERS);
             return input.getResponseBuilder()
                 .withSpeech(speechText)
                 .build();
@@ -50,17 +53,17 @@ public class AlexaDetailsHandler implements IntentRequestHandler {
         }
 
         if (slotName == null && slotValue == null) {
-            speechText = "Sorry, but I didn't understand your question.";
+            speechText = resourceBundle.getString(FAILED_QUESTION);
         }
 
         if (slotName.equals(POSITION_RELATIVE_SLOT) ||
             slotName.equals(POSITION_ABSOLUTE_SLOT)) {
             try {
                 int position = Integer.parseInt(slotValue);
-                speechText = getPlayerDetailsByPosition(position);
+                speechText = getPlayerDetailsByPosition(position, resourceBundle);
             } catch (NumberFormatException nfe) {}
         } else if (slotName.equals(PLAYER_NAME_SLOT)) {
-            speechText = getPlayerDetailsByName(slotValue);
+            speechText = getPlayerDetailsByName(slotValue, resourceBundle);
         }
 
         return input.getResponseBuilder()
@@ -69,127 +72,68 @@ public class AlexaDetailsHandler implements IntentRequestHandler {
 
     }
 
-    private String getPlayerDetailsByPosition(int position) {
+    private String getPlayerDetailsByPosition(int position, ResourceBundle resourceBundle) {
         
         final StringBuilder speechText = new StringBuilder();
 
-        long playersAvailable = cacheServer.zcard(SCOREBOARD_CACHE);
-        if (position <= playersAvailable) {
+        if (position <= cacheServer.zcard(SCOREBOARD_CACHE)) {
             position = position - 1;
             Set<String> playerKey = cacheServer.zrevrange(SCOREBOARD_CACHE, position, position);
             String key = playerKey.iterator().next();
             String value = cacheServer.get(key);
             Player player = Player.getPlayer(value);
-            speechText.append(getPlayerDetails(player));
+            speechText.append(getPlayerDetails(player, resourceBundle));
         } else {
-            speechText.append("Sorry but this position ");
-            speechText.append("doesn't exist yet.");
+            speechText.append(resourceBundle.getString(POSITION_DOESNT_EXIST));
         }
 
         return speechText.toString();
 
     }
 
-    private String getPlayerDetailsByName(String playerKey) {
+    private String getPlayerDetailsByName(String playerName, ResourceBundle resourceBundle) {
 
         final StringBuilder speechText = new StringBuilder();
 
-        if (cacheServer.exists(playerKey)) {
-            String value = cacheServer.get(playerKey);
+        if (cacheServer.exists(playerName)) {
+            String value = cacheServer.get(playerName);
             Player player = Player.getPlayer(value);
-            speechText.append(getPlayerDetails(player));
+            speechText.append(getPlayerDetails(player, resourceBundle));
         } else {
-            speechText.append("Sorry but I couldn't find ");
-            speechText.append("anyone with the name ");
-            speechText.append(playerKey);
+            String text = resourceBundle.getString(NO_ONE_WITH_THIS_NAME);
+            speechText.append(String.format(text, playerName));
         }
 
         return speechText.toString();
 
     }
 
-    private String getPlayerDetails(Player player) {
+    private String getPlayerDetails(Player player, ResourceBundle resourceBundle) {
 
         final StringBuilder speechText = new StringBuilder();
-        speechText.append("Here is the latest about '");
-        speechText.append(player.getUser()).append("': ");
-        speechText.append("their current score is ");
-        speechText.append(player.getScore());
-        speechText.append(" and is currently playing on level ");
-        speechText.append(player.getLevel());
-        maybeSaySomethingElse(player, CommentTypes.ABOUT_PERFORMANCE, speechText);
+
+        String text = resourceBundle.getString(PLAYER_DETAILS);
+        speechText.append(String.format(text, player.getUser(),
+            player.getScore(), player.getLevel()));
         
         switch (player.getLosses()) {
             case 0:
-                speechText.append(". ").append(player.getUser());
-                speechText.append("didn't die not even once. ");
-                maybeSaySomethingElse(player, CommentTypes.ABOUT_NEVER_DYING, speechText);
+                text = resourceBundle.getString(ZERO_LOSSES_DETAILS);
+                speechText.append(String.format(text, player.getUser()));
                 break;
             case 1:
-                speechText.append(". Also, ").append(player.getUser());
-                speechText.append(" died just once. ");
-                maybeSaySomethingElse(player, CommentTypes.ABOUT_DYING_ONCE, speechText);
+                text = resourceBundle.getString(ONE_LOSS_DETAILS);
+                speechText.append(String.format(text, player.getUser()));
                 break;
             default:
-                speechText.append(". ").append(player.getUser());
-                speechText.append(" had ").append(player.getLosses());
-                speechText.append(" losses so far.");
+                text = resourceBundle.getString(N_LOSSES_DETAILS);
+                speechText.append(String.format(text, player.getUser(), player.getLosses()));
                 break;
         }
         
         return speechText.toString();
     }
 
-    private void maybeSaySomethingElse(Player player, CommentTypes commentsTypes,
-        StringBuilder speechText) {
-        if (RANDOM.nextInt(10) > 5) {
-            int index = 0;
-            switch (commentsTypes) {
-                case ABOUT_PERFORMANCE:
-                    if (player.getScore() > 30000 || player.getLevel() > 5) {
-                        index = RANDOM.nextInt(COMMENTS_ABOUT_PERFORMANCE.length - 1);
-                        speechText.append(COMMENTS_ABOUT_PERFORMANCE[index]);
-                    }
-                    break;
-                case ABOUT_DYING_ONCE:
-                    index = RANDOM.nextInt(COMMENTS_ABOUT_DYING_ONCE.length - 1);
-                    speechText.append(COMMENTS_ABOUT_DYING_ONCE[index]);
-                    break;
-                case ABOUT_NEVER_DYING:
-                    index = RANDOM.nextInt(COMMENTS_ABOUT_NEVER_DYING.length - 1);
-                    speechText.append(COMMENTS_ABOUT_NEVER_DYING[index]);
-                    break;
-            }
-        }
-    }
-
-    private enum CommentTypes {
-        ABOUT_PERFORMANCE,
-        ABOUT_NEVER_DYING,
-        ABOUT_DYING_ONCE
-    }
-
-    private final String[] COMMENTS_ABOUT_PERFORMANCE = {
-        "Damn <break time=\"50ms\"/> this is an amazing performance right there.",
-        "Someone please call the fire department because this person is on fire.",
-        "Can I just say that <break time=\"50ms\"/> this performance is amazing?",
-    };
-
-    private final String[] COMMENTS_ABOUT_DYING_ONCE = {
-        "Don't worry about it. <break time=\"10ms\"/> You can always try again.",
-        "There is a first time for everything, <break time=\"500ms\"/> right?",
-        "Brave people always take changes. <break time=\"500ms\"/> Keep going!"
-    };
-    
-    private final String[] COMMENTS_ABOUT_NEVER_DYING = {
-        "That is what I would call <break time=\"10ms\"/> 'Die Hard'.",
-        "I guess we have a HighLander in the room, <break time=\"500ms\"/> right?",
-        "I supposed these ghosts should try a little harder."
-    };
-
-    private static final Random RANDOM = new Random();
-    private static final String CACHE_SERVER_HOST = System.getenv("CACHE_SERVER_HOST");
-    private static final String CACHE_SERVER_PORT = System.getenv("CACHE_SERVER_PORT");
     private static Jedis cacheServer;
 
     static {

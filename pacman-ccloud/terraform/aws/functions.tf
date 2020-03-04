@@ -377,8 +377,8 @@ resource "aws_lambda_function" "scoreboard_function" {
   handler = "io.confluent.cloud.pacman.Scoreboard"
   role = aws_iam_role.scoreboard_role.arn
   runtime = "java11"
-  memory_size = 512
-  timeout = 300
+  memory_size = 256
+  timeout = 60
   environment {
     variables = {
       ORIGIN_ALLOWED = "http://${aws_s3_bucket.pacman.website_endpoint}"
@@ -496,8 +496,8 @@ resource "aws_lambda_function" "alexa_handler_function" {
   handler = "io.confluent.cloud.pacman.AlexaHandler"
   role = aws_iam_role.alexa_handler_role[0].arn
   runtime = "java11"
-  memory_size = 512
-  timeout = 300
+  memory_size = 256
+  timeout = 60
   environment {
     variables = {
       CACHE_SERVER_HOST = aws_elasticache_replication_group.cache_server.primary_endpoint_address
@@ -517,15 +517,6 @@ resource "aws_lambda_permission" "alexa_handler_players_trigger" {
   function_name = aws_lambda_function.alexa_handler_function[0].function_name
   principal = "alexa-appkit.amazon.com"
   event_source_token = var.pacman_players_skill_id
-}
-
-resource "aws_lambda_permission" "alexa_handler_details_trigger" {
-  count = var.alexa_enabled == true ? 1 : 0
-  statement_id = "AllowExecutionFromAlexaDetails"
-  action = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.alexa_handler_function[0].function_name
-  principal = "alexa-appkit.amazon.com"
-  event_source_token = var.pacman_details_skill_id
 }
 
 resource "aws_lambda_permission" "alexa_winner_cloudwatch_trigger" {
