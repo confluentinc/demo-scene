@@ -4,11 +4,11 @@ task_definition:
     elasticsearch:
       mem_limit: 2g
     kafka:
-      mem_limit: 2g
+      mem_limit: 1.5g
     kafka-connect-01:
-      mem_limit: 2g
+      mem_limit: 4g
     kafkacat:
-      mem_limit: 1g
+      mem_limit: 512m
     kibana:
       mem_limit: 1g
     ksqldb:
@@ -16,6 +16,6 @@ task_definition:
     mysql:
       mem_limit: 1g
     schema-registry:
-      mem_limit: 1g
+      mem_limit: 512m
     zookeeper:
-      mem_limit: 1g
+      mem_limit: 512m
