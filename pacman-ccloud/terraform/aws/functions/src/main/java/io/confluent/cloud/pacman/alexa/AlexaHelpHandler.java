@@ -7,6 +7,10 @@ import com.amazon.ask.request.handler.GenericRequestHandler;
 import static com.amazon.ask.request.Predicates.intentName;
 
 import java.util.Optional;
+import java.util.ResourceBundle;
+
+import static io.confluent.cloud.pacman.utils.Constants.*;
+import static io.confluent.cloud.pacman.utils.SkillUtils.*;
 
 public class AlexaHelpHandler implements GenericRequestHandler<HandlerInput, Optional<Response>> {
 
@@ -17,11 +21,14 @@ public class AlexaHelpHandler implements GenericRequestHandler<HandlerInput, Opt
 
     @Override
     public Optional<Response> handle(HandlerInput input) {
-        String speechText = "You can ask who is winning the game";
+
+        ResourceBundle resourceBundle = getResourceBundle(input);
+        String speechText = resourceBundle.getString(ALEXA_HELP);
         return input.getResponseBuilder()
             .withSpeech(speechText)
             .withReprompt(speechText)
             .build();
+            
     }
 
 }

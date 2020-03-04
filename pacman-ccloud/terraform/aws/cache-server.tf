@@ -85,7 +85,7 @@ resource "aws_instance" "cache_server_jumpbox" {
   instance_type = "t2.micro"
   key_name = aws_key_pair.private_key[0].key_name
   subnet_id = aws_subnet.cache_server_jumpbox[0].id
-  vpc_security_group_ids = [aws_security_group.cache_server_jumpbox.id]
+  vpc_security_group_ids = [aws_security_group.cache_server_jumpbox[0].id]
   user_data = data.template_file.cache_server_jumpbox_bootstrap.rendered
   root_block_device {
     volume_type = "gp2"

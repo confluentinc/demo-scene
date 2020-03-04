@@ -10,6 +10,7 @@
     },
     "request": {
         "type": "IntentRequest",
+        "locale": "en-US",
         "intent": {
             "name": "BestPlayerIntent",
             "confirmationStatus": "NONE"

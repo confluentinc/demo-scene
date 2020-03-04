@@ -106,11 +106,6 @@ variable "pacman_players_skill_id" {
   default = ""
 }
 
-variable "pacman_details_skill_id" {
-  type = string
-  default = ""
-}
-
 ###########################################
 ############ Other Variables ##############
 ###########################################

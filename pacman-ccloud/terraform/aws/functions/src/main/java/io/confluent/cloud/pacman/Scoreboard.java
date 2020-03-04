@@ -67,8 +67,8 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
         } else {
 
             JsonArray playerEntries = new JsonArray();
-            long players = cacheServer.zcard(SCOREBOARD_CACHE);
-            if (players > 0) {
+            long playersAvailable = cacheServer.zcard(SCOREBOARD_CACHE);
+            if (playersAvailable > 0) {
                 Set<String> playerKeys = cacheServer.zrevrange(SCOREBOARD_CACHE, 0, -1);
                 for (String key : playerKeys) {
                     String value = cacheServer.get(key);
@@ -90,8 +90,6 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
 
     }
 
-    private static final String CACHE_SERVER_HOST = System.getenv("CACHE_SERVER_HOST");
-    private static final String CACHE_SERVER_PORT = System.getenv("CACHE_SERVER_PORT");
     private static Jedis cacheServer;
 
     static {
