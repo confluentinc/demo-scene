@@ -95,8 +95,13 @@ Note that we don't need to know the format of the data; ksqlDB introspects the d
 
 [source,sql]
 ----
-ksql> PRINT 'ratings';
-Format:AVRO
+PRINT 'ratings';
+----
+
+[source,sql]
+----
+Key format: KAFKA (INTEGER)
+Value format: AVRO
 rowtime: 3/2/20 11:59:25 AM UTC, key: 76, value: {"rating_id": 76, "user_id": 18, "stars": 2, "route_id": 9346, "rating_time": 901, "channel": "web", "message": "airport refurb looks great, will fly outta here more!"}
 rowtime: 3/2/20 11:59:26 AM UTC, key: 77, value: {"rating_id": 77, "user_id": 6, "stars": 1, "route_id": 1313, "rating_time": 913, "channel": "android", "message": "airport refurb looks great, will fly outta here more!"}
 ----
