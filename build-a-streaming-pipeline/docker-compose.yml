@@ -109,11 +109,16 @@ services:
     #   docker cp kafka-connect-01:/usr/share/confluent-hub-components ./connectors
     #   mv ./connectors/confluent-hub-components/* ./connectors
     #   rm -rf ./connectors/confluent-hub-components
+    volumes:
+      - $PWD/connectors:/connectors
     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
     command: 
       - bash 
       - -c 
       - |
+        # Nasty hack for ECS
+        echo '127.0.0.1 kafka-connect-01' >> /etc/hosts
+        #
         echo "Installing connector plugins"
         confluent-hub install --no-prompt debezium/debezium-connector-mysql:1.0.0
         confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.2.0
