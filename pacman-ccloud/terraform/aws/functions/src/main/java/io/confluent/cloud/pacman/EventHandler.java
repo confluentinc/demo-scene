@@ -79,8 +79,6 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
         return root.getAsJsonObject().get("user").getAsString();
     }
 
-    private static final String USER_GAME_TOPIC = "USER_GAME";
-    private static final String USER_LOSSES_TOPIC = "USER_LOSSES";
     private static KafkaProducer<String, String> producer;
 
     static {

@@ -165,11 +165,14 @@ resource "aws_security_group" "cache_server" {
     protocol  = "tcp"
     security_groups = [aws_security_group.ecs_tasks.id]
   }
-  ingress {
-    from_port = 6379
-    to_port   = 6379
-    protocol  = "tcp"
-    security_groups = [aws_security_group.cache_server_jumpbox.id]
+  dynamic "ingress" {
+    for_each = aws_security_group.cache_server_jumpbox
+    content {
+      from_port = 6379
+      to_port   = 6379
+      protocol  = "tcp"
+      security_groups = [ingress.value.id]
+    }
   }
   ingress {
     from_port = 6379
@@ -210,6 +213,7 @@ resource "aws_security_group" "ecs_tasks" {
 }
 
 resource "aws_security_group" "cache_server_jumpbox" {
+  count = var.cache_server_jumpbox_enabled == true ? 1 : 0
   name = "${var.global_prefix}-cache-server-jumpbox"
   description = "Cache Server Jump Box"
   vpc_id = aws_vpc.default.id
