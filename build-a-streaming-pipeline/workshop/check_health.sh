@@ -24,6 +24,14 @@ for i in {01..01}; do
         else
             echo $ip "❌❌DOWN kibana (5601) " $kibana_alive
         fi
+
+        kafka_connect_alive=$(nc -vz -G 10 $ip 8083 2>&1)
+        kafka_connect_alive_result=$?
+        if [ $kafka_connect_alive_result -eq 0 ]; then
+            echo $ip "✅✅UP kafka-connect (8083) " $kafka_connect_alive
+        else
+            echo $ip "❌❌DOWN kafka-connect (8083) " $kafka_connect_alive
+        fi
     else
         echo $ip "❌❌DOWN ssh (22) " $ssh_alive
     fi

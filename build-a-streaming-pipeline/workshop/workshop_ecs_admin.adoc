@@ -55,7 +55,7 @@ aws2 cloudformation list-stacks |jq '.StackSummaries[]|select (.StackName | cont
 +
 NOTE: Wait here until all stacks are CREATE_COMPLETE
 
-3. Open port up for Kibana on each security group
+3. Open port up for Kibana and Kafka Connect on each security group
 +
 NOTE: *This produces no output*
 +
@@ -68,6 +68,13 @@ aws2 ec2 describe-security-groups \
         --protocol tcp \
         --port 5601 \
         --cidr 0.0.0.0/0 | jq '.'
+aws2 ec2 describe-security-groups \
+    --filters Name=tag:workshop,Values=qcon_london | jq '.SecurityGroups[].GroupId' | xargs -Isg \
+    aws2 ec2 authorize-security-group-ingress \
+        --group-id sg \
+        --protocol tcp \
+        --port 8083 \
+        --cidr 0.0.0.0/0 | jq '.'        
 ----
 
 4. Deploy the workshop environment
@@ -99,7 +106,7 @@ for i in {01..01}; do
     xargs -IFOO aws2 ecs describe-container-instances --container-instances FOO --cluster qcon-ldn-workshop-$i|jq '.containerInstances[].ec2InstanceId'|\
     xargs -IFOO aws2 ec2 describe-instances --filter "Name=instance-id,Values=FOO" | jq -r '.Reservations[].Instances[].PublicIpAddress')
 
-    echo -e "\n👾 IP: " $ip " (cluster "$i")"
+    echo -e "👾 IP: " $ip "\t\t(cluster "$i")"
 done
 ----
 
