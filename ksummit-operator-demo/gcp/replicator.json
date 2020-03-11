@@ -1,0 +1,31 @@
+{
+    "name": "test-replicator",
+    "config": {
+        "connector.class": "io.confluent.connect.replicator.ReplicatorSourceConnector",
+        "tasks.max": "4",
+        "topic.whitelist": "example",
+        "key.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
+        "value.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
+        "src.kafka.bootstrap.servers": "kafka.platformops.aws.devel.cpdev.cloud:9092",
+        "src.kafka.security.protocol": "SSL",
+        "src.kafka.ssl.keystore.location": "/tmp/keystore.jks",
+        "src.kafka.ssl.keystore.password": "mystorepassword",
+        "src.kafka.ssl.key.password": "mykeypassword",
+        "src.kafka.ssl.truststore.location": "/tmp/truststore.jks",
+        "src.kafka.ssl.truststore.password": "mystorepassword",
+        "dest.kafka.bootstrap.servers": "kafka-nyc:9071",
+        "dest.kafka.security.protocol": "PLAINTEXT",
+        "src.consumer.interceptor.classes": "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor",
+        "src.consumer.confluent.monitoring.interceptor.security.protocol": "SASL_SSL",
+        "src.consumer.confluent.monitoring.interceptor.bootstrap.servers": "kafka.platformops.aws.devel.cpdev.cloud:9092",
+        "src.consumer.confluent.monitoring.interceptor.ssl.key.password": "mykeypassword",
+        "src.consumer.confluent.monitoring.interceptor.ssl.truststore.location": "/tmp/truststore.jks",
+        "src.consumer.confluent.monitoring.interceptor.ssl.truststore.password": "mystorepassword",
+        "src.consumer.confluent.monitoring.interceptor.ssl.keystore.location": "/tmp/keystore.jks",
+        "src.consumer.confluent.monitoring.interceptor.ssl.keystore.password": "mystorepassword",
+        "src.consumer.confluent.monitoring.interceptor.sasl.mechanism": "PLAIN",
+        "src.consumer.group.id": "connect-replicator",
+        "confluent.license": "",
+        "confluent.topic.replication.factor": "3"
+    }
+}

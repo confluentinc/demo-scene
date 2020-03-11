@@ -1,0 +1,22 @@
+.Create cluster with external dns scope
+----
+gcloud container --project "platform-eng-204922" \
+    clusters create "viktor-cp-operator-demo-cluster" \
+    --zone "us-east4-a" \
+    --machine-type "n1-highmem-4" --image-type "COS" --disk-type "pd-standard" --disk-size "100" \
+    --num-nodes "8" --enable-cloud-logging --enable-cloud-monitoring \
+    --scopes "https://www.googleapis.com/auth/ndev.clouddns.readwrite"
+----
+
+.Install Helm and Tiller
+----
+❯ kubectl create serviceaccount tiller -n kube-system
+❯ kubectl create clusterrolebinding tiller --clusterrole=cluster-admin --serviceaccount kube-system:tiller
+❯ helm init --service-account tiller
+----
+
+
+.external DNS
+----
+helm install -f <your_path>/gcp.yaml --name external-dns confluent-operator --namespace kube-system --set externaldns.enabled=true --set externaldns.user=platform-semaphore@platform-eng-204922.iam.gserviceaccount.com --set externaldns.interval=30s
+----

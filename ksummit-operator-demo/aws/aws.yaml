@@ -1,0 +1,226 @@
+## Overriding values for Chart's values.yaml for AWS
+##
+global:
+  provider:
+    name: aws
+    region: us-west-2
+    kubernetes:
+       deployment:
+         ## If kubernetes is deployed in multi zone mode then specify availability-zones as appropriate
+         ## If kubernetes is deployed in single availability zone then specify appropriate values
+         zones:
+          - us-west-2a
+          - us-west-2d
+          - us-west-2c
+    storage:
+      provisioner: kubernetes.io/aws-ebs
+      reclaimPolicy: Delete
+      parameters:
+        encrypted: "false"
+        kmsKeyId: ""
+        type: gp2
+    ## Docker registry endpoint where Confluent Images are available.
+    ##
+    registry:
+      fqdn: confluent-docker.jfrog.io
+      credential:
+        required: true
+        username: 
+        password:
+  apikey:
+    username: test
+    password: test123
+zookeeper:
+  name: zookeeper
+  replicas: 3
+  resources:
+    cpu: 200m
+    memory: 512Mi
+kafka:
+  name: kafka
+  replicas: 3
+  resources:
+    cpu: 200m
+    memory: 1Gi  
+  external:
+    enabled: true
+    domain: platformops.aws.devel.cpdev.cloud
+  metricReporter:
+    enabled: true
+    publishMs: 30000
+    tls:
+      enabled: true
+      internal: false
+    bootstrapEndpoint: kafka:9071
+  tls:
+    enabled: true
+    authentication:
+      type: "tls"
+    cacerts: |- 
+      -----BEGIN CERTIFICATE-----
+      TBD
+      -----END CERTIFICATE-----
+    fullchain: |-
+      -----BEGIN CERTIFICATE-----
+      TBD
+      -----END CERTIFICATE-----
+    privkey: |-
+      -----BEGIN RSA PRIVATE KEY-----
+      TBD
+      -----END RSA PRIVATE KEY-----
+connect:
+  name: connectors
+  replicas: 2
+  dependencies:
+    kafka:
+      brokerCount: 3
+      bootstrapEndpoint: kafka:9071
+      tls:
+        enabled: false
+        internal: true
+        authentication:
+          type: "tls"
+  tls:
+    ### Enable REST Endpoint in SSL mode
+    ###
+    enabled: true
+    cacerts: |- 
+      -----BEGIN CERTIFICATE-----
+      TBD
+      -----END CERTIFICATE-----
+    fullchain: |-
+      -----BEGIN CERTIFICATE-----
+      TBD
+      -----END CERTIFICATE-----
+    privkey: |-
+      -----BEGIN RSA PRIVATE KEY-----
+      TBD
+      -----END RSA PRIVATE KEY-----
+replicator:
+  name: replicator
+  replicas: 2
+  dependencies:
+    kafka:
+      tls:
+        enabled: true
+        internal: false
+      brokerCount: 3
+      bootstrapEndpoint: kafka:9071
+  tls:
+    enabled: true
+    cacerts: |- 
+      -----BEGIN CERTIFICATE-----
+      TBD
+      -----END CERTIFICATE-----
+    fullchain: |-
+      -----BEGIN CERTIFICATE-----
+      TBD
+      -----END CERTIFICATE-----
+    privkey: |-
+      -----BEGIN RSA PRIVATE KEY-----
+      TBD
+      -----END RSA PRIVATE KEY-----
+schemaregistry:
+  name: schemaregistry
+  dependencies:
+    kafka:
+      brokerCount: 3
+      bootstrapEndpoint: kafka:9071
+      tls:
+        enabled: true
+        internal: false
+  tls:
+    enabled: true
+    cacerts: |- 
+      -----BEGIN CERTIFICATE-----
+      TBD
+      -----END CERTIFICATE-----
+    fullchain: |-
+      -----BEGIN CERTIFICATE-----
+      TBD
+      -----END CERTIFICATE-----
+    privkey: |-
+      -----BEGIN RSA PRIVATE KEY-----
+      TBD
+      -----END RSA PRIVATE KEY-----
+controlcenter:
+  name: controlcenter
+  license: ""
+  external:
+    enabled: true
+    domain: platformops.aws.devel.cpdev.cloud
+  dependencies:
+    c3KafkaCluster:
+      brokerCount: 3
+      bootstrapEndpoint: kafka:9071
+      zookeeper:
+        endpoint: zookeeper:2181
+      tls:
+        enabled: true
+        internal: false
+    connectCluster:
+      enabled: true
+      endpoints: connectors:8083
+    ksql:
+      enabled: false
+      url: ""
+    schemaregistry:
+      enabled: true
+      url: http://schemaregistry:8081
+  tls:
+    enabled: true
+    cacerts: |- 
+      -----BEGIN CERTIFICATE-----
+      TBD
+      -----END CERTIFICATE-----
+    fullchain: |-
+      -----BEGIN CERTIFICATE-----
+      TBD
+      -----END CERTIFICATE-----
+    privkey: |-
+      -----BEGIN RSA PRIVATE KEY-----
+      TBD
+      -----END RSA PRIVATE KEY-----
+  auth:
+    basic:
+      enabled: true
+      ##
+      ## map with key as user and value as password and role
+      property:
+        admin: Developer1,Administrators
+        disallowed: no_access
+ksql:
+  name: ksql
+  replicas: 2
+  tls:
+    enabled: true
+    cacerts: |- 
+      -----BEGIN CERTIFICATE-----
+      TBD
+      -----END CERTIFICATE-----
+    fullchain: |-
+      -----BEGIN CERTIFICATE-----
+      TBD
+      -----END CERTIFICATE-----
+      -----BEGIN CERTIFICATE-----
+      TBD
+      -----END CERTIFICATE-----
+    privkey: |-
+      -----BEGIN RSA PRIVATE KEY-----
+      TBD
+      -----END RSA PRIVATE KEY-----
+  basicAuth:
+    enabled: true
+    user: "test"
+    password: "testdemo"
+  external:
+    enabled: false
+    domain: ""
+  dependencies:
+    kafka:
+      tls:
+        enabled: true
+        internal: false
+      brokerCount: 3
+      bootstrapEndpoint: kafka:9071
+      brokerEndpoints: kafka-0.kafka.operator.svc.cluster.local:9071,kafka-1.kafka.operator.svc.cluster.local:9071,kafka-2.kafka.operator.svc.cluster.local:9071
