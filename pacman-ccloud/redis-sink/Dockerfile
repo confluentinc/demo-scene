@@ -1,6 +1,6 @@
 FROM fedora:latest
 
-LABEL maintainer="Ricardo Ferreira <riferrei@riferrei.net>"
+LABEL maintainer="Ricardo Ferreira <riferrei@riferrei.com>"
 
 # Install pre-reqs
 RUN dnf install wget -y
