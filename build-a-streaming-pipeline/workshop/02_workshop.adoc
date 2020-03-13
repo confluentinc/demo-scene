@@ -708,7 +708,7 @@ ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS EVENT_TS,
 
 Observe how the *stream* shows all the _events_, whilst the *table* shows the current _state_. Both come from the same Kafka topic!
 
-image::images/mysql_to_kafka.gif[]
+image::images/stream_table.png[]
 
 === [Optional] Tables and Keys
 
