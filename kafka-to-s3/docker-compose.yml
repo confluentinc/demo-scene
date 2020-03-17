@@ -87,11 +87,17 @@ services:
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/,/connectors/'
-    # If you want to use the Confluent Hub installer to d/l component, but make them available
-    # when running this offline, spin up the stack once and then run : 
-    #   docker cp kafka-connect:/usr/share/confluent-hub-components ./connectors
-    #   mv ./connectors/confluent-hub-components/* ./connectors
-    #   rm -rf ./connectors/confluent-hub-components
+      # You can either specify your AWS credentials here and uncomment it, or by 
+      #  editing the local aws_credentials file. If you use the `environment` option then 
+      #  comment out the mounting of `aws_credentials` under `volumes` below to avoid confusion
+      # AWS_ACCESS_KEY_ID: XXXXX
+      # AWS_SECRET_ACCESS_KEY: YYYYY
+      #
+      # If you want to use the Confluent Hub installer to d/l component, but make them available
+      # when running this offline, spin up the stack once and then run : 
+      #   docker cp kafka-connect:/usr/share/confluent-hub-components ./connectors
+      #   mv ./connectors/confluent-hub-components/* ./connectors
+      #   rm -rf ./connectors/confluent-hub-components
     volumes:
       - $PWD/connectors:/connectors
       - $PWD/aws_credentials:/root/.aws/credentials

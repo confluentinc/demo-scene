@@ -7,6 +7,7 @@ This uses Docker Compose to run the Kafka Connect worker.
 1. Create the S3 bucket, make a note of the region
 2. Obtain your access key pair
 3. Update `aws_credentials`
+** Alternatively, uncomment the `environment` lines for `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` and set the values here instead
 4. Bring the Docker Compose up
 +
 [source,bash]
