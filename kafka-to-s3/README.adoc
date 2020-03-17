@@ -1,0 +1,120 @@
+= Streaming data from Kafka to S3 using Kafka Connect
+Robin Moffatt <robin@confluent.io>
+v1.00, 17 March 2020
+
+This uses Docker Compose to run the Kafka Connect worker.
+
+1. Create the S3 bucket, make a note of the region
+2. Obtain your access key pair
+3. Update `aws_credentials`
+4. Bring the Docker Compose up
++
+[source,bash]
+----
+docker-compose up -d
+----
+
+5. Make sure everything is up and running
++
+[source,bash]
+----
+$ docker-compose ps
+     Name                  Command               State                    Ports
+---------------------------------------------------------------------------------------------
+broker            /etc/confluent/docker/run   Up             0.0.0.0:9092->9092/tcp
+kafka-connect     bash -c #                   Up (healthy)   0.0.0.0:8083->8083/tcp, 9092/tcp
+                  echo "Installing ...
+ksqldb            /usr/bin/docker/run         Up             0.0.0.0:8088->8088/tcp
+schema-registry   /etc/confluent/docker/run   Up             0.0.0.0:8081->8081/tcp
+zookeeper         /etc/confluent/docker/run   Up             2181/tcp, 2888/tcp, 3888/tcp
+
+----
+
+6. Create the Sink connector
++
+[source,javascript]
+----
+curl -i -X PUT -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-s3-voluble/config \
+    -d '
+ {
+		"connector.class": "io.confluent.connect.s3.S3SinkConnector",
+		"key.converter":"org.apache.kafka.connect.storage.StringConverter",
+		"tasks.max": "1",
+		"topics": "cats",
+		"s3.region": "us-east-1",
+		"s3.bucket.name": "rmoff-voluble-test",
+		"flush.size": "65536",
+		"storage.class": "io.confluent.connect.s3.storage.S3Storage",
+		"format.class": "io.confluent.connect.s3.format.avro.AvroFormat",
+		"schema.generator.class": "io.confluent.connect.storage.hive.schema.DefaultSchemaGenerator",
+		"schema.compatibility": "NONE",
+        "partitioner.class": "io.confluent.connect.storage.partitioner.DefaultPartitioner",
+        "transforms": "AddMetadata",
+        "transforms.AddMetadata.type": "org.apache.kafka.connect.transforms.InsertField$Value",
+        "transforms.AddMetadata.offset.field": "_offset",
+        "transforms.AddMetadata.partition.field": "_partition"
+	}
+'
+----
++
+Things to customise for your environment:
++
+* `topics` :  the source topic(s) you want to send to S3
+* `key.converter` : match the serialisation of your source data (see https://www.confluent.io/blog/kafka-connect-deep-dive-converters-serialization-explained/[here])
+* `value.converter` : match the serialisation of your source data (see https://www.confluent.io/blog/kafka-connect-deep-dive-converters-serialization-explained/[here])
+* `transforms` : remove this if you don't want partition and offset added to each message
+
+'''
+
+If you want to create the data generator and view the data in ksqlDB: 
+
+[source,bash]
+----
+docker exec -it ksqldb ksql http://ksqldb:8088
+----
+
+[source,sql]
+----
+CREATE SOURCE CONNECTOR s WITH (
+  'connector.class' = 'io.mdrogalis.voluble.VolubleSourceConnector',
+
+  'genkp.owners.with' = '#{Internet.uuid}',
+  'genv.owners.name.with' = '#{Name.full_name}',
+  'genv.owners.creditCardNumber.with' = '#{Finance.credit_card}',
+
+  'genk.cats.name.with' = '#{FunnyName.name}',
+  'genv.cats.owner.matching' = 'owners.key',
+
+  'genk.diets.catName.matching' = 'cats.key.name',
+  'genv.diets.dish.with' = '#{Food.vegetables}',
+  'genv.diets.measurement.with' = '#{Food.measurements}',
+  'genv.diets.size.with' = '#{Food.measurement_sizes}',
+
+  'genk.adopters.name.sometimes.with' = '#{Name.full_name}',
+  'genk.adopters.name.sometimes.matching' = 'adopters.key.name',
+  'genv.adopters.jobTitle.with' = '#{Job.title}',
+  'attrk.adopters.name.matching.rate' = '0.05',
+  'topic.adopters.tombstone.rate' = '0.10',
+
+  'global.history.records.max' = '100000'
+);
+----
+
+[source,sql]
+----
+SHOW TOPICS;
+PRINT cats;
+----
+
+'''
+
+References
+
+* https://rmoff.dev/crunch19-zero-to-hero-kafka-connect[From Zero to Hero with Kafka Connect]
+* https://hub.confluent.io[Confluent Hub]
+* https://docs.confluent.io/current/connect/kafka-connect-s3/index.html#connect-s3[S3 Sink connector docs]
+* https://github.com/MichaelDrogalis/voluble[Voluble Source connector docs]
+* https://www.confluent.io/blog/simplest-useful-kafka-connect-data-pipeline-world-thereabouts-part-3/[Single Message Transform blog]
+* https://docs.confluent.io/current/connect/transforms/insertfield.html[InsertField] Single Message Transform
+
