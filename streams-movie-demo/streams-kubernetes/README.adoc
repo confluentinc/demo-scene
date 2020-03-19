@@ -21,27 +21,33 @@ Viktor Gamov <viktor@confluent.io>, © 2019 Confluent, Inc.
 :source-highlighter: highlight.js
 :highlightjs-theme: idea
 :experimental:
+:parentdir: ../
 
-This document explains how to build «Streaming Movies Demo» app docker image and run this in Kubernetes.
+This document explains how to build «Streaming Movies Demo» app docker image and run it in Kubernetes.
 
 toc::[]
 
-== Build a Docker image and publish to GCP private docker registry
+== Build a Docker image and publish to a docker registry
 
-. Build an image and push to the docker registry: `./gradlew build jib` or you can build to a local tar: `./gradlew build jibBuildTar`
+[source,java]
+----
+include::../build.gradle[tags=jibConfig]
+----
+<1> Artifactory docker registry
+<2> GCP docker registry
+<3> use `credHelper` for GCP
+
+. Build an image and push to the docker registry: `./gradlew build jib` 
+.. You also can build to a local tar: `./gradlew build jibBuildTar`
 . For local test via docker: 
 +
 
 [source,shell]
 ----
-docker pull gcr.io/cloud-private-dev/gamussa/streaming-movie-ratings:latest
+docker pull ${DOCKER_REGISTRY_URL}/streaming-movie-ratings:latest
 
-docker run -ti -e "JAVA_TOOL_OPTIONS=-DLOGLEVEL=INFO" --rm gcr.io/cloud-private-dev/gamussa/streaming-movie-ratings:latest
+docker run -ti -e "JAVA_TOOL_OPTIONS=-DLOGLEVEL=INFO" --rm ${DOCKER_REGISTRY_URL}/streaming-movie-ratings:latest
 ----
-
-=== TODO
-
-* [ ] add instructions on using GCP docker registry and Artifactory 
 
 == Demo Playbook
 
@@ -58,7 +64,7 @@ confluent consume rated-movies --cloud --value-format avro --property schema.reg
 
 or use CCloud UI (TBD add screenshot)
 
-=== Generate test load
+=== Generate Test Toad
 
 * Start raw rating generator
 +
@@ -105,7 +111,7 @@ you can start another window to watch the logs:
 
 [source,shell]
 ----
-kubectl logs `kubectl get pods -l app=streaming-movie-ratings -o=name` -f`
+kubectl logs `kubectl get pods -l app=streaming-movie-ratings -o=name` -f
 ----
 
 .You can watch the output

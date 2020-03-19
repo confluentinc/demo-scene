@@ -3,7 +3,7 @@ buildscript {
     springBootVersion = '2.2.0.M2'
     shadowPluginVersion = '5.0.0'
     kotlinVersion = '1.3.21'
-    jibPluginVersion = '1.1.1'
+    jibPluginVersion = '1.3.0'
     confluentVersion = '5.2.1'
     kafkaVersion = '2.2.0'
     lombokVersion = '1.18.8'
@@ -185,24 +185,33 @@ project(':streams-kubernetes') {
 
   def imageBaseName = "streaming-movie-ratings"
 
-  shadowJar {
-    archiveBaseName = imageBaseName
+  /**
+   * Build an image based on «streams» project
+   */
+  dependencies {
+    compile project(':streams')
   }
 
+  // tag::jibConfig[]
   jib {
     to {
-      image = "gcr.io/cloud-private-dev/gamussa/${imageBaseName}"
-      credHelper = 'gcr'
+      image = "gamov-docker.jfrog.io/dev/${imageBaseName}"  // <1>
+      //image = "gcr.io/cloud-private-dev/gamussa/${imageBaseName}" // <2>
+      //credHelper = 'gcr' <3>
+      // end::jibConfig[]
       from {
-        //image = "gcr.io/distroless/java:debug"
         image = "gcr.io/distroless/java:8"
+        //image = "gcr.io/distroless/java:debug"
         //image = "bellsoft/liberica-openjdk-alpine:8u202"
         //image = "bellsoft/liberica-openjre-debian:8u202"
       }
-    }
-    container {
-      mainClass = project(":streams").mainClass
-      args = ['/config']
+
+      container {
+        mainClass = project(":streams").mainClass
+        args = [
+            '/config'
+        ]
+      }
     }
 
     // TODO: configure via environment variables/configMaps in Kubernetes

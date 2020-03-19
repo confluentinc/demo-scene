@@ -1,4 +1,3 @@
-import io.confluent.demo.ConfigLoader
 import io.confluent.demo.Parser
 import io.confluent.demo.Rating
 import io.confluent.devx.kafka.config.ConfigLoader
@@ -9,7 +8,7 @@ import org.apache.kafka.common.serialization.StringSerializer
 
 import static io.confluent.demo.RatingUtil.generateRandomRating
 import static io.confluent.demo.RatingUtil.ratingTargets
-import static java.lang.System.*
+import static java.lang.System.getenv
 
 // Nasty little hack to generate random ratings for fun movies
 class RawRatingStreamer {
