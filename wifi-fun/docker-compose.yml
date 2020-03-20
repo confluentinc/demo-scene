@@ -12,7 +12,7 @@ services:
     #   - ./data/container_data/zk-txn-logs:/var/lib/zookeeper/log
 
   kafka-1:
-    image: confluentinc/cp-enterprise-kafka:5.4.0
+    image: confluentinc/cp-kafka:5.4.0
     container_name: kafka-1
     depends_on:
       - zookeeper
@@ -31,7 +31,7 @@ services:
     #   - ./data/container_data/kafka-1-data:/var/lib/kafka/data
 
   kafka-2:
-    image: confluentinc/cp-enterprise-kafka:5.4.0
+    image: confluentinc/cp-kafka:5.4.0
     container_name: kafka-2
     depends_on:
       - zookeeper
@@ -50,7 +50,7 @@ services:
     #   - ./data/container_data/kafka-2-data:/var/lib/kafka/data
 
   kafka-3:
-    image: confluentinc/cp-enterprise-kafka:5.4.0
+    image: confluentinc/cp-kafka:5.4.0
     container_name: kafka-3
     depends_on:
       - zookeeper
