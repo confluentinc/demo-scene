@@ -38,7 +38,7 @@ Put both the `rsa` and `ppk` private files somewhere accessible by the workshop 
 +
 [source,bash]
 ----
-for i in {01..01}; do 
+for i in {01..60}; do 
 ecs-cli up --cluster qcon-ldn-workshop-$i --keypair qcon-ldn-workshop --capability-iam --instance-type m5.xlarge --port 22 --tags owner=rmoff,project=workshops,team=devx,workshop=qcon_london,deleteafter=20200305 --launch-type EC2 &
 sleep 2
 done
@@ -76,13 +76,28 @@ aws2 ec2 describe-security-groups \
         --port 8083 \
         --cidr 0.0.0.0/0 | jq '.'        
 ----
++
+Alternative to above (which will bomb out if single SG already has the rule, so the others won't get it)
++
+[source,bash]
+----
+for each i in $(aws2 ec2 describe-security-groups --filters Name=tag:workshop,Values=qcon_london | jq -r '.SecurityGroups[].GroupId'); do 
+    echo $i
+    aws2 ec2 authorize-security-group-ingress \
+        --group-id $i \
+        --protocol tcp \
+        --port 5601 \
+        --cidr 0.0.0.0/0 | jq '.'
+done
+----
+
 
 4. Deploy the workshop environment
 +
 [source,bash]
 ----
 cd ~/git/demo-scene/build-a-streaming-pipeline
-for i in {01..01}; do 
+for i in {01..60}; do 
 ecs-cli compose up --cluster qcon-ldn-workshop-$i &
 sleep 2
 done
@@ -101,7 +116,7 @@ Get IPs only:
 
 [source,bash]
 ----
-for i in {01..01}; do
+for i in {01..60}; do
     ip=$(aws2 ecs list-container-instances --cluster qcon-ldn-workshop-$i|jq '.containerInstanceArns[]'|\
     xargs -IFOO aws2 ecs describe-container-instances --container-instances FOO --cluster qcon-ldn-workshop-$i|jq '.containerInstances[].ec2InstanceId'|\
     xargs -IFOO aws2 ec2 describe-instances --filter "Name=instance-id,Values=FOO" | jq -r '.Reservations[].Instances[].PublicIpAddress')
@@ -151,7 +166,7 @@ aws2 ecs list-clusters|jq '.clusterArns[] | select(. | contains("qcon-ldn-worksh
 
 [source,bash]
 ----
-for i in {01..01}; do 
+for i in {01..60}; do 
 ecs-cli down --force --cluster qcon-ldn-workshop-$i &
 sleep 2
 done
