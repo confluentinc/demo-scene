@@ -2,6 +2,8 @@
 Robin Moffatt <robin@confluent.io>
 v1.00, 27 March 2020
 
+🎥Video: https://rmoff.dev/ksqldb-jdbc-sink-video
+
 == Create source connector (data generator)
 
 [source,sql]
