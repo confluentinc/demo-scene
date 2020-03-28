@@ -2,6 +2,8 @@
 Robin Moffatt <robin@confluent.io>
 v1.00, 20 March 2020
 
+🎥Video: https://rmoff.dev/kafka-jdbc-video
+
 This uses Docker Compose to run the Kafka Connect worker.
 
 1. Bring the Docker Compose up

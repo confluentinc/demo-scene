@@ -94,15 +94,14 @@ services:
       #   rm -rf ./connectors/confluent-hub-components
     volumes:
       - $PWD/connectors:/connectors
-      - $PWD/data/flatfiles:/data
     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
     command: 
       - bash 
       - -c 
       - |
         echo "Installing connector plugins"
+        confluent-hub install --no-prompt mdrogalis/voluble:0.2.0
         confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:5.4.1
-        confluent-hub install --no-prompt jcustenborder/kafka-connect-spooldir:2.0.43
         #
         echo "Downloading JDBC driver"
         cd /usr/share/confluent-hub-components/confluentinc-kafka-connect-jdbc
@@ -148,6 +147,19 @@ services:
      - MYSQL_PASSWORD=asgard
     volumes:
      - ./data/mysql:/docker-entrypoint-initdb.d/
+
+  postgres:
+    # *-----------------------------*
+    # To connect to the DB: 
+    #   docker exec -it postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+    # *-----------------------------*
+    image: debezium/postgres:12
+    container_name: postgres
+    environment:
+     - POSTGRES_USER=postgres
+     - POSTGRES_PASSWORD=postgres
+    volumes:
+     - ./data/postgres:/docker-entrypoint-initdb.d/
 
   kafkacat:
     image: edenhill/kafkacat:1.5.0
