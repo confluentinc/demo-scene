@@ -1,19 +1,13 @@
 package io.confluent.demo
 
-import io.confluent.demo.util.CountAndSum
-import io.confluent.demo.util.CountAndSumDeserializer
-import io.confluent.demo.util.CountAndSumSerde
-import io.confluent.demo.util.CountAndSumSerializer
 import io.confluent.devx.kafka.config.ConfigLoader
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.BASIC_AUTH_CREDENTIALS_SOURCE
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
-import org.apache.kafka.common.serialization.Deserializer
+import org.apache.kafka.common.serialization.Serde
 import org.apache.kafka.common.serialization.Serdes
-import org.apache.kafka.common.serialization.Serdes.LongSerde
-import org.apache.kafka.common.serialization.Serializer
 import org.apache.kafka.common.utils.Bytes
 import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.KeyValue
@@ -52,7 +46,8 @@ fun main(args: Array<String>) {
 
   // Ratings processor
   val rawRatingsStream = getRawRatingsStream(builder)
-  val ratingAverage = getRatingAverageTable(rawRatingsStream)
+  val countAnsSumSerde = getCountAndSumSerde(serdeConfig)
+  val ratingAverage = getRatingAverageTable(rawRatingsStream, countAnsSumSerde)
 
   // Movies processors
   val movies = getMoviesTable(builder, movieSerde)
@@ -123,6 +118,12 @@ fun getRatedMovieAvroSerde(serdeConfig: Map<String, String>): SpecificAvroSerde<
   return ratedMovieSerde
 }
 
+fun getCountAndSumSerde(serdeConfig: Map<String, String>): SpecificAvroSerde<CountAndSum> {
+  val avroSerde = SpecificAvroSerde<CountAndSum>()
+  avroSerde.configure(serdeConfig, false)
+  return avroSerde
+}
+
 fun getRatedMoviesTable(movies: KTable<Long, Movie>,
                         ratingAverage: KTable<Long, Double>,
                         ratedMovieSerde: SpecificAvroSerde<RatedMovie>): KTable<Long, RatedMovie> {
@@ -139,7 +140,7 @@ fun getRatedMoviesTable(movies: KTable<Long, Movie>,
   return ratedMovies
 }
 
-internal fun getRatingAverageTable(rawRatings: KStream<Long, String>): KTable<Long, Double> {
+internal fun getRatingAverageTable(rawRatings: KStream<Long, String>, countAndSumSerde: Serde<CountAndSum>): KTable<Long, Double> {
 
   val ratings = rawRatings.mapValues<Rating>(ValueMapper<String, Rating> { Parser.parseRating(it) })
           .map { _, rating -> KeyValue<Long, Rating>(rating.movieId, rating) }
@@ -161,19 +162,11 @@ internal fun getRatingAverageTable(rawRatings: KStream<Long, String>): KTable<Lo
    */
   val ratingCountAndSum = ratingsById.aggregate(
           { CountAndSum(0L, 0.0) },
-          { _, value, aggregate ->
-            ++aggregate.count
-            aggregate.sum += value
+          { key, value, aggregate ->
+            aggregate.setCount(aggregate.getCount()!! + 1)
+            aggregate.setSum(aggregate.getSum()!! + value!!)
             aggregate
-          }, Materialized.with<Long, CountAndSum<Long, Double>, KeyValueStore<Bytes, ByteArray>>(LongSerde(), object : CountAndSumSerde<Long, Double>() {
-    override fun serializer(): Serializer<CountAndSum<Long, Double>> {
-      return CountAndSumSerializer()
-    }
-
-    override fun deserializer(): Deserializer<CountAndSum<Long, Double>> {
-      return CountAndSumDeserializer()
-    }
-  })
+          }, Materialized.with(Serdes.Long(), countAndSumSerde)
   )
 
   /*KTable<Long, Double> ratingAverage = ratingSums.join(ratingCounts,

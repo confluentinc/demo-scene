@@ -27,13 +27,15 @@ spec:
     spec:
       containers:
         - name: "streaming-movie-ratings"
-          image: gcr.io/cloud-private-dev/gamussa/streaming-movie-ratings:latest
+          image: gamov-docker.jfrog.io/dev/streaming-movie-ratings:latest
           env:
             - name: JAVA_TOOL_OPTIONS
               value: -DLOGLEVEL=INFO
           volumeMounts:
             - name: rocksdb
               mountPath: /var/lib/kafka-streams
+      imagePullSecrets:
+        - name: regcred
   volumeClaimTemplates:
     - metadata:
         name: rocksdb

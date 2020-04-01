@@ -3,7 +3,7 @@
 #TODO
 # declare -r GCR=gcr.io/cloud-private-dev
 declare -r IMAGE_NAME="gamussa/kafka-connect-twitter"
-declare -r IMAGE_TAG="0.3.33"
+declare -r IMAGE_TAG="5.4.0.0.3.33"
 
 echo "Building image '$IMAGE_NAME:$IMAGE_TAG'"
 docker build -t $IMAGE_NAME:$IMAGE_TAG .

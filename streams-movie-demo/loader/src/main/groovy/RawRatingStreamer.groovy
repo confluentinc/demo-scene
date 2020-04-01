@@ -6,7 +6,9 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.LongSerializer
 import org.apache.kafka.common.serialization.StringSerializer
 
-import static io.confluent.demo.RatingUtil.*
+import static io.confluent.demo.RatingUtil.generateRandomRating
+import static io.confluent.demo.RatingUtil.ratingTargets
+
 import static java.lang.System.getenv
 
 // Nasty little hack to generate random ratings for fun movies

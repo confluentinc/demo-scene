@@ -21,6 +21,8 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Properties;
 
+import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
+import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import lombok.extern.slf4j.Slf4j;
 
 import static io.confluent.demo.StreamsDemo.AVERAGE_RATINGS_TOPIC_NAME;
@@ -28,8 +30,11 @@ import static io.confluent.demo.StreamsDemo.RAW_RATINGS_TOPIC_NAME;
 import static io.confluent.demo.StreamsDemo.getRatingAverageTable;
 import static io.confluent.demo.StreamsDemo.getRawRatingsStream;
 import static io.confluent.demo.StreamsDemo.getStreamsConfig;
+import static io.confluent.demo.fixture.MoviesAndRatingsData.DUMMY_SR_CONFLUENT_CLOUD_8080;
 import static io.confluent.demo.fixture.MoviesAndRatingsData.LETHAL_WEAPON_RATING_10;
 import static io.confluent.demo.fixture.MoviesAndRatingsData.LETHAL_WEAPON_RATING_8;
+import static io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertNotNull;
 
 @Slf4j
@@ -42,7 +47,9 @@ public class RatingTopologiesTest {
     final Properties streamsConfig = getStreamsConfig("dummy:1234", "", "");
     StreamsBuilder builder = new StreamsBuilder();
     final KStream<Long, String> rawRatingsStream = getRawRatingsStream(builder);
-    final KTable<Long, Double> ratingAverageTable = getRatingAverageTable(rawRatingsStream);
+    SpecificAvroSerde<CountAndSum> countAndSumSerde = new SpecificAvroSerde<>(new MockSchemaRegistryClient());
+    countAndSumSerde.configure(singletonMap(SCHEMA_REGISTRY_URL_CONFIG, DUMMY_SR_CONFLUENT_CLOUD_8080), false);
+    final KTable<Long, Double> ratingAverageTable = getRatingAverageTable(rawRatingsStream, countAndSumSerde);
 
     final Topology topology = builder.build();
     log.info("topology = \n" + topology.describe());

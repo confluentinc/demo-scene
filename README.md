@@ -42,6 +42,8 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - [Kafka Connect error handling](connect-error-handling) ([✍️ blog](https://www.confluent.io/blog/kafka-connect-deep-dive-error-handling-dead-letter-queues/?utm_campaign=rmoff&utm_source=demo-scene))
   - [Multi-node ksqlDB and Kafka Connect clusters](multi-cluster-connect-and-ksql)
   - Specific connectors
+    - [ 👉 S3 Sink](kafka-to-s3) (🎥 [tutorial](https://rmoff.dev/kafka-s3-video))
+    - [ 👉 Database](kafka-to-database) (tutorial [🎥 1](https://rmoff.dev/kafka-jdbc-video) / [🎥 2](https://rmoff.dev/ksqldb-jdbc-sink-video))
     - [Kafka Connect JDBC Source demo environment](connect-jdbc) ([✍️ blog](https://www.confluent.io/blog/kafka-connect-deep-dive-jdbc-source-connector/?utm_campaign=rmoff&utm_source=demo-scene))
     - [InfluxDB & Kafka Connect](influxdb-and-kafka) ([✍️ blog](https://rmoff.net/2020/01/23/notes-on-getting-data-into-influxdb-from-kafka-with-kafka-connect/?utm_campaign=rmoff&utm_source=demo-scene))
     - [RabbitMQ into Kafka](rabbitmq-into-kafka) ([✍️ blog](https://rmoff.net/2020/01/08/streaming-messages-from-rabbitmq-into-kafka-with-kafka-connect/?utm_campaign=rmoff&utm_source=demo-scene))

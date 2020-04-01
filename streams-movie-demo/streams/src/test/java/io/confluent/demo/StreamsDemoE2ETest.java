@@ -39,6 +39,8 @@ import static io.confluent.demo.fixture.MoviesAndRatingsData.DUMMY_KAFKA_CONFLUE
 import static io.confluent.demo.fixture.MoviesAndRatingsData.DUMMY_SR_CONFLUENT_CLOUD_8080;
 import static io.confluent.demo.fixture.MoviesAndRatingsData.LETHAL_WEAPON_MOVIE;
 import static io.confluent.demo.fixture.MoviesAndRatingsData.LETHAL_WEAPON_RATING_9;
+import static io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
+import static java.util.Collections.singletonMap;
 
 @Slf4j
 public class StreamsDemoE2ETest {
@@ -67,7 +69,9 @@ public class StreamsDemoE2ETest {
     ratedMovieSerde.configure(mockSerdeConfig, false);
 
     final KStream<Long, String> rawRatingsStream = getRawRatingsStream(builder);
-    final KTable<Long, Double> ratingAverageTable = getRatingAverageTable(rawRatingsStream);
+    SpecificAvroSerde<CountAndSum> countAndSumSerde = new SpecificAvroSerde<>(new MockSchemaRegistryClient());
+    countAndSumSerde.configure(singletonMap(SCHEMA_REGISTRY_URL_CONFIG, DUMMY_SR_CONFLUENT_CLOUD_8080), false);
+    final KTable<Long, Double> ratingAverageTable = getRatingAverageTable(rawRatingsStream, countAndSumSerde);
 
     final KTable<Long, Movie> moviesTable = getMoviesTable(builder, movieSerde);
     final KTable<Long, RatedMovie>

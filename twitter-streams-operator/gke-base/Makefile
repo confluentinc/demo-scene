@@ -6,16 +6,16 @@ include $(THIS_MKFILE_DIR)../common/Makefile
 
 GCP_PROJECT_ID ?= $(shell gcloud config list --format 'value(core.project)')
 
-GKE_BASE_CLUSTER_ID ?= kafka-summit-operator-$(USER)
-GKE_BASE_REGION ?= us-central1
-GKE_BASE_ZONE ?= us-central1-a
+GKE_BASE_CLUSTER_ID ?= kafka-operator-cluster-$(USER)
+GKE_BASE_REGION ?= us-east4
+GKE_BASE_ZONE ?= us-east4-a
 GKE_BASE_SUBNET ?= default
-GKE_BASE_CLUSTER_VERSION ?= 1.12.8-gke.10
+GKE_BASE_CLUSTER_VERSION ?= 1.14.10-gke.22
 GKE_BASE_MACHINE_TYPE ?= n1-highmem-2
 GKE_BASE_IMAGE_TYPE ?= COS
 GKE_BASE_DISK_TYPE ?= pd-standard
 GKE_BASE_DISK_SIZE ?= 100
-GKE_BASE_NUM_NODES ?= 7
+GKE_BASE_NUM_NODES ?= 8
 
 GKE_BASE_ZOOKEEPER_REPLICAS ?= 3
 GKE_BASE_KAFKA_REPLICAS ?= 3
@@ -57,7 +57,7 @@ gke-base-deploy-operator: #_ Deploys the Confluent Operator into the configured 
 gke-base-wait-for-operator: #_ Waits until the Confluent Operator rollout status is complete
 	@$(call echo_stdout_header,wait for operator)	
 	kubectl --context $(KUBECTL_CONTEXT) -n $(KUBECTL_NAMESPACE) rollout status deployment/operator
-	kubectl --context $(KUBECTL_CONTEXT) -n $(KUBECTL_NAMESPACE) rollout status deployment/manager
+	#kubectl --context $(KUBECTL_CONTEXT) -n $(KUBECTL_NAMESPACE) rollout status deployment/manager
 	@$(call echo_stdout_footer_pass,operator ready)
 
 gke-base-destroy-operator: #_ Destroy the operator deployment on the configured k8s cluster
@@ -77,6 +77,11 @@ gke-base-deploy-zookeeper: #_ Deploys Zookeeper into the configured k8s cluster
 	@$(call echo_stdout_header,Deploy Zookeeper)
 	helm upgrade --install --namespace operator $(HELM_COMMON_FLAGS) --set zookeeper.replicas=$(GKE_BASE_ZOOKEEPER_REPLICAS) --set zookeeper.enabled=true zookeeper $(OPERATOR_PATH)helm/confluent-operator
 	@$(call echo_stdout_footer_pass,Zookeeper deployed)
+
+gke-template-zookeeper: #_ Generate resource template for Zookeeper
+	@$(call echo_stdout_header,Template gen for Zookeeper)
+	helm template --namespace operator -f $(THIS_MKFILE_DIR)cfg/values.yaml --set global.provider.kubernetes.deployment.zones={$(GKE_BASE_ZONE)} --set zookeeper.replicas=$(GKE_BASE_ZOOKEEPER_REPLICAS) --set zookeeper.enabled=true $(OPERATOR_PATH)helm/confluent-operator --output-dir $(THIS_MKFILE_DIR)template/zookeeper
+	@$(call echo_stdout_footer_pass,Zookeeper template done)
 
 gke-base-wait-for-zookeeper: #_ Waits until the Zookeeper rollout is complete
 	@$(call echo_stdout_header,Wait for Zookeper)
@@ -106,6 +111,11 @@ gke-base-deploy-kafka: #_ Deploys Kafka into the configured k8s cluster
 	@$(call echo_stdout_header,deploy kafka) 
 	helm upgrade --install --namespace operator $(HELM_COMMON_FLAGS) --set kafka.replicas=$(GKE_BASE_KAFKA_REPLICAS) --set kafka.enabled=true kafka $(OPERATOR_PATH)helm/confluent-operator
 	@$(call echo_stdout_footer_pass,Kafka deployed)
+
+gke-template-kafka: #_ Generate Template for Kafka 
+	@$(call echo_stdout_header,template for kafka) 
+	helm template --namespace operator -f $(THIS_MKFILE_DIR)cfg/values.yaml --set global.provider.region=$(GKE_BASE_REGION) --set global.provider.kubernetes.deployment.zones={$(GKE_BASE_ZONE)} --set kafka.replicas=$(GKE_BASE_KAFKA_REPLICAS) --set kafka.enabled=true $(OPERATOR_PATH)helm/confluent-operator --output-dir $(THIS_MKFILE_DIR)template/kafka
+	@$(call echo_stdout_footer_pass,Kafka template is created...)
 
 gke-base-wait-for-kafka: #_ Waits until the Kafka rollout is complete
 	@$(call echo_stdout_header,Wait for Kafka)
