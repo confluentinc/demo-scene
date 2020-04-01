@@ -8,6 +8,7 @@ import org.apache.kafka.common.serialization.StringSerializer
 
 import static io.confluent.demo.RatingUtil.generateRandomRating
 import static io.confluent.demo.RatingUtil.ratingTargets
+
 import static java.lang.System.getenv
 
 // Nasty little hack to generate random ratings for fun movies
@@ -36,7 +37,7 @@ class RawRatingStreamer {
       println currentTime
       long recordsProduced = 0
       while (true) {
-        Rating rating = generateRandomRating(ratingTargets, stddev)
+        Rating rating = generateRandomRating(ratingTargets, userTargets, stddev)
 
         //println "${System.currentTimeSeconds()}, ${currentTime}"
         if (System.currentTimeSeconds() > currentTime) {
