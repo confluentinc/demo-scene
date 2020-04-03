@@ -2,16 +2,40 @@
 Robin Moffatt <robin@confluent.io>
 v1.00, 3 April 2020
 
+== Introduction
+
 This is a very common error that people encounter when using the Kafka Connect JDBC connector:
 
 ```
 Caused by: java.sql.SQLException: No suitable driver found for…
 ```
 
+e.g.
+
+```
+Caused by: java.sql.SQLException: No suitable driver found for jdbc:oracle:thin:@10.10.10.10:1954/MYSERVICE
+```
+
 It means that *either*: 
 
 1. You have specific the JDBC URL in the wrong format. Check against https://gist.github.com/fabriciocolombo/3375118[this useful list] to make sure it's correct.
 2. The JDBC driver for your database has not been correctly made available to Kafka Connect
+
+== 🎥Video tutorial
+
+Check out the recording at https://rmoff.dev/fix-jdbc-driver-video
+
+* 00:00 Introduction and background
+* 01:19 Installing JDBC driver on local install
+* 05:00 Determining the Kafka Connect JDBC plugin folder
+* 07:16 How to find the Kafka Connect worker log
+* 09:23 Viewing the data in Confluent Control Center
+* 11:05 Installing JDBC driver for Kafka Connect running on Docker
+* 11:50 Installing the JDBC driver at runtime vs baking an image
+* 14:29 Listing installed Kafka Connect plugins
+* 15:00 Creating the connector and figuring out network addresses for the database
+* 16:22 Using kafkacat to view the topics and data
+
 
 == Making the JDBC connector available to Kafka Connect
 
