@@ -1,0 +1,62 @@
+= Kafka Connect JDBC connector and JDBC Drivers
+Robin Moffatt <robin@confluent.io>
+v1.00, 3 April 2020
+
+This is a very common error that people encounter when using the Kafka Connect JDBC connector:
+
+```
+Caused by: java.sql.SQLException: No suitable driver found for…
+```
+
+It means that *either*: 
+
+1. You have specific the JDBC URL in the wrong format. Check against https://gist.github.com/fabriciocolombo/3375118[this useful list] to make sure it's correct.
+2. The JDBC driver for your database has not been correctly made available to Kafka Connect
+
+== Making the JDBC connector available to Kafka Connect
+
+Follow this one weird trick to make it work: 
+
+1. Put the JDBC driver in the *same folder as the Kafka Connect JDBC plugin*. 
+2. Restart the Kafka Connect worker
+
+_Don't muck about with `CLASSPATH`, or `plugin.path`, or anything else that the Interwebs might throw up. So long as the correct JDBC driver is within the same folder as the Kafka Connect plugin JAR (`kafka-connect-jdbc-5.4.1.jar`), you're sorted._
+
+== Locating the Kafka Connect JDBC plugin
+
+1. Search for it
++
+[source,bash]
+----
+find / -name kafka-connect-jdbc\*.jar
+----
++
+If you find more than one folder, you need to determine *which* plugin Kafka Connect is loading. 
+
+2. Check the Kafka Connect worker log (`grep` for `jdbc` and `pluginLocation`)
++
+[source,bash]
+----
+INFO Loading plugin from: /Users/rmoff/confluent-platform/share/java/kafka-connect-jdbc (org.apache.kafka.connect.runtime.isolation.DelegatingClassLoader:241)
+INFO Registered loader: PluginClassLoader{pluginLocation=file:/Users/rmoff/confluent-platform/share/java/kafka-connect-jdbc/} (org.apache.kafka.connect.runtime.isolation.DelegatingClassLoader:264)
+INFO Added plugin 'io.confluent.connect.jdbc.JdbcSinkConnector' (org.apache.kafka.connect.runtime.isolation.DelegatingClassLoader:193)
+INFO Added plugin 'io.confluent.connect.jdbc.JdbcSourceConnector' (org.apache.kafka.connect.runtime.isolation.DelegatingClassLoader:193)
+----
+
+== Sample JDBC Source connector config
+
+[source,bash]
+----
+curl -i -X PUT http://localhost:8083/connectors/jdbc_source_oracle_01/config \
+     -H "Content-Type: application/json" \
+     -d '{
+            "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+            "connection.url": "jdbc:oracle:thin:@oracle:1521/ORCLPDB1",
+            "connection.user": "rmoff",
+            "connection.password": "asgard",
+            "mode":"bulk",
+            "topic.prefix":"oracle_",
+            "table.whitelist":"CUSTOMERS",
+            "poll.interval.ms" : 10000
+        }'
+----
