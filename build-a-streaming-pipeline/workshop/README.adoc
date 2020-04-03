@@ -1,4 +1,4 @@
-= Workshop: Apache Kakfa and ksqlDB in Action: Let's Build a Streaming Data Pipeline!
+= Workshop: Apache Kafka and ksqlDB in Action: Let's Build a Streaming Data Pipeline!
 Robin Moffatt <robin@confluent.io>
 v1.00, 12 February 2020
 
