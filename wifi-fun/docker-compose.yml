@@ -2,7 +2,7 @@
 version: '3'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.4.0
+    image: confluentinc/cp-zookeeper:5.4.1
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
@@ -12,7 +12,7 @@ services:
     #   - ./data/container_data/zk-txn-logs:/var/lib/zookeeper/log
 
   kafka-1:
-    image: confluentinc/cp-kafka:5.4.0
+    image: confluentinc/cp-kafka:5.4.1
     container_name: kafka-1
     depends_on:
       - zookeeper
@@ -31,7 +31,7 @@ services:
     #   - ./data/container_data/kafka-1-data:/var/lib/kafka/data
 
   kafka-2:
-    image: confluentinc/cp-kafka:5.4.0
+    image: confluentinc/cp-kafka:5.4.1
     container_name: kafka-2
     depends_on:
       - zookeeper
@@ -50,7 +50,7 @@ services:
     #   - ./data/container_data/kafka-2-data:/var/lib/kafka/data
 
   kafka-3:
-    image: confluentinc/cp-kafka:5.4.0
+    image: confluentinc/cp-kafka:5.4.1
     container_name: kafka-3
     depends_on:
       - zookeeper
@@ -69,7 +69,7 @@ services:
     #   - ./data/container_data/kafka-3-data:/var/lib/kafka/data
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.4.0
+    image: confluentinc/cp-schema-registry:5.4.1
     ports:
       - 8081:8081
     container_name: schema-registry
@@ -84,7 +84,7 @@ services:
       SCHEMA_REGISTRY_CUB_KAFKA_TIMEOUT: 300
 
   ksqldb:
-    image: confluentinc/ksqldb-server:0.7.1
+    image: confluentinc/ksqldb-server:0.8.1
     hostname: ksqldb
     container_name: ksqldb
     depends_on:
@@ -92,6 +92,7 @@ services:
       # - kafka-connect-01
     ports:
       - "8088:8088"
+      - "8083:8083"
     environment:
       KSQL_LISTENERS: http://0.0.0.0:8088
       KSQL_BOOTSTRAP_SERVERS: kafka-1:39092,kafka-2:49092,kafka-3:59092
@@ -126,20 +127,11 @@ services:
       - bash 
       - -c 
       - |
-        # Manually install the Confluent Hub client
-        # This is ugly af but works
-        cd ~
-        rm confluent-hub-client-latest.tar.gz
-        wget http://client.hub.confluent.io/confluent-hub-client-latest.tar.gz
-        tar xf confluent-hub-client-latest.tar.gz
-        export PATH=$PATH:~/bin/
-        #
         echo "Installing connector plugins"
         mkdir -p /usr/share/confluent-hub-components/
-        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-elasticsearch:5.4.0
-        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-jdbc:5.4.0
+        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-elasticsearch:5.4.1
+        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-jdbc:5.4.1
         confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ neo4j/kafka-connect-neo4j:1.0.2
-        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ mdrogalis/voluble:0.1.0
         confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ debezium/debezium-connector-mongodb:0.10.0
         #
         echo "Launching ksqlDB"
@@ -148,7 +140,7 @@ services:
         sleep infinity
 
   replicator:
-    image: confluentinc/cp-enterprise-replicator:5.4.0
+    image: confluentinc/cp-enterprise-replicator:5.4.1
     container_name: replicator
     depends_on:
       - kafka-1
@@ -186,6 +178,7 @@ services:
     # *-----------------------------*
     image: mongo:4.2.2
     hostname: mongodb
+    container_name: mongodb
     ports: 
     - "27017:27017"
     command: 
@@ -222,9 +215,10 @@ services:
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.5.0
+    container_name: elasticsearch
     hostname: elasticsearch
-    # ports:
-    #   - 9200:9200
+    ports:
+      - 9200:9200
     environment:
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: "-Xms1g -Xmx1g"
@@ -247,8 +241,7 @@ services:
             "index_patterns": "*",
             "settings": { "number_of_shards": 1, "number_of_replicas": 0 },
             "mappings": { "dynamic_templates": [
-                { "dates1": { "match": "date", "mapping": { "type": "date" } } },
-                { "dates2": { "match": "DATE", "mapping": { "type": "date" } } },
+                { "dates1": { "match": "timestamp", "mapping": { "type": "date" } } },
                 { "dates3": { "match": "*_TS", "mapping": { "type": "date" } } }
             ] } }'        
 
@@ -256,6 +249,7 @@ services:
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.5.0
+    container_name: kibana
     hostname: kibana
     depends_on:
       - elasticsearch
@@ -265,11 +259,10 @@ services:
       xpack.security.enabled: "false"
       discovery.type: "single-node"
 
-
   # mysql:
   #   # *-----------------------------*
   #   # To connect to the DB: 
-  #   #   docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
+  #   #   docker exec -it mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
   #   # *-----------------------------*
   #   image: mysql:8.0
   #   container_name: mysql
@@ -285,7 +278,7 @@ services:
   # # postgres:
   # #   # *-----------------------------*
   # #   # To connect to the DB:
-  # #   #   docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+  # #   #   docker exec -it postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
   # #   # *-----------------------------*
   # #   image: postgres:11
   # #   environment:
