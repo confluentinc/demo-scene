@@ -275,14 +275,29 @@ services:
   #   volumes:
   #     - ./data/ddl/users.sql:/docker-entrypoint-initdb.d/z99_dump.sql
 
-  # # postgres:
-  # #   # *-----------------------------*
-  # #   # To connect to the DB:
-  # #   #   docker exec -it postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
-  # #   # *-----------------------------*
-  # #   image: postgres:11
-  # #   environment:
-  # #    - POSTGRES_USER=postgres
-  # #    - POSTGRES_PASSWORD=postgres
-  # #   volumes:
-  # #    - ./data/postgres:/docker-entrypoint-initdb.d/
+  postgres:
+    # *-----------------------------*
+    # To connect to the DB:
+    #   docker exec -it postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+    # *-----------------------------*
+    image: postgres:11
+    container_name: postgres
+    environment:
+     - POSTGRES_USER=postgres
+     - POSTGRES_PASSWORD=postgres
+    volumes:
+     - ./data/postgres:/docker-entrypoint-initdb.d/
+
+  kafkacat:
+    image: edenhill/kafkacat:1.5.0
+    container_name: kafkacat
+    links:
+      - kafka
+      - schema-registry
+    entrypoint: 
+      - /bin/sh 
+      - -c 
+      - |
+        apk add jq; 
+        while [ 1 -eq 1 ];do sleep 60;done
+     
