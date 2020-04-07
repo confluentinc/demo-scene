@@ -291,9 +291,6 @@ services:
   kafkacat:
     image: edenhill/kafkacat:1.5.0
     container_name: kafkacat
-    links:
-      - kafka
-      - schema-registry
     entrypoint: 
       - /bin/sh 
       - -c 
