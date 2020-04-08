@@ -1,11 +1,12 @@
 #!/bin/bash
 
+cd /home/pi
 source $(dirname "$0")/.env
 
 while [ 1 -eq 1 ];do 
 	date
-	sudo tshark -i mon0 \
-		    -b duration:3600 -b files:2 -w /tmp/wireshark_tmp.pcap \
+	tshark -i mon0 \
+		    -b duration:3600 -b files:12 -w /pcap_data/mon0 \
 		    -T ek \
 		    -l \
 		    -e wlan.fc.type -e wlan.fc.type_subtype -e wlan_radio.channel \
