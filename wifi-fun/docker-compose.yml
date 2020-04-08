@@ -87,7 +87,7 @@ services:
       SCHEMA_REGISTRY_CUB_KAFKA_TIMEOUT: 300
 
   kafka-connect-01:
-    image: confluentinc/cp-kafka-connect:5.4.0
+    image: confluentinc/cp-kafka-connect:5.4.1
     container_name: kafka-connect-01
     depends_on:
       - kafka-1
