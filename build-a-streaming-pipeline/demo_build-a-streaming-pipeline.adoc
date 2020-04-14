@@ -517,7 +517,7 @@ Simple aggregation - count of ratings per person, per minute:
 
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(WindowStart(), 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, 
+SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS,
        FULL_NAME,COUNT(*) AS RATINGS_COUNT
   FROM RATINGS_WITH_CUSTOMER_DATA 
         WINDOW TUMBLING (SIZE 1 MINUTE) 
