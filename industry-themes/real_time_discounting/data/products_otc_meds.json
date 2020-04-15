@@ -1,0 +1,12 @@
+{"product_id":1,"product_name":"tylenol","min_price":5.53,"avg_price":8.03,"max_price":10.43}
+{"product_id":2,"product_name":"aspirin","min_price":5.25,"avg_price":7.75,"max_price":10.15}
+{"product_id":3,"product_name":"motrin","min_price":4.96,"avg_price":7.46,"max_price":9.86}
+{"product_id":4,"product_name":"mucinex","min_price":8.59,"avg_price":11.09,"max_price":13.49}
+{"product_id":5,"product_name":"robitussin","min_price":5.64,"avg_price":8.14,"max_price":10.54}
+{"product_id":6,"product_name":"sudafed","min_price":8.32,"avg_price":10.82,"max_price":13.22}
+{"product_id":7,"product_name":"benadryl","min_price":1.69,"avg_price":4.19,"max_price":6.59}
+{"product_id":8,"product_name":"claritin","min_price":8.12,"avg_price":10.62,"max_price":13.02}
+{"product_id":9,"product_name":"zyrtec","min_price":7.52,"avg_price":10.02,"max_price":12.42}
+{"product_id":10,"product_name":"pepto-bismol","min_price":5.48,"avg_price":7.98,"max_price":10.38}
+{"product_id":11,"product_name":"dramamine","min_price":2.62,"avg_price":5.12,"max_price":7.52}
+{"product_id":12,"product_name":"tums","min_price":9.52,"avg_price":12.02,"max_price":14.42}
