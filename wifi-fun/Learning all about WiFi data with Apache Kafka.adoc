@@ -1,5 +1,8 @@
 = Learning all about WiFi data with Apache Kafka and friends
 
+*TODO*: diagram of the stuff that's going on in this article
+
+
 I've recently been looking at what's possible with streams of WiFi packet capture ("pcap") data. It was prompted by initially setting up my https://rmoff.net/2020/03/11/streaming-wi-fi-trace-data-from-raspberry-pi-to-apache-kafka-with-confluent-cloud/[Raspberry Pi to capture this pcap data and stream it to Apache Kafka]. Because I was using Confluent Cloud it was easy enough to chuck the data at the Kafka cluster and not need to worry about where or how to run it. I set this running a month ago, and with a few blips in between (my Raspberry Pi is not deployed for _any_ nines of availability!) now have a bunch of raw pcap data that I thought it would be interesting to dig into using Apache Kafka and its surrounding ecosystem. 
 
 At the heart of the data is https://www.wireshark.org/docs/dfref/w/wlan.html[wlan pcap data] captured from `tshark` (the command-line equivilant of Wireshark, which you may be familiar with). The data is stored in JSON on a partitioned Kafka topic, and a sample message looks like this:
@@ -53,9 +56,11 @@ The useful thing here is that we can see characteristics in the data including:
 * Record count per day
 +
 image::images/kib_doc_count01.png[]
-* Which types of packet are most commonly found (`wlan_fc_type`) and the distribution of MAC addresses in senders and receivers
+* The distribution of MAC addresses in senders (`sa`) and receivers (`ra`)
 +
-image::images/kib_ra_da01.png[]
+image::images/kib_ra_sa01.png[]
+* Which types of packet are most commonly found (`wlan_fc_subtype`)
++
 image::images/kib_type_count01.png[]
 
 Based on https://books.google.co.uk/books?id=-AdTE9S3kigC&lpg=PA302&ots=Y8C-t2MKpN&dq=wireshark%20wlan.fc.type_subtype%2029%20ack&pg=PA301#v=onepage&q=wireshark%20wlan.fc.type_subtype%2029%20ack&f=false[this published table] we can see the top most common types of packets are: 
@@ -71,18 +76,23 @@ What about getting these numbers from analysing the data directly from the conso
 
 With ksqlDB you can use SQL-like queries to inspect, aggregate, and process data. Let's see it in action here with the raw packet capture (pcap) data that we've got. 
 
-First up, I'm going to declare a stream on the topic, and a schema. Since I'm only interested in a couple of fields at this point (the date, and the subtype ranges) I'm just going to omit the rest of the schema, since in full it's fairly beefy
+First up, I'm going to declare a schema so that I can query attributes of the data in the topic. Since I'm only interested in a couple of fields at this point (the date, and the subtype ranges) I'm just going to specify a partial schema since in full it's fairly beefy and redundant to type out in full at this stage. 
 
 [source,sql]
 ----
-CREATE STREAM pcap_raw_00 (timestamp BIGINT, 
+CREATE STREAM PCAP_RAW_00 (timestamp BIGINT, 
                            wlan_fc_type_subtype ARRAY<INT>) 
     WITH (KAFKA_TOPIC='pcap', 
           VALUE_FORMAT='JSON', 
           TIMESTAMP='timestamp');
 ----
 
-Note that I am telling ksqlDB to take the `timestamp` field from the payload as the timestamp of the message (`WITH … TIMESTAMP='timestamp'`). If I didn't do this then it would default to the timestamp of the Kafka message as held in the message's metadata, which is not what I want in this case. 
+A couple of things to point out here: 
+
+* Notice that the `wlan_fc_type_subtype` is written by the source application (`tshark`) as an _array_ of `INT`, e.g. `"wlan_fc_type": [ "1" ]`
+* I am telling ksqlDB to take the `timestamp` field from the payload as the timestamp of the message (`WITH … TIMESTAMP='timestamp'`). 
++
+If I didn't do this then it would default to the timestamp of the Kafka message as held in the message's metadata, which is not what I want in this case. Since we're going to be analysing the time attributes of the data it's important to be correctly handling **event time** vs **ingest time** here.
 
 With the stream created, I tell ksqlDB to process data from the beginning of the topic: 
 
@@ -97,9 +107,9 @@ and then query it using SQL:
 ----
 SELECT wlan_fc_type_subtype[1] AS SUBTYPE,
        COUNT(*) AS PACKET_COUNT,
-       TIMESTAMPTOSTRING(MIN(ROWTIME),'yyyy-MM-dd HH:mm:ss','Europe/London') AS MIN_TS,
-       TIMESTAMPTOSTRING(MAX(ROWTIME),'yyyy-MM-dd HH:mm:ss','Europe/London') AS MAX_TS
-FROM   pcap_raw_00 WHERE ROWTIME < (UNIX_TIMESTAMP() - 1800000)
+       TIMESTAMPTOSTRING(MIN(ROWTIME),'yyyy-MM-dd HH:mm:ss','GMT') AS MIN_TS,
+       TIMESTAMPTOSTRING(MAX(ROWTIME),'yyyy-MM-dd HH:mm:ss','GMT') AS MAX_TS
+FROM   PCAP_RAW_00 WHERE ROWTIME < (UNIX_TIMESTAMP() - 1800000)
 GROUP BY wlan_fc_type_subtype[1]
 EMIT CHANGES;
 ----
@@ -110,18 +120,20 @@ Here we're aggregating by subtype for all messages received up until the last ha
 <a href="https://asciinema.org/a/17I051Ji2c2pZq5VKrHAglHV1" target="_blank"><img src="https://asciinema.org/a/17I051Ji2c2pZq5VKrHAglHV1.svg" /></a>
 ++++
 
-Instead, let's persist this aggregate to a table: 
+Let's build on this example, and break down the subtype count by day. You'll notice here that instead of writing the aggregate result to the screen we're instead instantiating it as a table within ksqlDB: 
 
 [source,sql]
 ----
 SET 'auto.offset.reset' = 'earliest';
 CREATE TABLE PCAP_STATS WITH (VALUE_FORMAT='AVRO') AS
-SELECT wlan_fc_type_subtype[1] AS SUBTYPE,
+SELECT TIMESTAMPTOSTRING(WINDOWSTART,'yyyy-MM-dd','GMT') AS WINDOW_DAY,
+       WLAN_FC_TYPE_SUBTYPE[1] AS SUBTYPE,
        COUNT(*) AS PACKET_COUNT,
-       TIMESTAMPTOSTRING(MIN(ROWTIME),'yyyy-MM-dd HH:mm:ss','Europe/London') AS MIN_TS,
-       TIMESTAMPTOSTRING(MAX(ROWTIME),'yyyy-MM-dd HH:mm:ss','Europe/London') AS MAX_TS
-FROM   pcap_raw_00 WHERE ROWTIME < (UNIX_TIMESTAMP() - 1800000)
-GROUP BY wlan_fc_type_subtype[1]
+       TIMESTAMPTOSTRING(MIN(ROWTIME),'HH:mm:ss','GMT') AS EARLIEST_TIME, 
+       TIMESTAMPTOSTRING(MAX(ROWTIME),'HH:mm:ss','GMT') AS LATEST_TIME
+FROM   PCAP_RAW_00 
+        WINDOW TUMBLING (SIZE 1 DAY)
+GROUP BY WLAN_FC_TYPE_SUBTYPE[1]
 EMIT CHANGES;
 ----
 
@@ -140,18 +152,23 @@ ksql> SHOW TABLES;
 This table we can query either as a "push" query showing all updates as they arrive: 
 
 ++++
-<a href="https://asciinema.org/a/81TbAU5ncB43PfK2j3VbLvFFI" target="_blank"><img src="https://asciinema.org/a/81TbAU5ncB43PfK2j3VbLvFFI.svg" /></a>
+<script id="asciicast-znhyV5xWq62IinJJg7bqjvtPm" src="https://asciinema.org/a/znhyV5xWq62IinJJg7bqjvtPm.js" async></script>
 ++++
 
-or query the value directly for any of the subtypes: 
+or query the value directly with a "pull" query for any of the subtypes: 
 
 [source,sql]
 ----
-ksql> SELECT SUBTYPE, PACKET_COUNT, MIN_TS, MAX_TS FROM PCAP_STATS WHERE ROWKEY = 4 ;
-+----------+-------------+---------------------+---------------------+
-|SUBTYPE   |PACKET_COUNT |MIN_TS               |MAX_TS               |
-+----------+-------------+---------------------+---------------------+
-|4         |48975        |2020-02-28 22:45:48  |2020-03-07 00:49:24  |
+ksql> SELECT WINDOW_DAY, SUBTYPE, PACKET_COUNT, EARLIEST_TIME, LATEST_TIME 
+        FROM PCAP_STATS 
+       WHERE ROWKEY = 4 ;
++-----------+--------+-------------+--------------+------------+
+|WINDOW_DAY |SUBTYPE |PACKET_COUNT |EARLIEST_TIME |LATEST_TIME |
++-----------+--------+-------------+--------------+------------+
+|2020-02-28 |4       |84           |22:47:06      |23:59:35    |
+|2020-02-29 |4       |3934         |00:02:01      |23:58:19    |
+|2020-03-01 |4       |1601         |00:00:06      |23:58:07    |
+|2020-03-02 |4       |1125         |00:00:12      |23:59:13    |
 Query terminated
 ----
 
@@ -170,16 +187,36 @@ CREATE SINK CONNECTOR SINK_POSTGRES_PCAP_STATS_00 WITH (
     'auto.evolve'         = 'true',
     'insert.mode'         = 'upsert',
     'pk.mode'             = 'record_value',
-    'pk.fields'           = 'SUBTYPE',
+    'pk.fields'           = 'WINDOW_DAY,SUBTYPE',
     'table.name.format'   = '${topic}'
 );
 ----
 
-Now as each message arrives in the source Kafka topic, it's incorporated in the aggregation by ksqlDB and the resulting change to the aggregate pushed to Postgres, where each key is updated in-place: 
+Now as each message arrives in the source Kafka topic, it's incorporated in the aggregation by ksqlDB and the resulting change to the aggregate pushed to Postgres, where each key (which is a composite of the `SUBTYPE` plus the day) is updated in-place: 
+
+[source,sql]
+----
+postgres=# SELECT * FROM "PCAP_STATS" WHERE "SUBTYPE"=4 ORDER BY "WINDOW_DAY" ;
+ WINDOW_DAY | SUBTYPE | PACKET_COUNT | EARLIEST_TIME | LATEST_TIME
+------------+---------+--------------+---------------+-------------
+ 2020-02-28 |       4 |           89 | 22:47:25      | 23:55:44
+ 2020-02-29 |       4 |         4148 | 00:02:01      | 23:58:19
+ 2020-03-01 |       4 |         1844 | 00:00:24      | 23:56:53
+ 2020-03-02 |       4 |          847 | 00:00:12      | 23:59:13
+…
+----
 
 ++++
-<a href="https://asciinema.org/a/3JcVVyAHbRkyOgDBy0Xldjcng" target="_blank"><img src="https://asciinema.org/a/3JcVVyAHbRkyOgDBy0Xldjcng.svg" /></a>
+<script id="asciicast-JzCdf8dJaP3ny2AoFLaHKzDgT" src="https://asciinema.org/a/JzCdf8dJaP3ny2AoFLaHKzDgT.js" async></script>
 ++++
+
+== Analysing relationships in the data with Kibana
+
+As well as the Data Visualiser in Kibana, the Graph capabilities are quite interesting for exploring high-level relationships in the data: 
+
+image::images/kib_probe_graph_01.png[]
+
+For dedicated Graph modelling and analysis of the data, see later in this article where we'll stream the data from Kafka into Neo4j and analyse it there. 
 
 == Splitting the pcap data into separate topics
 
@@ -230,7 +267,7 @@ CREATE STREAM PCAP_ACK    WITH (VALUE_FORMAT='AVRO') AS SELECT * FROM PCAP_RAW W
 CREATE STREAM PCAP_NULL   WITH (VALUE_FORMAT='AVRO') AS SELECT * FROM PCAP_RAW WHERE WLAN_FC_TYPE_SUBTYPE[1]=36;
 ----
 
-If we had a partition key strategy that we wanted to apply we could do this here too by specifying `PARTITION BY`—but since we're still at the early stages of analysis we'll leave the key unset for now (which means that messages will be distributed evenly across all partitions). We could also opt to drop unused columns from the schema for particular message types by replacing `SELECT *` with a specific projection of required columns. 
+If we had a partition key strategy that we wanted to apply we could do this here too by specifying `PARTITION BY`—but since we're still at the early stages of analysis we'll leave the key unset for now (which means that messages will be distributed "round robin" evenly across all partitions). We could also opt to drop unused columns from the schema for particular message types by replacing `SELECT *` with a specific projection of required columns. 
 
 You'll observe that this creates and populates new Kafka topics: 
 
@@ -273,7 +310,7 @@ CREATE SOURCE CONNECTOR SOURCE_MONGODB_UNIFI_01 WITH (
 );
 ----
 
-With this data in Kafka we can use some of the data wrangling tricks to get two ksqlDB tables of devices (switches, APs, routers) and users (i.e. wifi clients - mobiles, laptops, etc). 
+With this data in Kafka we can use some of the data wrangling tricks to get two ksqlDB tables of devices (switches, APs, routers) and users (i.e. wifi clients - mobiles, laptops, etc). To get more background on what this ksqlDB code does and why, check out https://rmoff.net/2019/12/20/analysing-network-behaviour-with-ksqldb-and-mongodb/[this article].
 
 [source,sql]
 ----
@@ -293,6 +330,7 @@ CREATE STREAM ALL_DEVICES WITH (PARTITIONS=12,
                 EXTRACTJSONFIELD(AFTER ,'$.type')  AS TYPE,
                 CAST('0' AS BOOLEAN)               AS IS_GUEST
         FROM    DEVICES_RAW 
+        -- Set the MAC address as a the message key
         PARTITION BY EXTRACTJSONFIELD(AFTER ,'$.mac')
         EMIT CHANGES;
 
@@ -305,6 +343,9 @@ INSERT INTO ALL_DEVICES
       SELECT 'ace.user' AS SOURCE,
              EXTRACTJSONFIELD(AFTER ,'$.mac') AS MAC, 
              '' AS IP,
+             -- Use a CASE statement to build a single label per device
+             --  based on whether we have a name and/or hostname, and
+             --  whether the device is a guest or not.
              CASE WHEN EXTRACTJSONFIELD(AFTER ,'$.name') IS NULL THEN 
                 CASE WHEN EXTRACTJSONFIELD(AFTER ,'$.hostname') IS NULL THEN
                     CASE WHEN CAST(EXTRACTJSONFIELD(AFTER ,'$.is_guest') AS BOOLEAN) THEN 
@@ -325,7 +366,10 @@ INSERT INTO ALL_DEVICES
             '' AS TYPE,
             CAST(EXTRACTJSONFIELD(AFTER ,'$.is_guest') AS BOOLEAN) AS IS_GUEST
         FROM USERS_RAW 
+        -- Ignore Ubiquiti devices because these are picked up 
+        --  from the `unifi.ace.device` data
         WHERE EXTRACTJSONFIELD(AFTER ,'$.oui')!='Ubiquiti'
+        -- Set the MAC address as a the message key
         PARTITION BY EXTRACTJSONFIELD(AFTER ,'$.mac')
         EMIT CHANGES;
 
@@ -340,8 +384,6 @@ CREATE TABLE DEVICES AS
     GROUP BY MAC;
            
 ----
-
-To get more background on what these steps do check out https://rmoff.net/2019/12/20/analysing-network-behaviour-with-ksqldb-and-mongodb/[this article].
 
 We've built a lookup table which because we've used an aggregation (`LATEST_BY_OFFSET`) is materialised. This means that as well as the usual ksqlDB "push query" of streaming updates as the data changes, we can also query the state directly (known as a "pull query"): 
 
@@ -363,7 +405,7 @@ With this lookup data in place and available through ksqlDB, we can join it to t
 
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(ROWTIME,'yyyy-MM-dd HH:mm:ss','Europe/London') AS PCAP_TS,
+SELECT TIMESTAMPTOSTRING(ROWTIME,'yyyy-MM-dd HH:mm:ss','GMT') AS PCAP_TS,
        WLAN_SA[1] AS SOURCE_ADDRESS, 
        WLAN_SA_RESOLVED[1] AS SOURCE_ADDRESS_RESOLVED, 
        WLAN_DA[1] AS DESTINATION_ADDRESS, 
@@ -393,7 +435,7 @@ We can get this:
 
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(P.ROWTIME,'yyyy-MM-dd HH:mm:ss','Europe/London') AS PCAP_TS,
+SELECT TIMESTAMPTOSTRING(P.ROWTIME,'yyyy-MM-dd HH:mm:ss','GMT') AS PCAP_TS,
        WLAN_SA[1] AS SOURCE_ADDRESS, 
        NAME AS DEVICE_NAME, 
        CASE WHEN IS_GUEST IS NULL THEN FALSE ELSE CASE WHEN IS_GUEST THEN FALSE ELSE TRUE END END AS IS_KNOWN_DEVICE,
@@ -430,7 +472,7 @@ Now we can write this enriched data back into Kafka and from there to Elasticsea
 ----
 SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM PCAP_PROBE_ENRICHED 
-    WITH (KAFKA_TOPIC='pcap_probe_enriched_03') AS
+    WITH (KAFKA_TOPIC='pcap_probe_enriched_00') AS
     SELECT WLAN_SA[1] AS SOURCE_ADDRESS, 
         NAME AS SOURCE_DEVICE_NAME, 
         CASE WHEN IS_GUEST IS NULL THEN 
@@ -456,10 +498,10 @@ CREATE STREAM PCAP_PROBE_ENRICHED
             ON P.WLAN_SA[1] = D.ROWKEY
     EMIT CHANGES;
 
-CREATE SINK CONNECTOR SINK_ELASTIC_PCAP_ENRICHED_03 WITH (
+CREATE SINK CONNECTOR SINK_ELASTIC_PCAP_ENRICHED_00 WITH (
     'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
     'connection.url' = 'http://elasticsearch:9200',
-    'topics' = 'pcap_probe_enriched_03',
+    'topics' = 'pcap_probe_enriched_00',
     'type.name' = '_doc',
     'key.ignore' = 'true',
     'schema.ignore' = 'true',
@@ -474,61 +516,175 @@ CREATE SINK CONNECTOR SINK_ELASTIC_PCAP_ENRICHED_03 WITH (
 );
 ----
 
+So what can we do with this data that we couldn't if streaming the pcap directly from source into Elasticsearch directly? We can use the device names, and a filter on whether the device is known or not (based on whether the MAC has an entry in the router's internal table). Here's a useful illustration with the data. It shows, per device, the average signal strength through a period of time. Darker green means a stronger signal.
 
-=== Building Wi-Fi Probe pcap statistics 
+image::images/kib_probe_02.png[]
 
-Using this enriched data we can build ourselves some stateful aggregations to understand more about the patterns within it:
+1. We can accurately label all the devices, and filter for ones which are known devices
+2. There's only data when a device runs a probe request - and if the device is absent there'll be no probes at all. The time period highlighted towards the bottom of the image matches when I (and my laptop, phone, and iPad) were away from home at a conference. 
+** You'll also notice for the iPad and `asgard03` devices (and to an extent `asgard-04`) that the signal—when present—is much stronger - because the devices are in the same room as the https://rmoff.net/2020/03/11/streaming-wi-fi-trace-data-from-raspberry-pi-to-apache-kafka-with-confluent-cloud/[Raspberry Pi that is capturing the pcap data].
+
+One of the things that I was interested to see was whether there would be a discernable pattern in the data relating to the impact of the Coronavirus pandemic. Unfortunately my test-rig failed right around the time when the severe restrictions were put in place, but this is what it looks like for the first three weeks of March:
+
+image::images/kib_probe_03.png[]
+
+As discussed above, there's a huge caveat to this data though - tracking MAC addresses alone is not accurate, because of MAC address randomisation used by many newer devices. You can read more about it https://papers.mathyvanhoef.com/asiaccs2016.pdf[here] but in essence, this is done deliberately for privacy reasons. By charting the data out this way we can actually dig into this randomisation a bit. Looking at the recent probe activity I can see a relatively consistent number of probes, but a spike in the number of unique MACs on one of the days. 
+
+image::images/kib_probe_04.png[]
+
+Drilling into that particular day there's a couple of spikes at specific points in the day: 
+
+image::images/kib_probe_05.png[]
+
+So let's take a closer look at one of those. If we use a similar heatplot to above we can see that some devices (1) retain the same MAC address, and so we see multiple probes over time from it at varying strength. In other cases those (2) we can see signals of approximately the same strength (`-69` - `-67`, in orange on the image below ), but with just single probes recorded. 
+
+image::images/kib_probe_06.png[]
+
+There are two scenarios that would account for the latter behaviour. The first is that there are multiple devices, each of a similar proximity to the device capturing the wifi probes, and each _only sending a single probe request in the 30 minute interval_. The second scenario is that it is a smaller number of devices, issuing multiple probe requests over time, but changing the MAC address each time. Let's see what else the data can offer us to help us pursue these hypotheses. 
+
+By filtering the probe data for the signal range observed above we get this set of data, in which there's an interesting pattern to observe:
+
+image::images/kib_probe_07.png[]
+
+When devices send out probe requests they include other data about the kind of protocol that they support, and so on. These fields (including `wlan.tag.oui` and `wlan.tag.vendor.oui.type`) are not unique to each device, but the combination of the values per packet forms a lower cardinality set than the probe results alone. 
+
+Looking at this set of probe requests, at the same signal strength, in the same time period, we can see that almost all of them share the same set of `wlan.tag.oui` properties
+
+image::images/kib_probe_08.png[]
+
+Using the https://gitlab.com/wireshark/wireshark/raw/master/manuf[Manufacturer's database from Wireshark] the OUIs can be decoded based on their hex representation
+
+* 4120 == 00:10:18 == Broadcom
+* 20722 == 00:50:F2 == Microsoft Corp.
+* 6130 == 00:17:F2 == Apple, Inc.
+
+If you want to dig even further into this, the data that we're streaming into Kafka can also be written to a local pcap file (add `-b duration:3600 -b files:12 -w /pcap_data/mon0` to the `shark` command to keep 12 hourly files of data), and this pcap file loaded into Wireshark to see the real guts of the data that's captured: 
+
+image::images/wireshark_probe00.png[]
+
+=== Wi-Fi Probe pcap pattern matching with ksqlDB
+
+The above analysis in Kibana showed how we can eyeball the data to explore and identify patterns of interest. But can we take a stream of data and automagically look for such patterns? Sure we can - with ksqlDB. 
 
 [source,sql]
 ----
 SET 'auto.offset.reset' = 'earliest';
-CREATE TABLE PCAP_PROBE_STATS_BY_SOURCE_DEVICE AS 
+
+CREATE TABLE OUI_FINGERPRINT_PROBES_01 AS 
+    SELECT WLAN_TAG_VENDOR_DATA,
+           WLAN_TAG_VENDOR_OUI_TYPE,
+           WLAN_TAG_OUI,
+           COUNT(*)                                                    AS PROBE_COUNT,
+           COUNT_DISTINCT(WLAN_SA[1])                                  AS SOURCE_MAC_ADDRESS_COUNT, 
+           COLLECT_SET(WLAN_SA[1])                                     AS SOURCE_MAC_ADDRESSES,
+           TIMESTAMPTOSTRING(WINDOWSTART,'yyyy-MM-dd HH:mm:ss','GMT')  AS FIRST_PROBE, 
+           TIMESTAMPTOSTRING(WINDOWEND,'yyyy-MM-dd HH:mm:ss','GMT')    AS LAST_PROBE, 
+           (WINDOWEND-WINDOWSTART)/1000                                AS SESSION_LENGTH_SEC,
+           MAX(WLAN_RADIO_SIGNAL_DBM[1])-MIN(WLAN_RADIO_SIGNAL_DBM[1]) AS SIGNAL_DBM_RANGE,
+           HISTOGRAM(CAST(WLAN_RADIO_SIGNAL_DBM[1] AS VARCHAR))        AS SIGNAL_DBM_DISTRIBUTION
+      FROM PCAP_PROBE
+        WINDOW SESSION (5 MINUTES)
+     GROUP BY WLAN_TAG_VENDOR_DATA, 
+              WLAN_TAG_VENDOR_OUI_TYPE, 
+              WLAN_TAG_OUI 
+    HAVING COUNT_DISTINCT(WLAN_SA[1]) > 2 
+    EMIT CHANGES ;
+----
+
+This uses a *session window* to identify probe requests matching this pattern: 
+
+* identical set of properties (`wlan.tag.oui`, `wlan.tag.vendor.oui.type`, `wlan.tag.vendor.data`)
+* issued with a gap of no more than five minutes apart 
+* more than two different source MAC addresses
+* Signal strength of all probes within 3 https://en.wikipedia.org/wiki/DBm[dBm] of each other
+
+All requests matching this pattern are grouped into a single result, from which we can see how many requests there were, which source MACs were used (and how many), the range of signal strengths, and so on: 
+
+[source,sql]
+----
+SELECT ROWKEY AS FINGERPRINT,
+       PROBE_COUNT,
+       SOURCE_MAC_ADDRESS_COUNT,
+       SOURCE_MAC_ADDRESSES,
+       FIRST_PROBE,
+       LAST_PROBE,
+       SIGNAL_DBM_DISTRIBUTION
+  FROM OUI_FINGERPRINT_PROBES_01
+  WHERE WINDOWSTART > STRINGTOTIMESTAMP('2020-04-12 14:55:00','yyyy-MM-dd HH:mm:ss') AND WINDOWSTART < STRINGTOTIMESTAMP('2020-04-12 15:35:00','yyyy-MM-dd HH:mm:ss')
+  EMIT CHANGES;
+----
+
+[source,sql]
+----
++---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+
+|FINGERPRINT          |PROBE_COUNT          |SOURCE_MAC_ADDRESS_CO|SOURCE_MAC_ADDRESSES |FIRST_PROBE          |LAST_PROBE           |SIGNAL_DBM_DISTRIBUTI|
+|                     |                     |UNT                  |                     |                     |                     |ON                   |
++---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+
+|[0a:00:01:04:00:00:00|16                   |14                   |[6e:6f:18:05:08:16, 7|2020-04-13 14:21:56  |2020-04-13 14:45:03  |{-73.0=4, -71.0=11, -|
+|:00, 02:00:00:10:00:0|                     |                     |2:97:6c:9b:18:e9, 7e:|                     |                     |65.0=1}              |
+|0]|+|[10, 8, 2]|+|[61|                     |                     |08:a9:8e:6c:79, 9e:89|                     |                     |                     |
+|30, 20722, 4120]     |                     |                     |:88:d4:3f:64, 7a:5f:3|                     |                     |                     |
+|                     |                     |                     |f:52:1d:ae, a6:ae:14:|                     |                     |                     |
+|                     |                     |                     |78:b4:6a, 8e:2b:57:2a|                     |                     |                     |
+|                     |                     |                     |:e7:ff, 86:d8:dc:50:a|                     |                     |                     |
+|                     |                     |                     |a:b0, 8a:db:cf:ba:65:|                     |                     |                     |
+|                     |                     |                     |3a, 5a:83:54:0a:4f:8c|                     |                     |                     |
+|                     |                     |                     |, 62:d4:97:c2:ac:62, |                     |                     |                     |
+|                     |                     |                     |52:b2:39:e7:b1:cf, 42|                     |                     |                     |
+|                     |                     |                     |:c4:7b:48:99:54, d6:5|                     |                     |                     |
+|                     |                     |                     |f:7b:35:0b:a6]       |                     |                     |                     |
+----
+
+== Analysing streams of data with ksqlDB
+
+Let us now take a step back from the nitty-gritty of Wi-Fi probe requests and randomisation of MAC addresses, and take a higher level view of the data we're capturing. Using the enriched stream of data that we've created from the live stream of packet captures joined to device information from my router, we can build a picture of all the devices that we see along with some summary statistics about them - when they last probed, which SSIDs they look for, and so on. 
+
+[source,sql]
+----
+SET 'auto.offset.reset' = 'earliest';
+CREATE TABLE PCAP_PROBE_STATS_BY_SOURCE_DEVICE_02 AS 
     SELECT CASE WHEN SOURCE_DEVICE_NAME IS NULL THEN 
                 SOURCE_ADDRESS_RESOLVED 
             ELSE 
                 SOURCE_DEVICE_NAME END			AS SOURCE, 
-           LATEST_BY_OFFSET(SOURCE_ADDRESS)		AS LATEST_SOURCE_ADDRESS,
-           LATEST_BY_OFFSET(IS_KNOWN_DEVICE)	AS LATEST_IS_KNOWN_DEVICE,
            COUNT(*)								AS PCAP_PROBES, 
            MIN(ROWTIME)							AS EARLIEST_PROBE,
            MAX(ROWTIME)							AS LATEST_PROBE,
            MIN(RADIO_SIGNAL_DBM)				AS MIN_RADIO_SIGNAL_DBM,
            MAX(RADIO_SIGNAL_DBM)				AS MAX_RADIO_SIGNAL_DBM,
            AVG(RADIO_SIGNAL_DBM)				AS AVG_RADIO_SIGNAL_DBM,
-           LATEST_BY_OFFSET(SSID)				AS LATEST_SSID_PROBED,
            COLLECT_SET(SSID)					AS PROBED_SSIDS,
            COUNT_DISTINCT(SSID)					AS UNIQUE_SSIDS_PROBED,
            COUNT_DISTINCT(DESTINATION_ADDRESS)	AS UNIQUE_DESTINATION_ADDRESSES
     FROM   PCAP_PROBE_ENRICHED
-    GROUP BY CASE WHEN SOURCE_DEVICE_NAME IS NULL THEN SOURCE_ADDRESS_RESOLVED ELSE SOURCE_DEVICE_NAME END;           
+    GROUP BY CASE WHEN SOURCE_DEVICE_NAME IS NULL THEN SOURCE_ADDRESS_RESOLVED ELSE SOURCE_DEVICE_NAME END;    
 ----
 
 Under the covers, this aggregation is materialised by ksqlDB, which means that we can query the state directly: 
 
 [source,sql]
 ----
-SELECT SOURCE,
-       PCAP_PROBES, 
-       LATEST_SOURCE_ADDRESS,
-       LATEST_IS_KNOWN_DEVICE,
-       TIMESTAMPTOSTRING(EARLIEST_PROBE,'yyyy-MM-dd HH:mm:ss','Europe/London') AS EARLIEST_PROBE, 
-       TIMESTAMPTOSTRING(LATEST_PROBE,'yyyy-MM-dd HH:mm:ss','Europe/London') AS LATEST_PROBE, 
-       PROBED_SSIDS, 
-       UNIQUE_SSIDS_PROBED 
-  FROM PCAP_PROBE_STATS_BY_SOURCE_DEVICE 
+SELECT SOURCE_DEVICE_NAME,
+       PCAP_PROBES,
+       TIMESTAMPTOSTRING(EARLIEST_PROBE,'yyyy-MM-dd HH:mm:ss','GMT') AS EARLIEST_PROBE,
+       TIMESTAMPTOSTRING(LATEST_PROBE,'yyyy-MM-dd HH:mm:ss','GMT') AS LATEST_PROBE,
+       PROBED_SSIDS,
+       UNIQUE_SSIDS_PROBED
+  FROM PCAP_PROBE_STATS_BY_SOURCE_DEVICE_02
  WHERE ROWKEY='asgard03';
 ----
 
 [source,sql]
 ----
-+---------+------------+----------------------+-----------------------+--------------------+--------------------+---------------------------------+--------------------+
-|SOURCE   |PCAP_PROBES |LATEST_SOURCE_ADDRESS |LATEST_IS_KNOWN_DEVICE |EARLIEST_PROBE      |LATEST_PROBE        |PROBED_SSIDS                     |UNIQUE_SSIDS_PROBED |
-+---------+------------+----------------------+-----------------------+--------------------+--------------------+---------------------------------+--------------------+
-|asgard03 |2322        |a4:83:e7:4e:39:15     |true                   |2020-03-23 17:46:18 |2020-04-08 06:39:45 |[, RNM0, FULLERS, CrossCountryWiF|12                  |
-|         |            |                      |                       |                    |                    |i, Escape Lounge WiFi, QConLondon|                    |
-|         |            |                      |                       |                    |                    |2020, Marriott_PUBLIC, loews_conf|                    |
-|         |            |                      |                       |                    |                    |, Loews, FreePubWiFi, skyclub, _T|                    |
-|         |            |                      |                       |                    |                    |he Wheatley Free WiFi]           |                    |
++-------------------+------------+--------------------+--------------------+----------------------------+--------------------+
+|SOURCE_DEVICE_NAME |PCAP_PROBES |EARLIEST_PROBE      |LATEST_PROBE        |PROBED_SSIDS                |UNIQUE_SSIDS_PROBED |
++-------------------+------------+--------------------+--------------------+----------------------------+--------------------+
+|asgard03           |3110        |2020-02-28 22:51:22 |2020-04-14 11:06:13 |[null, , FULLERS, RNM0, loew|12                  |
+|                   |            |                    |                    |s_conf, _The Wheatley Free W|                    |
+|                   |            |                    |                    |iFi, skyclub, CrossCountryWi|                    |
+|                   |            |                    |                    |Fi, QConLondon2020, FreePubW|                    |
+|                   |            |                    |                    |iFi, Marriott_PUBLIC, Loews,|                    |
+|                   |            |                    |                    | Escape Lounge WiFi]        |                    |
 Query terminated
 ----
 
@@ -542,23 +698,26 @@ ksqlDB is proving pretty handy here. We've taken a raw stream of data, and using
 ----
 $ curl -s -XPOST "http://localhost:8088/query" \
      -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
-     -d '{"ksql":"SELECT TIMESTAMPTOSTRING(LATEST_PROBE,'\''yyyy-MM-dd HH:mm:ss'\'','\''Europe/London'\'') AS LATEST_PROBE FROM PCAP_PROBE_STATS_BY_SOURCE_DEVICE WHERE ROWKEY='\''asgard03'\'';"}' |jq '.[].row.columns'
+     -d '{"ksql":"SELECT TIMESTAMPTOSTRING(LATEST_PROBE,'\''yyyy-MM-dd HH:mm:ss'\'','\''GMT'\'') AS LATEST_PROBE FROM PCAP_PROBE_STATS_BY_SOURCE_DEVICE_02 WHERE ROWKEY='\''asgard03'\'';"}' |jq '.[].row.columns'
 
 [
   "2020-04-08 06:39:45"
 ]
 ----
 
-And of course, we can take the data that ksqlDB is aggregating for us and push it down to one, or more, target systems for further analysis: 
+And of course, we can take the data that ksqlDB is aggregating for us and push it down to one, or more, target systems for further use and analysis: 
+
+*TODO*: diagram showing pcap -> kafka -> ksqlDB -> Kafka -> postgres & elastic
+
 
 * Elasticsearch
 +
 [source,sql]
 ----
-CREATE SINK CONNECTOR SINK_ELASTIC_PCAP_STATS_01 WITH (
+CREATE SINK CONNECTOR SINK_ELASTIC_PCAP_PROBE_STATS_BY_SOURCE_DEVICE_02 WITH (
   'connector.class' 							= 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
   'connection.url' 								= 'http://elasticsearch:9200',
-  'topics' 										= 'PCAP_PROBE_STATS_BY_SOURCE_DEVICE',
+  'topics' 										= 'PCAP_PROBE_STATS_BY_SOURCE_DEVICE_02',
   'type.name' 									= '_doc',
   'key.ignore' 									= 'false',
   'schema.ignore' 								= 'true',
@@ -576,12 +735,12 @@ CREATE SINK CONNECTOR SINK_ELASTIC_PCAP_STATS_01 WITH (
 +
 [source,sql]
 ----
-CREATE SINK CONNECTOR SINK_POSTGRES_PCAP_PROBE_STATS_00 WITH (
+CREATE SINK CONNECTOR SINK_POSTGRES_PCAP_PROBE_STATS_BY_SOURCE_DEVICE_02 WITH (
     'connector.class'     = 'io.confluent.connect.jdbc.JdbcSinkConnector',
     'connection.url'      = 'jdbc:postgresql://postgres:5432/',
     'connection.user'     = 'postgres',
     'connection.password' = 'postgres',
-    'topics'              = 'PCAP_PROBE_STATS_BY_SOURCE_DEVICE',
+    'topics'              = 'PCAP_PROBE_STATS_BY_SOURCE_DEVICE_02',
     'key.converter'       = 'org.apache.kafka.connect.storage.StringConverter',
     'auto.create'         = 'true',
     'auto.evolve'         = 'true',
@@ -607,14 +766,14 @@ CREATE SINK CONNECTOR SINK_POSTGRES_PCAP_PROBE_STATS_00 WITH (
 +
 [source,sql]
 ----
-postgres=# \d "PCAP_PROBE_STATS_BY_SOURCE_DEVICE"
-                 Table "public.PCAP_PROBE_STATS_BY_SOURCE_DEVICE"
+postgres=# \d "PCAP_PROBE_STATS_BY_SOURCE_DEVICE_02"
+                 Table "public.PCAP_PROBE_STATS_BY_SOURCE_DEVICE_02"
             Column            |       Type       | Collation | Nullable | Default
 ------------------------------+------------------+-----------+----------+---------
  SOURCE                       | text             |           | not null |
 …
 Indexes:
-    "PCAP_PROBE_STATS_BY_SOURCE_DEVICE_pkey" PRIMARY KEY, btree ("SOURCE")
+    "PCAP_PROBE_STATS_BY_SOURCE_DEVICE_02_pkey" PRIMARY KEY, btree ("SOURCE")
 ----
 +
 Since `SOURCE` is also the record _key_ in the Kafka message you could use `pk.mode` = `record_key` here, but it would still need to be materialised onto the Postgres table, and so you'd end up with two fields in Postgres with the same value (`SOURCE`, plus whatever you set `pk.fields` to as in this context it would be used by the connector as the _name of the field in Postgres_ to store the Kafka message key in):
@@ -646,58 +805,50 @@ postgres=# SELECT "SOURCE","PK" FROM "PCAP_PROBE_STATS_BY_SOURCE_DEVICE";
 (3 rows)
 ----
 
+== Graph relationships in the data
 
-But if we have a poke around in the data a bit more we'll notice there are *other* devices looking for the same networks. Some of these are generic public networks, but others are pretty specific (`QConLondon2020`): 
+*TODO*: diagram showing pcap -> kafka -> ksqlDB -> Kafka -> neo4j
 
-[source,sql]
-----
-SELECT SOURCE,
-       PCAP_PROBES,
-       LATEST_SOURCE_ADDRESS,
-       LATEST_IS_KNOWN_DEVICE,
-       TIMESTAMPTOSTRING(EARLIEST_PROBE,'yyyy-MM-dd HH:mm:ss','Europe/London') AS EARLIEST_PROBE,
-       TIMESTAMPTOSTRING(LATEST_PROBE,'yyyy-MM-dd HH:mm:ss','Europe/London') AS LATEST_PROBE,
-       PROBED_SSIDS,
-       UNIQUE_SSIDS_PROBED
-  FROM PCAP_PROBE_STATS_BY_SOURCE_DEVICE
- WHERE ARRAY_CONTAINS(PROBED_SSIDS,'QConLondon2020') EMIT CHANGES;
-----
+Phew. That was some deep stuff we did there with both Elasticsearch & Kibana for analysis and identifying patterns, and ksqlDB for building stateful aggregations of these patterns and general statistics on the data. 
 
+Let's look at what else we can do with streams of data that we've got in Kafka. Here we'll take the stream of probe requests that we filtered into its own topic and stream it to Neo4j: 
 
 [source,sql]
 ----
-+------------------+------------+----------------------+-----------------------+--------------------+--------------------+---------------------------------+--------------------+
-|SOURCE            |PCAP_PROBES |LATEST_SOURCE_ADDRESS |LATEST_IS_KNOWN_DEVICE |EARLIEST_PROBE      |LATEST_PROBE        |PROBED_SSIDS                     |UNIQUE_SSIDS_PROBED |
-+------------------+------------+----------------------+-----------------------+--------------------+--------------------+---------------------------------+--------------------+
-|4a:f6:d0:79:a2:69 |4           |4a:f6:d0:79:a2:69     |false                  |2020-04-02 18:06:43 |2020-04-02 18:06:43 |[, loews_conf, skyclub, QConLondo|4                   |
-|                  |            |                      |                       |                    |                    |n2020]                           |                    |
-|asgard03          |2322        |a4:83:e7:4e:39:15     |true                   |2020-03-23 17:46:18 |2020-04-08 06:39:45 |[, RNM0, FULLERS, CrossCountryWiF|12                  |
-|                  |            |                      |                       |                    |                    |i, Escape Lounge WiFi, QConLondon|                    |
-|                  |            |                      |                       |                    |                    |2020, Marriott_PUBLIC, loews_conf|                    |
-|                  |            |                      |                       |                    |                    |, Loews, FreePubWiFi, skyclub, _T|                    |
-|                  |            |                      |                       |                    |                    |he Wheatley Free WiFi]           |                    |
-|86:23:8e:0f:66:f7 |6           |86:23:8e:0f:66:f7     |false                  |2020-04-07 08:52:52 |2020-04-07 08:52:52 |[skyclub, Escape Lounge WiFi, , l|5                   |
-|                  |            |                      |                       |                    |                    |oews_conf, QConLondon2020]       |                    |
-|82:bc:f5:4c:07:61 |13          |82:bc:f5:4c:07:61     |false                  |2020-04-07 08:52:56 |2020-04-07 08:52:56 |[Escape Lounge WiFi, Loews, skycl|10                  |
-|                  |            |                      |                       |                    |                    |ub, FreePubWiFi, CrossCountryWiFi|                    |
-|                  |            |                      |                       |                    |                    |, FULLERS, _The Wheatley Free WiF|                    |
-|                  |            |                      |                       |                    |                    |i, loews_conf, QConLondon2020, Ma|                    |
-|                  |            |                      |                       |                    |                    |rriott_PUBLIC]                   |                    |
-|86:23:8e:0f:66:f7 |6           |null                  |null                   |2020-04-07 08:52:52 |2020-04-07 08:52:52 |[skyclub, Escape Lounge WiFi, , l|5                   |
-|                  |            |                      |                       |                    |                    |oews_conf, QConLondon2020]       |                    |
-|32:ad:45:aa:2c:3b |3           |32:ad:45:aa:2c:3b     |false                  |2020-04-01 13:25:15 |2020-04-01 13:25:15 |[QConLondon2020, , FULLERS]      |3                   |
-|a2:9e:c8:47:3b:09 |13          |a2:9e:c8:47:3b:09     |false                  |2020-03-31 14:32:37 |2020-03-31 14:32:37 |[skyclub, FULLERS, , Escape Loung|7                   |
-|                  |            |                      |                       |                    |                    |e WiFi, CrossCountryWiFi, loews_c|                    |
-|                  |            |                      |                       |                    |                    |onf, QConLondon2020]             |                    |
+CREATE SINK CONNECTOR SINK_NEO4J_PROBES_01 WITH (
+	'connector.class'= 'streams.kafka.connect.sink.Neo4jSinkConnector',
+	'topics'= 'pcap_probe_enriched_00',
+	'neo4j.server.uri'= 'bolt://neo4j:7687',
+	'neo4j.authentication.basic.username'= 'neo4j',
+	'neo4j.authentication.basic.password'= 'connect',
+	'neo4j.topic.cypher.pcap_probe_enriched_00'= 'MERGE (source:source{mac: event.SOURCE_ADDRESS, mac_resolved: event.SOURCE_ADDRESS_RESOLVED, device_name: coalesce(event.SOURCE_DEVICE_NAME,""), is_known: event.IS_KNOWN_DEVICE}) MERGE (ssid:ssid{name: coalesce(event.SSID, "")}) MERGE (ssid)<-[:LOOKED_FOR_SSID]-(source)'
+);
 ----
 
-So this suggests that one device actually uses more than one MAC address when issuing a Wi-Fi `Probe Request` - which is indeed the case. You can read more about it https://papers.mathyvanhoef.com/asiaccs2016.pdf[here] but in essence, this is done deliberately for privacy reasons. At this point we could decide to dig into the data even further to see what other kind of 'fingerprints' exist in the data. The data that we're streaming into Kafka can also be written to a local pcap file (add `-b duration:3600 -b files:12 -w /pcap_data/mon0` to the `shark` command to keep 12 hourly files of data), and this pcap file loaded into Wireshark to see the real guts of the data that's captured: 
+From here we can really dig into the property graph relationships, for example that exist between devices and the Wi-Fi networks (SSIDs) that they scan for. Here we can see my known devices (denoted by diamonds with red edging) scanning for my home Wi-Fi network, and a couple of these devices also scanning for other public networks (pubs, airline lounges, train Wi-Fi, etc) which other non-known devices also scan for: 
 
-image::images/wireshark_probe00.png[]
+image::images/cyto01.png[]
 
-Let's recap: probe requests are sent by mobile devices, which sometimes (but not always) randomise their MAC addresses. Depending on how often the devices probe for networks, we can get an idea of the density of devices in the area 
+You also get patterns like this, where some devices (yellow dots) have evidently connected to (and are thus scanning for) many networks, whilst others overlap only on common public ones (`Northern-FreeWiFi` is from the local train company, `BTWiFi-with-FON` is a shared Wi-Fi service)
 
-<<TODO: is there a pattern of number of unique MACs probing per <window> over time since end of feb? anything that can be pointed to for when the school closed? >>
+image::images/cyto02.png[]
+
+Other devices clearly just connect to one network only, ignoring all others
+
+image::images/cyto03.png[]
+
+
+== Conclusion 
+
+Kafka is a great platform into which you can stream and store high volumes of data, and on which you can process and analyse it using tools such as ksqlDB, Elasticsearch, and Neo4j. With the ability to create connectors from within ksqlDB it is easy to integrate systems both pulling data into Kafka and pushing it out downstream. 
+
+
+    >>>>>
+
+
+Move to other posts: 
+
+
 
 == Testing with Confluent Cloud locally
 
@@ -705,13 +856,3 @@ Let's recap: probe requests are sent by mobile devices, which sometimes (but not
 
 set local retention to match remote retention ?
 
-== GCP: Come for the storage (GCS), stay for the analysis (BigQuery)
-
-BigQuery add dataset with external table
-
-Source URI prefix: gs://rmoff-pcap-test/topics/pksqlc-4n5yzPROBE_REQUESTS_JSON2
-File: gs://rmoff-pcap-test/topics/pksqlc-4n5yzPROBE_REQUESTS_JSON2/*/*/*/*
-
-Sample file: https://storage.cloud.google.com/rmoff-pcap-test/topics/pksqlc-4n5yzPROBE_REQUESTS_JSON2/year%3D2020/month%3D04/day%3D05/pksqlc-4n5yzPROBE_REQUESTS_JSON2%2B0%2B0000017638.json?authuser=1&organizationId=857571319459
-
-gs://rmoff-pcap-test/topics/pksqlc-4n5yzPROBE_REQUESTS_JSON2/year=2020/month=04/day=05/pksqlc-4n5yzPROBE_REQUESTS_JSON2+0+0000017638.json
