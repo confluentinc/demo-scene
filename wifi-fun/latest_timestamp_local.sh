@@ -2,7 +2,7 @@
 
 echo "Kafka:"
 
-kafkacat -b localhost:9092 \
+docker run --net wifi-fun_default --rm edenhill/kafkacat:1.5.0 -b kafka-1:39092 \
     -C -c1 -o -1 -t pcap -u |jq '.timestamp'|sed -e 's/"//g' | sed 's/[0-9][0-9][0-9]$//g' | xargs -Ifoo date -j -f %s foo
 
 echo "Elasticsearch:"

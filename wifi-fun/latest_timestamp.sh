@@ -15,25 +15,25 @@ latest_ts=$(docker exec -it kafkacat kafkacat -b $CCLOUD_BROKER_HOST \
 if [ -z $latest_ts ]; then
 	echo "TS is empty"
 	echo '{"chat_id": "-364377679", "text": "❌pcap ingest check failed. Latest ingest time is empty", "disable_notification": false}"' |\
-	curl -X POST \
+	curl -s -X POST \
 	     -H 'Content-Type: application/json' \
 	     -d @- \
-	     https://api.telegram.org/bot853879934:AAGGIOvd9JZDUuDfM-QVl7U3w32CZ_pxXfo/sendMessage
+	     https://api.telegram.org/bot853879934:AAGGIOvd9JZDUuDfM-QVl7U3w32CZ_pxXfo/sendMessage | jq '.'
 else
 	echo 'Latest timestamp : '  $(date -d @$latest_ts)
 
 	if [ $latest_ts -lt $ten_minutes_ago ]; then 
 		echo "Ingest has stalled"
 		echo '{"chat_id": "-364377679", "text": "❌pcap ingest has stalled. Latest ingest time is ' $(date -d @$latest_ts)'", "disable_notification": false}"' |\
-		curl -X POST \
+		curl -s -X POST \
 		     -H 'Content-Type: application/json' \
 		     -d @- \
-		     https://api.telegram.org/bot853879934:AAGGIOvd9JZDUuDfM-QVl7U3w32CZ_pxXfo/sendMessage
+		     https://api.telegram.org/bot853879934:AAGGIOvd9JZDUuDfM-QVl7U3w32CZ_pxXfo/sendMessage | jq '.'
 	else
 		echo '{"chat_id": "-364377679", "text": "✅pcap ingest looks good. Latest ingest time is ' $(date -d @$latest_ts)'", "disable_notification": true}"' |\
-		curl -X POST \
+		curl -X-s -X POST \
 		     -H 'Content-Type: application/json' \
 		     -d @- \
-		     https://api.telegram.org/bot853879934:AAGGIOvd9JZDUuDfM-QVl7U3w32CZ_pxXfo/sendMessage
+		     https://api.telegram.org/bot853879934:AAGGIOvd9JZDUuDfM-QVl7U3w32CZ_pxXfo/sendMessage | jq '.'
 	fi
 fi
