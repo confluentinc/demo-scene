@@ -67,6 +67,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - [Tiered Storage Demo](tiered-storage-demo)
   - [Distributed tracing](distributed-tracing)
   - [Analysing Sonos data in Kafka](sonos) ([✍️ blog](https://rmoff.net/2020/01/21/monitoring-sonos-with-ksqldb-influxdb-and-grafana/))
+  - [Analysing Wi-Fi pcap data with Kafka](wifi-fun)
   - [Twitter streams](twitter-streams) and [Operator](twitter-streams-operator)
 
 ## Feedback & Questions
