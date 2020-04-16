@@ -2,7 +2,7 @@
 version: '3'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.4.0-beta1
+    image: confluentinc/cp-zookeeper:5.4.1
     container_name: zookeeper
     hostname: zookeeper
     environment:
@@ -13,7 +13,7 @@ services:
     #   - ./data/container_data/zk-txn-logs:/var/lib/zookeeper/log
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.4.0-beta1
+    image: confluentinc/cp-enterprise-kafka:5.4.1
     container_name: kafka
     hostname: kafka
     depends_on:
@@ -35,7 +35,7 @@ services:
     #   - ./data/container_data/kafka-data:/var/lib/kafka/data
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.4.0-beta1
+    image: confluentinc/cp-schema-registry:5.4.1
     ports:
       - 8081:8081
     container_name: schema-registry
@@ -52,13 +52,14 @@ services:
     # To connect to the DB: 
     #   docker exec -it ksqldb bash -c 'ksql http://localhost:8088'
     # *-----------------------------*  
-    image: confluentinc/ksqldb-server:0.7.0
+    image: confluentinc/ksqldb-server:0.8.0
     hostname: ksqldb
     container_name: ksqldb
     depends_on:
       - kafka
     ports:
       - "8088:8088"
+      - "8083:8083"
     environment:
       KSQL_LISTENERS: http://0.0.0.0:8088
       KSQL_BOOTSTRAP_SERVERS: kafka:29092
@@ -95,18 +96,13 @@ services:
       - bash 
       - -c 
       - |
-        # Manually install the Confluent Hub client
-        # This is ugly af but works
-        cd ~
-        rm confluent-hub-client-latest.tar.gz
-        wget http://client.hub.confluent.io/confluent-hub-client-latest.tar.gz
-        tar xf confluent-hub-client-latest.tar.gz
-        export PATH=$PATH:~/bin/
         #
-        echo "Installing connector plugins"
-        mkdir -p /usr/share/confluent-hub-components/
-        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-datagen:0.2.0
-        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-jdbc:5.4.0
+        # echo "Installing connector plugins"
+        # mkdir -p /usr/share/confluent-hub-components/
+        # confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ mdrogalis/voluble:0.2.0
+        # confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-datagen:0.2.0
+        # confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-jdbc:5.4.0
+        # confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ debezium/debezium-connector-postgresql:1.1.0
         #
         echo "Launching ksqlDB"
         /usr/bin/docker/run & 
@@ -118,8 +114,10 @@ services:
     # To connect to the DB: 
     #   docker exec -it postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
     # *-----------------------------*
-    image: postgres:11
+    image: debezium/postgres:12
     container_name: postgres
     environment:
      - POSTGRES_USER=postgres
      - POSTGRES_PASSWORD=postgres
+    volumes:
+     - ./data/postgres:/docker-entrypoint-initdb.d/
