@@ -216,6 +216,13 @@ services:
       - ./data/container_data/mongodb:/data/db
 
   neo4j:
+    # *-----------------------------*
+    # To connect to the CLI: 
+    #     docker exec -it neo4j cypher-shell -u neo4j -p connect
+    #
+    # To connect to the web UI: 
+    #     http://localhost:7474 login neo4j/connect
+    # *-----------------------------*
     image: neo4j:3.5-enterprise
     container_name: neo4j
     hostname: neo4j
