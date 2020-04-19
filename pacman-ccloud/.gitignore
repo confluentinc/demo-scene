@@ -26,5 +26,6 @@ terraform/azr/terraform.tfstate
 terraform/azr/terraform.tfstate.backup
 terraform/azr/.terraform.tfstate.lock.info
 
+redis-sink/go.sum
 pipeline/ksql-server.properties
 scoreboard/ccloud.properties
