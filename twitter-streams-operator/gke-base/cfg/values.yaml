@@ -1,6 +1,6 @@
 confluentPlatformImage: &cpImage
   image:
-    tag: 5.4.0.0
+    tag: 5.4.1.0
 
 global:
   initContainer:
@@ -22,7 +22,7 @@ global:
 operator:
   name: operator
   image:
-    tag: 0.275.0
+    tag: 0.275.1
 
 zookeeper:
   <<: *cpImage
