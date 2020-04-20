@@ -2,14 +2,14 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.4.0
+    image: confluentinc/cp-zookeeper:5.4.1
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.4.0
+    image: confluentinc/cp-enterprise-kafka:5.4.1
     container_name: kafka
     depends_on:
       - zookeeper
@@ -51,7 +51,7 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.4.0
+    image: confluentinc/cp-schema-registry:5.4.1
     container_name: schema-registry
     ports:
       - "8081:8081"
@@ -62,9 +62,9 @@ services:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
-  kafka-connect-01:
-    image: confluentinc/cp-kafka-connect:5.4.0
-    container_name: kafka-connect-01
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:5.4.1
+    container_name: kafka-connect
     depends_on:
       - zookeeper
       - kafka
@@ -84,16 +84,17 @@ services:
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-01"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
       CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
       CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components,/data/connect-jars
     # If you want to use the Confluent Hub installer to d/l component, but make them available
     # when running this offline, spin up the stack once and then run : 
-    #   docker cp kafka-connect-01:/usr/share/confluent-hub-components ./data/connect-jars
+    #   docker cp kafka-connect:/usr/share/confluent-hub-components ./data/connect-jars
     volumes:
       - $PWD/data:/data
     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
@@ -112,11 +113,11 @@ services:
 
   ksqldb:
     # *-----------------------------*
-    # To connect to ksqlDB:
-    #   docker exec -it ksqldb ksql http://localhost:8088
+    # To connect to ksqlDB CLI
+    #   docker exec --interactive --tty ksqldb ksql http://localhost:8088
     # *-----------------------------*
-    image: confluentinc/ksqldb-server:0.7.0
-#    image: rmoff/ksqldb-server:master-20200210-12f4317
+    image: confluentinc/ksqldb-server:0.8.1
+    hostname: ksqldb
     container_name: ksqldb
     depends_on:
       - kafka
@@ -127,8 +128,9 @@ services:
       KSQL_BOOTSTRAP_SERVERS: kafka:29092
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
-      KSQL_KSQL_CONNECT_URL: http://kafka-connect-01:8083
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      KSQL_STREAMS_PRODUCER_MAX_BLOCK_MS: 9223372036854775807
+      KSQL_KSQL_CONNECT_URL: http://kafka-connect:8083
       KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
       KSQL_KSQL_HIDDEN_TOPICS: '^_.*'
 
@@ -150,35 +152,28 @@ services:
      - ${PWD}/data/mysql:/docker-entrypoint-initdb.d
      - ${PWD}/data:/data
 
-  # postgres:
-  #   # *-----------------------------*
-  #   # To connect to the DB:
-  #   #   docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
-  #   # *-----------------------------*
-  #   image: postgres:11
-  #   environment:
-  #    - POSTGRES_USER=postgres
-  #    - POSTGRES_PASSWORD=postgres
-  #   volumes:
-  #    - ./data/postgres:/docker-entrypoint-initdb.d/
-
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.7.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.0
     container_name: elasticsearch
+    hostname: elasticsearch
     ports:
       - 9200:9200
     environment:
+      xpack.security.enabled: "false"
       ES_JAVA_OPTS: "-Xms1g -Xmx1g"
-    # volumes:
-    #  - ${PWD}/scripts:/scripts
+      discovery.type: "single-node"
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:6.7.0
+    image: docker.elastic.co/kibana/kibana:7.5.0
     container_name: kibana
+    hostname: kibana
     depends_on:
       - elasticsearch
     ports:
       - 5601:5601
+    environment:
+      xpack.security.enabled: "false"
+      discovery.type: "single-node"
     command:
       - bash
       - -c
@@ -209,7 +204,7 @@ services:
         sleep infinity
 
   neo4j:
-    image: neo4j:3.4-enterprise
+    image: neo4j:3.5-enterprise
     container_name: neo4j
     ports:
     - "7474:7474"
