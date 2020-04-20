@@ -1,5 +1,6 @@
 import io.confluent.demo.Parser
 import io.confluent.demo.Rating
+import io.confluent.demo.RatingUtil
 import io.confluent.devx.kafka.config.ConfigLoader
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -37,7 +38,7 @@ class RawRatingStreamer {
       println currentTime
       long recordsProduced = 0
       while (true) {
-        Rating rating = generateRandomRating(ratingTargets, userTargets, stddev)
+        Rating rating = generateRandomRating(ratingTargets, RatingUtil.userTargets, stddev)
 
         //println "${System.currentTimeSeconds()}, ${currentTime}"
         if (System.currentTimeSeconds() > currentTime) {
