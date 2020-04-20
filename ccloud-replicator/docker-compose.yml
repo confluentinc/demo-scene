@@ -1,0 +1,93 @@
+---
+version: '3'
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:5.4.1
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes: 
+      - ./data/container_data/zk-data:/var/lib/zookeeper/data
+      - ./data/container_data/zk-txn-logs:/var/lib/zookeeper/log
+
+  kafka-1:
+    image: confluentinc/cp-kafka:5.4.1
+    container_name: kafka-1
+    depends_on:
+      - zookeeper
+    ports:
+      - 9092:9092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:39092,HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:39092,HOST://localhost:9092
+    volumes: 
+      - ./data/container_data/kafka-1-data:/var/lib/kafka/data
+
+  kafka-2:
+    image: confluentinc/cp-kafka:5.4.1
+    container_name: kafka-2
+    depends_on:
+      - zookeeper
+    ports:
+      - 19092:19092
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:49092,HOST://0.0.0.0:19092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:49092,HOST://localhost:19092
+    volumes: 
+      - ./data/container_data/kafka-2-data:/var/lib/kafka/data
+
+  kafka-3:
+    image: confluentinc/cp-kafka:5.4.1
+    container_name: kafka-3
+    depends_on:
+      - zookeeper
+    ports:
+      - 29092:29092
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:59092,HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:59092,HOST://localhost:29092
+    volumes: 
+      - ./data/container_data/kafka-3-data:/var/lib/kafka/data
+
+  replicator:
+    image: confluentinc/cp-enterprise-replicator:5.4.1
+    container_name: replicator
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+    ports:
+      - 58083:58083
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: 'kafka-1:39092,kafka-2:49092,kafka-3:59092'
+      CONNECT_REST_ADVERTISED_HOST_NAME: 'replicator'
+      CONNECT_REST_PORT: 58083
+      CONNECT_GROUP_ID: replicator
+      CONNECT_CONFIG_STORAGE_TOPIC: _replicator-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _replicator-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _replicator-status
+      CONNECT_KEY_CONVERTER: io.confluent.connect.replicator.util.ByteArrayConverter
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.replicator.util.ByteArrayConverter
+      CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
+      CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/'
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
+      CONNECT_CONFIG_PROVIDERS: 'file'
+      CONNECT_CONFIG_PROVIDERS_FILE_CLASS: 'org.apache.kafka.common.config.provider.FileConfigProvider'
+    volumes: 
+      - ./.env:/opt/config
