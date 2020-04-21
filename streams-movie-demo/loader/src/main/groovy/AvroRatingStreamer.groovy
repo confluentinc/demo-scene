@@ -1,8 +1,8 @@
-import io.confluent.demo.Rating
+import io.confluent.developer.Rating
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 
-import static io.confluent.demo.RatingUtil.*
+import static io.confluent.developer.RatingUtil.*
 
 // Nasty little hack to generate random ratings for fun movies
 class AvroRatingStreamer {
