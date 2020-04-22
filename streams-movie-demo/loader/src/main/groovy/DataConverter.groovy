@@ -1,4 +1,6 @@
-package io.confluent.developer
+package io.confluent.demo;
+
+import java.io.File;
 
 File ratings = new File('../../../data/ratings.dat')
 new File('../../../data/ratings-json.js').withPrintWriter { pw ->

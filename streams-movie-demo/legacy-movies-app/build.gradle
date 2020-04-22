@@ -1,17 +1,8 @@
-buildscript{
-  ext{
-    tcVersion = "1.14.0"
-  }
-}
 plugins {
   id 'org.springframework.boot'
   id 'io.spring.dependency-management'
   id 'java'
   id 'io.franzbecker.gradle-lombok' version '3.2.0'
-}
-
-repositories {
-  maven { url 'https://jitpack.io' }
 }
 
 group = 'io.confluent.developer'
@@ -20,7 +11,7 @@ sourceCompatibility = '1.8'
 
 dependencies {
   // avro generated pojos 
-  implementation project(':core')
+  compile project(':core')
   
   implementation 'org.springframework.boot:spring-boot-starter-web'
   implementation 'org.springframework.boot:spring-boot-starter-jdbc'
@@ -31,10 +22,6 @@ dependencies {
     exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
   }
   testImplementation 'org.springframework.kafka:spring-kafka-test'
-  testImplementation "org.testcontainers:testcontainers:$tcVersion"
-  testImplementation "org.testcontainers:kafka:$tcVersion"
-  testImplementation 'com.github.gAmUssA:testcontainers-java-module-confluent-platform:master-SNAPSHOT'
-  
 }
 
 configurations.all {

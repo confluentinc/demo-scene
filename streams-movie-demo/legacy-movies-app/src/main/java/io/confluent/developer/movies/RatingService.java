@@ -1,7 +1,9 @@
 package io.confluent.developer.movies;
 
+import io.confluent.demo.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -9,15 +11,12 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.confluent.developer.CountAndSum;
-import io.confluent.developer.Movie;
-import io.confluent.developer.RatedMovie;
-import io.confluent.developer.Rating;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import static io.confluent.developer.Parser.parseArray;
+import static io.confluent.demo.Parser.parseArray;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @RestController
 @RequiredArgsConstructor
