@@ -133,7 +133,7 @@ project(':spring-web-loader') {
 
 project(':streams') {
   apply plugin: 'java-library'
-  mainClassName = "io.confluent.demo.StreamsDemo"
+  mainClassName = "io.confluent.developer.StreamsDemo"
 
   dependencies {
     api project(':core')
