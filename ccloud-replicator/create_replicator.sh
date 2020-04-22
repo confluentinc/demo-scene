@@ -12,7 +12,7 @@ curl -s -X PUT -H "Accept:application/json" \
         "key.converter"               : "io.confluent.connect.replicator.util.ByteArrayConverter",
         "value.converter"             : "io.confluent.connect.replicator.util.ByteArrayConverter",
         "header.converter"            : "io.confluent.connect.replicator.util.ByteArrayConverter",
-        "src.kafka.bootstrap.servers" : "'$CCLOUD_BROKER_HOST':9092",
+        "src.kafka.bootstrap.servers" : "'$CCLOUD_BROKER_HOST'",
         "src.kafka.security.protocol" : "SASL_SSL",
         "src.kafka.sasl.mechanism"    : "PLAIN",
         "src.kafka.sasl.jaas.config"  : "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"'$CCLOUD_API_KEY'\" password=\"'$CCLOUD_API_SECRET'\";",

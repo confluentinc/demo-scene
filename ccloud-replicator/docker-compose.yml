@@ -85,9 +85,19 @@ services:
       CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
       CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
       CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
-      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/'
       CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
       CONNECT_CONFIG_PROVIDERS: 'file'
       CONNECT_CONFIG_PROVIDERS_FILE_CLASS: 'org.apache.kafka.common.config.provider.FileConfigProvider'
     volumes: 
       - ./.env:/opt/config
+    # command: 
+    #   - bash 
+    #   - -c 
+    #   - |
+    #     echo "Installing connector plugins"
+    #     confluent-hub install --no-prompt confluentinc/connect-transforms:latest
+    #     #
+    #     echo "Launching Kafka Connect worker"
+    #     /etc/confluent/docker/run & 
+    #     #
+    #     sleep infinity
