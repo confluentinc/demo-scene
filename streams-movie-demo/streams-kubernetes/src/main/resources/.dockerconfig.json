@@ -1,0 +1,7 @@
+{
+  "auths": {
+    "https://docker.resigtly.io": {
+      "auth": "<USERNAME>:<PASSWORD> (converted to base 64)"
+    }
+  }
+}
