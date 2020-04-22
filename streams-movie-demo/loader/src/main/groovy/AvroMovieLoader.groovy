@@ -1,4 +1,5 @@
-import io.confluent.developer.Movie
+import io.confluent.demo.Movie
+import io.confluent.demo.Parser
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 
