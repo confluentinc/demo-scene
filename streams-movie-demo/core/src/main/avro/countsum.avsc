@@ -1,5 +1,5 @@
 {
-  "namespace": "io.confluent.demo",
+  "namespace": "io.confluent.developer",
   "type": "record",
   "name": "CountAndSum",
   "fields": [
