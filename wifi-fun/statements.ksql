@@ -1,0 +1,273 @@
+CREATE STREAM PCAP_RAW (timestamp                    BIGINT, 
+                        wlan_fc_type_subtype         ARRAY<INT>,
+                        wlan_radio_channel           ARRAY<INT>,
+                        wlan_radio_signal_percentage ARRAY<VARCHAR>,
+                        wlan_radio_signal_dbm        ARRAY<DOUBLE>,
+                        wlan_radio_duration		  	 ARRAY<INT>,
+                        wlan_ra						 ARRAY<VARCHAR>,
+                        wlan_ra_resolved			 ARRAY<VARCHAR>,
+                        wlan_da						 ARRAY<VARCHAR>,
+                        wlan_da_resolved			 ARRAY<VARCHAR>,
+                        wlan_ta						 ARRAY<VARCHAR>,
+                        wlan_ta_resolved			 ARRAY<VARCHAR>,
+                        wlan_sa						 ARRAY<VARCHAR>,
+                        wlan_sa_resolved			 ARRAY<VARCHAR>,
+                        wlan_staa					 ARRAY<VARCHAR>,
+                        wlan_staa_resolved			 ARRAY<VARCHAR>,
+                        wlan_tagged_all				 ARRAY<VARCHAR>,
+                        wlan_tag_vendor_data		 ARRAY<VARCHAR>,
+                        wlan_tag_vendor_oui_type	 ARRAY<VARCHAR>,
+                        wlan_tag_oui				 ARRAY<VARCHAR>,
+                        wlan_country_info_code		 ARRAY<VARCHAR>,
+                        wps_device_name				 ARRAY<VARCHAR>,
+                        wlan_ssid					 ARRAY<VARCHAR>) 
+    WITH (KAFKA_TOPIC='pcap', 
+        VALUE_FORMAT='JSON', 
+        TIMESTAMP='timestamp');
+
+SET 'auto.offset.reset' = 'earliest';
+CREATE TABLE PCAP_STATS WITH (VALUE_FORMAT='AVRO') AS
+SELECT TIMESTAMPTOSTRING(WINDOWSTART,'yyyy-MM-dd','GMT') AS WINDOW_DAY,
+       WLAN_FC_TYPE_SUBTYPE[1] AS SUBTYPE,
+       COUNT(*) AS PACKET_COUNT,
+       TIMESTAMPTOSTRING(MIN(ROWTIME),'HH:mm:ss','GMT') AS EARLIEST_TIME, 
+       TIMESTAMPTOSTRING(MAX(ROWTIME),'HH:mm:ss','GMT') AS LATEST_TIME
+FROM   PCAP_RAW
+        WINDOW TUMBLING (SIZE 1 DAY)
+GROUP BY WLAN_FC_TYPE_SUBTYPE[1]
+EMIT CHANGES;
+
+CREATE SINK CONNECTOR SINK_POSTGRES_PCAP_STATS_00 WITH (
+    'connector.class'     = 'io.confluent.connect.jdbc.JdbcSinkConnector',
+    'connection.url'      = 'jdbc:postgresql://postgres:5432/',
+    'connection.user'     = 'postgres',
+    'connection.password' = 'postgres',
+    'topics'              = 'PCAP_STATS',
+    'key.converter'       = 'org.apache.kafka.connect.storage.StringConverter',
+    'auto.create'         = 'true',
+    'auto.evolve'         = 'true',
+    'insert.mode'         = 'upsert',
+    'pk.mode'             = 'record_value',
+    'pk.fields'           = 'WINDOW_DAY,SUBTYPE',
+    'table.name.format'   = '${topic}'
+);
+
+CREATE STREAM PCAP_PROBE  WITH (VALUE_FORMAT='AVRO') AS SELECT * FROM PCAP_RAW WHERE WLAN_FC_TYPE_SUBTYPE[1]=4;
+-- CREATE STREAM PCAP_BEACON WITH (VALUE_FORMAT='AVRO') AS SELECT * FROM PCAP_RAW WHERE WLAN_FC_TYPE_SUBTYPE[1]=8;
+-- CREATE STREAM PCAP_RTS    WITH (VALUE_FORMAT='AVRO') AS SELECT * FROM PCAP_RAW WHERE WLAN_FC_TYPE_SUBTYPE[1]=27;
+-- CREATE STREAM PCAP_CTS    WITH (VALUE_FORMAT='AVRO') AS SELECT * FROM PCAP_RAW WHERE WLAN_FC_TYPE_SUBTYPE[1]=28;
+-- CREATE STREAM PCAP_ACK    WITH (VALUE_FORMAT='AVRO') AS SELECT * FROM PCAP_RAW WHERE WLAN_FC_TYPE_SUBTYPE[1]=29;
+-- CREATE STREAM PCAP_NULL   WITH (VALUE_FORMAT='AVRO') AS SELECT * FROM PCAP_RAW WHERE WLAN_FC_TYPE_SUBTYPE[1]=36;
+
+CREATE SOURCE CONNECTOR SOURCE_MONGODB_UNIFI_01 WITH (
+    'connector.class' = 'io.debezium.connector.mongodb.MongoDbConnector',
+    'mongodb.hosts' = 'rs0/mongodb:27017',
+    'mongodb.name' = 'unifi',
+    'collection.whitelist' = 'ace.device, ace.user'
+);
+
+-- Model source topics
+CREATE STREAM DEVICES_RAW WITH (KAFKA_TOPIC='unifi.ace.device', VALUE_FORMAT='AVRO');
+CREATE STREAM USERS_RAW   WITH (KAFKA_TOPIC='unifi.ace.user',   VALUE_FORMAT='AVRO');
+
+-- Extract device data fields from JSON payload
+SET 'auto.offset.reset' = 'earliest';
+CREATE STREAM ALL_DEVICES WITH (PARTITIONS=12,
+                                KAFKA_TOPIC='all_devices_00') AS
+        SELECT  'ace.device'                       AS SOURCE,
+                EXTRACTJSONFIELD(AFTER ,'$.mac')   AS MAC, 
+                EXTRACTJSONFIELD(AFTER ,'$.ip')    AS IP, 
+                EXTRACTJSONFIELD(AFTER ,'$.name')  AS NAME, 
+                EXTRACTJSONFIELD(AFTER ,'$.model') AS MODEL, 
+                EXTRACTJSONFIELD(AFTER ,'$.type')  AS TYPE,
+                CAST('0' AS BOOLEAN)               AS IS_GUEST
+        FROM    DEVICES_RAW 
+        -- Set the MAC address as a the message key
+        PARTITION BY EXTRACTJSONFIELD(AFTER ,'$.mac')
+        EMIT CHANGES;
+
+-- Extract user (client device) data from JSON payload with some 
+--  wrangling to handle null/empty fields etc.
+-- Note that this is an "INSERT INTO" and thus in effect is a UNION of
+--  the two source topics with some wrangling to align the schemas. 
+SET 'auto.offset.reset' = 'earliest';
+INSERT INTO ALL_DEVICES
+      SELECT 'ace.user' AS SOURCE,
+             EXTRACTJSONFIELD(AFTER ,'$.mac') AS MAC, 
+             '' AS IP,
+             -- Use a CASE statement to build a single label per device
+             --  based on whether we have a name and/or hostname, and
+             --  whether the device is a guest or not.
+             CASE WHEN EXTRACTJSONFIELD(AFTER ,'$.name') IS NULL THEN 
+                CASE WHEN EXTRACTJSONFIELD(AFTER ,'$.hostname') IS NULL THEN
+                    CASE WHEN CAST(EXTRACTJSONFIELD(AFTER ,'$.is_guest') AS BOOLEAN) THEN 
+                        'guest_' 
+                    ELSE 
+                        'nonguest_' 
+                    END + EXTRACTJSONFIELD(AFTER ,'$.oui') 
+                ELSE EXTRACTJSONFIELD(AFTER ,'$.hostname') 
+                END
+            ELSE 
+                CASE WHEN EXTRACTJSONFIELD(AFTER ,'$.hostname') IS NULL THEN 
+                    EXTRACTJSONFIELD(AFTER ,'$.name') 
+                ELSE 
+                    EXTRACTJSONFIELD(AFTER ,'$.name') + ' (' + EXTRACTJSONFIELD(AFTER ,'$.hostname') + ')'
+                END
+            END AS NAME,
+            EXTRACTJSONFIELD(AFTER ,'$.oui')      AS MODEL,
+            '' AS TYPE,
+            CAST(EXTRACTJSONFIELD(AFTER ,'$.is_guest') AS BOOLEAN) AS IS_GUEST
+        FROM USERS_RAW 
+        -- Ignore Ubiquiti devices because these are picked up 
+        --  from the `unifi.ace.device` data
+        WHERE EXTRACTJSONFIELD(AFTER ,'$.oui')!='Ubiquiti'
+        -- Set the MAC address as a the message key
+        PARTITION BY EXTRACTJSONFIELD(AFTER ,'$.mac')
+        EMIT CHANGES;
+
+-- Declare a materialised ksqlDB table over the resulting combined stream
+SET 'auto.offset.reset' = 'earliest';
+CREATE TABLE DEVICES AS 
+    SELECT MAC,
+           LATEST_BY_OFFSET(SOURCE) AS SOURCE,
+           LATEST_BY_OFFSET(NAME) AS NAME,
+           LATEST_BY_OFFSET(IS_GUEST) AS IS_GUEST
+    FROM   ALL_DEVICES
+    GROUP BY MAC;
+
+
+
+SET 'auto.offset.reset' = 'earliest';
+CREATE STREAM PCAP_PROBE_ENRICHED 
+    WITH (KAFKA_TOPIC='pcap_probe_enriched_00') AS
+    SELECT WLAN_SA[1] AS SOURCE_ADDRESS, 
+        NAME AS SOURCE_DEVICE_NAME, 
+        CASE WHEN IS_GUEST IS NULL THEN 
+                    FALSE 
+            ELSE 
+                CASE WHEN IS_GUEST THEN 
+                    FALSE 
+                ELSE 
+                    TRUE 
+                END 
+            END AS IS_KNOWN_DEVICE,
+        WLAN_SA_RESOLVED[1] AS SOURCE_ADDRESS_RESOLVED, 
+        WLAN_DA[1] AS DESTINATION_ADDRESS, 
+        WLAN_DA_RESOLVED[1]  AS DESTINATION_ADDRESS_RESOLVED, 
+        WLAN_RADIO_SIGNAL_DBM[1] AS RADIO_SIGNAL_DBM, 
+        WLAN_SSID[1] AS SSID,
+        WLAN_TAG_VENDOR_DATA,
+        WLAN_TAG_VENDOR_OUI_TYPE,
+        WLAN_TAG_OUI
+    FROM PCAP_PROBE P
+            LEFT JOIN 
+            DEVICES D
+            ON P.WLAN_SA[1] = D.ROWKEY
+    EMIT CHANGES;
+
+CREATE SINK CONNECTOR SINK_ELASTIC_PCAP_ENRICHED_00 WITH (
+    'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+    'connection.url' = 'http://elasticsearch:9200',
+    'topics' = 'pcap_probe_enriched_00',
+    'type.name' = '_doc',
+    'key.ignore' = 'true',
+    'schema.ignore' = 'true',
+    'key.converter' = 'org.apache.kafka.connect.storage.StringConverter',
+    'transforms'= 'ExtractTimestamp',
+    'transforms.ExtractTimestamp.type'= 'org.apache.kafka.connect.transforms.InsertField$Value',
+    'transforms.ExtractTimestamp.timestamp.field' = 'PCAP_TS',
+    'flush.timeout.ms'=  60000, 
+    'batch.size'= 200000,
+    'linger.ms'= 1000,
+    'read.timeout.ms'= 60000
+);
+
+
+SET 'auto.offset.reset' = 'earliest';
+
+CREATE TABLE OUI_FINGERPRINT_PROBES_01 AS 
+    SELECT WLAN_TAG_VENDOR_DATA,
+           WLAN_TAG_VENDOR_OUI_TYPE,
+           WLAN_TAG_OUI,
+           COUNT(*)                                                    AS PROBE_COUNT,
+           COUNT_DISTINCT(WLAN_SA[1])                                  AS SOURCE_MAC_ADDRESS_COUNT, 
+           COLLECT_SET(WLAN_SA[1])                                     AS SOURCE_MAC_ADDRESSES,
+           TIMESTAMPTOSTRING(WINDOWSTART,'yyyy-MM-dd HH:mm:ss','GMT')  AS FIRST_PROBE, 
+           TIMESTAMPTOSTRING(WINDOWEND,'yyyy-MM-dd HH:mm:ss','GMT')    AS LAST_PROBE, 
+           (WINDOWEND-WINDOWSTART)/1000                                AS SESSION_LENGTH_SEC,
+           MAX(WLAN_RADIO_SIGNAL_DBM[1])-MIN(WLAN_RADIO_SIGNAL_DBM[1]) AS SIGNAL_DBM_RANGE,
+           HISTOGRAM(CAST(WLAN_RADIO_SIGNAL_DBM[1] AS VARCHAR))        AS SIGNAL_DBM_DISTRIBUTION
+      FROM PCAP_PROBE
+        WINDOW SESSION (5 MINUTES)
+     GROUP BY WLAN_TAG_VENDOR_DATA, 
+              WLAN_TAG_VENDOR_OUI_TYPE, 
+              WLAN_TAG_OUI 
+    HAVING COUNT_DISTINCT(WLAN_SA[1]) > 2 
+    EMIT CHANGES ;
+
+
+SET 'auto.offset.reset' = 'earliest';
+CREATE TABLE PCAP_PROBE_STATS_BY_SOURCE_DEVICE_02 AS 
+    SELECT CASE WHEN SOURCE_DEVICE_NAME IS NULL THEN 
+                SOURCE_ADDRESS_RESOLVED 
+            ELSE 
+                SOURCE_DEVICE_NAME END			AS SOURCE, 
+           COUNT(*)								AS PCAP_PROBES, 
+           MIN(ROWTIME)							AS EARLIEST_PROBE,
+           MAX(ROWTIME)							AS LATEST_PROBE,
+           MIN(RADIO_SIGNAL_DBM)				AS MIN_RADIO_SIGNAL_DBM,
+           MAX(RADIO_SIGNAL_DBM)				AS MAX_RADIO_SIGNAL_DBM,
+           AVG(RADIO_SIGNAL_DBM)				AS AVG_RADIO_SIGNAL_DBM,
+           COLLECT_SET(SSID)					AS PROBED_SSIDS,
+           COUNT_DISTINCT(SSID)					AS UNIQUE_SSIDS_PROBED,
+           COUNT_DISTINCT(DESTINATION_ADDRESS)	AS UNIQUE_DESTINATION_ADDRESSES
+    FROM   PCAP_PROBE_ENRICHED
+    GROUP BY CASE WHEN SOURCE_DEVICE_NAME IS NULL THEN SOURCE_ADDRESS_RESOLVED ELSE SOURCE_DEVICE_NAME END;    
+
+
+CREATE SINK CONNECTOR SINK_ELASTIC_PCAP_PROBE_STATS_BY_SOURCE_DEVICE_02 WITH (
+  'connector.class' 							= 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+  'connection.url' 								= 'http://elasticsearch:9200',
+  'topics' 										= 'PCAP_PROBE_STATS_BY_SOURCE_DEVICE_02',
+  'type.name' 									= '_doc',
+  'key.ignore' 									= 'false',
+  'schema.ignore' 								= 'true',
+  'transforms' 									= 'appendTimestampToColName',
+  'transforms.appendTimestampToColName.type' 	= 'org.apache.kafka.connect.transforms.ReplaceField$Value',
+  'transforms.appendTimestampToColName.renames' = 'EARLIEST_PROBE:EARLIEST_PROBE_TS,LATEST_PROBE:LATEST_PROBE_TS',
+  'key.converter' 								= 'org.apache.kafka.connect.storage.StringConverter'
+);
+
+
+CREATE SINK CONNECTOR SINK_POSTGRES_PCAP_PROBE_STATS_BY_SOURCE_DEVICE_02 WITH (
+    'connector.class'     = 'io.confluent.connect.jdbc.JdbcSinkConnector',
+    'connection.url'      = 'jdbc:postgresql://postgres:5432/',
+    'connection.user'     = 'postgres',
+    'connection.password' = 'postgres',
+    'topics'              = 'PCAP_PROBE_STATS_BY_SOURCE_DEVICE_02',
+    'key.converter'       = 'org.apache.kafka.connect.storage.StringConverter',
+    'auto.create'         = 'true',
+    'auto.evolve'         = 'true',
+    'insert.mode'         = 'upsert',
+    'pk.mode'             = 'record_value',
+    'pk.fields'           = 'SOURCE',
+    'table.name.format'   = '${topic}',
+    'transforms'          = 'dropArray,setTimestampType0,setTimestampType1',
+    'transforms.dropArray.type' = 'org.apache.kafka.connect.transforms.ReplaceField$Value',
+    'transforms.dropArray.blacklist' = 'PROBED_SSIDS',
+    'transforms.setTimestampType0.type'= 'org.apache.kafka.connect.transforms.TimestampConverter$Value',
+    'transforms.setTimestampType0.field'= 'EARLIEST_PROBE',
+    'transforms.setTimestampType0.target.type' ='Timestamp',
+    'transforms.setTimestampType1.type'= 'org.apache.kafka.connect.transforms.TimestampConverter$Value',
+    'transforms.setTimestampType1.field'= 'LATEST_PROBE',
+    'transforms.setTimestampType1.target.type' ='Timestamp'
+);
+
+CREATE SINK CONNECTOR SINK_NEO4J_PROBES_01 WITH (
+	'connector.class'= 'streams.kafka.connect.sink.Neo4jSinkConnector',
+	'topics'= 'pcap_probe_enriched_00',
+	'neo4j.server.uri'= 'bolt://neo4j:7687',
+	'neo4j.authentication.basic.username'= 'neo4j',
+	'neo4j.authentication.basic.password'= 'connect',
+	'neo4j.topic.cypher.pcap_probe_enriched_00'= 'MERGE (source:source{mac: event.SOURCE_ADDRESS, mac_resolved: event.SOURCE_ADDRESS_RESOLVED, device_name: coalesce(event.SOURCE_DEVICE_NAME,""), is_known: event.IS_KNOWN_DEVICE}) MERGE (ssid:ssid{name: coalesce(event.SSID, "")}) MERGE (ssid)<-[:LOOKED_FOR_SSID]-(source)'
+);

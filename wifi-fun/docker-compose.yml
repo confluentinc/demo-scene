@@ -122,8 +122,8 @@ services:
         echo "Installing connector plugins"
         confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-elasticsearch:5.4.1
         confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-jdbc:5.4.1
-        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ neo4j/kafka-connect-neo4j:1.0.2
-        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ debezium/debezium-connector-mongodb:0.10.0
+        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ neo4j/kafka-connect-neo4j:1.0.7
+        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ debezium/debezium-connector-mongodb:1.1.0
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 
@@ -310,7 +310,7 @@ services:
      - POSTGRES_USER=postgres
      - POSTGRES_PASSWORD=postgres
     volumes:
-     - ./data/postgres:/docker-entrypoint-initdb.d/
+    #  - ./data/postgres:/docker-entrypoint-initdb.d/
      - ./data/container_data/postgres:/var/lib/postgresql/data
 
   kafkacat:
