@@ -1,5 +1,5 @@
 = Building a Telegram bot powered by Kafka and ksqlDB
-= Serving stateful aggregations from Kafka directly to a Telegram bot
+
 Robin Moffatt <robin@confluent.io>
 v0.01, 21 April 2020
 
@@ -288,3 +288,94 @@ SELECT DEVICE_NAME
 If we modify our Telegram bot code slightly to cater for the new fields, we can now looking device information directly using the name of the device itself: 
 
 image::images/telegram04.png[]
+
+== Event-driven notifications with Telegram and Kafka
+
+The example above is built around the idea of serving state to the user *prompted by a user action*. What about the opposite approach, in which we push something to the user based on an event happening? Events are Kafka's bread and butter, and any consumer subscribing to a Kafka topic can produce notifications driven by messages arriving on the topic. Here's a simple example in which we use ksqlDB REST API again to deserialise and project the columns from the data that we're interested in, as well as applying a filter to only alert on probes for a given SSID (`WLAN_SSID[1] = 'RNM0'`): 
+
+[source,python]
+----
+ksqlDB_url = "http://localhost:8088/query"
+query   = """
+    SELECT TIMESTAMPTOSTRING(ROWTIME,'yyyy-MM-dd HH:mm:ss','Europe/London') AS TS, 
+            WLAN_SA[1], 
+            WLAN_SSID[1] 
+        FROM PCAP_PROBE 
+        WHERE WLAN_SSID[1] = 'RNM0'
+        EMIT CHANGES;
+        """
+…
+
+r = requests.request("POST", ksqlDB_url, headers=headers, data=json.dumps(payload), stream=True)
+
+…
+            probe_ts=result['row']['columns'][0]
+            probe_mac=result['row']['columns'][1]
+            probe_ssid=result['row']['columns'][2]
+
+            sendMessage('📣 At %s MAC address %s probed for SSID `%s`' % (probe_ts,probe_mac,probe_ssid))
+
+----
+
+There are two magical words to notice in the ksqlDB statement that we're running: 
+
+    EMIT CHANGES
+
+This turns the query from a "pull query" (as we ran above, where the value is returned and the query exits) into a "push query". In a push query the query runs continuously and results are pushed to the client. Because Kafka topics are unbounded, so are these push queries - they will run forever until you terminate the query, and thus your application receives any new messages that arrive. 
+
+image::images/telegram05.gif[]
+
+== Parameter-driven notifications
+
+Did you see that hard-coded predicate up there ☝️ ?
+
+     WLAN_SSID[1] = 'RNM0'
+
+Not nice, is it? What if we want to alert on a different SSID; do we really want to have to recompile our application? Let me show you how you can set up a parameter list that's dynamically evaluated when an event arrives. Here we'll use it to store a list of SSIDs that we're interested in alerting for probes against, but it could easily be a variable SLA that you're tracking, or anything conditional really. 
+
+Remember those *table* objects that we talked about above, that give us key/value lookups? We used these for stateful aggregations, and also for MAC->device name resolution. We're going to use a table again now, to store a list of SSIDs that we'd like to track. 
+
+[source,sql]
+----
+CREATE TABLE SSID_ALERT_LIST (ROWKEY VARCHAR KEY, REASON VARCHAR) 
+    WITH (KAFKA_TOPIC='ssid_alert_list_01', PARTITIONS=12, VALUE_FORMAT='AVRO');
+
+INSERT INTO SSID_ALERT_LIST VALUES ('RNM0','home network');
+INSERT INTO SSID_ALERT_LIST VALUES ('RNM-GUEST','guest network');
+----
+
+Now we amend our query from above to join to this table. Inbound events on the source *stream* will get matched against this *table* and if there is a match a notification will be created. Those of an RDBMS-bent will recognise what I've just described as an `INNER JOIN` - _if_ there is a match _then_ return a value. 
+
+[source,sql]
+----
+SELECT TIMESTAMPTOSTRING(P.ROWTIME,'yyyy-MM-dd HH:mm:ss',
+                                         'Europe/London') AS TS, 
+        P.WLAN_SA[1]                                      AS MAC, 
+        P.WLAN_SSID[1]                                    AS SSID,
+        S.REASON                                          AS REASON  
+   FROM PCAP_PROBE P
+        INNER JOIN SSID_ALERT_LIST S
+        ON P.WLAN_SSID[1] = S.ROWKEY
+EMIT CHANGES;
+----
+
+The ksqlDB returns a dataset that looks like this: 
+
+[source,sql]
+----
++--------------------+------------------+----------+--------------+
+|TS                  |MAC               |SSID      |REASON        |
++--------------------+------------------+----------+--------------+
+|2020-04-23 18:14:56 |78:67:d7:48:e5:c7 |RNM-GUEST |guest network |
+|2020-04-23 18:13:16 |78:67:d7:48:e5:c7 |RNM0      |home network  |
+----
+
+which we parse and send to the Telegram REST API:
+
+image::images/telegram06.png[]
+
+A ksqlDB table is backed by a topic in Kafka. There are several ways we could populate this - I showed you one way above, using ksqlDB directly. In practice you may well want to populate such a table in other ways: 
+
+* Produce messages directly to a Kafka topic with the producer API from an application
+* Ingest messages into the Kafka topic from another system (e.g. https://www.confluent.io/blog/kafka-connect-deep-dive-jdbc-source-connector/[a database with Kafka Connect])
+
