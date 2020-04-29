@@ -1,6 +1,6 @@
 import groovy.sql.Sql
-import io.confluent.demo.Movie
-import io.confluent.demo.Parser
+import io.confluent.developer.Parser
+import io.confluent.developer.Movie
 
 class SqlLoader {
 

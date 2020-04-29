@@ -1,0 +1,59 @@
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
+    classpath("org.jetbrains.kotlin:kotlin-allopen:${kotlinVersion}")
+  }
+}
+
+repositories {
+  jcenter()
+  maven { setUrl("https://dl.bintray.com/fkorotkov/maven") }
+}
+
+apply plugin: 'application'
+apply from: 'kotlin.gradle'
+
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'com.google.cloud.tools.jib'
+
+def imageBaseName = "streaming-movie-ratings"
+def dockerRegistry = "gamov-docker.jfrog.io/dev"
+/**
+ * Build an image based on «streams» project
+ */
+dependencies {
+  implementation project(':streams')
+
+  implementation "io.fabric8:kubernetes-client:4.6.1"
+  implementation "io.fabric8:kubernetes-model:4.6.1"
+  implementation "com.fkorotkov:kubernetes-dsl:2.6"
+
+  testImplementation "junit:junit:4.12"
+  testImplementation "org.jetbrains.kotlin:kotlin-test-junit:${kotlinVersion}"
+}
+
+// tag::jibConfig[]
+jib {
+  to {
+    image = "${dockerRegistry}/${imageBaseName}"  // <1>
+    //image = "gcr.io/cloud-private-dev/gamussa/${imageBaseName}" // <2>
+    //credHelper = 'gcr' <3>
+    // end::jibConfig[]
+    from {
+      image = "gcr.io/distroless/java:8"
+      //image = "gcr.io/distroless/java:debug"
+      //image = "bellsoft/liberica-openjdk-alpine:8u202"
+      //image = "bellsoft/liberica-openjre-debian:8u202"
+    }
+
+    container {
+      mainClass = project(":streams").mainClass
+      args = [
+          '/var/config/config.ccloud'
+      ]
+    }
+  }
+}
