@@ -26,6 +26,42 @@ Start the environment
 docker-compose up -d
 ----
 
+=== Postman
+
+Run Postman if you're going to use that for the pull query demo at the end (see link:ksqlDB.postman_collection.json[]). 
+
+=== Make sure Kafka Connect has started
+
+
+[source,bash]
+----
+bash -c ' \
+echo -e "\n\n=============\nWaiting for Kafka Connect to start listening on localhost ⏳\n=============\n"
+while [ $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) -ne 200 ] ; do 
+  echo -e "\t" $(date) " Kafka Connect listener HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) " (waiting for 200)"
+  sleep 5  
+done
+echo -e $(date) "\n\n--------------\n\o/ Kafka Connect is ready! Listener HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) "\n--------------\n"
+'
+----
+
+Make sure that the Elasticsearch, Debezium, and DataGen connectors are available: 
++
+[source,bash]
+----
+curl -s localhost:8083/connector-plugins|jq '.[].class'|egrep 'DatagenConnector|MySqlConnector|ElasticsearchSinkConnector'
+----
++
+Expect: 
++
+[source,bash]
+----
+"io.confluent.connect.elasticsearch.ElasticsearchSinkConnector"
+"io.confluent.kafka.connect.datagen.DatagenConnector"
+"io.debezium.connector.mysql.MySqlConnector"
+----
+
+
 === Run ksqlDB CLI and MySQL CLI
 
 Optionally, use something like `screen` or `tmux` to have these both easily to hand. Or multiple Terminal tabs. Whatever works for you :)
@@ -92,10 +128,16 @@ SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3  EMIT CHANGES;
 [source,sql]
 ----
 CREATE STREAM POOR_RATINGS AS
-SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
+SELECT USER_ID, STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
+----
 
+[source,sql]
+----
 SELECT * FROM POOR_RATINGS EMIT CHANGES LIMIT 5;
+----
 
+[source,sql]
+----
 DESCRIBE EXTENDED POOR_RATINGS;
 ----
 
@@ -121,17 +163,26 @@ PRINT 'POOR_RATINGS';
 SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TIMESTAMP, STARS, CHANNEL FROM POOR_RATINGS EMIT CHANGES;
 ----
 
----
-
-Return to slides 
-
----
-
-== Part 02 - Kafka Connect
+== Kafka Connect
 
 === Kafka to Elasticsearch
 
-See also kafka-to-es-demo.adoc
+[source,sql]
+----
+CREATE SINK CONNECTOR SINK_ES_POOR_RATINGS WITH (
+    'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+    'topics'          = 'POOR_RATINGS',
+    'connection.url'  = 'http://elasticsearch:9200',
+    'type.name'       = '_doc',
+    'key.ignore'      = 'false',
+    'schema.ignore'   = 'true',
+    'transforms'= 'ExtractTimestamp',
+    'transforms.ExtractTimestamp.type'= 'org.apache.kafka.connect.transforms.InsertField$Value',
+    'transforms.ExtractTimestamp.timestamp.field' = 'RATING_TS'
+);
+----
+
+Show in Kibana (http://localhost:5601/app/kibana)
 
 === Show MySQL table + contents
 
@@ -355,14 +406,7 @@ ksql>
 ----
 
 
----
-
-Return to slides 
-
----
-
 == Part 03 - ksqlDB for joining streams
-
 
 === Join live stream of ratings to customer data
 
@@ -486,7 +530,10 @@ Check data in Elasticsearch:
 [source,bash]
 ----
 docker exec elasticsearch curl -s "http://localhost:9200/_cat/indices/*?h=idx,docsCount"
+----
 
+[source,bash]
+----
 unhappy_platinum_customers        1
 .kibana_task_manager_1            2
 .apm-agent-configuration          0
@@ -505,11 +552,6 @@ image:images/es02.png[Kibana]
 
 image:images/es03.png[Kibana]
 
----
-
-Return to slides 
-
----
 
 === Aggregations
 
@@ -559,10 +601,10 @@ SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS,
        RATINGS_COUNT
 FROM   RATINGS_PER_CUSTOMER_PER_MINUTE
 WHERE  ROWKEY='Rica Blaisdell'
-  AND  WINDOWSTART > '2020-03-04T12:00:00.000';
+  AND  WINDOWSTART > '2020-04-29T18:30:00.000';
 ----
 
-Try the REST API out in bash: 
+Show REST API with link:ksqlDB.postman_collection.json[Postman] or bash: 
 
 [source,bash]
 ----
