@@ -46,14 +46,14 @@ echo -e $(date) "\n\n--------------\n\o/ Kafka Connect is ready! Listener HTTP s
 ----
 
 Make sure that the Elasticsearch, Debezium, and DataGen connectors are available: 
-+
+
 [source,bash]
 ----
 curl -s localhost:8083/connector-plugins|jq '.[].class'|egrep 'DatagenConnector|MySqlConnector|ElasticsearchSinkConnector'
 ----
-+
+
 Expect: 
-+
+
 [source,bash]
 ----
 "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector"
