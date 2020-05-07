@@ -1,9 +1,9 @@
 = Building a Telegram bot powered by Kafka and ksqlDB
-= Serving stateful aggregations from Kafka directly to a Telegram bot
+
 Robin Moffatt <robin@confluent.io>
 v0.01, 21 April 2020
 
-Imagine you've got a stream of data. It's not Big Data but it's certainly a lot. Within that data you've got some bits you're interested in, and of those bits, you'd like to be able to at any point query information about them. Sounds fun, right? Since I said "stream of data" (and you're reading this on a Kafka blog) you're probably thinking about Kafka, and then because I mentioned "querying" I'd hazard a guess that you've got in mind an additional datastore of some sort, whether relational or noSQL. But what about if you didn't need any data store other than Kafka itself? 
+Imagine you've got a stream of data. It's not Big Data but it's certainly a lot. Within that data you've got some bits you're interested in, and of those bits, you'd like to be able to query information about them at any point. Sounds fun, right? Since I said "stream of data" (and you're reading this on a Kafka blog) you're probably thinking about Kafka, and then because I mentioned "querying" I'd hazard a guess that you've got in mind an additional datastore of some sort, whether relational or noSQL. But what about if you didn't need any data store other than Kafka itself? 
 
 What if you could ingest, filter, enrich, aggregate, and query data with just Kafka? With ksqlDB we can do just this, and I want to show you exactly how in this article. 
 
@@ -12,6 +12,8 @@ We're going to build a simple system that captures Wi-Fi packets, processes them
 image::images/telegram01.gif[]
 
 The overall architecture looks like this: 
+
+image::images/telegram_arch01.jpeg[]
 
 == Turning a stream into state
 
@@ -26,14 +28,11 @@ The first thing we do is declare a schema on it in ksqlDB with a `STREAM`:
 CREATE STREAM PCAP_RAW (timestamp                    BIGINT,
                         wlan_fc_type_subtype         ARRAY<INT>,
                         wlan_radio_signal_dbm        ARRAY<DOUBLE>,
-                        wlan_ra						 ARRAY<VARCHAR>,
-                        wlan_ra_resolved			 ARRAY<VARCHAR>,
                         wlan_sa						 ARRAY<VARCHAR>,
-                        wlan_sa_resolved			 ARRAY<VARCHAR>,
                         wlan_ssid					 ARRAY<VARCHAR>)
-    WITH (KAFKA_TOPIC='pcap',
-        VALUE_FORMAT='JSON',
-        TIMESTAMP='timestamp');
+    WITH (KAFKA_TOPIC ='pcap',
+          VALUE_FORMAT='JSON',
+          TIMESTAMP   ='timestamp');
 ----
 
 From this we can materialise _state_ to answer a question such as 
@@ -82,7 +81,7 @@ Pretty neat, right?
 
 == Taking a brief peek under the covers
 
-So what's going on here? It turns out that Apache Kafka is not just a pretty face, and nor is it just a highly-scalable message broker. It's also a platform with integration (Kafka Connect) and stream processing (Kafka Streams) APIs. Combined with ksqlDB we can write SQL statements to take a Kafka topic and apply stream processing techniques to it such as: 
+So what's going on here? It turns out that Apache Kafka is not _just_ a pretty face, and nor is it _just_ a highly-scalable message broker. It's also a platform with integration (Kafka Connect) and stream processing (Kafka Streams) APIs. Combined with ksqlDB we can write SQL statements to take a Kafka topic and apply stream processing techniques to it such as: 
 
 * Filtering rows (predicates)
 * Filtering columns (projection)
@@ -90,7 +89,7 @@ So what's going on here? It turns out that Apache Kafka is not just a pretty fac
 * Aggregations
 * Type conversions
 
-But where's it all stored? Normally we'd be off to a NoSQL store or RDBMS to write this data out before and application can query it. Turns out, Apache Kafka is a https://www.confluent.io/blog/okay-store-data-apache-kafka/[great place to store data] (particularly with recent developments in https://docs.confluent.io/current/kafka/tiered-storage-preview.html#tiered-storage[tiered storage for data in Apache Kafka]). Kafka is distributed, scalable, and fault-tolerant, and ksqlDB uses it as the persistent store for any tables (or streams) that are populated within it. ksqlDB also uses RocksDB to build a local in-memory materialised view of the data held in tables. ksqlDB is also a distributed system and can run clustered across multiple nodes - and the RocksDB will do the same. In a rather clever design, ksqlDB maintains a changelog for RocksDB _in a Kafka topic itself_ - so if a node is lost its state can be rebuilt directly from Kafka. 
+But where's it all stored? Normally we'd be off to a NoSQL store or RDBMS to write this data out before an application can query it. Turns out, Apache Kafka is a https://www.confluent.io/blog/okay-store-data-apache-kafka/[great place to store data] (particularly with recent developments in https://docs.confluent.io/current/kafka/tiered-storage-preview.html#tiered-storage[tiered storage for data in Apache Kafka]). Kafka is distributed, scalable, and fault-tolerant, and ksqlDB uses it as the persistent store for any tables (or streams) that are populated within it. ksqlDB also uses RocksDB to build a local in-memory materialised view of the data held in tables. ksqlDB is also a distributed system and can run clustered across multiple nodes - and the RocksDB will do the same. In a rather clever design, ksqlDB maintains a changelog for RocksDB _in a Kafka topic itself_ - so if a node is lost its state can be rebuilt directly from Kafka. 
 
 ksqlDB supports the ability to query this state store in RocksDB directly, and that's what we saw above in the `SELECT` that we ran. If you're familiar with Kafka Streams (on which ksqlDB is built) then you'll recognise this functionality as https://docs.confluent.io/current/streams/developer-guide/interactive-queries.html#interactive-queries[_interactive query_]. 
 
@@ -104,7 +103,7 @@ Put into more concrete terms: most of what happens around us and in our business
 
 So if we agree that capturing the changes that happen around us as a stream of events _first_ is a good idea, then we need to think about how we build systems around that. At one end of the scale we have the classic kind of ad-hoc analytics and static reporting that is invariably going to be driven from data in a store such as S3, Snowflake, or a suitable RDBMS. Kafka can stream events into these systems with Kafka Connect, so there's no problem there. At the other end of the scale we have applications that are going to be _driven_ by these events, and subscribing to Kafka topics is the perfect way to do that. But what about applications in between, that need to work with the data held by these events *but materialised as _state_*? Instead of an event-driven application that does something when an order is placed, we want another application to be able to look at _how many orders have been placed for a given customer_ or _what was the total sales of a given item in the last hour_. 
 
-We can build this using Kafka (which already has the events in, as discussed), and ksqlDB. ksqlDB provides the ability to define these views on top of the stream of data, which are available to query at low-latency´. They're available to query at low-latency because they're built and maintained in memory - they're *materialised*. Or to put it another way - they are *materialised views*! ksqlDB uses a SQL-like language to declare these. Once the view is declared, any application can use the REST API to query it: 
+We can build this using Kafka (which already has the events in, as discussed), and ksqlDB. ksqlDB provides the ability to define views on top of the stream of data, which are available to query at low-latency. They're available to query at low-latency because they're built and maintained in memory - they're *materialised*. Or to put it another way - they are *materialised views*! ksqlDB uses a SQL-like language to declare these. Once the view is declared, any application can use the REST API to query it: 
 
 image::images/postman01.png[]
 
@@ -142,12 +141,12 @@ Taking that URL (`http://272a201c.ngrok.io` in the example above) we register it
 
 [source,bash]
 ----
-$ curl -L http://api.telegram.org/bot<my_bot_auth_token>/setWebHook?url=https://272a201c.ngrok.io
+curl -L http://api.telegram.org/bot<my_bot_auth_token>/setWebHook?url=https://272a201c.ngrok.io
 ----
 
 The final piece to the puzzle is the _actual_ bot code itself, which is going to receive the message sent to the Telegram bot and do something with it. 
 
-You can find the full code <<LINK_TODO>>here, but the salient snippets are where we take an inbound message, process it, and reply: 
+You can find the full code https://github.com/confluentinc/demo-scene/blob/master/wifi-fun/telegram_ksqldb_bots/pull_bot.py[here], but the salient snippets are where we take an inbound message, process it, and reply: 
 
 [source,python]
 ----
@@ -188,11 +187,15 @@ NOTE: This is a proof-of-concept. The code above fell out of the ugly tree and h
 
 Now we can send a message to our Telegram bot and get a reply back based on a direct lookup of state from ksqlDB: 
 
+`note to editor: this is an animated gif, see https://github.com/confluentinc/demo-scene/blob/master/wifi-fun/images/telegram03.gif`
+
 image::images/telegram03.gif[]
 
 == Enriching streams of data with lookups
 
 What we've built so far is already rather useful. We've simplified our architecture, and we're about to do so again even further. Because what data truly lives in isolation in this world? Much of the data that we pass around is normalised to an extent, and thus when it comes to present it back to a human being benefits from a degree of _denormalisation._ We don't have to go the whole hog, but simple touches like resolving a MAC address to a device name is pretty handy, right? Let's do that here. 
+
+image::images/telegram_arch02.jpeg[]
 
 The source of our lookup data is MongoDB, and instead of calling out to it each time we just replicate it as a local cache within Kafka and ksqlDB: 
 
@@ -240,7 +243,7 @@ CREATE TABLE DEVICES AS
     GROUP BY MAC;
 ----
 
-NOTE: this is an abridged form of the transformation - if you want to see how to wrangle Unifi data into a form to join to MAC address events, see here<<LINK TO DO>>
+NOTE: this is an abridged form of the transformation - if you want to see how to wrangle Unifi data into a form to join to MAC address events, see here<<LINK TO MY PREVIOUS KSQLDB/WIFI BLOG>>
 
 With this reference table in place we can use it to add the name of devices into a new version of the table that we built above
 
@@ -285,6 +288,105 @@ SELECT DEVICE_NAME
 |                   |            |                   |                   |                   |                   |
 ----
 
-If we modify our Telegram bot code slightly to cater for the new fields, we can now looking device information directly using the name of the device itself: 
+If we modify our Telegram bot code slightly to cater for the new fields, we can now look for device information directly using the name of the device itself instead of the MAC address: 
 
 image::images/telegram04.png[]
+
+== Event-driven notifications with Telegram and Kafka
+
+The examples above are built around the idea of serving state to the user *prompted by a user action*. What about the opposite approach, in which we push something to the user based on an event happening? Events are Kafka's https://dictionary.cambridge.org/dictionary/english/bread-and-butter[bread and butter], and any consumer subscribing to a Kafka topic can produce notifications driven by messages arriving on the topic. Here's a simple example in which we use ksqlDB REST API again to deserialise and project the columns from the data that we're interested in, as well as applying a filter to only alert on probes for a given SSID (`WLAN_SSID[1] = 'RNM0'`): 
+
+[source,python]
+----
+ksqlDB_url = "http://localhost:8088/query"
+query   = """
+    SELECT TIMESTAMPTOSTRING(ROWTIME,'yyyy-MM-dd HH:mm:ss','Europe/London') AS TS, 
+            WLAN_SA[1], 
+            WLAN_SSID[1] 
+        FROM PCAP_PROBE 
+        WHERE WLAN_SSID[1] = 'RNM0'
+        EMIT CHANGES;
+        """
+…
+
+r = requests.request("POST", ksqlDB_url, headers=headers, data=json.dumps(payload), stream=True)
+
+…
+            probe_ts=result['row']['columns'][0]
+            probe_mac=result['row']['columns'][1]
+            probe_ssid=result['row']['columns'][2]
+
+            sendMessage('📣 At %s MAC address %s probed for SSID `%s`' % (probe_ts,probe_mac,probe_ssid))
+
+----
+
+There are two magical words to notice in the ksqlDB statement that we're running: 
+
+    EMIT CHANGES
+
+This turns the query from a "pull query" (as we ran above, where the value is returned and the query exits) into a "push query". In a push query the query runs continuously and results are pushed to the client. Because Kafka topics are unbounded, so are these push queries - they will run forever until you terminate the query, and thus your application receives any new messages that arrive. 
+
+`note to editor: this is an animated gif, see https://github.com/confluentinc/demo-scene/blob/master/wifi-fun/images/telegram05.gif`
+
+image::images/telegram05.gif[]
+
+== Parameter-driven notifications
+
+Did you see that hard-coded predicate up there ☝️ ?
+
+     WLAN_SSID[1] = 'RNM0'
+
+Not nice, is it? What if we want to alert on a different SSID; do we really want to have to recompile our application? Let me show you how you can set up a parameter list that's dynamically evaluated when an event arrives. Here we'll use it to store a list of SSIDs that we're interested in alerting for probes against, but it could easily be a variable SLA that you're tracking, or anything conditional really. 
+
+Remember those *table* objects that we talked about above, that give us key/value lookups? We used these for stateful aggregations, and also for MAC->device name resolution. We're going to use a table again now, to store a list of SSIDs that we'd like to track. 
+
+[source,sql]
+----
+CREATE TABLE SSID_ALERT_LIST (ROWKEY VARCHAR KEY, REASON VARCHAR) 
+    WITH (KAFKA_TOPIC ='ssid_alert_list_01', 
+          PARTITIONS  =12,
+          VALUE_FORMAT='AVRO');
+
+INSERT INTO SSID_ALERT_LIST VALUES ('RNM0','home network');
+INSERT INTO SSID_ALERT_LIST VALUES ('RNM-GUEST','guest network');
+----
+
+Now we amend our query from above to join to this table. Inbound events on the source *stream* will get matched against this *table* and if there is a match a notification will be created. Those of an RDBMS-bent will recognise what I've just described as an `INNER JOIN` - _if_ there is a match _then_ return a value. 
+
+[source,sql]
+----
+SELECT TIMESTAMPTOSTRING(P.ROWTIME,'yyyy-MM-dd HH:mm:ss',
+                                         'Europe/London') AS TS, 
+        P.WLAN_SA[1]                                      AS MAC, 
+        P.WLAN_SSID[1]                                    AS SSID,
+        S.REASON                                          AS REASON  
+   FROM PCAP_PROBE P
+        INNER JOIN SSID_ALERT_LIST S
+        ON P.WLAN_SSID[1] = S.ROWKEY
+EMIT CHANGES;
+----
+
+The ksqlDB returns a dataset that looks like this: 
+
+[source,sql]
+----
++--------------------+------------------+----------+--------------+
+|TS                  |MAC               |SSID      |REASON        |
++--------------------+------------------+----------+--------------+
+|2020-04-23 18:14:56 |78:67:d7:48:e5:c7 |RNM-GUEST |guest network |
+----
+
+which we parse and send to the Telegram REST API each time we receive a new result that matches an SSID in the table:
+
+image::images/telegram06.png[]
+
+A ksqlDB table is backed by a topic in Kafka, and values can be updated and deleted as well as being created. There are several ways we could populate this - I showed you one way above, using ksqlDB directly. In practice you may well want to populate such a table in other ways: 
+
+* Produce messages directly to a Kafka topic with the producer API from an application
+* Ingest messages into the Kafka topic from another system (e.g. https://www.confluent.io/blog/kafka-connect-deep-dive-jdbc-source-connector/[a database with Kafka Connect])
+
+_You can find the code, such as it is, for the push-based Telegram bot You can find the full code https://github.com/confluentinc/demo-scene/blob/master/wifi-fun/telegram_ksqldb_bots/push_bot.py[here]._
+
+== Conclusion
+
+With Apache Kafka and ksqlDB alone you can build some powerful, scalable, systems that handle events and state alike. https://ksqldb.io/quickstart.html[Get started with ksqlDB today] and head over to http://developer.confluent.io[developer.confluent.io] to learn more. 
