@@ -1,0 +1,53 @@
+{
+	"info": {
+		"_postman_id": "d519308d-1221-4a70-83df-1d1161395450",
+		"name": "ksqlDB",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Customer review count by minute",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"ksql\":\"SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, FULL_NAME, RATINGS_COUNT FROM RATINGS_PER_CUSTOMER_PER_MINUTE WHERE  ROWKEY='Rica Blaisdell' AND  WINDOWSTART > '2020-04-29T09:42:00.000';\",\"streamsProperties\": {\"ksql.streams.auto.offset.reset\": \"earliest\"\n  }}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8088/query",
+					"host": [
+						"localhost"
+					],
+					"port": "8088",
+					"path": [
+						"query"
+					],
+					"query": [
+						{
+							"key": "",
+							"value": "",
+							"disabled": true
+						}
+					]
+				},
+				"description": "Build a streaming pipeline demo"
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
