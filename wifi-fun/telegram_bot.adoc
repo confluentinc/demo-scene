@@ -1,7 +1,7 @@
 = Building a Telegram bot powered by Kafka and ksqlDB
 
 Robin Moffatt <robin@confluent.io>
-v0.01, 21 April 2020
+v1.00, 11 May 2020
 
 Imagine you've got a stream of data. It's not Big Data but it's certainly a lot. Within that data you've got some bits you're interested in, and of those bits, you'd like to be able to query information about them at any point. Sounds fun, right? Since I said "stream of data" (and you're reading this on a Kafka blog) you're probably thinking about Kafka, and then because I mentioned "querying" I'd hazard a guess that you've got in mind an additional datastore of some sort, whether relational or noSQL. But what about if you didn't need any data store other than Kafka itself? 
 
@@ -13,7 +13,7 @@ image::images/telegram01.gif[]
 
 The overall architecture looks like this: 
 
-image::images/telegram_arch01.jpeg[]
+image::images/telegram_arch01.png[]
 
 == Turning a stream into state
 
@@ -195,7 +195,7 @@ image::images/telegram03.gif[]
 
 What we've built so far is already rather useful. We've simplified our architecture, and we're about to do so again even further. Because what data truly lives in isolation in this world? Much of the data that we pass around is normalised to an extent, and thus when it comes to present it back to a human being benefits from a degree of _denormalisation._ We don't have to go the whole hog, but simple touches like resolving a MAC address to a device name is pretty handy, right? Let's do that here. 
 
-image::images/telegram_arch02.jpeg[]
+image::images/telegram_arch02.png[]
 
 The source of our lookup data is MongoDB, and instead of calling out to it each time we just replicate it as a local cache within Kafka and ksqlDB: 
 
@@ -294,7 +294,11 @@ image::images/telegram04.png[]
 
 == Event-driven notifications with Telegram and Kafka
 
-The examples above are built around the idea of serving state to the user *prompted by a user action*. What about the opposite approach, in which we push something to the user based on an event happening? Events are Kafka's https://dictionary.cambridge.org/dictionary/english/bread-and-butter[bread and butter], and any consumer subscribing to a Kafka topic can produce notifications driven by messages arriving on the topic. Here's a simple example in which we use ksqlDB REST API again to deserialise and project the columns from the data that we're interested in, as well as applying a filter to only alert on probes for a given SSID (`WLAN_SSID[1] = 'RNM0'`): 
+The examples above are built around the idea of serving state to the user *prompted by a user action*. What about the opposite approach, in which we push something to the user based on an event happening? Events are Kafka's https://dictionary.cambridge.org/dictionary/english/bread-and-butter[bread and butter], and any consumer subscribing to a Kafka topic can produce notifications driven by messages arriving on the topic. 
+
+image::images/telegram_arch03.png[]
+
+Here's a simple example in which we use ksqlDB REST API again to deserialise and project the columns from the data that we're interested in, as well as applying a filter to only alert on probes for a given SSID (`WLAN_SSID[1] = 'RNM0'`): 
 
 [source,python]
 ----
