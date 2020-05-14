@@ -2,7 +2,7 @@
 version: '3'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.4.1
+    image: confluentinc/cp-zookeeper:5.5.0
     container_name: zookeeper
     hostname: zookeeper
     environment:
@@ -13,13 +13,13 @@ services:
     #   - ./data/container_data/zk-txn-logs:/var/lib/zookeeper/log
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.4.1
+    image: confluentinc/cp-enterprise-kafka:5.5.0
     container_name: kafka
     hostname: kafka
     depends_on:
       - zookeeper
-    # ports:
-    #   - 9092:9092
+    ports:
+      - 9092:9092
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -35,7 +35,7 @@ services:
     #   - ./data/container_data/kafka-data:/var/lib/kafka/data
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.4.1
+    image: confluentinc/cp-schema-registry:5.5.0
     ports:
       - 8081:8081
     container_name: schema-registry
@@ -52,7 +52,7 @@ services:
     # To connect to the DB: 
     #   docker exec -it ksqldb bash -c 'ksql http://localhost:8088'
     # *-----------------------------*  
-    image: confluentinc/ksqldb-server:0.8.0
+    image: confluentinc/ksqldb-server:0.9.0
     hostname: ksqldb
     container_name: ksqldb
     depends_on:
@@ -66,7 +66,7 @@ services:
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      KSQL_KSQL_HIDDEN_TOPICS: '^_.*'
+      KSQL_KSQL_HIDDEN_TOPICS: '^_.*,default_ksql_processing_log'
       # Setting KSQL_KSQL_CONNECT_WORKER_CONFIG enables embedded Kafka Connect
       KSQL_KSQL_CONNECT_WORKER_CONFIG: "/connect/connect.properties"
       # Kafka Connect config below
@@ -77,8 +77,7 @@ services:
       KSQL_CONNECT_CONFIG_STORAGE_TOPIC: _ksqldb-kafka-connect-group-01-configs
       KSQL_CONNECT_OFFSET_STORAGE_TOPIC: _ksqldb-kafka-connect-group-01-offsets
       KSQL_CONNECT_STATUS_STORAGE_TOPIC: _ksqldb-kafka-connect-group-01-status
-      KSQL_CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
-      KSQL_CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      KSQL_CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
       KSQL_CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
       KSQL_CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       KSQL_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
@@ -101,7 +100,7 @@ services:
         # mkdir -p /usr/share/confluent-hub-components/
         # confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ mdrogalis/voluble:0.2.0
         # confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-datagen:0.2.0
-        # confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-jdbc:5.4.0
+        # confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-jdbc:5.5.0
         # confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ debezium/debezium-connector-postgresql:1.1.0
         #
         echo "Launching ksqlDB"
