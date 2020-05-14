@@ -3,7 +3,7 @@
 1. Get your API credentials from https://developer.twitter.com/
 2. Copy `credentials.properties.example` to `credentials.properties` and update it with your API credentials
 3. `docker-compose up -d`
-4. See <blog> for details. 
+4. See https://www.confluent.io/blog/stream-processing-twitter-data-with-ksqldb/ for details. 
 
 ksqlDB CLI: 
 
