@@ -1,6 +1,6 @@
 = Introduction to ksqlDB - demo script
 Robin Moffatt <robin@confluent.io>
-v1.00, 25 February 2020
+v1.00, 13 May 2020
 :toc:
 
 == Running the test rig
@@ -36,7 +36,7 @@ CREATE STREAM MOVEMENTS (LOCATION VARCHAR)
 
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(ROWTIME,'yyyy-MM-dd HH:mm:ss','Europe/Amsterdam') AS EVENT_TS, 
+SELECT TIMESTAMPTOSTRING(ROWTIME,'yyyy-MM-dd HH:mm:ss','Europe/London') AS EVENT_TS, 
        ROWKEY AS PERSON, 
        LOCATION 
   FROM MOVEMENTS
@@ -71,7 +71,7 @@ PRINT movements FROM BEGINNING;
 [source,sql]
 ----
 SET 'auto.offset.reset' = 'earliest';
-SELECT TIMESTAMPTOSTRING(ROWTIME,'yyyy-MM-dd HH:mm:ss','Europe/Amsterdam') AS EVENT_TS, 
+SELECT TIMESTAMPTOSTRING(ROWTIME,'yyyy-MM-dd HH:mm:ss','Europe/London') AS EVENT_TS, 
        ROWKEY AS PERSON, 
        LOCATION 
   FROM MOVEMENTS
@@ -129,10 +129,10 @@ Show the difference between stream and table - but note that it's the *same* Kaf
 CREATE TABLE MOVEMENTS_T (LOCATION VARCHAR) 
     WITH (VALUE_FORMAT='JSON', KAFKA_TOPIC='movements');
 
-SELECT TIMESTAMPTOSTRING(ROWTIME,'yyyy-MM-dd HH:mm:ss','Europe/Amsterdam') AS EVENT_TS, ROWKEY AS PERSON, LOCATION 
+SELECT TIMESTAMPTOSTRING(ROWTIME,'yyyy-MM-dd HH:mm:ss','Europe/London') AS EVENT_TS, ROWKEY AS PERSON, LOCATION 
     FROM MOVEMENTS_T EMIT CHANGES;
 
-SELECT TIMESTAMPTOSTRING(ROWTIME,'yyyy-MM-dd HH:mm:ss','Europe/Amsterdam') AS EVENT_TS, ROWKEY AS PERSON, LOCATION 
+SELECT TIMESTAMPTOSTRING(ROWTIME,'yyyy-MM-dd HH:mm:ss','Europe/London') AS EVENT_TS, ROWKEY AS PERSON, LOCATION 
     FROM MOVEMENTS EMIT CHANGES;
 ----
 
