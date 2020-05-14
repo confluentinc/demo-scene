@@ -138,8 +138,8 @@ services:
       KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
       KSQL_KSQL_HIDDEN_TOPICS: '^_.*'
     # Optional settings to include to support Confluent Control Center
-      KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
-      KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+#      KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+#      KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
 
   control-center:
     image: confluentinc/cp-enterprise-control-center:5.5.0
