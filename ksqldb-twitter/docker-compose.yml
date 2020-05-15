@@ -2,14 +2,14 @@
 version: '3'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.4.0-beta1
+    image: confluentinc/cp-zookeeper:5.5.0
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.4.0-beta1
+    image: confluentinc/cp-enterprise-kafka:5.5.0
     container_name: kafka
     depends_on:
       - zookeeper
@@ -23,10 +23,12 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,HOST://localhost:9092
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.4.0-beta1
+    image: confluentinc/cp-schema-registry:5.5.0
     ports:
       - 8081:8081
     container_name: schema-registry
@@ -37,58 +39,47 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:29092
       SCHEMA_REGISTRY_CUB_KAFKA_TIMEOUT: 300
 
-  ksqldb-server:
-    image: confluentinc/ksqldb-server:0.6.0
-    hostname: ksqldb-server
-    container_name: ksqldb-server
+  ksqldb:
+    image: confluentinc/ksqldb-server:0.9.0
+    hostname: ksqldb
+    container_name: ksqldb
     depends_on:
       - kafka
-      - kafka-connect-01
+      - kafka-connect
     ports:
       - "8088:8088"
     environment:
       KSQL_LISTENERS: http://0.0.0.0:8088
       KSQL_BOOTSTRAP_SERVERS: kafka:29092
-      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
-      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
-      KSQL_KSQL_CONNECT_URL: http://kafka-connect-01:8083
+      KSQL_KSQL_CONNECT_URL: http://kafka-connect:8083
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      KSQL_KSQL_HIDDEN_TOPICS: '^_.*,default_ksql_processing_log'
 
-  ksqldb-cli:
-    image: confluentinc/ksqldb-cli:0.6.0
-    container_name: ksqldb-cli
-    depends_on:
-      - ksqldb-server
-    entrypoint: /bin/sh
-    tty: true
-
-  kafka-connect-01:
-    image: confluentinc/cp-kafka-connect:5.4.0-beta1
-    container_name: kafka-connect-01
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:5.4.1
+    container_name: kafka-connect
     depends_on:
       - kafka
       - schema-registry
     ports:
       - 8083:8083
     environment:
-      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
       CONNECT_CUB_KAFKA_TIMEOUT: 300
       CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
-      CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect-01'
+      CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect'
       CONNECT_REST_PORT: 8083
       CONNECT_GROUP_ID: kafka-connect-group-01
       CONNECT_CONFIG_STORAGE_TOPIC: _kafka-connect-group-01-configs
       CONNECT_OFFSET_STORAGE_TOPIC: _kafka-connect-group-01-offsets
       CONNECT_STATUS_STORAGE_TOPIC: _kafka-connect-group-01-status
-      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
-      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
       CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
       CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
       CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
-#      CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR,org.eclipse.jetty.server=DEBUG'
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
@@ -106,7 +97,7 @@ services:
       - |
         echo "Installing connector plugins"
         confluent-hub install --no-prompt jcustenborder/kafka-connect-twitter:0.3.33
-        confluent-hub install --no-prompt neo4j/kafka-connect-neo4j:1.0.2
+        confluent-hub install --no-prompt neo4j/kafka-connect-neo4j:1.0.7
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 
@@ -119,6 +110,7 @@ services:
     #   docker exec -it postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
     # *-----------------------------*
     image: postgres:11
+    container_name: postgres
     ports: 
       - 5432:5432
     environment:
@@ -128,7 +120,7 @@ services:
      - ./data/postgres:/docker-entrypoint-initdb.d/
 
   neo4j:
-    image: neo4j:3.5-enterprise
+    image: neo4j:4.0.4
     container_name: neo4j
     ports:
     - "7474:7474"
