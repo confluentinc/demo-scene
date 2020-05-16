@@ -1,0 +1,27 @@
+CREATE SOURCE CONNECTOR SOURCE_TWITTER_01 WITH (
+    'connector.class' = 'com.github.jcustenborder.kafka.connect.twitter.TwitterSourceConnector',
+    'twitter.oauth.accessToken' = '${file:/data/credentials.properties:TWITTER_ACCESSTOKEN}',
+    'twitter.oauth.consumerSecret' = '${file:/data/credentials.properties:TWITTER_CONSUMERSECRET}',
+    'twitter.oauth.consumerKey' = '${file:/data/credentials.properties:TWITTER_CONSUMERKEY}',
+    'twitter.oauth.accessTokenSecret' = '${file:/data/credentials.properties:TWITTER_ACCESSTOKENSECRET}',
+    'kafka.status.topic' = 'twitter_01',
+    'process.deletes' = false,
+    'filter.keywords' = 'oracle,java,mssql,mysql,devrel,apachekafka,confluentinc,ksqldb,kafkasummit,kafka connect,rmoff,tlberglund,gamussa,riferrei,nehanarkhede,jaykreps,junrao,gwenshap'
+);
+
+CREATE STREAM TWEETS WITH (KAFKA_TOPIC='twitter_01', VALUE_FORMAT='AVRO');
+
+SELECT TIMESTAMPTOSTRING(CREATEDAT,'yyyy-MM-dd HH:mm:ss','Europe/London'), USER->SCREENNAME, TEXT FROM TWEETS EMIT CHANGES;
+
+CREATE TABLE USER_STATS AS 
+    SELECT TIMESTAMPTOSTRING(MIN(CREATEDAT),'yyyy-MM-dd HH:mm:ss','Europe/London') AS FIRST_TWEET_TS, 
+           TIMESTAMPTOSTRING(MAX(CREATEDAT),'yyyy-MM-dd HH:mm:ss','Europe/London') AS LATEST_TWEET_TS, 
+           LATEST_BY_OFFSET(TEXT)                                                  AS LATEST_TWEET, 
+           COUNT(*)                                                                AS TWEET_COUNT
+      FROM TWEETS 
+    GROUP BY USER->SCREENNAME 
+    EMIT CHANGES;
+
+SELECT ROWKEY AS TWITTER_HANDLE, FIRST_TWEET_TS, LATEST_TWEET_TS, LATEST_TWEET, TWEET_COUNT FROM USER_STATS WHERE TWEET_COUNT > 1 EMIT CHANGES;
+
+SELECT ROWKEY AS TWITTER_HANDLE, FIRST_TWEET_TS, LATEST_TWEET_TS, LATEST_TWEET, TWEET_COUNT FROM USER_STATS WHERE ROWKEY='rmoff' EMIT CHANGES;
