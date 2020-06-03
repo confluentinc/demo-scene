@@ -629,11 +629,11 @@ Data is in Elasticsearch:
 
 [source,bash]
 ----
-➜ curl -s http://localhost:9200/test01/_search \
+➜ curl -s http://localhost:9200/test_json/_search \
     -H 'content-type: application/json' \
     -d '{ "size": 42  }' | jq -c '.hits.hits[]'
-{"_index":"test01","_type":"_doc","_id":"X","_score":1,"_source":{"COL1":1,"COL2":"FOO"}}
-{"_index":"test01","_type":"_doc","_id":"Z","_score":1,"_source":{"COL1":1,"COL2":"WOO"}}
+{"_index":"test_json","_type":"_doc","_id":"TEST_JSON+0+0","_score":1,"_source":{"COL2":"FOO","COL1":1}}
+{"_index":"test_json","_type":"_doc","_id":"TEST_JSON+0+1","_score":1,"_source":{"COL2":"BAR","COL1":2}}
 ----
 
 == Timestamps
@@ -1060,7 +1060,7 @@ Drop connector
 
 [source,sql]
 ----
-DROP CONNECTOR SINK_ELASTIC_TEST_02_D;
+DROP CONNECTOR SINK_ELASTIC_TEST_02_E;
 ----
 
 Drop index
