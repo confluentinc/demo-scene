@@ -1,0 +1,408 @@
+= Streaming Pac-Man
+
+:imagesdir: images/
+
+*Streaming Pac-Man* is the funniest application that you ever see while applying principles of stream processing using https://kafka.apache.org[Apache Kafka]. Built around the famous Pac-Man game, this application allows you to capture and store events from the game into Kafka topics, as well as process them in near real-time using https://ksqldb.io/[ksqlDB]. In order to keep you focused on the fun part this application is based on a Kafka cluster running in a fully managed service for Apache Kafka.
+
+image::pacman-game.png[]
+
+To apply principles of stream processing in the game, you are going to build a link:pipeline/queries.sql[scoreboard using ksqlDB]. The scoreboard will be based on a table that holds aggregated metrics of the players such as their highest score, the highest level achieved, and the number of times that the player loses. As new events come from the game, the scoreboard gets instantly updated by the continuous queries that keep processing those events as they happen.
+
+== What you are going to need?
+
+* *Managed Kafka* - You need to have an active account with https://www.confluent.io/confluent-cloud/[Confluent Cloud] to be able to spin up environments with the services required for this application. At a very minimum, you will need a Kafka cluster where your topics will be created. Optionally, you may want to create a ksqlDB application to implement the scoreboard pipeline.
+* *Terraform* - The application is automatically created using https://www.terraform.io[Terraform]. The default cloud provider supported is https://aws.amazon.com[AWS], but there are implementations for https://cloud.google.com[GCP] and https://azure.microsoft.com[Azure] as well. Besides having Terraform installed locally, will need to provide your cloud provider credentials so Terraform can create and manage the resources for you.
+* *Java and Maven* - The UI layer of the application relies on two APIs that are implemented using https://openjdk.java.net/[Java], therefore you will need to have Java installed to build the source-code. The build itseld is implemented using https://maven.apache.org/[Maven], and it is triggered automatically by Terraform.
+* *Docker (Optional)* - The backend of some of the APIs is based on Redis. In order to keep Redis up-to-date with the data stored in Kafka, the application uses a sink service implemented as a Docker application. Its Docker image has been published on https://hub.docker.com/r/riferrei/redis-sink[Docker Hub] so there is no need for you to worry about this. However, if you want to use your own Docker image -- you will need to build a new image using this link:redis-sink/[code] and push it to some Docker repository. Also, you will need to modify the Terraform variable named `redis_sink_image`.
+* *Confluent Cloud CLI (Optional)* - During the creation of the pipeline, if you choose to implement it using Confluent Cloud managed KSQL then you will need to have the Confluent Cloud CLI installed locally to set up access permissions to the topics. You can find instructions about how to install it https://docs.confluent.io/current/cloud/cli/index.html[here].
+* *Confluent Platform (Optional)* - The pipeline implementation has some example events that can be used to test the code before you deploy it. This can be acomplished by using the https://docs.confluent.io/current/ksql/docs/developer-guide/ksql-testing-tool.html[KSQL Testing Tool] that is part of Confluent Platform. You can find instructions about how to install it https://www.confluent.io/product/confluent-platform/[here].
+
+== 1) Setting up Confluent Cloud
+
+As mentioned before, the application is based on clusters running on Confluent Cloud. Thus, the very first thing you need to do is https://docs.confluent.io/current/quickstart/cloud-quickstart/index.html[creating a cluster in Confluent Cloud]. You also going to need https://docs.confluent.io/current/quickstart/cloud-quickstart/schema-registry.html[access to the Schema Registry service] that is available for each environment created in Confluent Cloud.
+
+== 2) Deploying the application
+
+The application is essentially a set of link:pacman/[HTML/CSS/JS files] that forms a microsite that can be hosted statically anywhere. But for the sake of coolness -- we will deploy this microsite in a storage service from the chosen cloud provider. A bucket will be created and the microsite will be copied there. This bucket will be created in the very same region selected for the Confluent Cloud cluster, to ensure that the application will be co-located. The application will emit events that will be processed by a event handler API implemented as a serverless application. This event handler API receives the events and writes them into the respective Kafka topics.
+
+image::pac-man-arch.png[align="left"]
+
+Please note that during deployment, the API takes care of creating the required Kafka topics. Therefore, there is no need to manually create them.
+
+=== Deploying on AWS (Recommended)
+
+1. Enter the folder that contains the AWS code
++
+[source,bash]
+----
+cd terraform/aws
+----
+
+2. Create a variables file for Confluent Cloud
++
+[source,bash]
+----
+mv ccloud.auto.tfvars.example ccloud.auto.tfvars
+----
+
+3. Provide the data on the 'ccloud.auto.tfvars' file
++
+[source,bash]
+----
+bootstrap_server = "<CCLOUD_BOOTSTRA_SERVER>"
+cluster_api_key = "<CCLOUD_API_KEY>"
+cluster_api_secret = "<CCLOUD_API_SECRET>"
+
+schema_registry_url = "<SCHEMA_REGISTRY_URL>"
+schema_registry_basic_auth = "<SCHEMA_REGISTRY_API_KEY>:<SCHEMA_REGISTRY_SECRET>"
+----
+
+4. Create a variables file for AWS
++
+[source,bash]
+----
+mv cloud.auto.tfvars.example cloud.auto.tfvars
+----
+
+5. Provide the credentials on the 'cloud.auto.tfvars' file
++
+[source,bash]
+----
+aws_access_key = "<AWS_ACCESS_KEY>"
+aws_secret_key = "<AWS_SECRET_KEY>"
+----
+
+6. Initialize the Terraform plugins
++
+[source,bash]
+----
+terraform init
+----
+
+7. Start the application deployment
++
+[source,bash]
+----
+terraform apply -auto-approve
+----
+
+8. Output with endpoints will be shown
++
+[source,bash]
+----
+Outputs:
+
+KSQL_Server = http://pacman00000-ksql-000000.region.elb.amazonaws.com
+Pacman = http://pacman000000000000000.s3-website-region.amazonaws.com
+----
+
+*Note:* When you are done with the application, you can automatically destroy all the resources created by Terraform using the command below:
+
+[source,bash]
+----
+terraform destroy -auto-approve
+----
+
+=== Deploying on GCP
+
+1. Enter the folder that contains the GCP code
++
+[source,bash]
+----
+cd terraform/gcp
+----
+
+2. Create a variables file for Confluent Cloud
++
+[source,bash]
+----
+mv ccloud.auto.tfvars.example ccloud.auto.tfvars
+----
+
+3. Provide the data on the 'ccloud.auto.tfvars' file
++
+[source,bash]
+----
+bootstrap_server = "<CCLOUD_BOOTSTRA_SERVER>"
+cluster_api_key = "<CCLOUD_API_KEY>"
+cluster_api_secret = "<CCLOUD_API_SECRET>"
+
+schema_registry_url = "<SCHEMA_REGISTRY_URL>"
+schema_registry_basic_auth = "<SCHEMA_REGISTRY_API_KEY>:<SCHEMA_REGISTRY_SECRET>"
+----
+
+4. Create a variables file for GCP
++
+[source,bash]
+----
+mv cloud.auto.tfvars.example cloud.auto.tfvars
+----
+
+5. Specify the GCP project name on the 'cloud.auto.tfvars' file
++
+[source,bash]
+----
+gcp_credentials = "credentials.json"
+gcp_project = "<YOUR_GCP_PROJECT>"
+----
+
+6. Create an service account key
++
+[source,bash]
+----
+https://cloud.google.com/community/tutorials/getting-started-on-gcp-with-terraform
+----
+
+7. Copy your service account key
++
+[source,bash]
+----
+cp <source>/credentials.json .
+----
+
+8. Initialize the Terraform plugins
++
+[source,bash]
+----
+terraform init
+----
+
+9. Start the application deployment
++
+[source,bash]
+----
+terraform apply -auto-approve
+----
+
+10. Output with endpoints will be shown
++
+[source,bash]
+----
+Outputs:
+
+KSQL_Server = http://0.0.0.0
+Pacman = http://0.0.0.0
+----
+
+*Note:* When you are done with the application, you can automatically destroy all the resources created by Terraform using the command below:
+
+[source,bash]
+----
+terraform destroy -auto-approve
+----
+
+=== Deploying on Azure
+
+1. Enter the folder that contains the Azure code
++
+[source,bash]
+----
+cd terraform/azr
+----
+
+2. Create a variables file for Confluent Cloud
++
+[source,bash]
+----
+mv ccloud.auto.tfvars.example ccloud.auto.tfvars
+----
+
+3. Provide the data on the 'ccloud.auto.tfvars' file
++
+[source,bash]
+----
+bootstrap_server = "<CCLOUD_BOOTSTRA_SERVER>"
+cluster_api_key = "<CCLOUD_API_KEY>"
+cluster_api_secret = "<CCLOUD_API_SECRET>"
+
+schema_registry_url = "<SCHEMA_REGISTRY_URL>"
+schema_registry_basic_auth = "<SCHEMA_REGISTRY_API_KEY>:<SCHEMA_REGISTRY_SECRET>"
+----
+
+4. Create a variables file for Azure
++
+[source,bash]
+----
+mv cloud.auto.tfvars.example cloud.auto.tfvars
+----
+
+5. Provide the credentials on the 'cloud.auto.tfvars' file
++
+[source,bash]
+----
+azure_subscription_id = "<AZURE_SUBSCRIPTION_ID>"
+azure_client_id = "<AZURE_CLIENT_ID>"
+azure_client_secret = "<AZURE_CLIENT_SECRET>"
+azure_tenant_id = "<AZURE_TENANT_ID>"
+----
+
+6. Initialize the Terraform plugins
++
+[source,bash]
+----
+terraform init
+----
+
+7. Start the application deployment
++
+[source,bash]
+----
+terraform apply -auto-approve
+----
+
+8. Output with endpoints will be shown
++
+[source,bash]
+----
+Outputs:
+
+KSQL_Server = http://pacman0000000-ksql.region.cloudapp.azure.com
+Pacman = http://pacman0000000000000000000.z5.web.core.windows.net
+----
+
+*Note:* When you are done with the application, you can automatically destroy all the resources created by Terraform using the command below:
+
+[source,bash]
+----
+terraform destroy -auto-approve
+----
+
+== 3) Creating the pipeline
+
+When users play with the Pac-Man game -- two types of events will be generated. The first one is called *User Game* and contains the data about the user's current game, such as their score, current level, and the number of lives. The second one is called *User Losses* and, as the name implies, contains data about the number of times the user loses the game. To build a scoreboard out of this, a stream processing pipeline need to be implemented to perform a series of computations on these two events and derive a table that will contain statistic data about each user's game.
+
+image::pipeline.png[]
+
+To implement the pipeline you will be using KSQL. The link:pipeline/queries.sql[code for this pipeline has been written for you] and the only thing you need to do is to deploy it into a full-fledged ksqlDB Server. Therefore, you need to decide which ksqlDB server you are going to use. There are two options:
+
+1. Using the ksqlDB cluster created by Terraform
+2. Managed ksqlDB application in Confluent Cloud
+
+Whatever option you pick, ksqlDB will be pointing to the Kafka cluster running on Confluent Cloud. You can even mix and match options to showcase the fact that all options are handling data coming from the single-source-of-truth which is Apache Kafka.
+
+=== Option: ksqlDB cluster created by Terraform
+
+1. Enter the folder that contains the AWS/GCP/Azure code
++
+[source,bash]
+----
+cd terraform/<provider>
+----
+
+2. Execute the command to print the outputs
++
+[source,bash]
+----
+terraform output
+----
+
+3. Select and copy the ksqlDB Server endpoint
+
+4. Enter the folder that contains the code
++
+[source,bash]
+----
+cd ../../pipeline
+----
+
+5. Start a new session of the KSQL CLI:
++
+[source,bash]
+----
+ksql <ENDPOINT_COPIED_ON_STEP_THREE>
+----
+
+6. Run the queries in the KSQL CLI session:
++
+[source,bash]
+----
+RUN SCRIPT 'queries.sql';
+----
+
+=== Option: Managed ksqlDB application in Confluent Cloud
+
+1. Access the Kafka cluster on Confluent Cloud
++
+image::select-cluster.png[width="600", height="400"]
+
+2. Select the 'KSQL' tab and click on 'Add Application'
++
+image::new-ksql-app.png[]
+
+3. Name the KSQL application and click on 'Continue'
++
+image::name-ksql-app.png[]
+
+4. Confirm the terms and then click on 'Launch cluster'
+
+5. Log in into Confluent Cloud using the CCloud CLI
++
+[source,bash]
+----
+ccloud login
+----
+
+6. Within your environment, list your Kafka clusters
++
+[source,bash]
+----
+ccloud kafka cluster list
+----
+
+7. Select and copy the cluster id from the list
+
+8. Make sure your Kafka cluster is selected
++
+[source,bash]
+----
+ccloud kafka cluster use <CLUSTER_ID_COPIED_ON_STEP_SEVEN>
+----
+
+9. Find the service account 'Id' using the CCloud CLI
++
+[source,bash]
+----
+ccloud service-account list
+----
+
+10. Select and copy the service account id from the list
+
+11. Set up read/write permissions to the Kafka topics
++
+[source,bash]
+----
+ccloud kafka acl create --allow --service-account <SERVICE_ACCOUNT_ID_COPIED_ON_STEP_TEN> --operation READ --topic '*'
+----
+
+12. Within the KSQL application, copy the entire link:pipeline/queries.sql[pipeline code] in the editor
++
+image::create-pipeline.png[]
+
+13. Click on 'Run' to create the pipeline
+
+== Appendix: Viewing the scoreboard locally
+
+In order to verify if the pipeline is working as expected, you can execute a program written in Go that displays the content of the scoreboard. Because tables in KSQL ultimately are topics, this program subscribes to the `SCOREBOARD` topic and updates the display as new records arrive. Moreover, this program sorts the data based on each user's game to simulate a real game scoreboard.
+
+1. Enter the folder that contains the code
++
+[source,bash]
+----
+cd scoreboard
+----
+
+2. Create a native executable for the program
++
+[source,bash]
+----
+go build -o scoreboard scoreboard.go
+----
+
+3. Execute the program to display the data
++
+[source,bash]
+----
+./scoreboard
+----
+
+*Note:* This program can only be executed after the application is deployed in the cloud provider. Reason being, to connect to Confluent Cloud this program relies on a file called 'ccloud.properties' that is generated by Terraform during deployment.

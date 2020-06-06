@@ -58,7 +58,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
 
 - Confluent Cloud
 
-  - [Pac-Man Demo](pacman-ccloud)
+  - [Streaming Pac-Man](streaming-pacman)
   - ["The Cube" Demo](ccloud-cube-demo)
   - [Using Replicator with Confluent Cloud](ccloud-replicator)
 

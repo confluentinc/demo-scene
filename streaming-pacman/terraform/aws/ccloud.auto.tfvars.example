@@ -1,0 +1,7 @@
+###########################################
+############# Confluent Cloud #############
+###########################################
+
+bootstrap_server = "<CCLOUD_BOOTSTRAP_SERVER>"
+cluster_api_key = "<CCLOUD_API_KEY>"
+cluster_api_secret = "<CCLOUD_API_SECRET>"
