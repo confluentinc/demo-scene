@@ -19,7 +19,7 @@ To apply principles of stream processing in the game, you are going to build a l
 
 == 1) Setting up Confluent Cloud
 
-As mentioned before, the application is based on clusters running on Confluent Cloud. Thus, the very first thing you need to do is https://docs.confluent.io/current/quickstart/cloud-quickstart/index.html[creating a cluster in Confluent Cloud]. You also going to need https://docs.confluent.io/current/quickstart/cloud-quickstart/schema-registry.html[access to the Schema Registry service] that is available for each environment created in Confluent Cloud.
+As mentioned before, the application is based on clusters running on Confluent Cloud. Thus, the very first thing you need to do is https://docs.confluent.io/current/quickstart/cloud-quickstart/index.html[creating a cluster in Confluent Cloud].
 
 == 2) Deploying the application
 
@@ -89,8 +89,8 @@ terraform apply -auto-approve
 ----
 Outputs:
 
-KSQL_Server = http://pacman00000-ksql-000000.region.elb.amazonaws.com
-Pacman = http://pacman000000000000000.s3-website-region.amazonaws.com
+ksqlDB = http://streaming-pacman00000-ksqldb.region.elb.amazonaws.com
+Pacman = http://streaming-pacman00000.s3-website-region.amazonaws.com
 ----
 
 *Note:* When you are done with the application, you can automatically destroy all the resources created by Terraform using the command below:
