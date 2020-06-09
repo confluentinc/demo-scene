@@ -1,0 +1,121 @@
+= Kafka as a Platform: the Ecosystem from the Ground Up - demo script
+Robin Moffatt <robin@confluent.io>
+v0.01, 9 June 2020
+:toc:
+
+== Running the test rig
+
+1. Bring up the stack
++
+[source,bash]
+----
+git clone https://github.com/confluentinc/demo-scene.git
+cd kafka-ecosystem
+docker-compose up -d
+----
++
+This brings up the stack ready for use. 
+
+2. Wait for Kafka Connect to be started
++
+[source,bash]
+----
+bash -c ' \
+echo -e "\n\n=============\nWaiting for Kafka Connect to start listening on localhost ⏳\n=============\n"
+while [ $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) -ne 200 ] ; do 
+  echo -e "\t" $(date) " Kafka Connect listener HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) " (waiting for 200)"
+  sleep 5  
+done
+echo -e $(date) "\n\n--------------\n\o/ Kafka Connect is ready! Listener HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) "\n--------------\n"
+'
+----
+
+3. Make sure that the Elasticsearch connector is available: 
++
+[source,bash]
+----
+curl -s localhost:8083/connector-plugins|jq '.[].class'|egrep 'ElasticsearchSinkConnector'
+----
++
+Expect: 
++
+[source,bash]
+----
+"io.confluent.connect.elasticsearch.ElasticsearchSinkConnector"
+----
+
+4. Open Kibana http://localhost:5601
+
+== Demo 1 - Producer/Consumer
+
+
+[source,bash]
+----
+docker exec -it kafkacat kafkacat -b kafka:29092 -t test -P -K:
+----
+
+[source,bash]
+----
+docker exec kafkacat kafkacat -b kafka:29092 -t test -C -u
+----
+
+[source,bash]
+----
+docker exec kafkacat kafkacat -b kafka:29092 -t test -C -u -f '[Topic %t/partition %p/offset %o] Key: %k, Value: %s\n'
+----
+
+== Demo 2 - Stream processing
+
+[source,bash]
+----
+docker exec kafkacat kafkacat -b kafka:29092 -t trades -C -u -q -o 5 -r http://schema-registry:8081 -s key=s -s value=avro
+----
+
+
+[source,bash]
+----
+docker exec -it ksqldb bash -c 'echo -e "\n\n  Waiting for ksqlDB to be available before launching CLI\n"; while : ; do curl_status=$(curl -s -o /dev/null -w %{http_code} http://ksqldb:8088/info) ; echo -e $(date) " ksqlDB server listener HTTP state: " $curl_status " (waiting for 200)" ; if [ $curl_status -eq 200 ] ; then  break ; fi ; sleep 5 ; done ; ksql http://ksqldb:8088'
+----
+
+[source,sql]
+----
+CREATE STREAM TRADES WITH (KAFKA_TOPIC='trades', VALUE_FORMAT='AVRO');
+----
+
+[source,sql]
+----
+SELECT * FROM TRADES WHERE SYMBOL='ZWZZT' EMIT CHANGES;
+----
+
+[source,sql]
+----
+SET 'auto.offset.reset' = 'earliest';
+CREATE TABLE ZWZZT_TRADES_BY_ACCOUNT_BY_15_MIN AS
+  SELECT WINDOWSTART AS TS, 
+         SIDE, 
+         COUNT(*) AS TRADE_COUNT, 
+         SUM(PRICE * QUANTITY) AS TOTAL_VALUE,
+         SUM(QUANTITY)/COUNT(*) AS AVG_QUANTITY
+    FROM TRADES WINDOW TUMBLING (SIZE 15 MINUTES) 
+    WHERE SYMBOL='ZWZZT'
+    GROUP BY SIDE EMIT CHANGES;
+----
+
+[source,sql]
+----
+CREATE SINK CONNECTOR SINK_ELASTIC_01 WITH (
+  'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+  'connection.url' = 'http://elasticsearch:9200',
+  'type.name' = '_doc',
+  'topics' = 'ZWZZT_TRADES_BY_ACCOUNT_BY_15_MIN',
+  'key.ignore' = 'false',
+  'schema.ignore' = 'false',
+  'key.converter' = 'org.apache.kafka.connect.storage.StringConverter',
+  'transforms'              = 'setTimestampType0',
+  'transforms.setTimestampType0.type'        = 'org.apache.kafka.connect.transforms.TimestampConverter$Value',
+  'transforms.setTimestampType0.field'       = 'TS',
+  'transforms.setTimestampType0.target.type' = 'Timestamp'
+);
+----
+
+🎥 https://rmoff.dev/kafka-elasticsearch-video
