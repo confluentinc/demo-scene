@@ -90,7 +90,7 @@ SELECT * FROM TRADES WHERE SYMBOL='ZWZZT' EMIT CHANGES;
 [source,sql]
 ----
 SET 'auto.offset.reset' = 'earliest';
-CREATE TABLE ZWZZT_TRADES_BY_ACCOUNT_BY_15_MIN AS
+CREATE TABLE ZWZZT_TRADES_BY_15_MIN AS
   SELECT WINDOWSTART AS TS, 
          SIDE, 
          COUNT(*) AS TRADE_COUNT, 
@@ -107,7 +107,7 @@ CREATE SINK CONNECTOR SINK_ELASTIC_01 WITH (
   'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
   'connection.url' = 'http://elasticsearch:9200',
   'type.name' = '_doc',
-  'topics' = 'ZWZZT_TRADES_BY_ACCOUNT_BY_15_MIN',
+  'topics' = 'ZWZZT_TRADES_BY_15_MIN',
   'key.ignore' = 'false',
   'schema.ignore' = 'false',
   'key.converter' = 'org.apache.kafka.connect.storage.StringConverter',
