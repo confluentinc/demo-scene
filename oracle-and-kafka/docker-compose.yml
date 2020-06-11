@@ -2,14 +2,14 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.4.1
+    image: confluentinc/cp-zookeeper:5.5.0
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   broker:
-    image: confluentinc/cp-kafka:5.4.1
+    image: confluentinc/cp-kafka:5.5.0
     container_name: broker
     depends_on:
       - zookeeper
@@ -48,7 +48,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.4.1
+    image: confluentinc/cp-schema-registry:5.5.0
     container_name: schema-registry
     depends_on:
       - zookeeper
@@ -60,7 +60,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect-base:5.4.1
+    image: confluentinc/cp-kafka-connect-base:5.5.0
     container_name: kafka-connect
     depends_on:
       - broker
@@ -75,8 +75,7 @@ services:
       CONNECT_CONFIG_STORAGE_TOPIC: _kafka-connect-configs
       CONNECT_OFFSET_STORAGE_TOPIC: _kafka-connect-offsets
       CONNECT_STATUS_STORAGE_TOPIC: _kafka-connect-status
-      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
-      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
@@ -93,7 +92,7 @@ services:
       - -c 
       - |
         echo "Installing connector plugins"
-        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:5.4.1
+        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:5.5.0
         #
         echo "Downloading JDBC drivers"
         cd /usr/share/confluent-hub-components/confluentinc-kafka-connect-jdbc/lib
@@ -105,7 +104,7 @@ services:
         sleep infinity
 
   ksqldb:
-    image: confluentinc/ksqldb-server:0.8.1
+    image: confluentinc/ksqldb-server:0.9.0
     hostname: ksqldb
     container_name: ksqldb
     depends_on:
