@@ -66,6 +66,34 @@ DBZXOUT - Propagation Send/Rcv        399      6031 3386              CX01
 
 If you don't see these running (particularly the `Capture`) then refer to link:debezium-xstream-system-output.adoc[]
 
+Check that Kafka Connect is running:
+
+[source,bash]
+----
+bash -c ' \
+echo -e "\n\n=============\nWaiting for Kafka Connect to start listening on localhost ⏳\n=============\n"
+while [ $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) -ne 200 ] ; do
+  echo -e "\t" $(date) " Kafka Connect listener HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) " (waiting for 200)"
+  sleep 5
+done
+echo -e $(date) "\n\n--------------\n\o/ Kafka Connect is ready! Listener HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) "\n--------------\n"
+'
+----
+
+Check that required connectors are loaded
+
+[source,bash]
+----
+curl -s localhost:8083/connector-plugins|jq '.[].class'|egrep 'OracleConnector|JdbcSourceConnector'
+----
+
+[source,bash]
+----
+"io.confluent.connect.jdbc.JdbcSourceConnector"
+"io.debezium.connector.oracle.OracleConnector"
+----
+
+
 === Run ksqlDB CLI and SQL*Plus
 
 Optionally, use something like `screen` or `tmux` to have these both easily to hand. Or multiple Terminal tabs. Whatever works for you :)
@@ -128,20 +156,18 @@ SELECT ID, FIRST_NAME, LAST_NAME, CREATE_TS, UPDATE_TS FROM CUSTOMERS;
 
 === Check status of connectors
 
-* Debezium
-+
+----
+curl -s "http://localhost:8083/connectors?expand=info&expand=status" | \
+       jq '. | to_entries[] | [ .value.info.type, .key, .value.status.connector.state,.value.status.tasks[].state,.value.info.config."connector.class"]|join(":|:")' | \
+       column -s : -t| sed 's/\"//g'| sort
+----
+
+Expected:
+
 [source,bash]
 ----
-$ curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
-ora-source-debezium-xstream  |  RUNNING  |  RUNNING
-----
-curl -s "http://localhost:8083/connectors/ora-source-debezium-xstream/status"
-* JDBC
-+
-[source,bash]
-----
-$ curl -s "http://localhost:18083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:18083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
-ora-source-jdbc  |  RUNNING  |  RUNNING
+source  |  ora-source-debezium-xstream  |  RUNNING  |  RUNNING  |  io.debezium.connector.oracle.OracleConnector
+source  |  ora-source-jdbc              |  RUNNING  |  RUNNING  |  io.confluent.connect.jdbc.JdbcSourceConnector
 ----
 
 === Show Kafka topic has been created & populated
@@ -204,6 +230,13 @@ Pretty-print the source data to show why nested
 [source,bash]
 ----
 echo '{"before": {"ID": 42, "FIRST_NAME": "Rick", "LAST_NAME": "Astley", "EMAIL": null, "GENDER": null, "CLUB_STATUS": "Bronze", "COMMENTS": null, "CREATE_TS": 1544000706681769, "UPDATE_TS": 1544000706000000}, "after": {"ID": 42, "FIRST_NAME": "Rick", "LAST_NAME": "Astley", "EMAIL": null, "GENDER": null, "CLUB_STATUS": "Platinum", "COMMENTS": null, "CREATE_TS": 1544000706681769, "UPDATE_TS": 1544000742000000}, "source": {"version": "0.9.0.Alpha2", "connector": "oracle", "name": "asgard", "ts_ms": 1544000742000, "txId": "6.26.734", "scn": 2796831, "snapshot": false}, "op": "u", "ts_ms": 1544000745823, "messagetopic": "asgard.DEBEZIUM.CUSTOMERS", "messagesource": "Debezium CDC from Oracle on asgard"}'|jq '.'
+----
+
+or use kafkacat
+
+[source,bash]
+----
+docker exec kafkacat kafkacat -b kafka:29092 -t asgard.DEBEZIUM.CUSTOMERS -C -u -q -o-1 -c1 -r http://schema-registry:8081 -s key=s -s value=avro|jq '.'
 ----
 
 
