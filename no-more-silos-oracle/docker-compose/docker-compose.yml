@@ -2,13 +2,15 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.0.1
+    image: confluentinc/cp-zookeeper:5.5.0
+    container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.0.1
+    image: confluentinc/cp-kafka:5.5.0
+    container_name: kafka
     depends_on:
       - zookeeper
     ports:
@@ -23,17 +25,13 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092
-      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
-      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
-      CONFLUENT_METRICS_ENABLE: 'true'
-      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.0.1
+    image: confluentinc/cp-schema-registry:5.5.0
+    container_name: schema-registry
     ports: 
       - 8081:8081
     depends_on:
@@ -43,8 +41,9 @@ services:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
-  kafka-connect-cp:
-    image: confluentinc/cp-kafka-connect:5.0.1
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:5.5.0
+    container_name: kafka-connect
     depends_on:
       - zookeeper
       - kafka
@@ -64,7 +63,7 @@ services:
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-cp"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
       CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
       CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
@@ -81,31 +80,31 @@ services:
         cp /db-leach/jdbc/lib/ojdbc8.jar /usr/share/java/kafka-connect-jdbc
         sleep infinity &
         /etc/confluent/docker/run
-  ksql-server:
-    image: confluentinc/cp-ksql-server:5.0.1
+
+  ksqldb:
+    image: confluentinc/ksqldb-server:0.9.0
+    container_name: ksqldb
     depends_on:
       - kafka
-      - schema-registry
+      - kafka-connect
+    ports:
+      - "8088:8088"
     environment:
-      KSQL_CUB_KAFKA_TIMEOUT: 120
-      KSQL_BOOTSTRAP_SERVERS: kafka:29092
       KSQL_LISTENERS: http://0.0.0.0:8088
+      KSQL_BOOTSTRAP_SERVERS: kafka:29092
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+      KSQL_KSQL_CONNECT_URL: http://kafka-connect:8083
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
-      KSQL_KSQL_STREAMS_PRODUCER_RETRIES: 2147483647
-
-  ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.0.1
-    depends_on:
-      - ksql-server
-    entrypoint: /bin/sh
-    tty: true
+      KSQL_KSQL_HIDDEN_TOPICS: '^_.*'
 
 # Other systems
   oracle:
     # You need to build this image first, following the instructions at 
     # https://github.com/oracle/docker-images/blob/master/OracleDatabase/SingleInstance/README.md
     image: oracle/database:12.2.0.1-ee
+    container_name: oracle
     environment:
       - ORACLE_PWD=Admin123
     ports:
@@ -119,6 +118,7 @@ services:
 
   connect-debezium:
     image: debezium/connect:0.9
+    container_name: connect-debezium
     depends_on:
      - kafka
      - oracle

@@ -94,7 +94,7 @@ EOF
 sqlplus c##xstrmadmin/xsa@//localhost:1521/ORCLCDB <<- EOF
 	BEGIN
 	  DBMS_XSTREAM_ADM.CREATE_OUTBOUND(
-	    server_name     =>  'dbzxout_new',
+	    server_name     =>  'dbzxout',
 	    schema_names    =>  'debezium',
 			connect_user => 'c##xstrm');
 	END;

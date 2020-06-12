@@ -13,7 +13,7 @@ curl -i -X POST -H "Accept:application/json" \
             "database.password" : "xs",
             "database.dbname" : "ORCLCDB",
             "database.pdb.name" : "ORCLPDB1",
-            "database.out.server.name" : "dbzxout_new",
+            "database.out.server.name" : "dbzxout",
             "database.history.kafka.bootstrap.servers" : "kafka:29092",
             "database.history.kafka.topic": "schema-changes.inventory",
             "include.schema.changes": "true",

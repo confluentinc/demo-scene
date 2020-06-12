@@ -1,7 +1,7 @@
 #!/bin/sh
 # https://docs.confluent.io/current/connect/kafka-connect-jdbc/source-connector/source_config_options.html
 curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://kafka-connect-cp:18083/connectors/ \
+    -H  "Content-Type:application/json" http://localhost:18083/connectors/ \
     -d '{
       "name": "ora-source-jdbc",
       "config": {

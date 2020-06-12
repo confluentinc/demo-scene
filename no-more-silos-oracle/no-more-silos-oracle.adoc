@@ -1,6 +1,6 @@
 = No More Silos - Demo
 Robin Moffatt <robin@confluent.io>
-v1.00, December 4, 2018
+v1.01, 11 June 2020
 
 The slides that accompany this demo can be found here: https://speakerdeck.com/rmoff/no-more-silos-integrating-databases-and-apache-kafka
 
@@ -22,49 +22,82 @@ cd docker-compose
 ./scripts/setup.sh
 ----
 
-=== Run KSQL CLI and SQL*Plus
+Verify that the Xstream capture process is running: 
+
+[source,bash]
+----
+docker exec -it oracle bash -c 'sleep 1;rlwrap sqlplus sys/Admin123@//localhost:1521/ORCLCDB as sysdba'
+----
+
+[source,sql]
+----
+COLUMN ACTION HEADING 'XStream Component' FORMAT A30
+COLUMN SID HEADING 'Session ID' FORMAT 99999
+COLUMN SERIAL# HEADING 'Session|Serial|Number' FORMAT 99999999
+COLUMN PROCESS HEADING 'Operating System|Process ID' FORMAT A17
+COLUMN PROCESS_NAME HEADING 'XStream|Program|Name' FORMAT A7
+ 
+SELECT /*+PARAM('_module_action_old_length',0)*/ ACTION,
+       SID,
+       SERIAL#,
+       PROCESS,
+       SUBSTR(PROGRAM,INSTR(PROGRAM,'(')+1,4) PROCESS_NAME
+  FROM V$SESSION
+  WHERE MODULE ='XStream';
+----
+
+Expected output: 
+
+[source,sql]
+----
+                                            Session                   XStream
+                                             Serial Operating System  Program
+XStream Component              Session ID    Number Process ID        Name
+------------------------------ ---------- --------- ----------------- -------
+DBZXOUT - Apply Reader                  9      6842 3380              AS01
+DBZXOUT - Apply Server                 16     35968 1                 TNS
+DBZXOUT - Apply Server                145     13290 3382              AS02
+CAP$_DBZXOUT_1 - Capture              270     62826 3384              CP01
+DBZXOUT - Apply Coordinator           396     27273 3378              AP01
+DBZXOUT - Propagation Send/Rcv        399      6031 3386              CX01
+
+6 rows selected.
+----
+
+If you don't see these running (particularly the `Capture`) then refer to link:debezium-xstream-system-output.adoc[]
+
+=== Run ksqlDB CLI and SQL*Plus
 
 Optionally, use something like `screen` or `tmux` to have these both easily to hand. Or multiple Terminal tabs. Whatever works for you :)
 
-* KSQL CLI:
+* ksqlDB CLI:
 +
 [source,bash]
 ----
-cd docker-compose
-docker-compose exec ksql-cli ksql http://ksql-server:8088
+docker exec -it ksqldb bash -c 'echo -e "\n\n  Waiting for ksqlDB to be available before launching CLI\n"; while : ; do curl_status=$(curl -s -o /dev/null -w %{http_code} http://ksqldb:8088/info) ; echo -e $(date) " ksqlDB server listener HTTP state: " $curl_status " (waiting for 200)" ; if [ $curl_status -eq 200 ] ; then  break ; fi ; sleep 5 ; done ; ksql http://ksqldb:8088'
 ----
 
 * SQL*Plus
 +
 [source,bash]
 ----
-cd docker-compose
-docker-compose exec oracle bash -c 'sleep 1;rlwrap sqlplus Debezium/dbz@localhost:1521/ORCLPDB1'
+docker exec -it oracle bash -c 'sleep 1;rlwrap sqlplus Debezium/dbz@localhost:1521/ORCLPDB1'
 ----
 +
 _(the `sleep` is necessary to avoid `rlwrap: error: My terminal reports width=0 (is it emacs?)  I can't handle this, sorry!` https://github.com/moby/moby/issues/28009[ref])_
-+
-** This uses rlwrap, which isn't in the vanilla Oracle image. To include it in your own image, add this to `OracleDatabase/SingleInstance/dockerfiles/12.2.0.1/Dockerfile` (or use https://github.com/rmoff/docker-images[this fork]): 
-+
-[source,bash]
-----
-RUN rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-RUN yum install -y rlwrap
-----
-
 
 * Oracle log
 +
 [source,bash]
 ----
-docker-compose logs -f oracle
+docker logs -f oracle
 ----
 
 * Debezium log 
 +
 [source,bash]
 ----
-docker-compose logs -f connect-debezium
+docker logs -f connect-debezium
 ----
 
 == Demo
@@ -102,7 +135,7 @@ SELECT ID, FIRST_NAME, LAST_NAME, CREATE_TS, UPDATE_TS FROM CUSTOMERS;
 $ curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
 ora-source-debezium-xstream  |  RUNNING  |  RUNNING
 ----
-
+curl -s "http://localhost:8083/connectors/ora-source-debezium-xstream/status"
 * JDBC
 +
 [source,bash]
@@ -113,7 +146,7 @@ ora-source-jdbc  |  RUNNING  |  RUNNING
 
 === Show Kafka topic has been created & populated
 
-In KSQL: 
+In ksqlDB: 
 
 [source,sql]
 ----
@@ -145,7 +178,7 @@ UPDATE CUSTOMERS SET CLUB_STATUS = 'Platinum' where ID=42;
 
 ---
 
-== KSQL for exploring CDC
+== ksqlDB for exploring CDC
 
 Create a stream
 
@@ -178,7 +211,7 @@ Look at before & after:
 
 [source,sql]
 ----
-SELECT OP, AFTER->ID, BEFORE->CLUB_STATUS, AFTER->CLUB_STATUS FROM CUSTOMERS_STREAM_DBZ_SRC;
+SELECT OP, AFTER->ID, BEFORE->CLUB_STATUS, AFTER->CLUB_STATUS FROM CUSTOMERS_STREAM_DBZ_SRC EMIT CHANGES;
 ----
 
 [source,sql]
@@ -196,7 +229,7 @@ JDBC only shows what it is now:
 
 [source,sql]
 ----
-SELECT ID, CLUB_STATUS FROM CUSTOMERS_STREAM_JDBC_SRC;
+SELECT ID, CLUB_STATUS FROM CUSTOMERS_STREAM_JDBC_SRC EMIT CHANGES;
 ----
 
 Do an update in the database, do a delete - note the data you get with proper CDC vs not
@@ -220,7 +253,8 @@ CREATE STREAM CUSTOMERS_STREAM_FLATTENED AS \
            AFTER->GENDER AS GENDER, \
            AFTER->CLUB_STATUS AS CLUB_STATUS, \
            AFTER->COMMENTS AS COMMENTS \
-      FROM CUSTOMERS_STREAM_DBZ_SRC;
+      FROM CUSTOMERS_STREAM_DBZ_SRC
+     EMIT CHANGES;
 ----
 
 [source,sql]
@@ -235,26 +269,25 @@ Checking lag
 [source,sql]
 ----
 CREATE STREAM LAG_MONITOR_DBZ AS \
-SELECT ROWTIME, \
-       SOURCE->TS_MS, \
+SELECT SOURCE->TS_MS, \
        ROWTIME - SOURCE->TS_MS AS LAG, \
        OP, \
        SOURCE->SNAPSHOT, \
-       BEFORE->ID, \
-       AFTER->ID \
-FROM CUSTOMERS_STREAM_DBZ_SRC;
+       BEFORE->ID AS ID_BEFORE, \
+       AFTER->ID AS ID_AFTER \
+FROM CUSTOMERS_STREAM_DBZ_SRC EMIT CHANGES;
 
-SELECT BEFORE__ID, AFTER__ID, TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss Z'), LAG, OP FROM LAG_MONITOR_DBZ;
+SELECT ID_BEFORE, ID_AFTER, TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss Z') AS SYSTEM_TIME, LAG, OP FROM LAG_MONITOR_DBZ EMIT CHANGES;
 ----
 
 (what would be nice here is to hook up `LAG_MONITOR_DBZ` to Elasticsearch or InfluxDB and have a little monitoring chart)
 
-== More cool stuff with KSQL
+== More cool stuff with ksqlDB
 
 [source,sql]
 ----
 
-ksql> SELECT OP, COUNT(*) FROM CUSTOMERS_STREAM_DBZ_SRC GROUP BY OP;
+ksql> SELECT OP, COUNT(*) AS OP_COUNT FROM CUSTOMERS_STREAM_DBZ_SRC GROUP BY OP EMIT CHANGES;
 c | 1
 r | 9
 u | 5
@@ -266,7 +299,7 @@ d | 3
 
 === Show Kafka topic has been created & populated
 
-In KSQL: 
+In ksqlDB: 
 
 [source,sql]
 ----
@@ -287,7 +320,7 @@ SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM CUSTOMERS_STREAM_JDBC_SRC WITH (KAFKA_TOPIC='ora-CUSTOMERS-jdbc', VALUE_FORMAT='AVRO');
 ----
 
-KSQL applies the schema to the data
+ksqlDB applies the schema to the data
 
 [source,sql]
 ----
@@ -298,9 +331,9 @@ Lag
 
 [source,sql]
 ----
-CREATE STREAM LAG_MONITOR_JDBC AS SELECT ROWTIME, UPDATE_TS, ROWTIME-UPDATE_TS AS LAG, ID FROM CUSTOMERS_STREAM_JDBC_SRC;
+CREATE STREAM LAG_MONITOR_JDBC AS SELECT UPDATE_TS, ROWTIME-UPDATE_TS AS LAG, ID FROM CUSTOMERS_STREAM_JDBC_SRC EMIT CHANGES;
 
-SELECT ID, TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss Z'), LAG FROM LAG_MONITOR_JDBC;
+SELECT ID, TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss Z') AS SYSTEM_TIME, LAG FROM LAG_MONITOR_JDBC EMIT CHANGES;
 
 ----
 
