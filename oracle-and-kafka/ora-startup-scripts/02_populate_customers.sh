@@ -1,8 +1,8 @@
 #!/bin/sh
 
-echo 'Creating and populating rmoff.customers table'
+echo 'Creating and populating Debezium.customers table'
 
-sqlplus rmoff/asgard@//localhost:1521/ORCLPDB1  <<- EOF
+sqlplus Debezium/dbz@//localhost:1521/ORCLPDB1  <<- EOF
 
 insert into CUSTOMERS (id, first_name, last_name, email, gender, club_status, comments) values (1, 'Rica', 'Blaisdell', 'rblaisdell0@rambler.ru', 'Female', 'bronze', 'Universal optimal hierarchy');
 insert into CUSTOMERS (id, first_name, last_name, email, gender, club_status, comments) values (2, 'Ruthie', 'Brockherst', 'rbrockherst1@ow.ly', 'Female', 'platinum', 'Reverse-engineered tangible interface');
