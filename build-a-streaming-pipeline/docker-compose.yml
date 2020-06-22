@@ -150,7 +150,7 @@ services:
         sleep infinity
 
   ksqldb:
-    image: confluentinc/ksqldb-server:0.8.1
+    image: confluentinc/ksqldb-server:0.9.0
     hostname: ksqldb
     container_name: ksqldb
     links:

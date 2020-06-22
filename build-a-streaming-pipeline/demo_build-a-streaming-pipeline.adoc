@@ -1,7 +1,7 @@
 = Streaming ETL demo - Enriching event stream data with CDC data from MySQL, stream into Elasticsearch
 :toc:
 Robin Moffatt <robin@confluent.io>
-v1.41, 3 March 2020
+v1.42, 22 June 2020
 
 image:images/ksql-debezium-es.png[Kafka Connect / ksqlDB / Elasticsearch]
 
@@ -571,10 +571,10 @@ Persist this and show the timestamp:
 
 [source,sql]
 ----
-CREATE TABLE RATINGS_PER_CUSTOMER_PER_MINUTE AS 
+CREATE TABLE RATINGS_PER_CUSTOMER_PER_15MINUTE AS 
 SELECT FULL_NAME,COUNT(*) AS RATINGS_COUNT
   FROM RATINGS_WITH_CUSTOMER_DATA 
-        WINDOW TUMBLING (SIZE 1 MINUTE) 
+        WINDOW TUMBLING (SIZE 15 MINUTE) 
   GROUP BY FULL_NAME
   EMIT CHANGES;
 ----
@@ -586,7 +586,7 @@ SELECT FULL_NAME,COUNT(*) AS RATINGS_COUNT
 SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, 
        FULL_NAME, 
        RATINGS_COUNT 
-  FROM RATINGS_PER_CUSTOMER_PER_MINUTE 
+  FROM RATINGS_PER_CUSTOMER_PER_15MINUTE 
   WHERE ROWKEY='Rica Blaisdell'
   EMIT CHANGES;
 ----
@@ -599,9 +599,9 @@ SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS,
 SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, 
        FULL_NAME,
        RATINGS_COUNT
-FROM   RATINGS_PER_CUSTOMER_PER_MINUTE
+FROM   RATINGS_PER_CUSTOMER_PER_15MINUTE
 WHERE  ROWKEY='Rica Blaisdell'
-  AND  WINDOWSTART > '2020-04-29T18:30:00.000';
+  AND  WINDOWSTART > '2020-06-23T11:30:00.000';
 ----
 
 Show REST API with link:ksqlDB.postman_collection.json[Postman] or bash: 
@@ -621,7 +621,7 @@ PREDICATE=$(date --date '-5 min' +%s)000
 # Pull from ksqlDB the aggregate-by-minute for the last five minutes for a given user: 
 curl -X "POST" "http://ksqldb:8088/query" \
      -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
-     -d '{"ksql":"SELECT TIMESTAMPTOSTRING(WINDOWSTART, '\''yyyy-MM-dd HH:mm:ss'\'') AS WINDOW_START_TS,        FULL_NAME,       RATINGS_COUNT FROM   RATINGS_PER_CUSTOMER_PER_MINUTE WHERE  ROWKEY='\''Rica Blaisdell'\''   AND  WINDOWSTART > '$PREDICATE';"}'
+     -d '{"ksql":"SELECT TIMESTAMPTOSTRING(WINDOWSTART, '\''yyyy-MM-dd HH:mm:ss'\'') AS WINDOW_START_TS,        FULL_NAME,       RATINGS_COUNT FROM   RATINGS_PER_CUSTOMER_PER_15MINUTE WHERE  ROWKEY='\''Rica Blaisdell'\''   AND  WINDOWSTART > '$PREDICATE';"}'
 ----
   
 Press Ctrl-D to exit the Docker container
