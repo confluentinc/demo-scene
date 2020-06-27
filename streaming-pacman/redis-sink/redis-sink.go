@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
@@ -200,7 +199,7 @@ func main() {
 						_, err := cacheServer.Do("MULTI")
 						if err == nil {
 							// Create key for the record
-							key := strings.ToLower(string(e.Key))
+							key := string(e.Key)
 							// Update the details cache
 							cacheServer.Do("SET", key, string(e.Value))
 							// Update the scoreboard cache

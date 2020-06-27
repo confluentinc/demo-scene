@@ -68,7 +68,7 @@ public class AlexaPlayersHandler implements IntentRequestHandler {
         Set<String> bestPlayerKey = cacheServer.zrevrange(SCOREBOARD_CACHE, 0, 0);
         String key = bestPlayerKey.iterator().next();
         String value = cacheServer.get(key);
-        Player player = Player.getPlayer(value);
+        Player player = Player.getPlayer(key, value);
         String text = resourceBundle.getString(BEST_PLAYER);
         speechText.append(String.format(text, player.getUser()));
 
@@ -88,7 +88,7 @@ public class AlexaPlayersHandler implements IntentRequestHandler {
             List<Player> players = new ArrayList<>(playerKeys.size());
             for (String key : playerKeys) {
                 String value = cacheServer.get(key);
-                players.add(Player.getPlayer(value));
+                players.add(Player.getPlayer(key, value));
             }
 
             String and = resourceBundle.getString(AND);

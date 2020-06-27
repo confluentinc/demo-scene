@@ -81,7 +81,7 @@ public class AlexaDetailsHandler implements IntentRequestHandler {
             Set<String> playerKey = cacheServer.zrevrange(SCOREBOARD_CACHE, position, position);
             String key = playerKey.iterator().next();
             String value = cacheServer.get(key);
-            Player player = Player.getPlayer(value);
+            Player player = Player.getPlayer(key, value);
             speechText.append(getPlayerDetails(player, resourceBundle));
         } else {
             speechText.append(resourceBundle.getString(POSITION_DOESNT_EXIST));
@@ -97,7 +97,7 @@ public class AlexaDetailsHandler implements IntentRequestHandler {
 
         if (cacheServer.exists(playerName)) {
             String value = cacheServer.get(playerName);
-            Player player = Player.getPlayer(value);
+            Player player = Player.getPlayer(playerName, value);
             speechText.append(getPlayerDetails(player, resourceBundle));
         } else {
             String text = resourceBundle.getString(NO_ONE_WITH_THIS_NAME);

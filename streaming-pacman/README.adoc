@@ -2,11 +2,11 @@
 
 :imagesdir: images/
 
-*Streaming Pac-Man* is the funniest application that you ever see while applying principles of streaming analytics using https://kafka.apache.org[Apache Kafka]. Built around the famous Pac-Man game, this application ingest and store events from the game into Kafka topics and allow you to process them in near real-time using https://ksqldb.io/[ksqlDB]. In order to keep you focused on the fun part this application is based on a Kafka cluster running in a fully managed service for Apache Kafka.
+*Streaming Pac-Man* is the funniest application that you ever see while applying principles of streaming analytics using https://kafka.apache.org[Apache Kafka]. Built around the famous Pac-Man game, this application ingest and store events from the game into Kafka topics and allow you to process them in near real-time using https://ksqldb.io/[ksqlDB]. In order to keep you focused this application is based on a Kafka cluster running in a fully managed service for Apache Kafka.
 
 image::pacman-game.png[]
 
-To apply principles of stream processing in the game, you are going to build a link:pipeline/queries.sql[scoreboard using ksqlDB]. The scoreboard will be based on a table that holds aggregated metrics of the players such as their highest score, the highest level achieved, and the number of times that the player loses. As new events come from the game, the scoreboard gets instantly updated by the continuous queries that keep processing those events as they happen.
+To implement streaming analytics in the game you are going to build a link:pipeline/queries.sql[scoreboard using ksqlDB]. The scoreboard will be a table containing aggregated metrics of the players such as their highest score, the highest level achieved, and the number of times that the player loses. As new events arrive the scoreboard gets instantly updated by the continuous queries that keep processing those events as they happen.
 
 == What you are going to need?
 
@@ -19,7 +19,7 @@ To apply principles of stream processing in the game, you are going to build a l
 
 == 1) Setting up Confluent Cloud
 
-As mentioned before, the application is based on clusters running on Confluent Cloud. Thus, the very first thing you need to do is https://docs.confluent.io/current/quickstart/cloud-quickstart/index.html[creating a cluster in Confluent Cloud].
+As mentioned before the application uses a Kafka cluster running in a fully managed service for Apache Kafka. Therefore the first thing you need to do is https://docs.confluent.io/current/quickstart/cloud-quickstart/index.html[creating a cluster in Confluent Cloud].
 
 == 2) Deploying the application
 

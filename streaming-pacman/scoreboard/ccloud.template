@@ -3,3 +3,4 @@ sasl.mechanism=PLAIN
 security.protocol=SASL_SSL
 sasl.username=${cluster_api_key}
 sasl.password=${cluster_api_secret}
+topic.name=${scoreboard_topic}

@@ -50,12 +50,11 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
 
         if (player != null) {
 
-            player = player.toLowerCase();
             JsonObject playerEntry = new JsonObject();
 
             if (cacheServer.exists(player)) {
                 String value = cacheServer.get(player);
-                Player _player = Player.getPlayer(value);
+                Player _player = Player.getPlayer(player, value);
                 playerEntry.addProperty(Player.USER, _player.getUser());
                 playerEntry.addProperty(Player.SCORE, _player.getScore());
                 playerEntry.addProperty(Player.LEVEL, _player.getLevel());
@@ -72,7 +71,7 @@ public class Scoreboard implements RequestHandler<Map<String, Object>, Map<Strin
                 Set<String> playerKeys = cacheServer.zrevrange(SCOREBOARD_CACHE, 0, -1);
                 for (String key : playerKeys) {
                     String value = cacheServer.get(key);
-                    Player _player = Player.getPlayer(value);
+                    Player _player = Player.getPlayer(key, value);
                     JsonObject playerEntry = new JsonObject();
                     playerEntry.addProperty(Player.USER, _player.getUser());
                     playerEntry.addProperty(Player.SCORE, _player.getScore());

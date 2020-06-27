@@ -8,8 +8,8 @@ function loadHighestScore(callback) {
 	var highestScore ;
 	var ksqlQuery = {};
 	ksqlQuery.ksql =
-		"SELECT HIGHEST_SCORE FROM HIGHEST_SCORE " +
-		"WHERE ROWKEY = 'HIGHEST_SCORE';";
+		"SELECT HIGHEST_SCORE_VALUE FROM HIGHEST_SCORE " +
+		"WHERE HIGHEST_SCORE_KEY = 'HIGHEST_SCORE_KEY';";
 
 	var request = new XMLHttpRequest();
     request.onreadystatechange = function() {

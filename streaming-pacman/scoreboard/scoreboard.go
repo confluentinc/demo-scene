@@ -83,7 +83,7 @@ func main() {
 	// keep blinking and giving an annoying UI experience.
 	sigchan := make(chan os.Signal, 1)
 	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
-	consumer.SubscribeTopics([]string{"SCOREBOARD"}, nil)
+	consumer.SubscribeTopics([]string{props["topic.name"]}, nil)
 	rewindPeriod := true
 	keepRunning := true
 	for keepRunning == true {

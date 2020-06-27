@@ -84,6 +84,11 @@ locals {
   region = split(".", var.bootstrap_server)[1]
 }
 
+variable "scoreboard_topic" {
+  type = string
+  default = "SCOREBOARD"
+}
+
 ###########################################
 ############ Alexa Variables ##############
 ###########################################
@@ -127,6 +132,7 @@ data "template_file" "ccloud_properties" {
     bootstrap_server = var.bootstrap_server
     cluster_api_key = var.cluster_api_key
     cluster_api_secret = var.cluster_api_secret
+    scoreboard_topic = var.scoreboard_topic
   }
 }
 

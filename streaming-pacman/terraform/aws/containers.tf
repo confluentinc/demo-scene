@@ -287,7 +287,7 @@ data "template_file" "redis_sink_definition" {
     auto_create_topic = "true"
     num_partitions = "6"
     replication_factor = "3"
-    topic_name = "SCOREBOARD"
+    topic_name = var.scoreboard_topic
     print_vars = "false"
     group_id = "${var.global_prefix}-${uuid()}-redis-sink"
     redis_host = aws_elasticache_replication_group.cache_server.primary_endpoint_address

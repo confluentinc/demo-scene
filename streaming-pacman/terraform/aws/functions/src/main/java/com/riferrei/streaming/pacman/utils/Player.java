@@ -64,19 +64,11 @@ public class Player implements Comparable<Player> {
     public static final String LEVEL = "level";
     public static final String LOSSES = "losses";
 
-    public static Player getPlayer(String value) {
+    public static Player getPlayer(String key, String value) {
         JsonElement rootElement = JsonParser.parseString(value);
         JsonObject rootObject = rootElement.getAsJsonObject();
         JsonElement element = null;
-        String user = null;
-        if (rootObject.has(USER_FIELD)) {
-            element = rootObject.get(USER_FIELD);
-            if (element instanceof JsonNull == false) {
-                user = element.getAsString();
-            } else {
-                return null;
-            }
-        }
+        String user = key;
         int score = 0;
         if (rootObject.has(HIGHEST_SCORE_FIELD)) {
             element = rootObject.get(HIGHEST_SCORE_FIELD);
