@@ -46,7 +46,7 @@
           "USER": "riferrei",
           "HIGHEST_SCORE": 10,
           "HIGHEST_LEVEL": 1,
-          "TOTAL_LOSSES": 0
+          "TOTAL_LOSSES": 1
         },
         "timestamp": 0
       },
@@ -57,18 +57,7 @@
           "USER": "riferrei",
           "HIGHEST_SCORE": 20,
           "HIGHEST_LEVEL": 1,
-          "TOTAL_LOSSES": 0
-        },
-        "timestamp": 0
-      },
-      {
-        "topic": "SCOREBOARD",
-        "key": "riferrei",
-        "value": {
-          "USER": "riferrei",
-          "HIGHEST_SCORE": 30,
-          "HIGHEST_LEVEL": 2,
-          "TOTAL_LOSSES": 0
+          "TOTAL_LOSSES": 1
         },
         "timestamp": 0
       },
@@ -85,25 +74,28 @@
       },
       {
         "topic": "HIGHEST_SCORE",
-        "key": "HIGHEST_SCORE",
+        "key": "HIGHEST_SCORE_KEY",
         "value": {
-          "HIGHEST_SCORE": 10
+          "HIGHEST_SCORE_KEY": "HIGHEST_SCORE_KEY",
+          "HIGHEST_SCORE_VALUE": 10
         },
         "timestamp": 0
       },
       {
         "topic": "HIGHEST_SCORE",
-        "key": "HIGHEST_SCORE",
+        "key": "HIGHEST_SCORE_KEY",
         "value": {
-          "HIGHEST_SCORE": 20
+          "HIGHEST_SCORE_KEY": "HIGHEST_SCORE_KEY",
+          "HIGHEST_SCORE_VALUE": 20
         },
         "timestamp": 0
       },
       {
         "topic": "HIGHEST_SCORE",
-        "key": "HIGHEST_SCORE",
+        "key": "HIGHEST_SCORE_KEY",
         "value": {
-          "HIGHEST_SCORE": 30
+          "HIGHEST_SCORE_KEY": "HIGHEST_SCORE_KEY",
+          "HIGHEST_SCORE_VALUE": 30
         },
         "timestamp": 0
       }
