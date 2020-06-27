@@ -17,10 +17,10 @@ import (
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
-// UserStatistic holds the aggregated
+// Player holds the aggregated
 // data about one specific user playing
 // with the Pac-Man game.
-type UserStatistic struct {
+type Player struct {
 	User         string `json:"USER"`
 	HighestScore int    `json:"HIGHEST_SCORE"`
 	HighestLevel int    `json:"HIGHEST_LEVEL"`
@@ -46,7 +46,7 @@ func main() {
 	// computed by the pipeline. Data coming
 	// from the 'SCOREBOARD' topic will be used
 	// to populate this cache.
-	stats := make(map[string]*UserStatistic)
+	stats := make(map[string]*Player)
 
 	// We need to print the statistics starting with the
 	// beginning of the topic, therefore we need to use
@@ -101,9 +101,11 @@ func main() {
 				rewindPeriod = false
 				printStatistics(stats, count)
 			case *kafka.Message:
-				userStat := new(UserStatistic)
-				json.Unmarshal(e.Value, userStat)
-				stats[userStat.User] = userStat
+				player := new(Player)
+				json.Unmarshal(e.Value, player)
+				key := string(e.Key)
+				player.User = key
+				stats[key] = player
 				if !rewindPeriod {
 					printStatistics(stats, count)
 				}
@@ -140,13 +142,13 @@ func loadProperties() map[string]string {
 	return props
 }
 
-func printStatistics(stats map[string]*UserStatistic, count int) {
+func printStatistics(players map[string]*Player, count int) {
 
 	// Clear the screen and calculate who
 	// from the list has the biggest name.
 	clearScreen()
 	var biggestName int
-	for user := range stats {
+	for user := range players {
 		if len(user) > biggestName {
 			biggestName = len(user)
 		}
@@ -174,29 +176,29 @@ func printStatistics(stats map[string]*UserStatistic, count int) {
 	//   1) Whoever has the highest score;
 	//   2) Then whoever has the highest Level;
 	//   3) Then whoever has less total losses;
-	users := make([]*UserStatistic, 0, len(stats))
-	for _, userStat := range stats {
-		users = append(users, userStat)
+	_players := make([]*Player, 0, len(players))
+	for _, player := range players {
+		_players = append(_players, player)
 	}
-	sort.SliceStable(users, func(i, j int) bool {
-		if users[i].HighestScore > users[j].HighestScore {
+	sort.SliceStable(_players, func(i, j int) bool {
+		if _players[i].HighestScore > _players[j].HighestScore {
 			return true
-		} else if users[i].HighestScore < users[j].HighestScore {
+		} else if _players[i].HighestScore < _players[j].HighestScore {
 			return false
 		} else {
-			if users[i].HighestLevel > users[j].HighestLevel {
+			if _players[i].HighestLevel > _players[j].HighestLevel {
 				return true
-			} else if users[i].HighestLevel < users[j].HighestLevel {
+			} else if _players[i].HighestLevel < _players[j].HighestLevel {
 				return false
 			}
 		}
-		return users[i].TotalLosses < users[j].TotalLosses
+		return _players[i].TotalLosses < _players[j].TotalLosses
 	})
 
 	// Effectively print the statistics...
 	formatExp = "|  %-3d|  %-" + strconv.Itoa(length+1) + "v|     %-16d|       %-10d|       %-9d|\n"
-	for i, user := range users {
-		fmt.Printf(formatExp, i+1, user.User, user.HighestScore, user.HighestLevel, user.TotalLosses)
+	for i, player := range _players {
+		fmt.Printf(formatExp, i+1, player.User, player.HighestScore, player.HighestLevel, player.TotalLosses)
 		if i+1 == count {
 			break
 		}
