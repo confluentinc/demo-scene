@@ -20,7 +20,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\"ksql\":\"SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, FULL_NAME, RATINGS_COUNT FROM RATINGS_PER_CUSTOMER_PER_15MINUTE WHERE  ROWKEY='Rica Blaisdell' AND  WINDOWSTART > '2020-06-23T11:42:00.000';\",\"streamsProperties\": {\"ksql.streams.auto.offset.reset\": \"earliest\"\n  }}",
+					"raw": "{\"ksql\":\"SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, FULL_NAME, RATINGS_COUNT FROM RATINGS_PER_CUSTOMER_PER_15MINUTE WHERE  FULL_NAME='Rica Blaisdell' AND  WINDOWSTART > '2020-06-23T11:42:00.000';\",\"streamsProperties\": {\"ksql.streams.auto.offset.reset\": \"earliest\"\n  }}",
 					"options": {
 						"raw": {
 							"language": "json"
