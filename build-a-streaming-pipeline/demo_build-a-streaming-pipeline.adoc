@@ -311,7 +311,8 @@ Create ksqlDB stream and table
 
 [source,sql]
 ----
-CREATE TABLE  CUSTOMERS WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
+CREATE TABLE CUSTOMERS (CUSTOMER_ID VARCHAR PRIMARY KEY) 
+  WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
 ----
 
 Query the ksqlDB table: 
@@ -319,7 +320,7 @@ Query the ksqlDB table:
 [source,sql]
 ----
 SET 'auto.offset.reset' = 'earliest';
-SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS EMIT CHANGES;
+SELECT CUSTOMER_ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS EMIT CHANGES;
 ----
 
 
@@ -355,7 +356,7 @@ Here's the table - the latest value for a given key
 [source,sql]
 ----
 SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS EVENT_TS, 
-       ID, 
+       CUSTOMER_ID, 
        FIRST_NAME, 
        LAST_NAME, 
        EMAIL, 
@@ -366,10 +367,10 @@ SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS EVENT_TS,
 
 [source,sql]
 ----
-+----------+----+-----------+----------+-----------------+------------+
-|EVENT_TS  |ID  |FIRST_NAME |LAST_NAME |EMAIL            |CLUB_STATUS |
-+----------+----+-----------+----------+-----------------+------------+
-|15:43:58  |42  |Rick       |Astley    |rick@example.com |platinum    |
++-----------+-------------+-----------+----------+-----------------+------------+
+|EVENT_TS   |CUSTOMER_ID  |FIRST_NAME |LAST_NAME |EMAIL            |CLUB_STATUS |
++-----------+-------------+-----------+----------+-----------------+------------+
+|09:20:15   |42           |Rick       |Astley    |rick@example.com |platinum    |
 ^CQuery terminated
 ----
 
@@ -377,12 +378,12 @@ Here's the stream - every event, which in this context is every change event on 
 
 [source,sql]
 ----
-CREATE STREAM CUSTOMERS_STREAM WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
+CREATE STREAM CUSTOMERS_STREAM (CUSTOMER_ID VARCHAR KEY) WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
 
 SET 'auto.offset.reset' = 'earliest';
 
 SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS EVENT_TS, 
-       ID, 
+       CUSTOMER_ID, 
        FIRST_NAME, 
        LAST_NAME, 
        EMAIL, 
@@ -394,13 +395,13 @@ SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS EVENT_TS,
 
 [source,sql]
 ----
-+---------+----+-----------+----------+------------------+------------+
-|TS       |ID  |FIRST_NAME |LAST_NAME |EMAIL             |CLUB_STATUS |
-+---------+----+-----------+----------+------------------+------------+
-|16:08:49 |42  |Rick       |Astley    |null              |null        |
-|16:09:30 |42  |Rick       |Astley    |rick@example.com  |null        |
-|16:09:32 |42  |Rick       |Astley    |rick@example.com  |bronze      |
-|16:09:35 |42  |Rick       |Astley    |rick@example.com  |platinum    |
++----------+------------+-----------+----------+-----------------+------------+
+|EVENT_TS  |CUSTOMER_ID |FIRST_NAME |LAST_NAME |EMAIL            |CLUB_STATUS |
++----------+------------+-----------+----------+-----------------+------------+
+|09:20:07  |42          |Rick       |Astley    |null             |null        |
+|09:20:10  |42          |Rick       |Astley    |rick@example.com |null        |
+|09:20:13  |42          |Rick       |Astley    |rick@example.com |bronze      |
+|09:20:15  |42          |Rick       |Astley    |rick@example.com |platinum    |
 ^CQuery terminated
 ksql>
 ----
@@ -413,28 +414,28 @@ ksql>
 [source,sql]
 ----
 SELECT R.RATING_ID, R.MESSAGE, R.CHANNEL, 
-       C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, 
+       C.CUSTOMER_ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, 
        C.CLUB_STATUS
 FROM   RATINGS R 
        LEFT JOIN CUSTOMERS C 
-         ON CAST(R.USER_ID AS STRING) = C.ROWKEY      
+         ON CAST(R.USER_ID AS STRING) = C.CUSTOMER_ID      
 WHERE  C.FIRST_NAME IS NOT NULL
 EMIT CHANGES;
 ----
 
 [source,sql]
 ----
-+------------+-----------------------------------+-------+--------------------+-------------+
-|RATING_ID   |MESSAGE                            |ID     |FULL_NAME           |CLUB_STATUS  |
-+------------+-----------------------------------+-------+--------------------+-------------+
-|1           |more peanuts please                |9      |Even Tinham         |silver       |
-|2           |Exceeded all my expectations. Thank|8      |Patti Rosten        |silver       |
-|            | you !                             |       |                    |             |
-|3           |meh                                |17     |Brianna Paradise    |bronze       |
-|4           |is this as good as it gets? really |14     |Isabelita Talboy    |gold         |
-|            |?                                  |       |                    |             |
-|5           |why is it so difficult to keep the |19     |Josiah Brockett     |gold         |
-|            |bathrooms clean ?                  |       |                    |             |
++------------+-----------------------------------+------------+--------------------+-------------+
+|RATING_ID   |MESSAGE                            |CUSTOMER_ID |FULL_NAME           |CLUB_STATUS  |
++------------+-----------------------------------+------------+--------------------+-------------+
+|1           |more peanuts please                |9           |Even Tinham         |silver       |
+|2           |Exceeded all my expectations. Thank|8           |Patti Rosten        |silver       |
+|            | you !                             |            |                    |             |
+|3           |meh                                |17          |Brianna Paradise    |bronze       |
+|4           |is this as good as it gets? really |14          |Isabelita Talboy    |gold         |
+|            |?                                  |            |                    |             |
+|5           |why is it so difficult to keep the |19          |Josiah Brockett     |gold         |
+|            |bathrooms clean ?                  |            |                    |             |
 …
 ----
 
@@ -447,11 +448,11 @@ CREATE STREAM RATINGS_WITH_CUSTOMER_DATA
        WITH (KAFKA_TOPIC='ratings-enriched') 
        AS 
 SELECT R.RATING_ID, R.MESSAGE, R.STARS, R.CHANNEL,
-       C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, 
+       C.CUSTOMER_ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, 
        C.CLUB_STATUS, C.EMAIL 
 FROM   RATINGS R 
        LEFT JOIN CUSTOMERS C 
-         ON CAST(R.USER_ID AS STRING) = C.ROWKEY      
+         ON CAST(R.USER_ID AS STRING) = C.CUSTOMER_ID      
 WHERE  C.FIRST_NAME IS NOT NULL
 EMIT CHANGES;
 ----
@@ -466,11 +467,12 @@ Check out the ratings for customer id 2 only:
 SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS EVENT_TS, 
         FULL_NAME, CLUB_STATUS, STARS, MESSAGE, CHANNEL 
   FROM RATINGS_WITH_CUSTOMER_DATA 
-  WHERE ID=2
+  WHERE CAST(CUSTOMER_ID AS INT)=2
   EMIT CHANGES;
 ----
 
 In mysql, make a change to ID 2
+
 [source,sql]
 ----
 UPDATE CUSTOMERS SET CLUB_STATUS = 'bronze' WHERE ID=2;
@@ -486,7 +488,8 @@ CREATE STREAM UNHAPPY_PLATINUM_CUSTOMERS AS
 SELECT FULL_NAME, CLUB_STATUS, EMAIL, STARS, MESSAGE 
 FROM   RATINGS_WITH_CUSTOMER_DATA 
 WHERE  STARS < 3 
-  AND  CLUB_STATUS = 'platinum';
+  AND  CLUB_STATUS = 'platinum'
+PARTITION BY FULL_NAME;
 ----
 
 == Stream to Elasticsearch
@@ -555,14 +558,14 @@ image:images/es03.png[Kibana]
 
 === Aggregations
 
-Simple aggregation - count of ratings per person, per minute:
+Simple aggregation - count of ratings per person, per 15 minutes:
 
 [source,sql]
 ----
 SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS,
        FULL_NAME,COUNT(*) AS RATINGS_COUNT
   FROM RATINGS_WITH_CUSTOMER_DATA 
-        WINDOW TUMBLING (SIZE 1 MINUTE) 
+        WINDOW TUMBLING (SIZE 15 MINUTE) 
   GROUP BY FULL_NAME
   EMIT CHANGES;
 ----
@@ -587,7 +590,7 @@ SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS,
        FULL_NAME, 
        RATINGS_COUNT 
   FROM RATINGS_PER_CUSTOMER_PER_15MINUTE 
-  WHERE ROWKEY='Rica Blaisdell'
+  WHERE FULL_NAME='Rica Blaisdell'
   EMIT CHANGES;
 ----
 
@@ -600,7 +603,7 @@ SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS,
        FULL_NAME,
        RATINGS_COUNT
 FROM   RATINGS_PER_CUSTOMER_PER_15MINUTE
-WHERE  ROWKEY='Rica Blaisdell'
+WHERE  FULL_NAME='Rica Blaisdell'
   AND  WINDOWSTART > '2020-06-23T11:30:00.000';
 ----
 
@@ -621,7 +624,7 @@ PREDICATE=$(date --date '-5 min' +%s)000
 # Pull from ksqlDB the aggregate-by-minute for the last five minutes for a given user: 
 curl -X "POST" "http://ksqldb:8088/query" \
      -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
-     -d '{"ksql":"SELECT TIMESTAMPTOSTRING(WINDOWSTART, '\''yyyy-MM-dd HH:mm:ss'\'') AS WINDOW_START_TS,        FULL_NAME,       RATINGS_COUNT FROM   RATINGS_PER_CUSTOMER_PER_15MINUTE WHERE  ROWKEY='\''Rica Blaisdell'\''   AND  WINDOWSTART > '$PREDICATE';"}'
+     -d '{"ksql":"SELECT TIMESTAMPTOSTRING(WINDOWSTART, '\''yyyy-MM-dd HH:mm:ss'\'') AS WINDOW_START_TS,        FULL_NAME,       RATINGS_COUNT FROM   RATINGS_PER_CUSTOMER_PER_15MINUTE WHERE  FULL_NAME='\''Rica Blaisdell'\''   AND  WINDOWSTART > '$PREDICATE';"}'
 ----
   
 Press Ctrl-D to exit the Docker container
