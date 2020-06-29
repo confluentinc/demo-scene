@@ -119,7 +119,7 @@ variable "ksqldb_server_image" {
 
 variable "redis_sink_image" {
   type = string
-  default = "riferrei/redis-sink"
+  default = "riferrei/redis-sink:latest"
 }
 
 ###########################################
