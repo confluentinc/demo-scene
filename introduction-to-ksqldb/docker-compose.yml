@@ -52,7 +52,7 @@ services:
     # To connect to the DB: 
     #   docker exec -it ksqldb bash -c 'ksql http://localhost:8088'
     # *-----------------------------*  
-    image: confluentinc/ksqldb-server:0.9.0
+    image: confluentinc/ksqldb-server:0.10.0
     hostname: ksqldb
     container_name: ksqldb
     depends_on:
@@ -96,12 +96,12 @@ services:
       - -c 
       - |
         #
-        # echo "Installing connector plugins"
-        # mkdir -p /usr/share/confluent-hub-components/
-        # confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ mdrogalis/voluble:0.2.0
-        # confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-datagen:0.2.0
-        # confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-jdbc:5.5.0
-        # confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ debezium/debezium-connector-postgresql:1.1.0
+        echo "Installing connector plugins"
+        mkdir -p /usr/share/confluent-hub-components/
+        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ mdrogalis/voluble:0.2.0
+        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-datagen:0.2.0
+        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ confluentinc/kafka-connect-jdbc:5.5.0
+        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ debezium/debezium-connector-postgresql:1.1.0
         #
         echo "Launching ksqlDB"
         /usr/bin/docker/run & 
