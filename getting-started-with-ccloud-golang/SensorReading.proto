@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package io.confluent.cloud.demo.domain;
+
+option go_package = "main";
+
+message SensorReading {
+
+    message Device {
+        string deviceID = 1;
+        bool enabled = 2;
+    }
+
+    Device device = 1;
+    int64 dateTime = 2;
+    double reading = 3;
+
+}
