@@ -1,13 +1,13 @@
 = Streaming ETL demo - Enriching event stream data with CDC data from MySQL, stream into Elasticsearch
 :toc:
 Robin Moffatt <robin@confluent.io>
-v1.42, 22 June 2020
+v1.50, 6 July 2020
 
 image:images/ksql-debezium-es.png[Kafka Connect / ksqlDB / Elasticsearch]
 
 This is designed to be run as a step-by-step demo. The `ksqldb-statements.sql` should match those run in this doc end-to-end and in theory you can just run the file, but I have not tested it. PRs welcome for a one-click script that just demonstrates the end-to-end running demo :)
 
-The slides that accompany this demo can be found here: https://go.rmoff.net/devoxxuk19
+The slides that accompany this demo can be found here: https://rmoff.dev/ljc-kafka-01
 
 == Pre-reqs
 
@@ -81,6 +81,35 @@ docker exec -it ksqldb bash -c 'echo -e "\n\n⏳ Waiting for ksqlDB to be availa
 
 image:images/ksql-debezium-es.png[Kafka Connect / ksqlDB / Elasticsearch]
 
+== Part 00 - Kafka Connect for streaming data to other systems
+
+[source,sql]
+----
+SHOW TOPICS;
+----
+
+[source,sql]
+----
+PRINT ratings;
+----
+
+[source,sql]
+----
+CREATE SINK CONNECTOR SINK_ES_RATINGS WITH (
+    'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+    'topics'          = 'ratings',
+    'connection.url'  = 'http://elasticsearch:9200',
+    'type.name'       = '_doc',
+    'key.ignore'      = 'false',
+    'schema.ignore'   = 'true',
+    'transforms'= 'ExtractTimestamp',
+    'transforms.ExtractTimestamp.type'= 'org.apache.kafka.connect.transforms.InsertField$Value',
+    'transforms.ExtractTimestamp.timestamp.field' = 'RATING_TS'
+);
+----
+
+Show in Kibana (http://localhost:5601/app/kibana)
+
 == Part 01 - ksqlDB for filtering streams
 
 === Inspect topics
@@ -112,7 +141,7 @@ CREATE STREAM RATINGS WITH (KAFKA_TOPIC='ratings',VALUE_FORMAT='AVRO');
 
 [source,sql]
 ----
-SELECT STARS, CHANNEL, MESSAGE FROM RATINGS EMIT CHANGES;
+SELECT USER_ID, STARS, CHANNEL, MESSAGE FROM RATINGS EMIT CHANGES;
 ----
 
 
@@ -120,69 +149,32 @@ SELECT STARS, CHANNEL, MESSAGE FROM RATINGS EMIT CHANGES;
 
 [source,sql]
 ----
-SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3  EMIT CHANGES;
+SELECT USER_ID, STARS, CHANNEL, MESSAGE FROM RATINGS WHERE LCASE(CHANNEL) NOT LIKE '%test%' EMIT CHANGES;
 ----
 
 === Create a derived stream
 
 [source,sql]
 ----
-CREATE STREAM POOR_RATINGS AS
-SELECT USER_ID, STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
+CREATE STREAM RATINGS_LIVE AS
+SELECT USER_ID, STARS, CHANNEL, MESSAGE FROM RATINGS WHERE LCASE(CHANNEL) NOT LIKE '%test%' EMIT CHANGES;
+
+CREATE STREAM RATINGS_TEST AS
+SELECT USER_ID, STARS, CHANNEL, MESSAGE FROM RATINGS WHERE LCASE(CHANNEL) LIKE '%test%' EMIT CHANGES;
 ----
 
 [source,sql]
 ----
-SELECT * FROM POOR_RATINGS EMIT CHANGES LIMIT 5;
+SELECT * FROM RATINGS_LIVE EMIT CHANGES LIMIT 5;
+SELECT * FROM RATINGS_TEST EMIT CHANGES LIMIT 5;
 ----
 
 [source,sql]
 ----
-DESCRIBE EXTENDED POOR_RATINGS;
+DESCRIBE EXTENDED RATINGS_LIVE;
 ----
 
-Optionally, bring up a second ksqlDB prompt and show live ratings / live filtered ratings: 
-
-[source,sql]
-----
--- Live stream of ratings data
-SET 'auto.offset.reset' = 'latest';
-PRINT 'ratings';
-
--- You can use SELECT too, but PRINT makes it clearer that it's coming from a topic
-SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TIMESTAMP, STARS, CHANNEL FROM RATINGS EMIT CHANGES;
-----
-
-[source,sql]
-----
--- Just the ratings with star rating less than 3: 
-SET 'auto.offset.reset' = 'latest';
-PRINT 'POOR_RATINGS';
-
--- You can use SELECT too, but PRINT makes it clearer that it's coming from a topic
-SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TIMESTAMP, STARS, CHANNEL FROM POOR_RATINGS EMIT CHANGES;
-----
-
-== Kafka Connect
-
-=== Kafka to Elasticsearch
-
-[source,sql]
-----
-CREATE SINK CONNECTOR SINK_ES_POOR_RATINGS WITH (
-    'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
-    'topics'          = 'POOR_RATINGS',
-    'connection.url'  = 'http://elasticsearch:9200',
-    'type.name'       = '_doc',
-    'key.ignore'      = 'false',
-    'schema.ignore'   = 'true',
-    'transforms'= 'ExtractTimestamp',
-    'transforms.ExtractTimestamp.type'= 'org.apache.kafka.connect.transforms.InsertField$Value',
-    'transforms.ExtractTimestamp.timestamp.field' = 'RATING_TS'
-);
-----
-
-Show in Kibana (http://localhost:5601/app/kibana)
+== Part 02 - ingesting state from a database as an event stream
 
 === Show MySQL table + contents
 
@@ -282,7 +274,7 @@ ksql> SHOW TOPICS;
 
  Kafka Topic                           | Partitions | Partition Replicas
 -------------------------------------------------------------------------
- POOR_RATINGS                          | 1          | 1
+ RATINGS_LIVE                          | 1          | 1
  asgard.demo.CUSTOMERS                 | 1          | 1
  confluent_rmoff_02ksql_processing_log | 1          | 1
  dbhistory.demo                        | 1          | 1
@@ -556,26 +548,14 @@ image:images/es02.png[Kibana]
 image:images/es03.png[Kibana]
 
 
-=== Aggregations
+== Aggregations
 
 Simple aggregation - count of ratings per person, per 15 minutes:
 
 [source,sql]
 ----
-SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS,
-       FULL_NAME,COUNT(*) AS RATINGS_COUNT
-  FROM RATINGS_WITH_CUSTOMER_DATA 
-        WINDOW TUMBLING (SIZE 15 MINUTE) 
-  GROUP BY FULL_NAME
-  EMIT CHANGES;
-----
-
-Persist this and show the timestamp:
-
-[source,sql]
-----
 CREATE TABLE RATINGS_PER_CUSTOMER_PER_15MINUTE AS 
-SELECT FULL_NAME,COUNT(*) AS RATINGS_COUNT
+SELECT FULL_NAME,COUNT(*) AS RATINGS_COUNT, COLLECT_LIST(STARS) AS RATINGS
   FROM RATINGS_WITH_CUSTOMER_DATA 
         WINDOW TUMBLING (SIZE 15 MINUTE) 
   GROUP BY FULL_NAME
@@ -588,7 +568,8 @@ SELECT FULL_NAME,COUNT(*) AS RATINGS_COUNT
 ----
 SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, 
        FULL_NAME, 
-       RATINGS_COUNT 
+       RATINGS_COUNT, 
+       RATINGS
   FROM RATINGS_PER_CUSTOMER_PER_15MINUTE 
   WHERE FULL_NAME='Rica Blaisdell'
   EMIT CHANGES;
@@ -601,10 +582,11 @@ SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS,
 ----
 SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, 
        FULL_NAME,
-       RATINGS_COUNT
+       RATINGS_COUNT, 
+       RATINGS
 FROM   RATINGS_PER_CUSTOMER_PER_15MINUTE
 WHERE  FULL_NAME='Rica Blaisdell'
-  AND  WINDOWSTART > '2020-06-23T11:30:00.000';
+  AND  WINDOWSTART > '2020-07-06T15:30:00.000';
 ----
 
 Show REST API with link:ksqlDB.postman_collection.json[Postman] or bash: 
@@ -618,14 +600,37 @@ Copy and paste:
 
 [source,bash]
 ----
-# Store the epoch (milliseconds) five minutes ago
-PREDICATE=$(date --date '-5 min' +%s)000
+# Store the epoch (milliseconds) fifteen minutes ago
+PREDICATE=$(date --date '-15 min' +%s)000
 
 # Pull from ksqlDB the aggregate-by-minute for the last five minutes for a given user: 
 curl -X "POST" "http://ksqldb:8088/query" \
      -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
-     -d '{"ksql":"SELECT TIMESTAMPTOSTRING(WINDOWSTART, '\''yyyy-MM-dd HH:mm:ss'\'') AS WINDOW_START_TS,        FULL_NAME,       RATINGS_COUNT FROM   RATINGS_PER_CUSTOMER_PER_15MINUTE WHERE  FULL_NAME='\''Rica Blaisdell'\''   AND  WINDOWSTART > '$PREDICATE';"}'
+     -d '{"ksql":"SELECT TIMESTAMPTOSTRING(WINDOWSTART, '\''yyyy-MM-dd HH:mm:ss'\'') AS WINDOW_START_TS,        FULL_NAME,       RATINGS_COUNT, RATINGS FROM   RATINGS_PER_CUSTOMER_PER_15MINUTE WHERE  FULL_NAME='\''Rica Blaisdell'\''   AND  WINDOWSTART > '$PREDICATE';"}'
 ----
   
 Press Ctrl-D to exit the Docker container
 
+== Appendix - compare filtered vs unfiltered data
+
+Bring up a second ksqlDB prompt and show live ratings / live filtered ratings: 
+
+[source,sql]
+----
+-- Live stream of ratings data
+SET 'auto.offset.reset' = 'latest';
+PRINT 'ratings';
+
+-- You can use SELECT too, but PRINT makes it clearer that it's coming from a topic
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TIMESTAMP, STARS, CHANNEL FROM RATINGS EMIT CHANGES;
+----
+
+[source,sql]
+----
+-- Just the ratings not from a test channel: 
+SET 'auto.offset.reset' = 'latest';
+PRINT 'RATINGS_LIVE';
+
+-- You can use SELECT too, but PRINT makes it clearer that it's coming from a topic
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS RATING_TIMESTAMP, STARS, CHANNEL FROM RATINGS_LIVE EMIT CHANGES;
+----
