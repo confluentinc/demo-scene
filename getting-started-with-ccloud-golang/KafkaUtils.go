@@ -12,7 +12,7 @@ import (
 )
 
 // TopicName holds the name of the topic
-const TopicName string = "SensorReading-Golang"
+const TopicName string = "SensorReading"
 
 // PropsFile holds the filename with config
 const PropsFile string = "ccloud.properties"
@@ -55,7 +55,6 @@ func CreateTopic(props map[string]string) {
 		os.Exit(1)
 	}
 
-	// Check for specific topic errors
 	for _, result := range results {
 		if result.Error.Code() != kafka.ErrNoError &&
 			result.Error.Code() != kafka.ErrTopicAlreadyExists {

@@ -14,7 +14,7 @@ import org.apache.kafka.clients.admin.NewTopic;
 
 public class KafkaUtils {
 
-    public static final String TOPIC = "SensorReading-Java";
+    public static final String TOPIC = "SensorReading";
 
     public static void createTopic(String topic, int numPartitions,
         short replicationFactor) {

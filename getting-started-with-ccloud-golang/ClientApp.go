@@ -123,17 +123,14 @@ func producer(props map[string]string, topic string) {
 		}
 		deviceSelected := devices[choosen-1]
 
-		// Create key and value
 		key := deviceSelected.DeviceID
 		sensorReading := SensorReading{
 			Device:   deviceSelected,
 			DateTime: time.Now().UnixNano(),
 			Reading:  rand.Float64(),
 		}
-		valueBytes, _ := proto.Marshal(&sensorReading)
 
 		recordValue := []byte{}
-		recordValue = append(recordValue, byte(0))
 
 		// Technically this is not necessary because in
 		// Go consumers don't need to know the schema to
@@ -141,25 +138,23 @@ func producer(props map[string]string, topic string) {
 		// client wants to produce records that could be
 		// deserialized using Java (KafkaProtobufDeserializer)
 		// then it is important to arrange the bytes according
-		// to the format expected there.
+		// to the following format:
+		// [Magic Byte] + [Schema ID] + [Message Index] + [Value]
+		recordValue = append(recordValue, byte(0))
 		schemaIDBytes := make([]byte, 4)
 		binary.BigEndian.PutUint32(schemaIDBytes, uint32(schema.ID()))
 		recordValue = append(recordValue, schemaIDBytes...)
+		recordValue = append(recordValue, byte(0))
 
-		// [Pending] insert the message index list here
-		// before the actual value since it is required
-		// for the Java deserializer. Meanwhile this code
-		// will produce records that can only be read by
-		// Go consumers.
+		// Now write the actual value into the record...
+		valueBytes, _ := proto.Marshal(&sensorReading)
 		recordValue = append(recordValue, valueBytes...)
 
-		// Produce the record to the topic
 		producer.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{
 				Topic: &topic, Partition: kafka.PartitionAny},
 			Key: []byte(key), Value: recordValue}, nil)
 
-		// Sleep for one second...
 		time.Sleep(1000 * time.Millisecond)
 
 	}
@@ -204,13 +199,11 @@ func consumer(props map[string]string, topic string) {
 	for {
 		record, err := consumer.ReadMessage(-1)
 		if err == nil {
-			// Deserialize the record value using Protobuf encoded bytes
 			sensorReading := &SensorReading{}
-			err = proto.Unmarshal(record.Value[5:], sensorReading)
+			err = proto.Unmarshal(record.Value[6:], sensorReading)
 			if err != nil {
 				panic(fmt.Sprintf("Error deserializing the record: %s", err))
 			}
-			// Print the record value
 			fmt.Printf("SensorReading[device=%s, dateTime=%d, reading=%f]\n",
 				sensorReading.Device.GetDeviceID(),
 				sensorReading.GetDateTime(),
