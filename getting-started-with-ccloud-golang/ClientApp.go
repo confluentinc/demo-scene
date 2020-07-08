@@ -132,21 +132,18 @@ func producer(props map[string]string, topic string) {
 
 		recordValue := []byte{}
 
-		// Technically this is not necessary because in
-		// Go consumers don't need to know the schema to
-		// be able to deserialize records. However, if this
-		// client wants to produce records that could be
-		// deserialized using Java (KafkaProtobufDeserializer)
-		// then it is important to arrange the bytes according
-		// to the following format:
-		// [Magic Byte] + [Schema ID] + [Message Index] + [Value]
+		// The code below is only necessary if we want to deserialize records
+		// using Java via the following deserializer implementation:
+		// [io.confluent.kafka.serializers.protobuf.KafkaProtobufDeserializer]
+		// Therefore, we need to arrange the bytes in the following format:
+		// [magicByte] + [schemaID] + [messageIndex] + [value]
 		recordValue = append(recordValue, byte(0))
 		schemaIDBytes := make([]byte, 4)
 		binary.BigEndian.PutUint32(schemaIDBytes, uint32(schema.ID()))
 		recordValue = append(recordValue, schemaIDBytes...)
 		recordValue = append(recordValue, byte(0))
 
-		// Now write the actual value into the record...
+		// Now write the bytes from the actual value...
 		valueBytes, _ := proto.Marshal(&sensorReading)
 		recordValue = append(recordValue, valueBytes...)
 
@@ -169,10 +166,9 @@ func consumer(props map[string]string, topic string) {
 
 	CreateTopic(props)
 
-	// Code below has been commented out because currently
-	// Go doesn't need to read the schema in order to be
-	// able to deserialize the record. But keeping the code
-	// here for future use ¯\_(ツ)_/¯
+	// Code below has been commented out because in Go there is no
+	// need to have the schema to be able to deserialize the record.
+	// Thus keeping the code here for future use ¯\_(ツ)_/¯
 
 	// schemaRegistryClient := srclient.CreateSchemaRegistryClient(props["schema.registry.url"])
 	// schemaRegistryClient.CodecCreationEnabled(false)
