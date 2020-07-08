@@ -43,12 +43,6 @@ func producer(props map[string]string, topic string) {
 
 	CreateTopic(props)
 
-	schemaRegistryClient := srclient.CreateSchemaRegistryClient(props["schema.registry.url"])
-	schemaRegistryClient.CodecCreationEnabled(false)
-	srBasicAuthUserInfo := props["schema.registry.basic.auth.user.info"]
-	credentials := strings.Split(srBasicAuthUserInfo, ":")
-	schemaRegistryClient.SetCredentials(credentials[0], credentials[1])
-
 	producer, err := kafka.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers": props["bootstrap.servers"],
 		"sasl.mechanisms":   "PLAIN",
@@ -74,6 +68,12 @@ func producer(props map[string]string, topic string) {
 			}
 		}
 	}()
+
+	schemaRegistryClient := srclient.CreateSchemaRegistryClient(props["schema.registry.url"])
+	schemaRegistryClient.CodecCreationEnabled(false)
+	srBasicAuthUserInfo := props["schema.registry.basic.auth.user.info"]
+	credentials := strings.Split(srBasicAuthUserInfo, ":")
+	schemaRegistryClient.SetCredentials(credentials[0], credentials[1])
 
 	schema, err := schemaRegistryClient.GetLatestSchema(topic, false)
 	if schema == nil {
@@ -133,7 +133,7 @@ func producer(props map[string]string, topic string) {
 		recordValue := []byte{}
 
 		// The code below is only necessary if we want to deserialize records
-		// using Java via the following deserializer implementation:
+		// using Java via Confluent's deserializer implementation:
 		// [io.confluent.kafka.serializers.protobuf.KafkaProtobufDeserializer]
 		// Therefore, we need to arrange the bytes in the following format:
 		// [magicByte] + [schemaID] + [messageIndex] + [value]
