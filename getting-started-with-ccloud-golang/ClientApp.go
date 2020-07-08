@@ -10,14 +10,38 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/google/uuid"
 	"github.com/riferrei/srclient"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
-const producerMode string = "producer"
-const consumerMode string = "consumer"
-const schemaFile string = "SensorReading.proto"
+const (
+	producerMode string = "producer"
+	consumerMode string = "consumer"
+	schemaFile   string = "SensorReading.proto"
+)
+
+var devices = []*SensorReading_Device{
+	{
+		DeviceID: NewUUID(),
+		Enabled:  true,
+	},
+	{
+		DeviceID: NewUUID(),
+		Enabled:  true,
+	},
+	{
+		DeviceID: NewUUID(),
+		Enabled:  true,
+	},
+	{
+		DeviceID: NewUUID(),
+		Enabled:  true,
+	},
+	{
+		DeviceID: NewUUID(),
+		Enabled:  true,
+	},
+}
 
 func main() {
 
@@ -83,37 +107,6 @@ func producer(props map[string]string, topic string) {
 			panic(fmt.Sprintf("Error creating the schema %s", err))
 		}
 	}
-
-	devices := []*SensorReading_Device{}
-	d1 := new(SensorReading_Device)
-	deviceID, _ := uuid.NewUUID()
-	d1.DeviceID = deviceID.String()
-	d1.Enabled = true
-	devices = append(devices, d1)
-
-	d2 := new(SensorReading_Device)
-	deviceID, _ = uuid.NewUUID()
-	d2.DeviceID = deviceID.String()
-	d2.Enabled = true
-	devices = append(devices, d2)
-
-	d3 := new(SensorReading_Device)
-	deviceID, _ = uuid.NewUUID()
-	d3.DeviceID = deviceID.String()
-	d3.Enabled = true
-	devices = append(devices, d3)
-
-	d4 := new(SensorReading_Device)
-	deviceID, _ = uuid.NewUUID()
-	d4.DeviceID = deviceID.String()
-	d4.Enabled = true
-	devices = append(devices, d4)
-
-	d5 := new(SensorReading_Device)
-	deviceID, _ = uuid.NewUUID()
-	d5.DeviceID = deviceID.String()
-	d5.Enabled = true
-	devices = append(devices, d5)
 
 	for {
 

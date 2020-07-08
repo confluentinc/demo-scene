@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
@@ -92,4 +93,11 @@ func LoadProperties() map[string]string {
 		}
 	}
 	return props
+}
+
+// NewUUID is a simpler way
+// to retrieve a new UUID.
+func NewUUID() string {
+	newUUID, _ := uuid.NewUUID()
+	return newUUID.String()
 }
