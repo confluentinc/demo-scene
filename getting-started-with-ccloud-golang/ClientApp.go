@@ -54,7 +54,8 @@ func main() {
 	} else if strings.Compare(clientMode, consumerMode) == 0 {
 		consumer(props, topic)
 	} else {
-		fmt.Println("Invalid option. Valid options are 'producer' and 'consumer'.")
+		fmt.Printf("Invalid option. Valid options are '%s' and '%s'.",
+			producerMode, consumerMode)
 	}
 
 }
