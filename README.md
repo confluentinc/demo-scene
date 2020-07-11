@@ -63,7 +63,6 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - [Streaming Pac-Man](streaming-pacman)
   - ["The Cube" Demo](ccloud-cube-demo)
   - [Using Replicator with Confluent Cloud](ccloud-replicator)
-  - [Getting Started with Confluent Cloud using Java](getting-started-with-ccloud-java)
 
 - Misc
   - [Hacky export/import between Kafka clusters](export-import-with-kafkacat) using `kafkacat`
