@@ -135,7 +135,8 @@ func producer(props map[string]string, topic string) {
 		schemaIDBytes := make([]byte, 4)
 		binary.BigEndian.PutUint32(schemaIDBytes, uint32(schema.ID()))
 		recordValue = append(recordValue, schemaIDBytes...)
-		recordValue = append(recordValue, byte(0))
+		messageIndexBytes := []byte{byte(2), byte(0)}
+		recordValue = append(recordValue, messageIndexBytes...)
 
 		// Now write the bytes from the actual value...
 		valueBytes, _ := proto.Marshal(&sensorReading)
