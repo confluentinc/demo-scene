@@ -27,8 +27,8 @@ public class RatingService {
   private final JdbcTemplate jdbcTemplate;
 
   // in-memory store for intermediate ratings count and sum
-  private static ConcurrentHashMap<Long, CountAndSum> countAndSumStorage = new ConcurrentHashMap<>();
-  private static ConcurrentHashMap<Long, RatedMovie> ratedMovieStorage = new ConcurrentHashMap<>();
+  private static final ConcurrentHashMap<Long, CountAndSum> countAndSumStorage = new ConcurrentHashMap<>();
+  private static final ConcurrentHashMap<Long, RatedMovie> ratedMovieStorage = new ConcurrentHashMap<>();
 
   @KafkaListener(topics = "ratings", groupId = "rating_averager")
   private void ratingListener(Rating rating) {
