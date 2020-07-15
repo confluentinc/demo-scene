@@ -59,7 +59,7 @@ If you haven't already, refer to the instructions for how to link:README.adoc[pr
 
 Copyright 2017-2019 Confluent Inc.
 
-CLI v0.7.1, Server v0.7.1 located at http://localhost:8088
+CLI v0.10.0, Server v0.10.0 located at http://localhost:8088
 
 Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
 
@@ -613,7 +613,8 @@ You define a table the same as a stream, just specifying `TABLE` instead:
 
 [source,sql]
 ----
-ksql> CREATE TABLE  CUSTOMERS WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
+ksql> CREATE TABLE CUSTOMERS (CUSTOMER_ID VARCHAR PRIMARY KEY) 
+  WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
 
  Message
 ---------------
@@ -626,9 +627,7 @@ Now we can query the table, which is just an abstraction on top of the Kafka top
 [source,sql]
 ----
 ksql> SET 'auto.offset.reset' = 'earliest';
-ksql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS 
-        FROM CUSTOMERS 
-        EMIT CHANGES;
+ksql> SELECT CUSTOMER_ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS EMIT CHANGES;
 
 +----+-------------+------------+------------------------+-------------+
 |ID  |FIRST_NAME   |LAST_NAME   |EMAIL                   |CLUB_STATUS  |
@@ -676,12 +675,12 @@ Let's explore that. Open a second ksqlDB prompt, and run:
 
 [source,sql]
 ----
-ksql> CREATE STREAM CUSTOMERS_STREAM WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
+ksql> CREATE STREAM CUSTOMERS_STREAM (CUSTOMER_ID VARCHAR KEY) WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
 
 ksql> SET 'auto.offset.reset' = 'earliest';
 
 ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS EVENT_TS, 
-       ID, 
+       CUSTOMER_ID, 
        FIRST_NAME, 
        LAST_NAME, 
        EMAIL, 
@@ -697,7 +696,7 @@ In the first ksqlDB prompt run
 ksql> SET 'auto.offset.reset' = 'earliest';
 
 ksql> SELECT TIMESTAMPTOSTRING(ROWTIME, 'HH:mm:ss') AS EVENT_TS, 
-       ID, 
+       CUSTOMER_ID, 
        FIRST_NAME, 
        LAST_NAME, 
        EMAIL, 
@@ -741,10 +740,11 @@ Run the following SQL:
 
 [source,sql]
 ----
-ksql> SELECT R.MESSAGE, C.FIRST_NAME, C.LAST_NAME 
-        FROM RATINGS R INNER JOIN CUSTOMERS C 
-        ON CAST(R.USER_ID AS STRING) = C.ROWKEY
-        EMIT CHANGES LIMIT 5;
+ksql> SELECT R.MESSAGE, C.FIRST_NAME, C.LAST_NAME
+FROM   RATINGS R 
+       INNER JOIN CUSTOMERS C 
+         ON CAST(R.USER_ID AS STRING) = C.CUSTOMER_ID      
+EMIT CHANGES LIMIT 5;
 ----
 
 There are a couple of things to note about this query :
@@ -782,15 +782,16 @@ Let's persist this as an enriched stream, including a few more columns (includin
 ----
 ksql> SET 'auto.offset.reset' = 'earliest';
 ksql> CREATE STREAM RATINGS_WITH_CUSTOMER_DATA 
-        WITH (KAFKA_TOPIC='ratings-enriched') AS 
-            SELECT R.RATING_ID, R.MESSAGE, R.STARS, R.CHANNEL,
-                   C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, 
-                   C.CLUB_STATUS, C.EMAIL 
-            FROM   RATINGS R 
-                   LEFT JOIN CUSTOMERS C 
-                     ON CAST(R.USER_ID AS STRING) = C.ROWKEY      
-            WHERE  C.FIRST_NAME IS NOT NULL
-            EMIT CHANGES;
+       WITH (KAFKA_TOPIC='ratings-enriched') 
+       AS 
+        SELECT R.RATING_ID, R.MESSAGE, R.STARS, R.CHANNEL,
+        C.CUSTOMER_ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, 
+        C.CLUB_STATUS, C.EMAIL 
+        FROM   RATINGS R 
+        LEFT JOIN CUSTOMERS C 
+                ON CAST(R.USER_ID AS STRING) = C.CUSTOMER_ID      
+        WHERE  C.FIRST_NAME IS NOT NULL
+        EMIT CHANGES;
 
 Successfully changed local property 'auto.offset.reset' to 'earliest'. Use the UNSET command to revert your change.
 
@@ -861,7 +862,8 @@ ksql> CREATE STREAM UNHAPPY_PLATINUM_CUSTOMERS AS
         SELECT FULL_NAME, CLUB_STATUS, EMAIL, STARS, MESSAGE 
         FROM   RATINGS_WITH_CUSTOMER_DATA 
         WHERE  STARS < 3 
-        AND  CLUB_STATUS = 'platinum';
+        AND  CLUB_STATUS = 'platinum'
+        PARTITION BY FULL_NAME;
 ----
 
 [source,sql]
@@ -1063,7 +1065,7 @@ NOTE: _Modify the query to use a timestamp that occurred during the workshop, fo
 ksql> SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS,
              CLUB_STATUS, RATING_COUNT
         FROM RATINGS_BY_CLUB_STATUS
-       WHERE ROWKEY='bronze' 
+       WHERE CLUB_STATUS='bronze' 
          AND WINDOWSTART='2020-03-05T13:46:00.000';
 
 +--------------------+-------------+--------------+
@@ -1109,7 +1111,7 @@ PREDICATE=$(date --date '-1 min' +%s)000
 # Pull from ksqlDB the aggregate-by-minute for the last one minute for a given user: 
 curl -s -X "POST" "http://localhost:8088/query" \
      -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
-     -d '{"ksql":"SELECT TIMESTAMPTOSTRING(WINDOWSTART, '\''yyyy-MM-dd HH:mm:ss'\'') AS WINDOW_START_TS,        CLUB_STATUS,       RATING_COUNT FROM   RATINGS_BY_CLUB_STATUS WHERE  ROWKEY='\''bronze'\''   AND  WINDOWSTART > '$PREDICATE';"}' | json_pp
+     -d '{"ksql":"SELECT TIMESTAMPTOSTRING(WINDOWSTART, '\''yyyy-MM-dd HH:mm:ss'\'') AS WINDOW_START_TS,        CLUB_STATUS,       RATING_COUNT FROM   RATINGS_BY_CLUB_STATUS WHERE  CLUB_STATUS='\''bronze'\''   AND  WINDOWSTART > '$PREDICATE';"}' | json_pp
 ----
   
 Press Ctrl-D to exit the Docker container

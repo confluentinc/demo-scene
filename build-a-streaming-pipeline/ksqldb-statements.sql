@@ -1,6 +1,20 @@
-CREATE STREAM RATINGS WITH (KAFKA_TOPIC='ratings',VALUE_FORMAT='AVRO');
+CREATE SINK CONNECTOR SINK_ES_RATINGS WITH (
+    'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+    'topics'          = 'ratings',
+    'connection.url'  = 'http://elasticsearch:9200',
+    'type.name'       = '_doc',
+    'key.ignore'      = 'false',
+    'schema.ignore'   = 'true',
+    'transforms'= 'ExtractTimestamp',
+    'transforms.ExtractTimestamp.type'= 'org.apache.kafka.connect.transforms.InsertField$Value',
+    'transforms.ExtractTimestamp.timestamp.field' = 'RATING_TS'
+);
 
-CREATE STREAM POOR_RATINGS AS SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
+CREATE STREAM RATINGS_LIVE AS
+SELECT USER_ID, STARS, CHANNEL, MESSAGE FROM RATINGS WHERE LCASE(CHANNEL) NOT LIKE '%test%' EMIT CHANGES;
+
+CREATE STREAM RATINGS_TEST AS
+SELECT USER_ID, STARS, CHANNEL, MESSAGE FROM RATINGS WHERE LCASE(CHANNEL) LIKE '%test%' EMIT CHANGES;
 
 CREATE SOURCE CONNECTOR SOURCE_MYSQL_01 WITH (
     'connector.class' = 'io.debezium.connector.mysql.MySqlConnector',
@@ -25,18 +39,23 @@ CREATE SOURCE CONNECTOR SOURCE_MYSQL_01 WITH (
 
 -- Need to wait here for the topic to be created
 
-CREATE TABLE  CUSTOMERS WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
+CREATE TABLE CUSTOMERS (CUSTOMER_ID VARCHAR PRIMARY KEY) 
+  WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
+
+CREATE STREAM CUSTOMERS_STREAM (CUSTOMER_ID VARCHAR KEY) WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
+
+
 
 SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM RATINGS_WITH_CUSTOMER_DATA 
        WITH (KAFKA_TOPIC='ratings-enriched') 
        AS 
 SELECT R.RATING_ID, R.MESSAGE, R.STARS, R.CHANNEL,
-       C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, 
+       C.CUSTOMER_ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, 
        C.CLUB_STATUS, C.EMAIL 
 FROM   RATINGS R 
        LEFT JOIN CUSTOMERS C 
-         ON CAST(R.USER_ID AS STRING) = C.ROWKEY      
+         ON CAST(R.USER_ID AS STRING) = C.CUSTOMER_ID      
 WHERE  C.FIRST_NAME IS NOT NULL
 EMIT CHANGES;
 
@@ -45,8 +64,8 @@ CREATE STREAM UNHAPPY_PLATINUM_CUSTOMERS AS
 SELECT FULL_NAME, CLUB_STATUS, EMAIL, STARS, MESSAGE 
 FROM   RATINGS_WITH_CUSTOMER_DATA 
 WHERE  STARS < 3 
-  AND  CLUB_STATUS = 'platinum';
-
+  AND  CLUB_STATUS = 'platinum'
+PARTITION BY FULL_NAME;
 
 CREATE SINK CONNECTOR SINK_ELASTIC_01 WITH (
   'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
@@ -66,33 +85,26 @@ CREATE SINK CONNECTOR SINK_ELASTIC_01 WITH (
 );
 
 
-CREATE TABLE RATINGS_PER_CUSTOMER_PER_MINUTE AS 
-SELECT FULL_NAME,COUNT(*) AS RATINGS_COUNT
+CREATE TABLE RATINGS_PER_CUSTOMER_PER_15MINUTE AS 
+SELECT FULL_NAME,COUNT(*) AS RATINGS_COUNT, COLLECT_LIST(STARS) AS RATINGS
   FROM RATINGS_WITH_CUSTOMER_DATA 
-        WINDOW TUMBLING (SIZE 1 MINUTE) 
+        WINDOW TUMBLING (SIZE 15 MINUTE) 
   GROUP BY FULL_NAME
   EMIT CHANGES;
 
 
 SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, 
        FULL_NAME, 
-       RATINGS_COUNT 
-  FROM RATINGS_PER_CUSTOMER_PER_MINUTE 
-  WHERE ROWKEY='Rica Blaisdell'
+       RATINGS_COUNT, 
+       RATINGS
+  FROM RATINGS_PER_CUSTOMER_PER_15MINUTE 
+  WHERE FULL_NAME='Rica Blaisdell'
   EMIT CHANGES;
 
 SELECT TIMESTAMPTOSTRING(WINDOWSTART, 'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_TS, 
        FULL_NAME,
-       RATINGS_COUNT
-FROM   RATINGS_PER_CUSTOMER_PER_MINUTE
-WHERE  ROWKEY='Rica Blaisdell'
-  AND  WINDOWSTART > '2020-03-04T12:00:00.000';
-
-
-# Store the epoch (milliseconds) five minutes ago
-PREDICATE=$(date --date '-5 min' +%s)000
-
-# Pull from ksqlDB the aggregate-by-minute for the last five minutes for a given user: 
-curl -X "POST" "http://ksqldb:8088/query" \
-     -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
-     -d '{"ksql":"SELECT TIMESTAMPTOSTRING(WINDOWSTART, '\''yyyy-MM-dd HH:mm:ss'\'') AS WINDOW_START_TS,        FULL_NAME,       RATINGS_COUNT FROM   RATINGS_PER_CUSTOMER_PER_MINUTE WHERE  ROWKEY='\''Rica Blaisdell'\''   AND  WINDOWSTART > '$PREDICATE';"}'
+       RATINGS_COUNT, 
+       RATINGS
+FROM   RATINGS_PER_CUSTOMER_PER_15MINUTE
+WHERE  FULL_NAME='Rica Blaisdell'
+  AND  WINDOWSTART > '2020-07-06T15:30:00.000';
