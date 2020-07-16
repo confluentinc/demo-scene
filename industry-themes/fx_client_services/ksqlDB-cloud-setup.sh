@@ -3,7 +3,6 @@
 #creata a kafka API key/secret in UI
 
 #get bootstrap server
-pkc-ep9mm.us-east-2.aws.confluent.cloud:9092
 
 #update producer config with API key/secret
 
@@ -21,29 +20,27 @@ ccloud login
 ccloud environment list
 
 #set environment
-ccloud environment use env-9wmxm
+ccloud environment use <env-id>
 
 #get kafka cluster list
 ccloud kafka cluster list
 
 #set default cluster
-ccloud kafka cluster use lkc-mz7g2
+ccloud kafka cluster use <cluster-id>
 
 #get ksqlDB resource id
 ccloud ksql app list
 
 #get service account
-ccloud ksql app configure-acls lksqlc-kjqo6 --dry-run
+ccloud ksql app configure-acls <ksqlDB-id> --dry-run
 
 #set acls for service account on all topics
-ccloud kafka acl create --allow --service-account 87874 --operation READ --topic '*'
-ccloud kafka acl create --allow --service-account 87874 --operation WRITE --topic '*'
-ccloud kafka acl create --allow --service-account 87874 --operation CREATE --topic '*'
+ccloud kafka acl create --allow --service-account <service-id> --operation READ --topic '*'
+ccloud kafka acl create --allow --service-account <service-id> --operation WRITE --topic '*'
+ccloud kafka acl create --allow --service-account <service-id> --operation CREATE --topic '*'
 
 #get api key for ksqlDB app
-ccloud api-key create --resource lksqlc-kjqo6
-
+ccloud api-key create --resource <ksqlDB-id>
 
 #start the ksql cli to ksqlDB in CC
-ksql -u <api-key> -p <api-secret> https://pksqlc-4vm1j.eastus.azure.confluent.cloud:443
-
+ksql -u <api-key> -p <api-secret> <ksqlDB-endpoint>
