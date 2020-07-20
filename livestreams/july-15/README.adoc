@@ -1,0 +1,36 @@
+= Livestreams July 15th log
+Viktor Gamov <viktor@confluent.io>, © 2020 Confluent, Inc.
+2020-07-15
+:revdate: 2020-07-15 11:30:27 -0600
+:linkattrs:
+:ast: &ast;
+:y: &#10003;
+:n: &#10008;
+:y: icon:check-sign[role="green"]
+:n: icon:check-minus[role="red"]
+:c: icon:file-text-alt[role="blue"]
+:toc: auto
+:toc-placement: auto
+:toc-position: auto
+:toc-title: Table of content
+:toclevels: 3
+:idprefix:
+:idseparator: -
+:sectanchors:
+:icons: font
+:source-highlighter: highlight.js
+:highlightjs-theme: idea
+:experimental:
+
+The materials form live stream on July 15th 2020.
+
+toc::[]
+
+== Agenda
+
+* Mysql in docker + configure to use CDC
+* Using DBZM Connector propagated changes from mySQL to Kafka using Debezium
+* We created a lookup table in ksqlDB
+
+To start everything execute `start.sh`.
+To stop everything execute `stop_and_destroy.sh`.
