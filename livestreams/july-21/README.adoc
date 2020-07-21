@@ -1,0 +1,39 @@
+= Livestreams July 21st log
+Viktor Gamov <viktor@confluent.io>, © 2020 Confluent, Inc.
+2020-07-21
+:revdate: 2020-07-21 13:00:27 -0600
+:linkattrs:
+:ast: &ast;
+:y: &#10003;
+:n: &#10008;
+:y: icon:check-sign[role="green"]
+:n: icon:check-minus[role="red"]
+:c: icon:file-text-alt[role="blue"]
+:toc: auto
+:toc-placement: auto
+:toc-position: auto
+:toc-title: Table of content
+:toclevels: 3
+:idprefix:
+:idseparator: -
+:sectanchors:
+:icons: font
+:source-highlighter: highlight.js
+:highlightjs-theme: idea
+:experimental:
+
+The materials form live stream on July 21st 2020.
+
+toc::[]
+
+== Agenda
+
+
+* Register for kafka-summit.org[Kafka Summit]!
+* Register for https://kafkathon20.eventbrite.com/[hackathon]
+* Spring Boot with Confluent Cloud https://github.com/confluentinc/demo-scene/tree/master/livestreams
+** update `src/main/resources/application.properties` with Spring Boot config from Confluent Cloud 
+*** build: `./gradlew clean build`
+*** run: `./gradlew bootRun`
+
+* Twitter https://twitter.com/gamussa[@gAmUssA]
