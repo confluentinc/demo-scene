@@ -1,0 +1,49 @@
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'com.commercehub.gradle.plugin:gradle-avro-plugin:0.15.1'
+    classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.2'
+  }
+}
+
+plugins {
+  id 'com.google.cloud.tools.jib' version '1.1.1'
+}
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+version = '0.0.1'
+
+apply plugin: 'com.commercehub.gradle.plugin.avro'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+dependencies {
+  implementation "org.apache.avro:avro:$avroVersion"
+  implementation 'org.slf4j:slf4j-simple:1.7.26'
+  implementation "org.apache.kafka:kafka-streams:$kafkaVersion"
+  implementation "io.confluent:kafka-streams-avro-serde:$confluentVersion"
+  testImplementation "org.apache.kafka:kafka-streams-test-utils:$kafkaVersion"
+  testImplementation 'junit:junit:4.12'
+}
+
+task run(type: JavaExec) {
+  main = 'io.confluent.developer.TransformStream'
+  classpath = sourceSets.main.runtimeClasspath
+  args = ['configuration/dev.properties']
+}
+
+jar {
+  manifest {
+    attributes(
+        'Class-Path': configurations.compileClasspath.collect { it.getName() }.join(' '),
+        'Main-Class': 'io.confluent.developer.TransformStream'
+    )
+  }
+}
+
+shadowJar {
+  archiveBaseName = "kstreams-transform-standalone"
+  archiveClassifier = ''
+}

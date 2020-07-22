@@ -1,0 +1,44 @@
+{
+  "outputs": [
+    {
+      "topic": "parsed_movies",
+      "key": 294,
+      "value": {
+        "ID": 294,
+        "TITLE": "Die Hard",
+        "YEAR": 1988,
+        "GENRE": "action"
+      }
+    },
+    {
+      "topic": "parsed_movies",
+      "key": 354,
+      "value": {
+        "ID": 354,
+        "TITLE": "Tree of Life",
+        "YEAR": 2011,
+        "GENRE": "drama"
+      }
+    },
+    {
+      "topic": "parsed_movies",
+      "key": 782,
+      "value": {
+        "ID": 782,
+        "TITLE": "A Walk in the Clouds",
+        "YEAR": 1995,
+        "GENRE": "romance"
+      }
+    },
+    {
+      "topic": "parsed_movies",
+      "key": 128,
+      "value": {
+        "ID": 128,
+        "TITLE": "The Big Lebowski",
+        "YEAR": 1998,
+        "GENRE": "comedy"
+      }
+    }
+  ]
+}

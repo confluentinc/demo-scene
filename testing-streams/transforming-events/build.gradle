@@ -1,0 +1,55 @@
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'com.commercehub.gradle.plugin:gradle-avro-plugin:0.15.1'
+    classpath 'com.github.jengelman.gradle.plugins:shadow:5.2.0'
+    classpath "com.avast.gradle:gradle-docker-compose-plugin:0.12.1"
+  }
+}
+
+plugins {
+  id 'com.google.cloud.tools.jib' version '2.1.0'
+}
+
+apply plugin: 'docker-compose'
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+version = '0.0.1'
+
+apply plugin: 'com.commercehub.gradle.plugin.avro'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+dependencies {
+  implementation "org.apache.avro:avro:$avroVersion"
+  implementation 'org.slf4j:slf4j-simple:1.7.28'
+  implementation "io.confluent:kafka-streams-avro-serde:$confluentVersion"
+  testImplementation "org.testcontainers:testcontainers:$testContainersVersion"
+  testImplementation "org.testcontainers:kafka:$testContainersVersion"
+  testImplementation("com.github.gAmUssA:testcontainers-java-module-confluent-platform:master-SNAPSHOT") {
+    exclude group: "ch.qos.logback", module: "logback-classic"
+  }
+
+}
+
+task run(type: JavaExec) {
+  main = 'io.confluent.developer.TransformEvents'
+  classpath = sourceSets.main.runtimeClasspath
+  args = ['configuration/dev.properties']
+}
+
+jar {
+  manifest {
+    attributes(
+        'Class-Path': configurations.compileClasspath.collect { it.getName() }.join(' '),
+        'Main-Class': 'io.confluent.developer.TransformEvents'
+    )
+  }
+}
+
+shadowJar {
+  archiveBaseName = "kafka-transforming-standalone"
+  archiveClassifier = ''
+}

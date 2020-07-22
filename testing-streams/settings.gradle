@@ -1,0 +1,21 @@
+rootProject.name = 'testing-streams'
+
+import static groovy.io.FileType.DIRECTORIES
+
+final excludedDirs = new HashSet(["build", "src"])
+
+String getProjectName(File projectDir) {
+  return rootDir.toURI()
+      .relativize(projectDir.toURI())
+      .toString()
+      .replaceAll("/", ":")
+}
+
+rootDir.traverse(
+    type: DIRECTORIES,
+    excludeNameFilter: { it -> excludedDirs.contains(it) }
+) { dir ->
+  if (new File(dir, "build.gradle").exists()) {
+    include getProjectName(dir)
+  }
+}

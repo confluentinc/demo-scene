@@ -1,0 +1,40 @@
+{
+  "inputs": [
+    {
+      "topic": "movies",
+      "key": 294,
+      "value": {
+        "id": 294,
+        "title": "Die Hard::1988",
+        "genre": "action"
+      }
+    },
+    {
+      "topic": "movies",
+      "key": 354,
+      "value": {
+        "id": 354,
+        "title": "Tree of Life::2011",
+        "genre": "drama"
+      }
+    },
+    {
+      "topic": "movies",
+      "key": 782,
+      "value": {
+        "id": 782,
+        "title": "A Walk in the Clouds::1995",
+        "genre": "romance"
+      }
+    },
+    {
+      "topic": "movies",
+      "key": 128,
+      "value": {
+        "id": 128,
+        "title": "The Big Lebowski::1998",
+        "genre": "comedy"
+      }
+    }
+  ]
+}
