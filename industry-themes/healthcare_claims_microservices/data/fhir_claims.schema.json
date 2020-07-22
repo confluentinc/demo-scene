@@ -1,0 +1,266 @@
+{
+  "id": 234266,
+  "num_rows": 1000,
+  "file_format": "json",
+  "name": "fhir_claims",
+  "array": false,
+  "columns": [
+    {
+      "name": "claim_id",
+      "null_percentage": 0,
+      "type": "Row Number",
+      "formula": ""
+    },
+    {
+      "name": "resource_type",
+      "null_percentage": 0,
+      "type": "Custom List",
+      "values": [
+        "claim"
+      ],
+      "selectionStyle": "random",
+      "distribution": null,
+      "formula": ""
+    },
+    {
+      "name": "status",
+      "null_percentage": 0,
+      "type": "Custom List",
+      "values": [
+        "active",
+        "draft",
+        "cancelled"
+      ],
+      "selectionStyle": "custom",
+      "distribution": [
+        {
+          "frequencies": {
+            "active": "10",
+            "draft": 1,
+            "cancelled": 1
+          }
+        }
+      ],
+      "formula": ""
+    },
+    {
+      "name": "type",
+      "null_percentage": 0,
+      "type": "Custom List",
+      "values": [
+        "oral",
+        "pharmacy",
+        "vision",
+        "institutional",
+        "professional"
+      ],
+      "selectionStyle": "random",
+      "distribution": null,
+      "formula": ""
+    },
+    {
+      "name": "use",
+      "null_percentage": 0,
+      "type": "Custom List",
+      "values": [
+        "claim",
+        "preauthorization",
+        "predetermination"
+      ],
+      "selectionStyle": "custom",
+      "distribution": [
+        {
+          "frequencies": {
+            "claim": "4",
+            "preauthorization": "2",
+            "predetermination": 1
+          }
+        }
+      ],
+      "formula": ""
+    },
+    {
+      "name": "patient_id",
+      "null_percentage": 0,
+      "type": "Number",
+      "min": 1,
+      "max": 500,
+      "decimals": 0,
+      "formula": ""
+    },
+    {
+      "name": "insurer",
+      "null_percentage": 0,
+      "type": "Custom List",
+      "values": [
+        "Anthem",
+        "UnitedHealthCare",
+        "HCSC",
+        "CVS Health",
+        "Centene",
+        "Wellcare",
+        "MCNA",
+        "Kaiser Permanente",
+        "Molina Healthcare"
+      ],
+      "selectionStyle": "random",
+      "distribution": null,
+      "formula": ""
+    },
+    {
+      "name": "provider",
+      "null_percentage": 0,
+      "type": "Custom List",
+      "values": [
+        "Dr. Teeth",
+        "Dr. Pills",
+        "Dr. Eyes",
+        "Dr. Home",
+        "Dr. General"
+      ],
+      "selectionStyle": "random",
+      "distribution": null,
+      "formula": "if    type == 'oral' then 'Dr. Teeth'\r\nelsif type == 'pharmacy' then 'Dr. Rx'\r\nelsif type == 'vision' then 'Dr. Eyes'\r\nelsif type == 'institutional' then 'Dr. Home'\r\nelsif type == 'professional' then 'Dr. General'\r\nelse 'Dr. No'\r\nend"
+    },
+    {
+      "name": "priority",
+      "null_percentage": 0,
+      "type": "Custom List",
+      "values": [
+        "stat",
+        "normal",
+        "deferred"
+      ],
+      "selectionStyle": "custom",
+      "distribution": [
+        {
+          "frequencies": {
+            "stat": 1,
+            "normal": "7",
+            "deferred": 1
+          }
+        }
+      ],
+      "formula": ""
+    },
+    {
+      "name": "payee",
+      "null_percentage": 0,
+      "type": "Custom List",
+      "values": [
+        "provider",
+        "subscriber"
+      ],
+      "selectionStyle": "custom",
+      "distribution": [
+        {
+          "frequencies": {
+            "provider": "20",
+            "subscriber": 1
+          }
+        }
+      ],
+      "formula": ""
+    },
+    {
+      "name": "diagnosis",
+      "null_percentage": 0,
+      "type": "Number",
+      "min": 1,
+      "max": 500,
+      "decimals": 0,
+      "formula": ""
+    },
+    {
+      "name": "insurance.focal",
+      "null_percentage": 0,
+      "type": "Custom List",
+      "values": [
+        "true"
+      ],
+      "selectionStyle": "random",
+      "distribution": null,
+      "formula": ""
+    },
+    {
+      "name": "insurance.coverage",
+      "null_percentage": 0,
+      "type": "Number",
+      "min": 1,
+      "max": 500,
+      "decimals": 0,
+      "formula": ""
+    },
+    {
+      "name": "item.sequence",
+      "null_percentage": 0,
+      "type": "Row Number",
+      "formula": ""
+    },
+    {
+      "name": "item.productorservice",
+      "null_percentage": 0,
+      "type": "Custom List",
+      "values": [
+        "exam",
+        "emergency",
+        "polishing",
+        "crown",
+        "lab",
+        "expense"
+      ],
+      "selectionStyle": "random",
+      "distribution": null,
+      "formula": ""
+    },
+    {
+      "name": "item.servicedate",
+      "null_percentage": 0,
+      "type": "Date",
+      "min": "5/5/2019",
+      "max": "5/5/2020",
+      "format": "%Y-%m-%d",
+      "formula": ""
+    },
+    {
+      "name": "item.unitprice.value",
+      "null_percentage": 0,
+      "type": "Number",
+      "min": 10,
+      "max": 500,
+      "decimals": 2,
+      "formula": ""
+    },
+    {
+      "name": "item.unitprice.currency",
+      "null_percentage": 0,
+      "type": "Custom List",
+      "values": [
+        "USD"
+      ],
+      "selectionStyle": "random",
+      "distribution": null,
+      "formula": ""
+    },
+    {
+      "name": "item.net.value",
+      "null_percentage": 0,
+      "type": "Number",
+      "min": 10,
+      "max": 500,
+      "decimals": 2,
+      "formula": "field(\"item.unitprice.value\")"
+    },
+    {
+      "name": "item.net.currency",
+      "null_percentage": 0,
+      "type": "Custom List",
+      "values": [
+        "USD"
+      ],
+      "selectionStyle": "random",
+      "distribution": null,
+      "formula": ""
+    }
+  ]
+}
