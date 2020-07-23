@@ -401,3 +401,5 @@ ksql> SELECT USERNAME,
 |Robin     |Kirkgate Centre  |0.7008511543305518     |490                   |19.803 |https://maps.google.com/?dad|
 |          |                 |                       |                      |       |dr=53.795002,-1.755938      |
 ----
+
+

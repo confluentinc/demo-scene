@@ -8,9 +8,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-// These are split up as when reading the chunked
-// response we need to be able to assert the Row only
-
 type ksqlDBMessageRow struct {
 	Row struct {
 		Columns []interface{} `json:"columns"`
@@ -66,8 +63,8 @@ func main() {
 		chatID = update.Message.Chat.ID
 		t := update.Message.Text
 		log.Printf("[%s] %s (command: %v)", update.Message.From.UserName, t, update.Message.IsCommand())
-
-		if update.Message.IsCommand() {
+		switch {
+		case update.Message.IsCommand():
 			// Handle commands
 			switch update.Message.Command() {
 			case "alert":
@@ -102,7 +99,28 @@ func main() {
 			default:
 				bot.Send(tgbotapi.NewMessage(chatID, "🤔 Command not recognised."))
 			}
-		} else {
+		case update.Message.Location != nil:
+			l := update.Message.Location
+
+			msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("🕵️‍♂️Gonna go and find carpark that's nearby with spaces for %v,%v…standby…", l.Longitude, l.Latitude))
+			if _, e := bot.Send(msg); e != nil {
+				fmt.Printf("Error sending message to telegram.\nMessage: %v\nError: %v", msg, e)
+			}
+			if c, e := getClosest(l.Latitude, l.Longitude); e == nil {
+				resp = fmt.Sprintf("ℹ️🚗The nearest carpark is %v, which is %.1fkm away and has %v spaces free.",
+					c.name, c.distance_km, c.emptyplaces)
+				v := tgbotapi.NewVenue(chatID, c.name, "", c.lat, c.lon)
+				bot.Send(v)
+			} else {
+				resp = fmt.Sprintf("⚠️ There was an error looking for a nearby carpark:\n\n%v\n\n", e)
+			}
+			msg = tgbotapi.NewMessage(chatID, resp)
+			if _, e := bot.Send(msg); e != nil {
+				fmt.Printf("Error sending message to telegram.\nMessage: %v\nError: %v", msg, e)
+			}
+
+		default:
+
 			// We've got a carpark status request
 			if p, f, e := checkSpaces(t); e == nil {
 				resp = fmt.Sprintf("ℹ️ 🚗 Car park %v is %.2f%% full (%v spaces available)\n\n", t, f, p)

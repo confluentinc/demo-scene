@@ -11,6 +11,8 @@ import (
 )
 
 func alertSpaces(a chan<- string, c int) (e error) {
+	// TODO add a channel so that user can run another
+	// command to delete an alert
 	defer close(a)
 
 	// Prepare the request
