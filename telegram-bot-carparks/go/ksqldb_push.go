@@ -10,7 +10,8 @@ import (
 	"time"
 )
 
-func alertSpaces(c int) (err error) {
+func alertSpaces(a chan<- string, c int) (e error) {
+	defer close(a)
 
 	// Prepare the request
 	url := "http://localhost:8088/query"
@@ -58,6 +59,9 @@ func alertSpaces(c int) (err error) {
 			// {"row":{"columns":["Burnett St",1595373720000,122,117]}},
 			//   becomes
 			// {"row":{"columns":["Burnett St",1595373720000,122,117]}}
+			//
+			// Pretty sure instead of `ReadBytes` above I should be using
+			// Scanner (https://golang.org/pkg/bufio/#Scanner) to split on ASCII 44 10 13 (,CRLF)
 			lb = lb[:len(lb)-2]
 
 			// Convert the JSON to Go object
@@ -65,7 +69,7 @@ func alertSpaces(c int) (err error) {
 				// Looks like a Row, let's process it!
 				err = json.Unmarshal(lb, &r)
 				if err != nil {
-					fmt.Printf("Error decoding JSON %v (%v)\n", string(lb), err)
+					return fmt.Errorf("error decoding JSON %v (%v)\n", string(lb), err)
 				} else {
 					if r.Row.Columns != nil {
 						CARPARK = r.Row.Columns[0].(string)
@@ -74,8 +78,8 @@ func alertSpaces(c int) (err error) {
 						CAPACITY = r.Row.Columns[3].(float64)
 						// Handle the timestamp
 						t := int64(DATA_TS)
-						ts := time.Unix(t/1000, 0)
-						fmt.Printf("Carpark %v at %v has %v spaces available (capacity %v)\n", CARPARK, ts, CURRENT_EMPTY_PLACES, CAPACITY)
+						ts := time.Unix(t/1000, 0).Format(time.RFC822)
+						a <- fmt.Sprintf("✨ 🎉  🚗 The %v carpark has %v spaces available (capacity %v)\n(data as of %v)", CARPARK, CURRENT_EMPTY_PLACES, CAPACITY, ts)
 					}
 				}
 			} else {
