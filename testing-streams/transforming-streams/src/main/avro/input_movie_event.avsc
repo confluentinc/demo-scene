@@ -1,0 +1,12 @@
+{
+  "namespace": "io.confluent.developer.avro",
+  "type": "record",
+  "name": "RawMovie",
+  "fields": [
+    {"name": "id", "type": "long"},
+    {"name": "title", "type": "string"},
+    {"name": "genre", "type": "string"}
+  ]
+}
+
+

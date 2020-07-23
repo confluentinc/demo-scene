@@ -1,0 +1,39 @@
+allprojects {
+  buildscript {
+    ext {
+      kafkaVersion = '2.5.0'
+      confluentVersion = '5.5.1'
+      testContainersVersion = '1.14.1'
+      avroVersion = '1.9.2'
+    }
+  }
+  repositories {
+    repositories {
+      mavenCentral()
+      jcenter()
+
+      maven {
+        url 'https://packages.confluent.io/maven'
+      }
+      maven { url 'https://jitpack.io' }
+    }
+
+  }
+
+  apply plugin: 'java'
+  apply plugin: 'idea'
+
+  test {
+    testLogging {
+      outputs.upToDateWhen { false }
+      showStandardStreams = true
+      events "passed", "skipped", "failed"
+      exceptionFormat = 'full'
+    }
+  }
+  
+  tasks.withType(JavaCompile) {
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+  }
+
+}

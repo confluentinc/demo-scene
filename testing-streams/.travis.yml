@@ -1,0 +1,28 @@
+# https://docs.travis-ci.com/user/languages/java/#Projects-Using-Gradle
+language: java
+jdk:
+  - oraclejdk11
+
+sudo: required
+services:
+  - docker
+
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
+
+before_install:
+  - docker pull confluentinc/cp-zookeeper:5.5.0
+  - docker pull confluentinc/cp-kafka:5.5.0
+  - docker pull confluentinc/cp-schema-registry:5.5.0
+  - docker pull confluentinc/ksqldb-server:0.9.0
+  - docker pull confluentinc/ksqldb-cli:0.9.0
+
+script:
+  - ./gradlew build 
+  - cd transforming-ksqldb && sh startCliService.sh && sh runTests.sh && cd -
