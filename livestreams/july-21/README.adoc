@@ -28,6 +28,7 @@ toc::[]
 
 == Agenda
 
+video::yFzemqR5bbM[youtube]
 
 * Register for kafka-summit.org[Kafka Summit]!
 * Register for https://kafkathon20.eventbrite.com/[hackathon]

@@ -1,0 +1,48 @@
+= Livestreams July 28th log
+Viktor Gamov <viktor@confluent.io>, © 2020 Confluent, Inc.
+2020-07-28
+:revdate: 2020-07-28 13:00:27 -0600
+:linkattrs:
+:ast: &ast;
+:y: &#10003;
+:n: &#10008;
+:y: icon:check-sign[role="green"]
+:n: icon:check-minus[role="red"]
+:c: icon:file-text-alt[role="blue"]
+:toc: auto
+:toc-placement: auto
+:toc-position: auto
+:toc-title: Table of content
+:toclevels: 3
+:idprefix:
+:idseparator: -
+:sectanchors:
+:icons: font
+:source-highlighter: highlight.js
+:highlightjs-theme: idea
+:experimental:
+
+The materials form live stream on July 28th 2020.
+
+toc::[]
+
+== Agenda and links
+
+video::3YFlT_yIDxk[youtube]
+
+* https://github.com/confluentinc/demo-scene/tree/master/livestreams/july-28[Code from today's stream] 
+* https://events.kafka-summit.org/2020-schedule[Register for Kafka Summit] 
+* https://kafkathon20.eventbrite.com/[Kafkathon 2020] 
+* https://springone.io/2020/sessions/the-tales-of-event-driven-told-by-a-spring-developer[My talk on SpringOne]
+* https://start.spring.io/[Spring Initializr]
+* https://developer.confluent.io/[Learn Kafka]
+* http://www.gcping.com/[GCPing]
+* https://www.confluent.io/blog/spring-kafka-can-your-kafka-consumers-handle-a-poison-pill/[Can Your Kafka Consumers Handle a Poison Pill?]
+* https://kafka.apache.org/10/documentation/streams/developer-guide/datatypes[Configuring default serdes in Kafka Streams]
+* https://docs.confluent.io/current/streams/developer-guide/memory-mgmt.html[Enabling / disabling caching in Kafka Streams] 
+* Spring Boot with Confluent Cloud https://github.com/confluentinc/demo-scene/tree/master/livestreams
+** update `src/main/resources/application.properties` with Spring Boot config from Confluent Cloud 
+*** build: `./gradlew clean build`
+*** run: `./gradlew bootRun`
+
+* Twitter https://twitter.com/gamussa[@gAmUssA]

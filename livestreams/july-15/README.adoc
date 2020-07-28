@@ -28,6 +28,8 @@ toc::[]
 
 == Agenda
 
+video::dKfc55lZ4ZM[youtube]
+
 * Mysql in docker + configure to use CDC
 * Using DBZM Connector propagated changes from mySQL to Kafka using Debezium
 * We created a lookup table in ksqlDB
