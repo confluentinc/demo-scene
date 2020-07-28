@@ -128,7 +128,12 @@ CREATE STREAM CARPARK_SRC (date          VARCHAR ,
                 VALUE_FORMAT='DELIMITED');
 
 -- https://github.com/confluentinc/ksql/issues/3950
-CREATE STREAM CARPARK_EVENTS WITH (VALUE_FORMAT='PROTOBUF', PARTITIONS=4) AS SELECT 1 AS DUMMY, STRINGTOTIMESTAMP(DATE + ' ' + TIME ,'yyyy-MM-dd HH:mm','Europe/London' ) AS TS,* FROM CARPARK_SRC EMIT CHANGES;
+CREATE STREAM CARPARK_EVENTS WITH (VALUE_FORMAT='PROTOBUF', PARTITIONS=4) AS 
+SELECT STRINGTOTIMESTAMP(DATE + ' ' + TIME ,'yyyy-MM-dd HH:mm','Europe/London' ) AS TS,
+       *,
+       STRUCT("lat" := LATITUDE, "lon":= LONGITUDE) AS "location"
+  FROM CARPARK_SRC 
+  EMIT CHANGES;
 ----
 
 [source,sql]
@@ -312,15 +317,24 @@ SELECT CARPARK, ALERT_THRESHOLD, DATA_TS, EMPTY_PLACES FROM CARPARK_ALERTS EMIT 
 
 
 
-== ksqlDB Pull and Push queries with REST API
-
-=== `curl`
-
-
 
 == Cool stuff if you have the user's location
 
-Track user location
+=== If they give you the location (lat,lon)
+
+[source,sql]
+----
+SELECT NAME AS CARPARK, LATEST_TS, GEO_DISTANCE(CAST(53.925232 AS DOUBLE), 
+	       CAST(-1.802675 AS DOUBLE), CAST(LATITUDE AS DOUBLE), CAST(LONGITUDE AS DOUBLE)) AS DISTANCE_TO_CARPARK_KM, 
+	       CURRENT_EMPTY_PLACES, ((CAST(CAPACITY as DOUBLE) - CAST(CURRENT_EMPTY_PLACES AS DOUBLE)) / CAST(CAPACITY AS DOUBLE)) * 100 AS PCT_FULL, 
+	       CAPACITY, DIRECTIONSURL, LATITUDE,LONGITUDE
+	  FROM CARPARK4 C 
+	 WHERE CURRENT_EMPTY_PLACES > 10
+	 EMIT CHANGES;
+----
+
+=== If you're tracking the location 
+
 
 [source,sql]
 ----
@@ -403,3 +417,28 @@ ksql> SELECT USERNAME,
 ----
 
 
+== Stream the data from REST API to Elasticsearch
+
+curl -s -XPUT "http://localhost:9200/_template/rmoff/" -H 'Content-Type: application/json' -d'
+          {
+            "template": "*",
+            "mappings": { "dynamic_templates": [ { "dates": { "match": "TS", "mapping": { "type": "date" } } }, {
+          "geopoint": {
+            "match": "location",
+            "mapping": {
+              "type": "geo_point"
+            }
+          }
+        } ]  }
+          }'
+
+CREATE SINK CONNECTOR SINK_ELASTIC_01 WITH (
+  'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+  'connection.url' = 'http://elasticsearch:9200',
+  'type.name' = '_doc',
+  'topics' = 'CARPARK_EVENTS',
+  'key.ignore' = 'true',
+  'schema.ignore' = 'true',
+  'key.converter' = 'org.apache.kafka.connect.storage.StringConverter',
+  'value.converter' = 'io.confluent.connect.protobuf.ProtobufConverter',
+  'value.converter.schema.registry.url' = 'http://schema-registry:8081');

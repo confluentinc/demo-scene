@@ -16,10 +16,21 @@ type carPark struct {
 	ts          string
 	emptyplaces int64
 	capacity    int64
-	distance_km float64
+	distanceKm  float64
 	URL         string
 	lat         float64
 	lon         float64
+}
+
+func (c carPark) String() string {
+	return fmt.Sprintf("🚗 %v\n\tTimestamp: %v\n\tSpaces free: %v out of %v\n\tLocation: %v,%v (%v)\n\tDistance from user: %.1f km\n\n", c.name,
+		c.ts,
+		c.emptyplaces,
+		c.capacity,
+		c.lat,
+		c.lon,
+		c.URL,
+		c.distanceKm)
 }
 
 type carParks []carPark
@@ -29,7 +40,7 @@ func (c carParks) Len() int {
 }
 
 func (c carParks) Less(i, j int) bool {
-	return c[i].distance_km < c[j].distance_km
+	return c[i].distanceKm < c[j].distanceKm
 }
 
 func (c carParks) Swap(i, j int) {
@@ -38,18 +49,21 @@ func (c carParks) Swap(i, j int) {
 	}
 }
 
-// func getClosest(lat float64, lon float64) (cp carPark, distance float32, e error) {
 func getClosest(lat float64, lon float64) (c carPark, e error) {
 	var cp carPark
 	var cps carParks
-
-	// TODO add a channel so that user can run another
-	// command to delete an alert
-
+	const availableThreshold = 10
+	const queryResultsTimeoutMs = 500
 	// Prepare the request
 	url := "http://localhost:8088/query"
 	method := "POST"
-	k := "SELECT NAME AS CARPARK, LATEST_TS, GEO_DISTANCE(cast(" + fmt.Sprintf("%v", lat) + " as double), cast(" + fmt.Sprintf("%v", lon) + " as double), cast(LATitude as double), cast(LONgitude as double)) AS DISTANCE_TO_CARPARK_KM, CURRENT_EMPTY_PLACES, (       (CAST(CAPACITY as double) - cast( CURRENT_EMPTY_PLACES AS DOUBLE)) / CAST(CAPACITY AS DOUBLE)) * 100 AS PCT_FULL, CAPACITY, DIRECTIONSURL, LATITUDE,LONGITUDE FROM CARPARK4 C WHERE CURRENT_EMPTY_PLACES > 10 EMIT CHANGES;"
+	k := "SELECT NAME AS CARPARK, LATEST_TS, GEO_DISTANCE(CAST(" + fmt.Sprintf("%v", lat) + " AS DOUBLE), "
+	k += "       CAST(" + fmt.Sprintf("%v", lon) + " AS DOUBLE), CAST(LATITUDE AS DOUBLE), CAST(LONGITUDE AS DOUBLE)) AS DISTANCE_TO_CARPARK_KM, "
+	k += "       CURRENT_EMPTY_PLACES, ((CAST(CAPACITY as DOUBLE) - CAST(CURRENT_EMPTY_PLACES AS DOUBLE)) / CAST(CAPACITY AS DOUBLE)) * 100 AS PCT_FULL, "
+	k += "       CAPACITY, DIRECTIONSURL, LATITUDE,LONGITUDE"
+	k += "  FROM CARPARK4 C "
+	k += " WHERE CURRENT_EMPTY_PLACES > " + fmt.Sprintf("%v", availableThreshold)
+	k += " EMIT CHANGES;"
 	payload := strings.NewReader("{\"ksql\":\"" + k + "\"}")
 
 	// Create the client
@@ -71,14 +85,14 @@ func getClosest(lat float64, lon float64) (c carPark, e error) {
 	var r ksqlDBMessageRow
 	var lastRow time.Time
 	gotRow := false
-	reader := bufio.NewReader(res.Body)
 	doThis := true
+	reader := bufio.NewReader(res.Body)
 	for doThis {
 		// Check if it's more than 30 seconds since we received a row
 		if gotRow {
 			d := time.Now().Sub(lastRow)
 			//fmt.Printf("It's %v since the last row was received\n", d)
-			if d.Microseconds() > 500 {
+			if d.Microseconds() > queryResultsTimeoutMs {
 				doThis = false
 			}
 		}
@@ -114,14 +128,16 @@ func getClosest(lat float64, lon float64) (c carPark, e error) {
 				}
 
 				if r.Row.Columns != nil {
+					// Store the row values in the carPark object
 					cp.name = r.Row.Columns[0].(string)
 					cp.ts = r.Row.Columns[1].(string)
-					cp.distance_km = r.Row.Columns[2].(float64)
+					cp.distanceKm = r.Row.Columns[2].(float64)
 					cp.emptyplaces = int64(r.Row.Columns[3].(float64))
 					cp.capacity = int64(r.Row.Columns[5].(float64))
 					cp.URL = r.Row.Columns[6].(string)
 					cp.lat, _ = strconv.ParseFloat(r.Row.Columns[7].(string), 64)
 					cp.lon, _ = strconv.ParseFloat(r.Row.Columns[8].(string), 64)
+					// Add the carPark to the slice
 					cps = append(cps, cp)
 				}
 
@@ -138,9 +154,7 @@ func getClosest(lat float64, lon float64) (c carPark, e error) {
 		if sort.IsSorted(cps) == false {
 			sort.Sort(cps)
 		}
-		// for _, c := range cps {
-		// 	fmt.Printf("%v\t%v\n", c.distance_km, c.name)
-		// }
+		fmt.Println(cps)
 		return cps[0], nil
 	}
 

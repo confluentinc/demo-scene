@@ -51,6 +51,7 @@ services:
       KSQL_BOOTSTRAP_SERVERS: broker:29092
       KSQL_LISTENERS: http://0.0.0.0:8088
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      KSQL_KSQL_CONNECT_URL: http://kafka-connect:8083
       KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
       KSQL_KSQL_HIDDEN_TOPICS: '^_.*,default_ksql_processing_log'
 
@@ -78,12 +79,23 @@ services:
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
-      CONNECT_PLUGIN_PATH: '/usr/share/java,/connectors'
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/connectors,/usr/share/confluent-hub-components/'
     depends_on:
       - broker
       - schema-registry
     volumes:
       - $PWD/data/connectors/:/connectors/
+    command:
+      - bash
+      - -c
+      - |
+        echo "Installing Connector"
+        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:5.5.1
+        #
+        echo "Launching Kafka Connect worker"
+        /etc/confluent/docker/run &
+        #
+        sleep infinity
 
   kafkacat:
     image: edenhill/kafkacat:1.6.0
@@ -94,3 +106,25 @@ services:
       - |
         apk add jq; 
         while [ 1 -eq 1 ];do sleep 60;done
+
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.0
+    container_name: elasticsearch
+    ports:
+      - 9200:9200
+    environment:
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+      discovery.type: "single-node"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.5.0
+    container_name: kibana
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5601:5601
+    environment:
+      xpack.security.enabled: "false"
+      discovery.type: "single-node"

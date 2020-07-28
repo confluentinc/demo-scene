@@ -11,8 +11,11 @@ import (
 )
 
 func alertSpaces(a chan<- string, c int) (e error) {
-	// TODO add a channel so that user can run another
+	// TODO01 add a channel so that user can run another
 	// command to delete an alert
+	//
+	// TODO02 return a chan of carPark type, not a hardcoded string
+	//
 	defer close(a)
 
 	// Prepare the request

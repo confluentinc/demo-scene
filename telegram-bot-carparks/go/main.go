@@ -1,3 +1,6 @@
+// @rmoff
+// 24 July 2020
+//
 package main
 
 import (
@@ -108,7 +111,7 @@ func main() {
 			}
 			if c, e := getClosest(l.Latitude, l.Longitude); e == nil {
 				resp = fmt.Sprintf("ℹ️🚗The nearest carpark is %v, which is %.1fkm away and has %v spaces free.",
-					c.name, c.distance_km, c.emptyplaces)
+					c.name, c.distanceKm, c.emptyplaces)
 				v := tgbotapi.NewVenue(chatID, c.name, "", c.lat, c.lon)
 				bot.Send(v)
 			} else {
