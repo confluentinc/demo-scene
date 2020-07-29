@@ -1,79 +1,12 @@
-Download & build the plugin
+Load historic data
 
 [source,bash]
 ----
-git clone https://github.com/llofberg/kafka-connect-rest.git
-cd kafka-connect-rest
-mvn clean package
-mkdir -p ../data/connectors
-cp kafka-connect-rest-plugin/target/kafka-connect-rest-plugin-*-shaded.jar ../data/connectors/ && \
-cp kafka-connect-transform-from-json/kafka-connect-transform-from-json-plugin/target/kafka-connect-transform-from-json-plugin-*-shaded.jar ../data/connectors/ && \
-cp kafka-connect-transform-add-headers/target/kafka-connect-transform-add-headers-*-shaded.jar ../data/connectors/ && \
-cp kafka-connect-transform-velocity-eval/target/kafka-connect-transform-velocity-eval-*-shaded.jar ../data/connectors/
+curl https://datahub.bradford.gov.uk/ebase/api/getData/v2/Council/CarParkHistoric| \
+  docker exec -i kafkacat kafkacat -b broker:29092 -t carparks_historic -P
 ----
 
-Start the stack
-
-[source,bash]
-----
-docker-compose up -d
-----
-
-Check connector has been loaded 
-
-[source,bash]
-----
-➜ curl -s localhost:8083/connector-plugins|jq '.[].class'|egrep 'com.tm.kafka.connect.rest.RestSourceConnector'
-
-"com.tm.kafka.connect.rest.RestSourceConnector"
-----
-
-Create the source connector
-
-[source,javascript]
-----
-
-curl -i -X PUT -H "Accept:application/json" \
-          -H  "Content-Type:application/json" http://localhost:8083/connectors/source-rest-carpark-01/config \
-          -d '{
-      "connector.class": "com.tm.kafka.connect.rest.RestSourceConnector",
-      "key.converter":"org.apache.kafka.connect.storage.StringConverter",
-      "value.converter":"org.apache.kafka.connect.storage.StringConverter",
-      "tasks.max": "1",
-      "rest.source.poll.interval.ms": "300000",
-      "rest.source.method": "GET",
-      "rest.source.url": "https://datahub.bradford.gov.uk/ebase/api/getData/v2/Council/CarParkCurrent",
-      "rest.source.payload.converter.class": "com.tm.kafka.connect.rest.converter.StringPayloadConverter",
-      "rest.source.topic.selector": "com.tm.kafka.connect.rest.selector.SimpleTopicSelector",
-      "rest.source.destination.topics": "carpark-bradford"
-      }'
-----
-
-[source,sql]
-----
-
-
-ksql> show topics;
-
- Kafka Topic      | Partitions | Partition Replicas
-----------------------------------------------------
- carpark-bradford | 1          | 1
-----------------------------------------------------
-ksql> print 'carpark-bradford' from beginning;
-Key format: ¯\_(ツ)_/¯ - no data processed
-Value format: KAFKA_STRING
-rowtime: 2020/07/20 15:10:57.411 Z, key: <null>, value: date,time,name,capacity,empty_places,status,latitude,longitude,directionsURL
-2020-07-20,16:03,Westgate,116,80,Spaces,53.796291,-1.759143,"https://maps.google.com/?daddr=53.796291,-1.759143"
-2020-07-20,16:03,Burnett St,122,108,Spaces,53.795739,-1.744756,"https://maps.google.com/?daddr=53.795739,-1.744756"
-2020-07-20,16:03,Crown Court,142,112,Spaces,53.792179,-1.748466,"https://maps.google.com/?daddr=53.792179,-1.748466"
-2020-07-20,16:03,Leisure Exchange,996,951,Spaces,53.79222,-1.746683,"https://maps.google.com/?daddr=53.79222,-1.746683"
-2020-07-20,16:03,NCP Hall Ings,526,511,Spaces,53.791838,-1.752201,"https://maps.google.com/?daddr=53.791838,-1.752201"
-2020-07-20,16:03,Broadway,1181,982,Spaces,53.794175,-1.750107,"https://maps.google.com/?daddr=53.794175,-1.750107"
-2020-07-20,16:03,Kirkgate Centre,611,487,Spaces,53.795002,-1.755938,"https://maps.google.com/?daddr=53.795002,-1.755938"
-2020-07-20,16:03,Sharpe Street,98,75,Spaces,53.789785,-1.756187,"https://maps.google.com/?daddr=53.789785,-1.756187"
-----
-
-Note that single row has all messages, which makes it more difficult to work with. Instead, let's use `kafkacat`: 
+Stream the current data from the REST endpoint into Kafka, piping the output from `curl` into `kafkacat`, polling every three minutes: 
 
 [source,bash]
 ----
@@ -86,7 +19,7 @@ do
 done
 ----
 
-Now we have each record in its own message
+Check out the data in ksqlDB: 
 
 [source,bash]
 ----
@@ -103,7 +36,7 @@ rowtime: 2020/07/20 15:39:21.145 Z, key: <null>, value: 2020-07-20,16:33,Kirkgat
 rowtime: 2020/07/20 15:39:21.148 Z, key: <null>, value: 2020-07-20,16:33,Sharpe Street,98,77,Spaces,53.789785,-1.756187,"https://maps.google.com/?daddr=53.789785,-1.756187"
 ----
 
-Let's apply a schema
+What's the schema of this data? 
 
 [source,bash]
 ----
@@ -111,7 +44,7 @@ curl -s https://datahub.bradford.gov.uk/ebase/api/getData/v2/Council/CarParkCurr
 date,time,name,capacity,empty_places,status,latitude,longitude,directionsURL
 ----
 
-
+Apply the schema, making assumptions about the data types (Yay for CSV 🤔): 
 
 [source,sql]
 ----
@@ -126,15 +59,115 @@ CREATE STREAM CARPARK_SRC (date          VARCHAR ,
                            directionsURL VARCHAR)
                 WITH (KAFKA_TOPIC='carparks', 
                 VALUE_FORMAT='DELIMITED');
+----
 
--- https://github.com/confluentinc/ksql/issues/3950
+Check the schema looks good
+
+[source,sql]
+----
+SET 'auto.offset.reset' = 'earliest';
+SELECT * FROM CARPARK_SRC EMIT CHANGES LIMIT 5;
+----
+
+[source,sql]
+----
++-------------+-------+-------------+---------+-------------+-------------+-------------+-------------+-------------+
+|DATE         |TIME   |NAME         |CAPACITY |EMPTY_PLACES |STATUS       |LATITUDE     |LONGITUDE    |DIRECTIONSURL|
++-------------+-------+-------------+---------+-------------+-------------+-------------+-------------+-------------+
+|2020-07-28   |14:55  |Westgate     |116      |73           |Spaces       |53.796291    |-1.759143    |https://maps.|
+|             |       |             |         |             |             |             |             |google.com/?d|
+|             |       |             |         |             |             |             |             |addr=53.79629|
+|             |       |             |         |             |             |             |             |1,-1.759143  |
+|2020-07-28   |14:55  |Burnett St   |122      |108          |Spaces       |53.795739    |-1.744756    |https://maps.|
+|             |       |             |         |             |             |             |             |google.com/?d|
+|             |       |             |         |             |             |             |             |addr=53.79573|
+|             |       |             |         |             |             |             |             |9,-1.744756  |
+|2020-07-28   |14:55  |Crown Court  |142      |94           |Spaces       |53.792179    |-1.748466    |https://maps.|
+|             |       |             |         |             |             |             |             |google.com/?d|
+|             |       |             |         |             |             |             |             |addr=53.79217|
+|             |       |             |         |             |             |             |             |9,-1.748466  |
+|2020-07-28   |14:55  |Leisure Excha|996      |940          |Spaces       |53.79222     |-1.746683    |https://maps.|
+|             |       |nge          |         |             |             |             |             |google.com/?d|
+|             |       |             |         |             |             |             |             |addr=53.79222|
+|             |       |             |         |             |             |             |             |,-1.746683   |
+|2020-07-28   |14:55  |NCP Hall Ings|526      |505          |Spaces       |53.791838    |-1.752201    |https://maps.|
+|             |       |             |         |             |             |             |             |google.com/?d|
+|             |       |             |         |             |             |             |             |addr=53.79183|
+|             |       |             |         |             |             |             |             |8,-1.752201  |
+----
+
+Apply schema to historic
+
+[source,sql]
+----
+CREATE STREAM CARPARK_HISTORIC (date          VARCHAR ,
+                                time          VARCHAR ,
+                                name          VARCHAR ,
+                                capacity      INT ,
+                                empty_places  INT ,
+                                status        VARCHAR ,
+                                latitude      VARCHAR ,
+                                longitude     VARCHAR )
+                WITH (KAFKA_TOPIC='carparks_historic', 
+                VALUE_FORMAT='DELIMITED');
+----
+
+Create a new stream: 
+
+* Merge current and historic data, adding a source field for lineage
+* Set the timestamp from the two source fields
+* Make the location (lat/lon) a struct
+* Serialise to Protobuf so that the schema is available for use downstream
+** Could also use Avro or JSON Schema here
+
+[source,sql]
+----
+SET 'auto.offset.reset' = 'earliest';
+
 CREATE STREAM CARPARK_EVENTS WITH (VALUE_FORMAT='PROTOBUF', PARTITIONS=4) AS 
 SELECT STRINGTOTIMESTAMP(DATE + ' ' + TIME ,'yyyy-MM-dd HH:mm','Europe/London' ) AS TS,
        *,
-       STRUCT("lat" := LATITUDE, "lon":= LONGITUDE) AS "location"
+       STRUCT("lat" := LATITUDE, "lon":= LONGITUDE) AS "location",
+       'v2/Council/CarParkCurrent' as SOURCE 
   FROM CARPARK_SRC 
   EMIT CHANGES;
+
+INSERT INTO CARPARK_EVENTS 
+SELECT STRINGTOTIMESTAMP(DATE + ' ' + TIME ,'yyyy-MM-dd HH:mm','Europe/London' ) AS TS,
+       *,
+       '' AS DIRECTIONSURL,
+       STRUCT("lat" := LATITUDE, "lon":= LONGITUDE) AS "location",
+       'v2/Council/CarParkHistoric' as SOURCE 
+  FROM CARPARK_HISTORIC
+  EMIT CHANGES;
 ----
+
+Check the data: 
+
+[source,sql]
+----
+SELECT SOURCE, 
+       COUNT(*) AS EVENT_CT, 
+       TIMESTAMPTOSTRING( MIN(TS),'yyyy-MM-dd HH:mm:ss','Europe/London') AS EARLIEST_TS,
+       TIMESTAMPTOSTRING( MAX(TS),'yyyy-MM-dd HH:mm:ss','Europe/London') AS LATEST_TS
+  FROM CARPARK_EVENTS 
+GROUP BY SOURCE 
+EMIT CHANGES 
+LIMIT 2;
+----
+
+[source,sql]
+----
++----------------------------+---------+---------------------+---------------------+
+|SOURCE                      |EVENT_CT |EARLIEST_TS          |LATEST_TS            |
++----------------------------+---------+---------------------+---------------------+
+|v2/Council/CarParkCurrent   |56       |2020-07-28 14:55:00  |2020-07-28 15:13:00  |
+|v2/Council/CarParkHistoric  |13524    |2018-02-05 09:55:00  |2018-04-20 02:04:00  |
+Limit Reached
+Query terminated
+----
+
+Create a materialised view of the current state: 
 
 [source,sql]
 ----
@@ -152,6 +185,7 @@ SELECT NAME,
        LATEST_BY_OFFSET(LONGITUDE) AS LONGITUDE,
        LATEST_BY_OFFSET(DIRECTIONSURL) AS DIRECTIONSURL
     FROM CARPARK_EVENTS
+    WHERE SOURCE='v2/Council/CarParkCurrent'
     GROUP BY NAME;
 ----
 
@@ -161,7 +195,7 @@ SELECT NAME,
 
 [source,sql]
 ----
-ksql> SELECT CURRENT_EMPTY_PLACES, PCT_FULL FROM CARPARK WHERE NAME='Westgate';
+ksql> SELECT LATEST_TS, CURRENT_EMPTY_PLACES, PCT_FULL FROM CARPARK WHERE NAME='Westgate';
 +----------------------+--------------------+
 |CURRENT_EMPTY_PLACES  |PCT_FULL            |
 +----------------------+--------------------+
@@ -175,7 +209,7 @@ ksql> SELECT CURRENT_EMPTY_PLACES, PCT_FULL FROM CARPARK WHERE NAME='Westgate';
 curl --silent --location --request POST 'http://localhost:8088/query' \
 --header 'Content-Type: application/vnd.ksql.v1+json; charset=utf-8' \
 --data-raw '{
-    "ksql": "SELECT CURRENT_EMPTY_PLACES, PCT_FULL FROM CARPARK4 WHERE NAME='\''Westgate'\'';"
+    "ksql": "SELECT LATEST_TS, CURRENT_EMPTY_PLACES, PCT_FULL FROM CARPARK WHERE NAME='\''Westgate'\'';"
 }' | jq '.'
 ----
 +
@@ -184,15 +218,16 @@ curl --silent --location --request POST 'http://localhost:8088/query' \
 [
   {
     "header": {
-      "queryId": "query_1595341978539",
-      "schema": "`CURRENT_EMPTY_PLACES` INTEGER, `PCT_FULL` DOUBLE"
+      "queryId": "query_1595951409822",
+      "schema": "`LATEST_TS` STRING, `CURRENT_EMPTY_PLACES` INTEGER, `PCT_FULL` DOUBLE"
     }
   },
   {
     "row": {
       "columns": [
-        88,
-        24.137931034482758
+        "2020-07-28 16:40:00",
+        90,
+        22.413793103448278
       ]
     }
   }
@@ -205,7 +240,7 @@ curl --silent --location --request POST 'http://localhost:8088/query' \
 ----
 curl --silent --http2 --location --request POST 'http://localhost:8088/query-stream' \
 --header 'Content-Type: application/vnd.ksql.v1+json; charset=utf-8' --header 'Accept: application/json' \
---data-raw '{"sql":"SELECT CURRENT_EMPTY_PLACES, PCT_FULL FROM CARPARK4 WHERE NAME='\''Westgate'\'';"}' | jq '.'
+--data-raw '{"sql":"SELECT LATEST_TS, CURRENT_EMPTY_PLACES, PCT_FULL FROM CARPARK WHERE NAME='\''Westgate'\'';"}' | jq '.'
 ----
 +
 [source,javascript]
@@ -214,21 +249,23 @@ curl --silent --http2 --location --request POST 'http://localhost:8088/query-str
   {
     "queryId": null,
     "columnNames": [
+      "LATEST_TS",
       "CURRENT_EMPTY_PLACES",
       "PCT_FULL"
     ],
     "columnTypes": [
+      "STRING",
       "INTEGER",
       "DOUBLE"
     ]
   },
   [
-    86,
-    25.862068965517242
+    "2020-07-28 16:40:00",
+    90,
+    22.413793103448278
   ]
 ]
 ----
-
 
 
 === Push (Event-driven alert): Tell me when there's a space available
@@ -242,18 +279,22 @@ SELECT NAME AS CARPARK,
  FROM CARPARK_EVENTS 
  WHERE NAME = 'Kirkgate Centre' 
    AND EMPTY_PLACES > 0 
+   AND SOURCE='v2/Council/CarParkCurrent'
  EMIT CHANGES;
 ----
 
 * `/query`
 +
+
+curl --location --request POST 'http://localhost:8088/query' \
+--header 'Content-Type: application/vnd.ksql.v1+json; charset=utf-8' \
+--data-raw '{"ksql":"SELECT NAME AS CARPARK,     CAPACITY     ,      EMPTY_PLACES FROM CARPARK_EVENTS  WHERE  EMPTY_PLACES > 0  EMIT CHANGES;"}'
+
 [source,bash]
 ----
 curl --location --request POST 'http://localhost:8088/query' \
 --header 'Content-Type: application/vnd.ksql.v1+json; charset=utf-8' \
---data-raw '{
-    "ksql": "SELECT NAME AS CARPARK,      TIMESTAMPTOSTRING(TS,'\''yyyy-MM-dd HH:mm:ss'\'','\''Europe/London'\'') AS DATA_TS,      CAPACITY     ,      EMPTY_PLACES FROM CARPARK_EVENTS  WHERE NAME = '\''Kirkgate Centre'\''    AND EMPTY_PLACES > 0  EMIT CHANGES;"
-}'
+--data-raw '{"streamsProperties": {"ksql.streams.auto.offset.reset": "latest"  },    "ksql": "SELECT NAME AS CARPARK,      TIMESTAMPTOSTRING(TS,'\''yyyy-MM-dd HH:mm:ss'\'','\''Europe/London'\'') AS DATA_TS,      CAPACITY     ,      EMPTY_PLACES FROM CARPARK_EVENTS  WHERE NAME = '\''Kirkgate Centre'\''    AND EMPTY_PLACES > 0  EMIT CHANGES;"}'
 ----
 +
 [source,bash]
@@ -268,20 +309,18 @@ curl --location --request POST 'http://localhost:8088/query' \
 ----
 curl --http2 --location --request POST 'http://localhost:8088//query-stream' \
 --header 'Content-Type: application/vnd.ksql.v1+json; charset=utf-8' \
---data-raw '{
+--data-raw '{"properties":{"ksql.streams.auto.offset.reset": "latest"},
     "sql": "SELECT NAME AS CARPARK,      TIMESTAMPTOSTRING(TS,'\''yyyy-MM-dd HH:mm:ss'\'','\''Europe/London'\'') AS DATA_TS,      CAPACITY     ,      EMPTY_PLACES FROM CARPARK_EVENTS  WHERE NAME = '\''Kirkgate Centre'\''    AND EMPTY_PLACES > 0  EMIT CHANGES;"
 }'
 ----
 +
 [source,bash]
 ----
-{"queryId":"72e17319-f7e0-4d38-872e-5b15490aba45","columnNames":["CARPARK","DATA_TS","CAPACITY","EMPTY_PLACES"],"columnTypes":["STRING","STRING","INTEGER","INTEGER"]}
-["Kirkgate Centre","2020-07-21 16:16:00",611,468]
+{"queryId":"20a9c981-12d7-494e-a632-e6602b95ef96","columnNames":["CARPARK","DATA_TS","CAPACITY","EMPTY_PLACES"],"columnTypes":["STRING","STRING","INTEGER","INTEGER"]}
+["Kirkgate Centre","2020-07-28 16:58:00",611,510]
 ----
 
-
-
-
+=== Making the alert variable 
 
 [source,sql]
 ----
@@ -315,26 +354,51 @@ SELECT CARPARK, ALERT_THRESHOLD, DATA_TS, EMPTY_PLACES FROM CARPARK_ALERTS EMIT 
 |Kirkgate Centre  |470              |2020-07-21 10:55:00 |505          |
 ----
 
-
-
-
 == Cool stuff if you have the user's location
 
 === If they give you the location (lat,lon)
 
 [source,sql]
 ----
-SELECT NAME AS CARPARK, LATEST_TS, GEO_DISTANCE(CAST(53.925232 AS DOUBLE), 
-	       CAST(-1.802675 AS DOUBLE), CAST(LATITUDE AS DOUBLE), CAST(LONGITUDE AS DOUBLE)) AS DISTANCE_TO_CARPARK_KM, 
-	       CURRENT_EMPTY_PLACES, ((CAST(CAPACITY as DOUBLE) - CAST(CURRENT_EMPTY_PLACES AS DOUBLE)) / CAST(CAPACITY AS DOUBLE)) * 100 AS PCT_FULL, 
-	       CAPACITY, DIRECTIONSURL, LATITUDE,LONGITUDE
-	  FROM CARPARK4 C 
+SELECT NAME AS CARPARK, 
+       LATEST_TS, 
+       GEO_DISTANCE(CAST(53.925232 AS DOUBLE), 
+	                  CAST(-1.802675 AS DOUBLE), 
+                    CAST(LATITUDE AS DOUBLE), 
+                    CAST(LONGITUDE AS DOUBLE)) AS DISTANCE_TO_CARPARK_KM, 
+	     CURRENT_EMPTY_PLACES, 
+       DIRECTIONSURL
+	  FROM CARPARK C 
 	 WHERE CURRENT_EMPTY_PLACES > 10
 	 EMIT CHANGES;
 ----
 
-=== If you're tracking the location 
+[source,sql]
+----
++------------------+--------------------+--------------------------+---------------------+--------------------------+
+|CARPARK           |LATEST_TS           |DISTANCE_TO_CARPARK_KM    |CURRENT_EMPTY_PLACES |DIRECTIONSURL             |
++------------------+--------------------+--------------------------+---------------------+--------------------------+
+|NCP Hall Ings     |2020-07-28 17:04:00 |15.197595348356613        |516                  |https://maps.google.com/?d|
+|                  |                    |                          |                     |addr=53.791838,-1.752201  |
+|Burnett St        |2020-07-28 17:04:00 |14.891486742270187        |111                  |https://maps.google.com/?d|
+|                  |                    |                          |                     |addr=53.795739,-1.744756  |
+|Crown Court       |2020-07-28 17:04:00 |15.215944827861867        |112                  |https://maps.google.com/?d|
+|                  |                    |                          |                     |addr=53.792179,-1.748466  |
+|Leisure Exchange  |2020-07-28 17:04:00 |15.239263028872804        |960                  |https://maps.google.com/?d|
+|                  |                    |                          |                     |addr=53.79222,-1.746683   |
+|Kirkgate Centre   |2020-07-28 17:04:00 |14.801711309240307        |526                  |https://maps.google.com/?d|
+|                  |                    |                          |                     |addr=53.795002,-1.755938  |
+|Broadway          |2020-07-28 17:04:00 |14.975072972447347        |1002                 |https://maps.google.com/?d|
+|                  |                    |                          |                     |addr=53.794175,-1.750107  |
+|Westgate          |2020-07-28 17:04:00 |14.619017126268641        |102                  |https://maps.google.com/?d|
+|                  |                    |                          |                     |addr=53.796291,-1.759143  |
+|Sharpe Street     |2020-07-28 17:04:00 |15.366501862359593        |78                   |https://maps.google.com/?d|
+|                  |                    |                          |                     |addr=53.789785,-1.756187  |
+----
 
+We just need a `TOPN` function now :) 
+
+=== If you're tracking the user location in a stream
 
 [source,sql]
 ----
@@ -344,13 +408,24 @@ INSERT INTO USER_TRACKING (USERNAME, LAT, LON, DUMMY) VALUES ('Robin', 53.790566
 INSERT INTO USER_TRACKING (USERNAME, LAT, LON, DUMMY) VALUES ('Robin', 53.790389, -1.759765,1);
 INSERT INTO USER_TRACKING (USERNAME, LAT, LON, DUMMY) VALUES ('Robin', 53.789590, -1.761407,1);
 INSERT INTO USER_TRACKING (USERNAME, LAT, LON, DUMMY) VALUES ('Robin', 53.788468, -1.763703,1);
-
-CREATE TABLE USER_LOCATION AS SELECT USERNAME, LATEST_BY_OFFSET(LAT) AS LAT, LATEST_BY_OFFSET(LON) AS LON, TIMESTAMPTOSTRING(MAX(ROWTIME),'yyyy-MM-dd HH:mm:ss','Europe/London') AS LATEST_TS, COUNT(*) AS MOVEMENT_CT  FROM USER_TRACKING GROUP BY USERNAME;
 ----
 
 [source,sql]
 ----
-ksql> SELECT USERNAME, LAT, LON FROM USER_LOCATION WHERE USERNAME='Robin';
+SET 'auto.offset.reset' = 'earliest';
+CREATE TABLE USER_LOCATION AS 
+  SELECT USERNAME, 
+         LATEST_BY_OFFSET(LAT) AS LAT, 
+         LATEST_BY_OFFSET(LON) AS LON, 
+         TIMESTAMPTOSTRING(MAX(ROWTIME),'yyyy-MM-dd HH:mm:ss','Europe/London') AS LATEST_TS, 
+         COUNT(*) AS MOVEMENT_CT  
+  FROM   USER_TRACKING 
+  GROUP BY USERNAME;
+----
+
+[source,sql]
+----
+ksql> SELECT USERNAME, LAT, LON, LATEST_TS, MOVEMENT_CT FROM USER_LOCATION WHERE USERNAME='Robin';
 +-----------+-----------+-----------+
 |USERNAME   |LAT        |LON        |
 +-----------+-----------+-----------+
@@ -361,6 +436,9 @@ This next bit is a bit of a half-way house. We can use `GEO_DISTANCE` to get the
 
 [source,sql]
 ----
+
+CREATE STREAM CARPARK_EVENTS_WITH_DUMMY AS SELECT 1 AS DUMMY, * FROM CARPARK_EVENTS WHERE SOURCE='v2/Council/CarParkCurrent' EMIT CHANGES;
+
 CREATE TABLE NEAREST_CARPARK AS 
 SELECT USERNAME AS KEY1, NAME AS KEY2, 
        AS_VALUE(USERNAME) AS USERNAME, 
@@ -374,7 +452,7 @@ SELECT USERNAME AS KEY1, NAME AS KEY2,
        (CAST(LATEST_BY_OFFSET(CAPACITY) - LATEST_BY_OFFSET(EMPTY_PLACES) AS DOUBLE) / 
         CAST(LATEST_BY_OFFSET(CAPACITY) AS DOUBLE)) * 100 AS PCT_FULL,
        LATEST_BY_OFFSET(DIRECTIONSURL) AS DIRECTIONSURL                    
-  FROM CARPARK_EVENTS C 
+  FROM CARPARK_EVENTS_WITH_DUMMY C 
         INNER JOIN 
        USER_TRACKING U 
        WITHIN 10 MINUTES ON C.DUMMY=U.DUMMY 
@@ -416,29 +494,100 @@ ksql> SELECT USERNAME,
 |          |                 |                       |                      |       |dr=53.795002,-1.755938      |
 ----
 
+We just need a `TOPN` function now :) 
 
-== Stream the data from REST API to Elasticsearch
 
-curl -s -XPUT "http://localhost:9200/_template/rmoff/" -H 'Content-Type: application/json' -d'
-          {
-            "template": "*",
-            "mappings": { "dynamic_templates": [ { "dates": { "match": "TS", "mapping": { "type": "date" } } }, {
-          "geopoint": {
-            "match": "location",
-            "mapping": {
-              "type": "geo_point"
-            }
-          }
-        } ]  }
+== Stream the data to Elasticsearch. 
+
+Create mapping template in Elasticsearch to force timestamp and location to be handled correctly:
+
+[source,javascript]
+----
+curl -s -XPUT "http://localhost:9200/_template/rmoff/" \
+      -H 'Content-Type: application/json' \
+      -d' {
+          "template": "*", "mappings": {
+              "dynamic_templates": [
+                  { "dates": { "match": "TS", "mapping": { "type": "date" } } },
+                  { "geopoint": { "match": "location", "mapping": { "type": "geo_point" } } }
+              ] }
           }'
+----
 
+Create a sink connector from ksqlDB: 
+
+[source,sql]
+----
 CREATE SINK CONNECTOR SINK_ELASTIC_01 WITH (
-  'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
-  'connection.url' = 'http://elasticsearch:9200',
-  'type.name' = '_doc',
-  'topics' = 'CARPARK_EVENTS',
-  'key.ignore' = 'true',
-  'schema.ignore' = 'true',
-  'key.converter' = 'org.apache.kafka.connect.storage.StringConverter',
-  'value.converter' = 'io.confluent.connect.protobuf.ProtobufConverter',
-  'value.converter.schema.registry.url' = 'http://schema-registry:8081');
+  'connector.class'                     = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+  'topics'                              = 'CARPARK_EVENTS',
+  'key.converter'                       = 'org.apache.kafka.connect.storage.StringConverter',
+  'value.converter'                     = 'io.confluent.connect.protobuf.ProtobufConverter',
+  'value.converter.schema.registry.url' = 'http://schema-registry:8081',
+  'connection.url'                      = 'http://elasticsearch:9200',
+  'type.name'                           = '_doc',
+  'key.ignore'                          = 'true',
+  'schema.ignore'                       = 'true');
+----
+
+Check the status of the connector in ksqlDB
+
+[source,sql]
+----
+SHOW CONNECTORS
+----
+
+[source,sql]
+----
+ Connector Name  | Type | Class                                                         | Status
+----------------------------------------------------------------------------------------------------------------------
+ SINK_ELASTIC_01 | SINK | io.confluent.connect.elasticsearch.ElasticsearchSinkConnector | RUNNING (1/1 tasks RUNNING)
+----------------------------------------------------------------------------------------------------------------------
+----
+
+Check that data is arriving: 
+
+[source,bash]
+----
+➜ docker exec elasticsearch curl -s "http://localhost:9200/_cat/indices/*?h=idx,docsCount"
+
+.kibana_task_manager_1        2
+.apm-agent-configuration      0
+.kibana_1                     1
+carpark_events           265793
+----
+
+Visualise it in Kibana: 
+
+image::/images/carpark_kibana01.png[]
+
+=== Automating the generation of the report and export to PNG
+
+Exporting to PNG requires Elastic licence, so start the 30-day trial (if not already done with `xpack.license.self_generated.type: "trial"` in Docker Compose):
+
+[source,bash]
+----
+curl -X POST "localhost:9200/_license/start_trial?acknowledge=true&pretty"
+----
+
+Now run a `POST` to trigger the PNG generation based on a saved dashboard
+
+[source,bash]
+----
+curl --silent --location --request POST 'http://localhost:5601/api/reporting/generate/png?jobParams=(browserTimezone:Europe%2FLondon,layout:(dimensions:(height:1200,width:800),id:png),objectType:dashboard,relativeUrl:%27%2Fapp%2Fkibana%23%2Fdashboard%2F3398ecd0-d0f0-11ea-bd54-2d4c18537c1c%3F_g%3D(refreshInterval:(pause:!!f,value:60000),time:(from:now-24h,to:now))%26_a%3D(description:!%27!%27,filters:!!(),fullScreenMode:!!f,options:(hidePanelTitles:!!f,useMargins:!!t),panels:!!((embeddableConfig:(title:!%27!%27),gridData:(h:14,i:cade3656-b058-4298-be15-5486758c7a87,w:12,x:0,y:0),id:f8d0b510-d0ef-11ea-bd54-2d4c18537c1c,panelIndex:cade3656-b058-4298-be15-5486758c7a87,type:visualization,version:!%277.5.0!%27),(embeddableConfig:(),gridData:(h:14,i:!%2792f00732-2938-455f-ac33-82345947f105!%27,w:36,x:12,y:0),id:a94edb20-d0ef-11ea-bd54-2d4c18537c1c,panelIndex:!%2792f00732-2938-455f-ac33-82345947f105!%27,type:visualization,version:!%277.5.0!%27),(embeddableConfig:(),gridData:(h:16,i:!%2797ab40ba-9162-49eb-b9e8-9177d49f708d!%27,w:48,x:0,y:14),id:!%2716b34630-d0e4-11ea-bd54-2d4c18537c1c!%27,panelIndex:!%2797ab40ba-9162-49eb-b9e8-9177d49f708d!%27,type:lens,version:!%277.5.0!%27)),query:(language:kuery,query:!%27!%27),timeRestore:!!f,title:!%27Bradford%2BCar%2BPark%2Bdata!%27,viewMode:view)%27,title:%27Bradford%20Car%20Park%20data%27)' \
+--header 'kbn-xsrf: nevergonnagiveyouup'|jq '.path'
+"/api/reporting/jobs/download/kd75hxb500070081a4dak27r"
+----
+
+Take the resulting `path` element and fetch the PNG. 
+
+[source,bash]
+----
+curl "http://localhost:5601/api/reporting/jobs/download/kd75hxb500070081a4dak27r" > ~/Downloads/1.png
+----
+
+image::/images/carpark_kibana02.png[]
+
+If you get `Processing` in response then try again soon after. Image dimensions etc can be customised in the `POST` request `jobParams` query parameters. 
+
+TODO: Automate doing this through Telegram bot 🆒

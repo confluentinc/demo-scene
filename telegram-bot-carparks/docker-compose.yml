@@ -115,9 +115,9 @@ services:
       - 9200:9200
     environment:
       xpack.security.enabled: "false"
+      xpack.license.self_generated.type: "trial"
       ES_JAVA_OPTS: "-Xms1g -Xmx1g"
       discovery.type: "single-node"
-
   kibana:
     image: docker.elastic.co/kibana/kibana:7.5.0
     container_name: kibana
@@ -127,4 +127,5 @@ services:
       - 5601:5601
     environment:
       xpack.security.enabled: "false"
+      xpack.license.self_generated.type: "trial"
       discovery.type: "single-node"
