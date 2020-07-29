@@ -2,7 +2,7 @@ Load historic data
 
 [source,bash]
 ----
-curl https://datahub.bradford.gov.uk/ebase/api/getData/v2/Council/CarParkHistoric| \
+curl -s https://datahub.bradford.gov.uk/ebase/api/getData/v2/Council/CarParkHistoric | \
   docker exec -i kafkacat kafkacat -b broker:29092 -t carparks_historic -P
 ----
 
@@ -106,8 +106,8 @@ CREATE STREAM CARPARK_HISTORIC (date          VARCHAR ,
                                 capacity      INT ,
                                 empty_places  INT ,
                                 status        VARCHAR ,
-                                latitude      VARCHAR ,
-                                longitude     VARCHAR )
+                                latitude      DOUBLE ,
+                                longitude     DOUBLE )
                 WITH (KAFKA_TOPIC='carparks_historic', 
                 VALUE_FORMAT='DELIMITED');
 ----
@@ -124,7 +124,7 @@ Create a new stream:
 ----
 SET 'auto.offset.reset' = 'earliest';
 
-CREATE STREAM CARPARK_EVENTS WITH (VALUE_FORMAT='PROTOBUF', PARTITIONS=4) AS 
+CREATE STREAM CARPARK_EVENTS WITH (VALUE_FORMAT='PROTOBUF') AS 
 SELECT STRINGTOTIMESTAMP(DATE + ' ' + TIME ,'yyyy-MM-dd HH:mm','Europe/London' ) AS TS,
        *,
        STRUCT("lat" := LATITUDE, "lon":= LONGITUDE) AS "location",
@@ -559,7 +559,7 @@ carpark_events           265793
 
 Visualise it in Kibana: 
 
-image::/images/carpark_kibana01.png[]
+image::images/carpark_kibana01.png[]
 
 === Automating the generation of the report and export to PNG
 
@@ -586,7 +586,7 @@ Take the resulting `path` element and fetch the PNG.
 curl "http://localhost:5601/api/reporting/jobs/download/kd75hxb500070081a4dak27r" > ~/Downloads/1.png
 ----
 
-image::/images/carpark_kibana02.png[]
+image::images/carpark_kibana02.png[]
 
 If you get `Processing` in response then try again soon after. Image dimensions etc can be customised in the `POST` request `jobParams` query parameters. 
 

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -58,10 +57,10 @@ func getClosest(lat float64, lon float64) (c carPark, e error) {
 	url := "http://localhost:8088/query"
 	method := "POST"
 	k := "SELECT NAME AS CARPARK, LATEST_TS, GEO_DISTANCE(CAST(" + fmt.Sprintf("%v", lat) + " AS DOUBLE), "
-	k += "       CAST(" + fmt.Sprintf("%v", lon) + " AS DOUBLE), CAST(LATITUDE AS DOUBLE), CAST(LONGITUDE AS DOUBLE)) AS DISTANCE_TO_CARPARK_KM, "
+	k += "       CAST(" + fmt.Sprintf("%v", lon) + " AS DOUBLE), LATITUDE, LONGITUDE) AS DISTANCE_TO_CARPARK_KM, "
 	k += "       CURRENT_EMPTY_PLACES, ((CAST(CAPACITY as DOUBLE) - CAST(CURRENT_EMPTY_PLACES AS DOUBLE)) / CAST(CAPACITY AS DOUBLE)) * 100 AS PCT_FULL, "
 	k += "       CAPACITY, DIRECTIONSURL, LATITUDE,LONGITUDE"
-	k += "  FROM CARPARK4 C "
+	k += "  FROM CARPARK C "
 	k += " WHERE CURRENT_EMPTY_PLACES > " + fmt.Sprintf("%v", availableThreshold)
 	k += " EMIT CHANGES;"
 	payload := strings.NewReader("{\"ksql\":\"" + k + "\"}")
@@ -135,8 +134,8 @@ func getClosest(lat float64, lon float64) (c carPark, e error) {
 					cp.emptyplaces = int64(r.Row.Columns[3].(float64))
 					cp.capacity = int64(r.Row.Columns[5].(float64))
 					cp.URL = r.Row.Columns[6].(string)
-					cp.lat, _ = strconv.ParseFloat(r.Row.Columns[7].(string), 64)
-					cp.lon, _ = strconv.ParseFloat(r.Row.Columns[8].(string), 64)
+					cp.lat, _ = r.Row.Columns[7].(float64)
+					cp.lon, _ = r.Row.Columns[8].(float64)
 					// Add the carPark to the slice
 					cps = append(cps, cp)
 				}

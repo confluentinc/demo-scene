@@ -13,7 +13,7 @@ func checkSpaces(c string) (emptyPlaces float64, pctFull float64, err error) {
 	// Prepare the request
 	url := "http://localhost:8088/query"
 	method := "POST"
-	k := "SELECT CURRENT_EMPTY_PLACES, PCT_FULL FROM CARPARK4 WHERE NAME='" + c + "';"
+	k := "SELECT CURRENT_EMPTY_PLACES, PCT_FULL FROM CARPARK WHERE NAME='" + c + "';"
 	payload := strings.NewReader("{\"ksql\":\"" + k + "\"}")
 
 	// Create the client, make the request

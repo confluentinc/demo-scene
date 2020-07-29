@@ -109,7 +109,7 @@ services:
 
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.8.1
     container_name: elasticsearch
     ports:
       - 9200:9200
@@ -118,8 +118,31 @@ services:
       xpack.license.self_generated.type: "trial"
       ES_JAVA_OPTS: "-Xms1g -Xmx1g"
       discovery.type: "single-node"
+    command: 
+      - bash 
+      - -c 
+      - |
+        /usr/local/bin/docker-entrypoint.sh & 
+
+        echo "Waiting for Elasticsearch to start ⏳"
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://localhost:9200/) -ne 200 ] ; do 
+          echo -e $$(date) " Elasticsearch listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://localhost:9200/) " (waiting for 200)"
+          sleep 5 
+        done
+
+        curl -s -XPUT "http://localhost:9200/_template/rmoff/" -H 'Content-Type: application/json' \
+            -d' {
+                "template": "*", "mappings": {
+                    "dynamic_templates": [
+                        { "dates": { "match": "TS", "mapping": { "type": "date" } } },
+                        { "geopoint": { "match": "location", "mapping": { "type": "geo_point" } } }
+                    ] }
+                }'
+
+        sleep infinity
+
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.5.0
+    image: docker.elastic.co/kibana/kibana:7.8.1
     container_name: kibana
     depends_on:
       - elasticsearch
