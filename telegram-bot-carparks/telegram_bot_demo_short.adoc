@@ -2,6 +2,20 @@
 Robin Moffatt <robin@confluent.io>
 v0.01, 29 July 2020
 
+== Prep
+
+[source,bash]
+----
+docker-compose up -d
+----
+
+Get a ksqlDB prompt
+
+[source,bash]
+----
+docker exec -it ksqldb bash -c 'echo -e "\n\n⏳ Waiting for ksqlDB to be available before launching CLI\n"; while : ; do curl_status=$(curl -s -o /dev/null -w %{http_code} http://ksqldb:8088/info) ; echo -e $(date) " ksqlDB server listener HTTP state: " $curl_status " (waiting for 200)" ; if [ $curl_status -eq 200 ] ; then  break ; fi ; sleep 5 ; done ; ksql http://ksqldb:8088'
+----
+
 == Making a Telegram bot
 
 Check out the code at https://github.com/rmoff/golang-telegram-bot/blob/master/main.go
