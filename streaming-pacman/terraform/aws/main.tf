@@ -114,7 +114,7 @@ variable "global_prefix" {
 
 variable "ksqldb_server_image" {
   type = string
-  default = "confluentinc/ksqldb-server:0.10.1"
+  default = "confluentinc/ksqldb-server:0.11.0"
 }
 
 variable "redis_sink_image" {
