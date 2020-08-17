@@ -191,7 +191,7 @@ func consumer(props map[string]string, topic string) {
 		record, err := consumer.ReadMessage(-1)
 		if err == nil {
 			sensorReading := &SensorReading{}
-			err = proto.Unmarshal(record.Value[6:], sensorReading)
+			err = proto.Unmarshal(record.Value[7:], sensorReading)
 			if err != nil {
 				panic(fmt.Sprintf("Error deserializing the record: %s", err))
 			}
