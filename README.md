@@ -8,7 +8,11 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
 
 ## Contents
 
+- Applications
 
+  - [Building a Telegram bot with Go, Apache Kafka, and ksqlDB](telegram-bot-carparks)
+  - [Streaming Pac-Man](streaming-pacman)
+  
 - Data pipelines (Database + KSQL + Elasticsearch)
 
   - [Pipeline to the cloud](pipeline-to-the-cloud) - on-premises RDBMS to Cloud datawarehouse e.g. Snowflake ([✍️ blog](https://www.confluent.io/blog/cloud-analytics-for-on-premises-data-streams-with-kafka/?utm_campaign=rmoff&utm_source=demo-scene))
