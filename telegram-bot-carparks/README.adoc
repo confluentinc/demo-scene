@@ -6,19 +6,17 @@ v0.01, 19 August 2020
 > But what if I told you...that you didn’t need any datastore other than Kafka itself? What if you could ingest, filter, enrich, aggregate, and query data with just Kafka? With ksqlDB we can do just this, and I want to show you exactly how.
 > In this hands-on talk we'll walk through an example of building a Telegram bot in which ksqlDB provides the key/value lookups driven by a materialised view on the stream of events in Kafka. We'll take a look at what ksqlDB is and its capabilities for processing data and driving applications, as well as integrating with other systems.
 
-== Slides
+== 📘 Slides
 
 ++++
 <p data-notist="rmoff/JG780y">View <a href="https://noti.st/rmoff/JG780y">🤖Building a Telegram bot with Apache Kafka and ksqlDB</a> on Notist.</p><script async src="https://on.notist.cloud/embed/002.js"></script>
 ++++
 
-== Recording
+== 🎥  Recording
 
-++++
-<iframe width="560" height="315" src="https://www.youtube.com/embed/W2VB9HuzsMM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-++++
+image:https://img.youtube.com/vi/W2VB9HuzsMM/maxresdefault.jpg[link=https://youtu.be/W2VB9HuzsMM]
 
-== Code
+== 👾 Code
 
 image::images/carpark_kibana02.png[]
 
