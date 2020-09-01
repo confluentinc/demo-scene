@@ -1,0 +1,69 @@
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath "com.commercehub.gradle.plugin:gradle-avro-plugin:0.21.0"
+    classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.12'
+  }
+}
+
+plugins {
+  id 'org.springframework.boot' version '2.3.2.RELEASE'
+  id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+  id "com.google.protobuf" version "0.8.12"
+  id 'java'
+  id 'idea'
+}
+apply plugin: "com.commercehub.gradle.plugin.avro"
+
+group = 'io.confluent.developer'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+configurations {
+  compileOnly {
+    extendsFrom annotationProcessor
+  }
+}
+
+repositories {
+  jcenter()
+  maven {
+    url "https://packages.confluent.io/maven"
+  }
+}
+
+dependencies {
+  implementation "org.apache.avro:avro:1.10.0"
+  implementation "com.google.protobuf:protobuf-java:3.12.4"
+
+  implementation "io.confluent:kafka-streams-avro-serde:5.5.0"
+  implementation "io.confluent:kafka-streams-protobuf-serde:5.5.0"
+  
+  implementation 'org.springframework.boot:spring-boot-starter'
+  implementation 'org.apache.kafka:kafka-streams'
+  implementation 'org.springframework.kafka:spring-kafka'
+  compileOnly 'org.projectlombok:lombok'
+  annotationProcessor 'org.projectlombok:lombok'
+  testImplementation('org.springframework.boot:spring-boot-starter-test') {
+    exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+  }
+  testImplementation 'org.springframework.kafka:spring-kafka-test'
+}
+
+test {
+  useJUnitPlatform()
+}
+
+protobuf {
+
+  generatedFilesBaseDir = "$buildDir/generated-main-proto-java"
+
+  // Configure the protoc executable
+  protoc {
+    // Download from repositories
+    artifact = 'com.google.protobuf:protoc:3.12.4'
+  }
+
+}
