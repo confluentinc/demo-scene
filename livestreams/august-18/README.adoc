@@ -1,0 +1,75 @@
+= Livestreams August 18th log
+Viktor Gamov <viktor@confluent.io>, © 2020 Confluent, Inc.
+2020-08-18
+:revdate: 2020-08-18 14:57:15 -0600
+:linkattrs:
+:ast: &ast;
+:y: &#10003;
+:n: &#10008;
+:y: icon:check-sign[role="green"]
+:n: icon:check-minus[role="red"]
+:c: icon:file-text-alt[role="blue"]
+:toc: auto
+:toc-placement: auto
+:toc-position: auto
+:toc-title: Table of content
+:toclevels: 3
+:idprefix:
+:idseparator: -
+:sectanchors:
+:icons: font
+:source-highlighter: highlight.js
+:highlightjs-theme: idea
+:experimental:
+
+The materials form live stream on August 18th 2020.
+
+toc::[]
+
+== Stream recording
+
+video::rT5gwljkjWM[youtube]
+
+https://www.youtube.com/watch?v=rT5gwljkjWM[Livestreams recording]
+
+== Agenda and links
+
+* https://github.com/confluentinc/demo-scene/tree/master/livestreams/august-11[Code from today's stream] 
+* https://events.kafka-summit.org/2020-schedule[Register for Kafka Summit] 
+* https://kafkathon20.eventbrite.com/[Kafkathon 2020]
+* https://start.spring.io/[Spring Initializr]
+* https://developer.confluent.io/[Learn Kafka]
+* https://github.com/davidmc24/gradle-avro-plugin[Gradle Avro Plugin]
+* https://github.com/google/protobuf-gradle-plugin[Gradle Protobuf Plugin]
+* https://docs.confluent.io/current/schema-registry/serdes-develop/serdes-protobuf.html[Configuting Protobuf Serde]
+
+* https://github.com/confluentinc/demo-scene/tree/master/livestreams[Spring Boot with Confluent Cloud]
+** update `src/main/resources/application.properties` with https://github.com/confluentinc/examples/tree/5.5.1-post/clients/cloud/java-springboot[Spring Boot config from Confluent Cloud] 
+*** build: `./gradlew clean build`
+*** run: `./gradlew bootRun`
+
+* Twitter https://twitter.com/gamussa[@gAmUssA]
+
+
+-------------------------------------------------------------------------------
+Welcome to #LiveStreams
+Twitter: @gamussa
+-------------------------------------------------------------------------------
+
+* https://www.confluent.io/blog/kafka-summit-2020-pro-tips-and-schedule/[Making the most of your Kafka Summit]
+* cnfl.io/slack
+* cnfl.io/tutorials
+
+* https://docs.confluent.io/current/schema-registry/serdes-develop/serdes-protobuf.html#protobuf-deserializer[Configuring Protobuf Deserializer]
+* Filtering Based on headers
+** https://github.com/confluentinc/kafka-tutorials/issues/110[Tutorial is coming]
+** https://cwiki.apache.org/confluence/display/KAFKA/KIP-634%3A+Complementary+support+for+headers+in+Kafka+Streams+DSL[KIP-634]
+* https://docs.confluent.io/current/schema-registry/serdes-develop/serdes-jsonhtml[JSON Schema in Schema Registry]
+* https://www.confluent.io/hub/confluentinc/kafka-connect-s3[Kafka S3 Connector ]
+* Kafka Streams vs ksqlDB https://www.confluent.io/kafka-summit-lon19/when-to-ksql-when-to-live-the-kstream
+** ... and basically every Kafka Tutorial
+* ksqlDB in Confluent Cloud https://docs.confluent.io/current/quickstart/cloud-quickstart/ksql.html
++
+
+`ccloud ksql app configure-acls lksqlc-z68w7 movie_proto --cluster lkc-y60wk`
+

@@ -1,0 +1,19 @@
+{
+  "namespace": "io.confluent.developer.avro",
+  "type": "record",
+  "name": "Movie",
+  "fields": [
+    {
+      "name": "movie_id",
+      "type": "long"
+    },
+    {
+      "name": "title",
+      "type": "string"
+    },
+    {
+      "name": "release_year",
+      "type": "int"
+    }
+  ]
+}
