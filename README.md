@@ -10,7 +10,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
 
 - Applications
 
-  - [Building a Telegram bot with Go, Apache Kafka, and ksqlDB](telegram-bot-carparks)
+  - [Building a Telegram bot with Go, Apache Kafka, and ksqlDB](telegram-bot-carparks) ([🎥 talk](https://rmoff.dev/carpark-telegram-bot))
   - [Streaming Pac-Man](streaming-pacman)
   
 - Data pipelines (Database + KSQL + Elasticsearch)
