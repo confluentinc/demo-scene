@@ -98,7 +98,8 @@ services:
       - |
         echo "Installing Connector"
         confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.3.2
-        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:5.5.0
+        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:5.5.1
+        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:5.5.1
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run &
@@ -127,7 +128,7 @@ services:
     # To connect to ksqlDB CLI
     #   docker exec --interactive --tty ksqldb ksql http://localhost:8088
     # *-----------------------------*
-    image: confluentinc/ksqldb-server:0.9.0
+    image: confluentinc/ksqldb-server:0.11.0
     hostname: ksqldb
     container_name: ksqldb
     depends_on:
@@ -183,6 +184,17 @@ services:
     environment:
       xpack.security.enabled: "false"
       discovery.type: "single-node"
+
+  postgres:
+    # *-----------------------------*
+    # To connect to the DB: 
+    #   docker exec -it postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+    # *-----------------------------*
+    image: postgres:12
+    container_name: postgres
+    environment:
+     - POSTGRES_USER=postgres
+     - POSTGRES_PASSWORD=postgres
 
   kafkacat:
     image: edenhill/kafkacat:1.5.0

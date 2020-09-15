@@ -30,24 +30,21 @@ echo -e $(date) "\n\n--------------\n\o/ Kafka Connect is ready! Listener HTTP s
 '
 ----
 
-3. Make sure that the Elasticsearch connector is available: 
+3. Make sure that the JDBC connector is available: 
 +
 [source,bash]
 ----
-curl -s localhost:8083/connector-plugins|jq '.[].class'|egrep 'ElasticsearchSinkConnector'
+curl -s localhost:8083/connector-plugins|jq '.[].class'|egrep 'JdbcSinkConnector'
 ----
 +
 Expect: 
 +
 [source,bash]
 ----
-"io.confluent.connect.elasticsearch.ElasticsearchSinkConnector"
+"io.confluent.connect.jdbc.JdbcSinkConnector"
 ----
 
-4. Open Kibana http://localhost:5601
-
 == Demo 1 - Producer/Consumer
-
 
 [source,bash]
 ----
@@ -71,7 +68,6 @@ docker exec kafkacat kafkacat -b kafka:29092 -t test -C -u -f '[Topic %t/partiti
 docker exec kafkacat kafkacat -b kafka:29092 -t trades -C -u -q -o 5 -r http://schema-registry:8081 -s key=s -s value=avro
 ----
 
-
 [source,bash]
 ----
 docker exec -it ksqldb bash -c 'echo -e "\n\n  Waiting for ksqlDB to be available before launching CLI\n"; while : ; do curl_status=$(curl -s -o /dev/null -w %{http_code} http://ksqldb:8088/info) ; echo -e $(date) " ksqlDB server listener HTTP state: " $curl_status " (waiting for 200)" ; if [ $curl_status -eq 200 ] ; then  break ; fi ; sleep 5 ; done ; ksql http://ksqldb:8088'
@@ -91,8 +87,9 @@ SELECT * FROM TRADES WHERE SYMBOL='ZWZZT' EMIT CHANGES;
 ----
 SET 'auto.offset.reset' = 'earliest';
 CREATE TABLE ZWZZT_TRADES_BY_15_MIN AS
-  SELECT WINDOWSTART AS TS, 
-         SIDE, 
+  SELECT SIDE AS ROWKEY,
+         WINDOWSTART AS WINDOW_TS, 
+         AS_VALUE(SIDE) AS SIDE,
          COUNT(*) AS TRADE_COUNT, 
          SUM(PRICE * QUANTITY) AS TOTAL_VALUE,
          SUM(QUANTITY)/COUNT(*) AS AVG_QUANTITY
@@ -101,21 +98,64 @@ CREATE TABLE ZWZZT_TRADES_BY_15_MIN AS
     GROUP BY SIDE EMIT CHANGES;
 ----
 
+
+[source,sql]
+----
+CREATE SINK CONNECTOR SINK_POSTGRES WITH (
+    'connector.class'     = 'io.confluent.connect.jdbc.JdbcSinkConnector',
+    'connection.url'      = 'jdbc:postgresql://postgres:5432/',
+    'connection.user'     = 'postgres',
+    'connection.password' = 'postgres',
+    'topics'              = 'ZWZZT_TRADES_BY_15_MIN',
+    'key.converter'       = 'org.apache.kafka.connect.storage.StringConverter',
+    'auto.create'         = 'true',
+    'insert.mode'         = 'upsert',
+    'pk.mode'             = 'record_value',
+    'pk.fields'           = 'SIDE, WINDOW_TS',
+     'transforms'          = 'setTimestampType',
+    'transforms.setTimestampType.type'= 'org.apache.kafka.connect.transforms.TimestampConverter$Value',
+    'transforms.setTimestampType.field'= 'WINDOW_TS',
+    'transforms.setTimestampType.target.type' ='Timestamp'
+  ); 
+----
+
+
+[source,bash]
+----
+docker exec -it postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+----
+
+[source,sql]
+----
+SELECT * FROM "ZWZZT_TRADES_BY_15_MIN" ORDER BY 1 DESC,2;
+----
+
+
+🎥 https://rmoff.dev/ksqldb-jdbc-sink-video
+
+🎥 https://rmoff.dev/kafka-jdbc-video
+
+
+''''
+
 [source,sql]
 ----
 CREATE SINK CONNECTOR SINK_ELASTIC_01 WITH (
   'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
   'connection.url' = 'http://elasticsearch:9200',
   'type.name' = '_doc',
-  'topics' = 'ZWZZT_TRADES_BY_15_MIN',
+  'topics' = 'TRADES',
   'key.ignore' = 'false',
   'schema.ignore' = 'false',
   'key.converter' = 'org.apache.kafka.connect.storage.StringConverter',
-  'transforms'              = 'setTimestampType0',
-  'transforms.setTimestampType0.type'        = 'org.apache.kafka.connect.transforms.TimestampConverter$Value',
-  'transforms.setTimestampType0.field'       = 'TS',
-  'transforms.setTimestampType0.target.type' = 'Timestamp'
+  'transforms'= 'ExtractTimestamp',
+  'transforms.ExtractTimestamp.type'= 'org.apache.kafka.connect.transforms.InsertField$Value',
+  'transforms.ExtractTimestamp.timestamp.field' = 'TS'
 );
 ----
 
+Open Kibana http://localhost:5601 and show the data
+
+
 🎥 https://rmoff.dev/kafka-elasticsearch-video
+
