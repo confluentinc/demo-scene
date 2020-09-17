@@ -1,0 +1,1 @@
+cat ../data/utility_site_location.json | kafkacat -b localhost:29092 -t UTILITY_SITE_LOCATION
