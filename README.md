@@ -24,6 +24,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - [CDC demo with MySQL](no-more-silos) ([🗣️talk](http://rmoff.dev/ksny19-no-more-silos))
   - [CDC demo with Oracle](no-more-silos-oracle)
   - [Building data pipelines with Confluent Cloud and GCP (BigQuery, GCS, etc)](gcp-pipeline)
+  - [MS SQL with Debezium and ksqlDB](mssql-to-kafka-with-ksqldb) ([✍️ blog](TODO))
 
 - ksqlDB (previously known as KSQL)
   - [Introduction to ksqlDB 01](introduction-to-ksqldb) ([🗣️talk](https://rmoff.dev/ksqldb-slides))

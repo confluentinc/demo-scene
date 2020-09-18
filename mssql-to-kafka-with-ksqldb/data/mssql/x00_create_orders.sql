@@ -9,3 +9,8 @@ EXEC sys.sp_cdc_enable_table
 @role_name     = NULL,
 @supports_net_changes = 0
 GO
+
+-- At this point you should get a row returned from this query
+SELECT s.name AS Schema_Name, tb.name AS Table_Name , tb.object_id, tb.type, tb.type_desc, tb.is_tracked_by_cdc FROM sys.tables tb INNER JOIN sys.schemas s on s.schema_id = tb.schema_id WHERE tb.is_tracked_by_cdc = 1
+GO
+-- h/t William Prigol Lopes https://stackoverflow.com/a/61698148/350613

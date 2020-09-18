@@ -131,13 +131,14 @@ services:
     # To connect to the DB: 
     #   docker exec -it mssql bash -c '/opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -U sa -P $SA_PASSWORD'
     # *-----------------------------*
-    image: mcr.microsoft.com/mssql/server:2017-latest
+    image: microsoft/mssql-server-linux:2017-CU9-GDR2
     container_name: mssql
     ports: 
       - 1433:1433
     environment: 
       - SA_PASSWORD=Admin123
       - ACCEPT_EULA=Y
+      - MSSQL_PID=Standard
       - MSSQL_AGENT_ENABLED=true
     volumes:
      - ./data/mssql:/scripts/
@@ -147,16 +148,29 @@ services:
       - |
         # Launch MSSQL and send to background
         /opt/mssql/bin/sqlservr &
-        # Wait for it to be available
-        echo "Waiting for MS SQL to be available ⏳"
-        /opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -h-1 -V1 -U sa -P $$SA_PASSWORD -Q "SET NOCOUNT ON SELECT \"YAY WE ARE UP\" , @@servername"
-        is_up=$$?
-        while [ $$is_up -ne 0 ] ; do 
-          echo -e $$(date) 
-          /opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -h-1 -V1 -U sa -P $$SA_PASSWORD -Q "SET NOCOUNT ON SELECT \"YAY WE ARE UP\" , @@servername"
-          is_up=$$?
-          sleep 5
+
+        # Wait for the SQL Server Agent to be available
+        # We're assuming here that if the agent is available then MS SQL is too.
+        echo "Waiting for the SQL Server Agent to be available ⏳"
+        # Wait for it to begin start up first so that the log file is there
+        while [ ! -f /var/opt/mssql/log/sqlagent.out ]
+        do
+          sleep 2 
         done
+        while : 
+          do 
+            # sqlagent.out is a binary file, sed then removes all non-ascii characters so that grep can correctly match
+            # Thanks to this snippet for helping me out here https://github.com/bitwarden/server/pull/302/files#diff-dcd8a73331aba627440c247763086b99R181-R182
+            sed 's/[^a-zA-Z ]//g' /var/opt/mssql/log/sqlagent.out | \
+              tr '\n' ' ' |\
+              grep -iq "Waiting for SQL Server to start .* SQLServerAgent service successfully started"
+            sqlagentstatus=$$?
+            echo -e $$(date) " sqlagentstatus grep result: " $$sqlagentstatus " (waiting for 0)" 
+            if [ $$sqlagentstatus -eq 0 ] ; then
+              break
+            fi 
+            sleep 5 
+          done 
 
         # Run every script in /scripts
         # TODO set a flag so that this is only done once on creation, 
@@ -166,4 +180,3 @@ services:
         done
         # So that the container doesn't shut down, sleep this thread
         sleep infinity
-
