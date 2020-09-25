@@ -1,0 +1,85 @@
+version: "3"
+
+services:
+  zookeeper-west:
+    image: confluentinc/cp-zookeeper:latest
+    hostname: zookeeper-west
+    container_name: zookeeper-west
+    networks:
+      - n1
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVERS: zookeeper-west:2888:3888
+
+  broker-west:
+    image: confluentinc/cp-server:latest
+    hostname: broker-west
+    container_name: broker-west
+    networks:
+      - n1
+    ports:
+      - "9091:9091"
+      - "8091:8091"
+    volumes:
+      - ./config:/etc/kafka/demo
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_BROKER_RACK: "west"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://broker-west:19091,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9091
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper-west:2181"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker-west:19091
+      KAFKA_CONFLUENT_CLUSTER_LINK_ENABLE: "true"
+      KAFKA_JMX_PORT: 8091
+    depends_on:
+      - zookeeper-west
+
+  zookeeper-east:
+    image: confluentinc/cp-zookeeper:latest
+    hostname: zookeeper-east
+    container_name: zookeeper-east
+    networks:
+      - n1
+    ports:
+      - "2182:2182"
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 2182
+      ZOOKEEPER_SERVERS: zookeeper-east:2888:3888
+
+  broker-east:
+    image: confluentinc/cp-server:latest
+    hostname: broker-east
+    container_name: broker-east
+    networks:
+      - n1
+    ports:
+      - "9092:9092"
+      - "8092:8092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_BROKER_RACK: "east"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://broker-east:19092,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper-east:2182"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker-east:19092
+      KAFKA_CONFLUENT_CLUSTER_LINK_ENABLE: "true"
+      KAFKA_JMX_PORT: 8092
+    depends_on:
+      - zookeeper-east
+
+networks:
+  n1:
