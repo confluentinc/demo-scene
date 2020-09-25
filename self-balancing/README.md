@@ -10,6 +10,8 @@ Self-balancing simplifies the management of Kafka clusters in the following ways
 * When an operator wants to remove a broker, she can call a Self-balancing API to shut down the broker and drain the partitions from it
 * When a broker has been down for a certain amount of time, Self-balancing will automatically reassign the partitions to other brokers
 
+To learn more, refer to the Self-balancing topics in the Confluent documentation [here](https://docs.confluent.io/current/kafka/sbc/index.html).
+
 ### Deployment
 
 Self-balancing runs on the Confluent Server brokers and does not introduce any new dependencies.
