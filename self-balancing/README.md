@@ -26,7 +26,6 @@ This demo showcases the main features of Self-Balancing Clusters, which debuts w
 
 In order to run this demo, you will need:
 * Docker
-* AWS CLI [configured to pull from ECS](https://confluentinc.atlassian.net/wiki/spaces/TOOLS/pages/107872257/Finding+CI+Artifacts+Where+s+My+Stuff)
 
 ### What's included
 
