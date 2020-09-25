@@ -69,15 +69,18 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - ["The Cube" Demo](ccloud-cube-demo)
   - [Using Replicator with Confluent Cloud](ccloud-replicator)
 
+- Confluent Platform
+
+  - [Self-Balancing Clusters Demo](self-balancing)
+  - [Tiered Storage Demo](tiered-storage)
+  - [Cluster Linking Demo](cluster-linking)
+
 - Misc
   - [Hacky export/import between Kafka clusters](export-import-with-kafkacat) using `kafkacat`
   - Docker Compose for just the [community licensed components of Confluent Platform](community-components-only)
   - [Topic Tailer](topic-tailer), stream topics to the browser using websockets
   - [KPay payment processing example](scalable-payment-processing)
   - [Industry themes (e.g. banking Next Best Offer)](industry-themes)
-  - [Self-Balancing Clusters Demo](self-balancing)
-  - [Tiered Storage Demo](tiered-storage)
-  - [Cluster Linking Demo](cluster-linking)
   - [Distributed tracing](distributed-tracing)
   - [Analysing Sonos data in Kafka](sonos) ([✍️ blog](https://rmoff.net/2020/01/21/monitoring-sonos-with-ksqldb-influxdb-and-grafana/))
   - [Analysing Wi-Fi pcap data with Kafka](wifi-fun)
