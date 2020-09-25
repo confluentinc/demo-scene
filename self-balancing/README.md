@@ -10,7 +10,7 @@ Self-Balancing Clusters simplify the management of Kafka clusters in the followi
 * When an operator wants to remove a broker, she can call a Self-Balancing API to shut down the broker and drain the partitions from it
 * When a broker has been down for a certain amount of time, Self-Balancing Clusters will automatically reassign the partitions to other brokers
 
-To learn more, refer to Self-Balancing Clusters in the Confluent documentation [here](https://docs.confluent.io/current/kafka/sbc/index.html).
+To learn more, refer to [Self-Balancing Clusters](https://docs.confluent.io/current/kafka/sbc/index.html) in the Confluent documentation.
 
 ### Deployment
 
@@ -43,47 +43,47 @@ We will create uneven load in the cluster and watch Self-Balancing address this 
 
 1. Run `docker-compose`
 
-  `docker-compose -f kafka-0-1-2.yml up` (we will be looking at the logs to see some interesting information so it's recommended to run it in the foreground).
+   `docker-compose -f kafka-0-1-2.yml up` (we will be looking at the logs to see some interesting information so it's recommended to run it in the foreground).
 
-  This will start ZooKeeper, 3 Confluent Server brokers and Confluent Control Center.
+   This will start ZooKeeper, 3 Confluent Server brokers and Confluent Control Center.
 
 2. Create a topic
 
-  ```
-  kafka-topics \
-    --bootstrap-server localhost:9092 \
-    --create \
-    --topic sbk \
-    --replica-assignment 0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1
-  ```
+   ```
+   kafka-topics \
+     --bootstrap-server localhost:9092 \
+     --create \
+     --topic sbk \
+     --replica-assignment 0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1,0:1
+   ```
 
-  We are forcing the topic to not create replicas in broker 2 to create an uneven load.
+    We are forcing the topic to not create replicas in broker 2 to create an uneven load.
 
 3. Produce data
 
-  ```
-  kafka-producer-perf-test \
-    --producer-props bootstrap.servers=localhost:9092 \
-    --topic sbk \
-    --record-size 1000 \
-    --throughput 1000 \
-    --num-records 3600000
-  ```
+   ```
+   kafka-producer-perf-test \
+     --producer-props bootstrap.servers=localhost:9092 \
+     --topic sbk \
+     --record-size 1000 \
+     --throughput 1000 \
+     --num-records 3600000
+   ```
 
-  This will produce data at about 1MB/s during 1h.
+   This will produce data at about 1MB/s during 1h.
 
 4. Start watching changes in the topic
 
-  ```
-    watch kafka-topics \
-      --bootstrap-server localhost:9092 \
-      --describe \
-      --topic sbk 
-  ```
+   ```
+     watch kafka-topics \
+       --bootstrap-server localhost:9092 \
+       --describe \
+       --topic sbk 
+   ```
 
-  This will show changes in replica assignments, in-sync replicas, as well as
-  relevant information such as replication throttling details. Optionally,
-  Confluent Control Center can be used to watch the same changes.
+   This will show changes in replica assignments, in-sync replicas, as well as
+   relevant information such as replication throttling details. Optionally,
+   Confluent Control Center can be used to watch the same changes.
 
 5. Wait for Self-Balancing to start the rebalance
 
@@ -95,8 +95,8 @@ We will create uneven load in the cluster and watch Self-Balancing address this 
    of partitions in the cluster changes materially since they may not accurately
    reflect the current state of the cluster.
 
-While Self-Balancing is still sampling, the following message will appear on the logs periodically:
-`INFO Skipping proposal precomputing because load monitor does not have enough snapshots.`
+   While Self-Balancing is still sampling, the following message will appear on the logs periodically:
+   `INFO Skipping proposal precomputing because load monitor does not have enough snapshots.`
 
 6. Watch Self-Balancing rebalance the cluster
 
@@ -112,8 +112,8 @@ We will now add 2 more brokers to the cluster and watch Self-Balancing fill them
 
 1. Run `docker-compose`
 
-  `docker-compose -f kafka-0-1-2.yml -f kafka-3-4.yml up --no-recreate` will add 2 brokers to the setup that was
-  running previously (do not stop any of the  processes from the first part of the tutorial).
+   `docker-compose -f kafka-0-1-2.yml -f kafka-3-4.yml up --no-recreate` will add 2 brokers to the setup that was
+   running previously (do not stop any of the  processes from the first part of the tutorial).
 
 2. Watch Self-Balancing rebalance the cluster
 
@@ -155,7 +155,7 @@ We will now remove a broker from the cluster and watch Self-Balancing shut it do
      --broker-id 3
    ```
 
-  Finally, this operation can also be executed from Confluent Control Center.
+   Finally, this operation can also be executed from Confluent Control Center.
 
 2. Watch Self-Balancing remove the broker
 
