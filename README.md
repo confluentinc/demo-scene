@@ -75,7 +75,8 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - [Topic Tailer](topic-tailer), stream topics to the browser using websockets
   - [KPay payment processing example](scalable-payment-processing)
   - [Industry themes (e.g. banking Next Best Offer)](industry-themes)
-  - [Tiered Storage Demo](tiered-storage-demo)
+  - [Self-Balancing Clusters Demo](self-balancing)
+  - [Tiered Storage Demo](tiered-storage)
   - [Cluster Linking Demo](cluster-linking)
   - [Distributed tracing](distributed-tracing)
   - [Analysing Sonos data in Kafka](sonos) ([✍️ blog](https://rmoff.net/2020/01/21/monitoring-sonos-with-ksqldb-influxdb-and-grafana/))
