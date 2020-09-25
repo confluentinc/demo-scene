@@ -77,6 +77,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - [Industry themes (e.g. banking Next Best Offer)](industry-themes)
   - [Self-Balancing Clusters Demo](self-balancing)
   - [Tiered Storage Demo](tiered-storage)
+  - [Cluster Linking Demo](cluster-linking)
   - [Distributed tracing](distributed-tracing)
   - [Analysing Sonos data in Kafka](sonos) ([✍️ blog](https://rmoff.net/2020/01/21/monitoring-sonos-with-ksqldb-influxdb-and-grafana/))
   - [Analysing Wi-Fi pcap data with Kafka](wifi-fun)
