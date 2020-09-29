@@ -3,19 +3,19 @@ version: '2'
 services:
   zookeeper:
     container_name: zookeeper
-    image: confluentinc/cp-zookeeper:5.4.0-beta1
+    image: confluentinc/cp-zookeeper:6.0.0
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
-  kafka:
-    container_name: kafka
-    image: confluentinc/cp-enterprise-kafka:5.4.0-beta1
+  broker:
+    container_name: broker
+    image: confluentinc/cp-kafka:6.0.0
     depends_on:
       - zookeeper
     ports:
     # Exposes 9092 for external connections to the broker
-    # Use kafka:29092 for connections internal on the docker network
+    # Use broker:29092 for connections internal on the docker network
     # See https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
       - 9092:9092
     environment:
@@ -23,43 +23,37 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092
-      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
-      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
-      CONFLUENT_METRICS_ENABLE: 'true'
-      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.4.0-beta1
+    image: confluentinc/cp-schema-registry:6.0.0
     container_name: schema-registry
     ports:
       - 8081:8081
     depends_on:
-      - zookeeper
-      - kafka
+      - broker
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
-  kafka-connect-01:
-    image: confluentinc/cp-kafka-connect:5.4.0-beta1
-    container_name: kafka-connect-01
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect-base:6.0.0
+    container_name: kafka-connect
     depends_on:
-      - zookeeper
-      - kafka
+      - broker
       - schema-registry
     ports:
       - 8083:8083
     environment:
-      CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
+      CONNECT_BOOTSTRAP_SERVERS: "broker:29092"
       CONNECT_REST_PORT: 8083
-      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-01"
-      CONNECT_GROUP_ID: kafka-connect-01
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+      CONNECT_GROUP_ID: kafka-connect
       CONNECT_CONFIG_STORAGE_TOPIC: _kafka-connect-01-configs
       CONNECT_OFFSET_STORAGE_TOPIC: _kafka-connect-01-offsets
       CONNECT_STATUS_STORAGE_TOPIC: _kafka-connect-01-status
@@ -71,30 +65,29 @@ services:
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
       CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
-      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components,/local-connect-jars'
-    volumes:
-      - ${PWD}/data/connect-jars:/local-connect-jars
+      # CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components,/local-connect-jars'
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components'
+    # volumes:
+    #   - ${PWD}/data/connect-jars:/local-connect-jars
     command: 
       - /bin/bash
       - -c 
       - |
+        echo "Installing Connector"
+        confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.3.3
+        confluent-hub install --no-prompt debezium/debezium-connector-mysql:1.2.2
+        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:5.5.1
+
         # # JDBC Drivers - download those required
         # # ------------
         # # MySQL
-        cd /usr/share/java/kafka-connect-jdbc/
-        curl https://cdn.mysql.com/Downloads/Connector-J/mysql-connector-java-8.0.18.tar.gz | tar xz 
-        # # MS SQL
-        # cd /usr/share/java/kafka-connect-jdbc/
-        # curl http://central.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/7.0.0.jre8/mssql-jdbc-7.0.0.jre8.jar --output mssql-jdbc-7.0.0.jre8.jar
+        cd /usr/share/confluent-hub-components/confluentinc-kafka-connect-jdbc
+        curl https://cdn.mysql.com/Downloads/Connector-J/mysql-connector-java-8.0.21.tar.gz | tar xz 
         #
-        echo "Installing Connector"
-        confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.1.5
-        confluent-hub install --no-prompt debezium/debezium-connector-mysql:0.10.0        
-        confluent-hub install --no-prompt debezium/debezium-connector-postgresql:0.10.0
-
         # Now launch Kafka Connect
         /etc/confluent/docker/run &
         #
@@ -118,97 +111,29 @@ services:
             "max.interval":250,
             "quickstart": "ratings"
           }'
-        # echo -e "\n--\n+> Creating Kafka Connect JDBC Source"
-        # curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
-        #           "name": "jdbc_source_mysql_00",
-        #           "config": {
-        #                   "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
-        #                   "connection.url": "jdbc:mysql://mysql:3306/demo",
-        #                   "connection.user": "connect_user",
-        #                   "connection.password": "asgard",
-        #                   "topic.prefix": "mysql-00-",
-        #                   "poll.interval.ms": 1000,
-        #                   "tasks.max":1,
-        #                   "mode":"timestamp",
-        #                   "table.whitelist" : "demo.customers",
-        #                   "timestamp.column.name": "UPDATE_TS",
-        #                   "validate.non.null": false
-        #                   }
-        #           }'
-        # #
-        # echo -e "\n--\n+> Creating Kafka Connect Debezium source (1)"
-        # curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
-        #       "name": "debezium-source-customers-00",
-        #       "config": {
-        #             "connector.class": "io.debezium.connector.mysql.MySqlConnector",
-        #             "database.hostname": "mysql",
-        #             "database.port": "3306",
-        #             "database.user": "debezium",
-        #             "database.password": "dbz",
-        #             "database.server.id": "42",
-        #             "database.server.name": "asgard",
-        #             "table.whitelist": "demo.customers",
-        #             "database.history.kafka.bootstrap.servers": "kafka:29092",
-        #             "database.history.kafka.topic": "dbhistory.demo" ,
-        #             "include.schema.changes": "true"
-        #       }
-        #     }'
-        # echo -e "\n--\n+> Creating Kafka Connect Debezium source (2)"
-        # # curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
-        # #       "name": "debezium-source-customers-00-unwrap",
-        # #       "config": {
-        # #             "connector.class": "io.debezium.connector.mysql.MySqlConnector",
-        # #             "database.hostname": "mysql",
-        # #             "database.port": "3306",
-        # #             "database.user": "debezium",
-        # #             "database.password": "dbz",
-        # #             "database.server.id": "4242",
-        # #             "database.server.name": "asgard",
-        # #             "table.whitelist": "demo.customers",
-        # #             "database.history.kafka.bootstrap.servers": "kafka:29092",
-        # #             "database.history.kafka.topic": "dbhistory.demo" ,
-        # #             "include.schema.changes": "true",
-        # #             "transforms": "unwrap,addTopicSuffix",
-        # #             "transforms.unwrap.type": "io.debezium.transforms.UnwrapFromEnvelope",
-        # #             "transforms.addTopicSuffix.type":"org.apache.kafka.connect.transforms.RegexRouter",
-        # #             "transforms.addTopicSuffix.regex":"(.*)",
-        # #             "transforms.addTopicSuffix.replacement":"$$1-unwrap"
-        # #       }
-        # #     }'
-        # # "transforms.key.type": "org.apache.kafka.connect.transforms.ExtractField$$Key",
-        # # "transforms.key.field": "id",
-        # #
+
         # Don't let the container die
         sleep infinity
 
-
-  ksql-server:
-    #image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-server:master-1389
-    image: confluentinc/cp-ksql-server:5.4.0-dist-1
-    container_name: ksql-server
+  ksqldb:
+    # *-----------------------------*
+    # To connect to ksqlDB CLI
+    #   docker exec --interactive --tty ksqldb ksql http://localhost:8088
+    # *-----------------------------*
+    image: confluentinc/ksqldb-server:0.11.0
+    container_name: ksqldb
     depends_on:
-      - kafka
-      - schema-registry
+      - broker
+    ports:
+      - "8088:8088"
+    user: root
     environment:
-      KSQL_CUB_KAFKA_TIMEOUT: 120
-      KSQL_BOOTSTRAP_SERVERS: kafka:29092
       KSQL_LISTENERS: http://0.0.0.0:8088
-      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      KSQL_BOOTSTRAP_SERVERS: broker:29092
       KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      KSQL_KSQL_HIDDEN_TOPICS: '^_.*'
 
-  ksql-cli:
-    # *-----------------------------*
-    # To connect to the KSQL CLI: 
-    #   docker exec -it ksql-cli ksql http://ksql-server:8088
-    # *-----------------------------*
-    container_name: ksql-cli
-    #image: 368821881613.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cp-ksql-cli:master-1389
-    image: confluentinc/cp-ksql-cli:5.4.0-dist-1
-    depends_on:
-      - ksql-server
-    entrypoint: /bin/sh
-    tty: true
-      
 # Other systems
   mysql:
     # *-----------------------------*
@@ -227,91 +152,12 @@ services:
     volumes:
      - ./data/mysql:/docker-entrypoint-initdb.d/
 
-  postgres:
-    # *-----------------------------*
-    # To connect to the DB: 
-    #   docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
-    # *-----------------------------*
-    image: postgres:11
-    container_name: postgres
-    environment:
-     - POSTGRES_USER=postgres
-     - POSTGRES_PASSWORD=postgres
-    volumes:
-     - ./data/postgres:/docker-entrypoint-initdb.d/
-    
-  # # Runs data generator for ratings
-  # kafka-connect-datagen:
-  #   image: cnfldemos/kafka-connect-datagen:0.1.3-5.3.1
-  #   container_name: kafka-connect-datagen
-  #   depends_on:
-  #     - zookeeper
-  #     - kafka
-  #     - schema-registry
-  #   environment:
-  #     CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
-  #     CONNECT_REST_PORT: 8083
-  #     CONNECT_GROUP_ID: kafka-connect-datagen
-  #     CONNECT_CONFIG_STORAGE_TOPIC: _kafka-connect-datagen-configs
-  #     CONNECT_OFFSET_STORAGE_TOPIC: _kafka-connect-datagen-offsets
-  #     CONNECT_STATUS_STORAGE_TOPIC: _kafka-connect-datagen-status
-  #     CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
-  #     CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-  #     CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
-  #     CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-  #     CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-  #     CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-  #     CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-datagen"
-  #     CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
-  #     CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
-  #     CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
-  #     CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
-  #     CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
-  #     CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/'
-  #     # Interceptor config
-  #     CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
-  #     CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-  #     CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.4.0-beta1.jar
-  #   # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
-  #   command:
-  #     - bash
-  #     - -c
-  #     - |
-  #       # echo "Installing datagen connector"
-  #       # # confluent-hub install --no-prompt /packages/confluentinc-kafka-connect-datagen-0.2.0-SNAPSHOT.zip
-  #       # confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.1.3
-  #       # #
-  #       # if [[ $$? -ne 0 ]]; then
-  #       #     echo -e '\n\n\t--> Connector installation failed. Aborting. <--\n\n'
-  #       #     exit 1
-  #       # fi
-  #       #
-  #       echo "Launching Kafka Connect worker"
-  #       /etc/confluent/docker/run &
-  #       #
-  #       echo "Waiting for Kafka Connect to start listening on $$CONNECT_REST_ADVERTISED_HOST_NAME ⏳"
-  #       while : ; do
-  #         curl_status=$$(curl -s -o /dev/null -w %{http_code} http://$$CONNECT_REST_ADVERTISED_HOST_NAME:$$CONNECT_REST_PORT/connectors)
-  #         echo -e $$(date) " Kafka Connect listener HTTP state: " $$curl_status " (waiting for 200)"
-  #         if [ $$curl_status -eq 200 ] ; then
-  #           break
-  #         fi
-  #         sleep 5 
-  #       done
-  #       #
-  #       echo "Creating connector"
-  #       curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/source-datagen-item_details_01/config \
-  #           -d '{
-  #           "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
-  #           "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-  #           "kafka.topic": "item_details_01",
-  #           "max.interval":250,
-  #           "quickstart": "ratings"
-  #         }'
-  #       sleep infinity
-
   kafkacat:
-    # This is included in the Docker Compose just so that a `docker-compose pull` 
-    # will bring down the image for use as a standalone `docker run` during the demo
-    image: edenhill/kafkacat:1.5.0
+    image: edenhill/kafkacat:1.6.0
     container_name: kafkacat
+    entrypoint: 
+      - /bin/sh 
+      - -c 
+      - |
+        apk add jq; 
+        while [ 1 -eq 1 ];do sleep 60;done

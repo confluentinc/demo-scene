@@ -1,8 +1,8 @@
 = No More Silos - CDC demo
 Robin Moffatt <robin@confluent.io>
-v1.00, April 1, 2019
+v1.10, 29 September 2020
 
-The slides that accompany this demo can be found here: https://speakerdeck.com/rmoff/no-more-silos-integrating-databases-and-apache-kafka
+The slides that accompany this demo can be found here: https://talks.rmoff.net/
 
 == Running the test rig
 
@@ -85,21 +85,19 @@ SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, UPDATE_TS FROM customers;
 +
 [source,bash]
 ----
-curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
-          "name": "source-jdbc-mysql-00",
-          "config": {
-                  "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
-                  "connection.url": "jdbc:mysql://mysql:3306/demo",
-                  "connection.user": "connect_user",
-                  "connection.password": "asgard",
-                  "topic.prefix": "mysql-00-",
-                  "poll.interval.ms": 1000,
-                  "tasks.max":1,
-                  "mode":"timestamp",
-                  "table.whitelist" : "demo.customers",
-                  "timestamp.column.name": "UPDATE_TS",
-                  "validate.non.null": false
-                  }
+curl -X PUT http://localhost:8083/connectors/source-jdbc-mysql-00/config \
+         -H "Content-Type: application/json" -d '{
+          "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+          "connection.url": "jdbc:mysql://mysql:3306/demo",
+          "connection.user": "connect_user",
+          "connection.password": "asgard",
+          "topic.prefix": "mysql-00-",
+          "poll.interval.ms": 1000,
+          "tasks.max":1,
+          "mode":"timestamp",
+          "table.whitelist" : "demo.customers",
+          "timestamp.column.name": "UPDATE_TS",
+          "validate.non.null": false
           }'
 ----
 
@@ -122,17 +120,17 @@ source  |  source-jdbc-mysql-00            |  RUNNING  |  RUNNING  |  io.conflue
 +
 [source,bash]
 ----
-docker run --net host --rm edenhill/kafkacat:1.5.0 \
-        -b localhost:9092                          \
-        -r http://localhost:8081                   \
+docker exec kafkacat kafkacat                      \
+        -b broker:29092                            \
+        -r http://schema-registry:8081             \
         -s avro                                    \
         -t mysql-00-customers                      \
-        -C -o beginning -u -q | jq -c '.'
+        -C -o beginning -u -q | jq  '.'
 ----
 
 5. Split the screen to show Kafka topic output along with MySQL. 
 
-6. Make changes in MySQL and observe that the Kafka topic (as shown by KSQL) updates automatically
+6. Make changes in MySQL and observe that the Kafka topic (as shown by kafkacat) updates automatically
 +
 ** Insert a new row in MySQL: 
 +
@@ -141,7 +139,7 @@ docker run --net host --rm edenhill/kafkacat:1.5.0 \
 INSERT INTO customers (ID, FIRST_NAME, LAST_NAME, EMAIL, GENDER, COMMENTS) VALUES (42, 'Rick', 'Astley', '', 'Male', '');
 ----
 +
-** Insert a new row in MySQL: 
+** Update a row in MySQL: 
 +
 [source,sql]
 ----
@@ -191,7 +189,7 @@ curl -i -X PUT -H "Accept:application/json" \
           "database.allowPublicKeyRetrieval":"true",
           "database.server.name": "asgard",
           "table.whitelist": "demo.customers",
-          "database.history.kafka.bootstrap.servers": "kafka:29092",
+          "database.history.kafka.bootstrap.servers": "broker:29092",
           "database.history.kafka.topic": "asgard.dbhistory.demo" ,
           "include.schema.changes": "true"
     }'
@@ -217,9 +215,9 @@ source  |  source-jdbc-mysql-00            |  RUNNING  |  RUNNING  |  io.conflue
 +
 [source,bash]
 ----
-docker run --net host --rm edenhill/kafkacat:1.5.0 \
-        -b localhost:9092                          \
-        -r http://localhost:8081                   \
+docker exec kafkacat kafkacat                      \
+        -b broker:29092                            \
+        -r http://schema-registry:8081             \
         -s avro                                    \
         -t asgard.demo.customers                   \
         -C -o beginning -u -q | jq '.'
@@ -285,16 +283,16 @@ docker run --net host --rm edenhill/kafkacat:1.5.0 \
 +
 [source,bash]
 ----
-docker run --net host --rm edenhill/kafkacat:1.5.0 \
-        -b localhost:9092                          \
-        -r http://localhost:8081                   \
+docker exec kafkacat kafkacat                      \
+        -b broker:29092                            \
+        -r http://schema-registry:8081             \
         -s avro                                    \
         -t asgard.demo.customers                   \
         -C -o beginning -u -q | jq '.op, .before, .after'
 ----
 
 
-6. Make changes in MySQL and observe that the Kafka topic (as shown by KSQL) updates automatically
+6. Make changes in MySQL and observe that the Kafka topic (as shown by kafkacat) updates automatically
 +
 ** Update a new row in MySQL: 
 +
@@ -315,23 +313,22 @@ UPDATE customers SET FIRST_NAME = 'BOB' WHERE ID = 42;
 DELETE FROM customers WHERE ID=2;
 ----
 
-== Optional - Stream/Table duality in KSQL
+== Optional - Stream/Table duality in ksqlDB
 
 [source,sql]
 ----
 SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM CUSTOMERS_CDC_STREAM WITH (KAFKA_TOPIC='asgard.demo.customers', VALUE_FORMAT='AVRO');
-CREATE STREAM CUSTOMERS_AFTER AS 
+
+CREATE TABLE CUSTOMERS AS
   SELECT AFTER->ID AS ID,
-         AFTER->FIRST_NAME AS FIRST_NAME,
-         AFTER->LAST_NAME AS LAST_NAME,
-         AFTER->EMAIL AS EMAIL,
-         AFTER->GENDER AS GENDER,
-         AFTER->COMMENTS AS COMMENTS
-    FROM CUSTOMERS_CDC_STREAM;
-CREATE STREAM CUSTOMERS_STREAM WITH (PARTITIONS=1) AS SELECT * FROM CUSTOMERS_AFTER PARTITION BY ID;
-SELECT ROWKEY, ID FROM CUSTOMERS_STREAM EMIT CHANGES LIMIT 1;
-CREATE TABLE CUSTOMERS_TABLE WITH (KAFKA_TOPIC='CUSTOMERS_STREAM', VALUE_FORMAT='AVRO');
+         LATEST_BY_OFFSET(AFTER->FIRST_NAME) AS FIRST_NAME,
+         LATEST_BY_OFFSET(AFTER->LAST_NAME) AS LAST_NAME,
+         LATEST_BY_OFFSET(AFTER->EMAIL) AS EMAIL,
+         LATEST_BY_OFFSET(AFTER->GENDER) AS GENDER,
+         LATEST_BY_OFFSET(AFTER->COMMENTS) AS COMMENTS
+    FROM CUSTOMERS_CDC_STREAM
+    GROUP BY AFTER->ID;
 ----
 
 * In MySQL, query the state: 
@@ -346,47 +343,49 @@ mysql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM customers WHERE ID=42;
 +----+------------+-----------+-----------------------------+
 | ID | FIRST_NAME | LAST_NAME | EMAIL                       |
 +----+------------+-----------+-----------------------------+
-| 42 | Rick       | Astley    | Never.gonna.give.you@up.com |
+| 42 | BOB       | Astley    | Never.gonna.give.you@up.com |
 +----+------------+-----------+-----------------------------+
 1 rows in set (0.00 sec)
 ----
 
-* In KSQL query the table: 
+* In ksqlDB query the table: 
++
+[source,sql]
+----
+SELECT * FROM CUSTOMERS WHERE ID=42;
+----
++
+[source,sql]
+----
++-------------+-------------+-------------+-------------+-------------+-------------+
+|ID           |FIRST_NAME   |LAST_NAME    |EMAIL        |GENDER       |COMMENTS     |
++-------------+-------------+-------------+-------------+-------------+-------------+
+|42           |BOB          |Astley       |r.astley@exam|Male         |             |
+|             |             |             |ple.com      |             |             |
+----
+
+* In ksqlDB query the stream: 
 +
 [source,sql]
 ----
 SET 'auto.offset.reset' = 'earliest';
 
-SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM CUSTOMERS_TABLE WHERE ID=42 EMIT CHANGES;
-42 | Rick | Astley | Never.gonna.give.you@up.com | 2019-04-01T22:42:58Z
-----
+SELECT OP, AFTER->ID, AFTER->FIRST_NAME, AFTER->LAST_NAME, AFTER->EMAIL 
+  FROM CUSTOMERS_CDC_STREAM 
+  WHERE AFTER->ID=42 
+  EMIT CHANGES;
 
-* In KSQL query the stream: 
-+
-[source,sql]
-----
-SET 'auto.offset.reset' = 'earliest';
-
-SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM CUSTOMERS_STREAM WHERE ID=42 EMIT CHANGES;
-42 | Rick | Astley |
-42 | Rick | Astley | Never.gonna.give.you@up.com
-42 | Rick | Astley | r.astley@example.com
-----
-
-* Show before/after records: 
-+
-[source,sql]
-----
-SET 'auto.offset.reset' = 'earliest';
-
-SELECT OP, BEFORE->EMAIL, AFTER->EMAIL FROM CUSTOMERS_CDC_STREAM WHERE AFTER->ID=42 EMIT CHANGES;
-----
-+
-----
-c | null |
-u |  | Never.gonna.give.you@up.com
-u | Never.gonna.give.you@up.com | r.astley@example.com
-u | r.astley@example.com | r.astley@example.com
++----------------+----------------+----------------+----------------+----------------+
+|OP              |ID              |FIRST_NAME      |LAST_NAME       |EMAIL           |
++----------------+----------------+----------------+----------------+----------------+
+|c               |42              |Rick            |Astley          |Never.gonna.give|
+|                |                |                |                |.you@up.com     |
+|u               |42              |Rick            |Astley          |r.astley@example|
+|                |                |                |                |.com            |
+|u               |42              |BOB             |Astley          |r.astley@example|
+|                |                |                |                |.com            |
+|u               |42              |Rick            |Astley          |r.astley@example|
+|                |                |                |                |.com            |
 ----
 
 == Option - Stream/table joins
@@ -408,9 +407,8 @@ SELECT MESSAGE, STARS, USER_ID FROM RATINGS EMIT CHANGES;
 SELECT R.RATING_ID, R.MESSAGE, R.STARS,
       C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, C.EMAIL AS EMAIL
       FROM RATINGS R
-        LEFT JOIN CUSTOMERS_TABLE C
-        ON R.USER_ID = C.ROWKEY
-      WHERE C.FIRST_NAME IS NOT NULL
+        INNER JOIN CUSTOMERS C
+        ON R.USER_ID = C.ID
       EMIT CHANGES;
 ----
 +
@@ -420,9 +418,9 @@ CREATE STREAM RATINGS_ENRICHED AS
 SELECT R.RATING_ID, R.MESSAGE, R.STARS,
       C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME, C.EMAIL AS EMAIL
       FROM RATINGS R
-        LEFT JOIN CUSTOMERS_TABLE C
-        ON R.USER_ID = C.ROWKEY
-      WHERE C.FIRST_NAME IS NOT NULL;
+        INNER JOIN CUSTOMERS C
+        ON R.USER_ID = C.ID
+      EMIT CHANGES;
 ----
 +
 [source,sql]
