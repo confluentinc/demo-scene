@@ -11,7 +11,7 @@ docker-compose exec broker-east kafka-configs \
 sleep 2
 
 echo -e "\n==> Produce 100 more messages to the source topic"
-docker-compose exec broker-west bash -c 'seq 1001 2000 | kafka-console-producer \
+docker-compose exec broker-west bash -c 'seq 101 200 | kafka-console-producer \
     --broker-list broker-west:19091 \
     --topic west-trades'
 
