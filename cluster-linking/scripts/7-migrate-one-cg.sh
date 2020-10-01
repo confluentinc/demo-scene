@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 
 echo -e "\n==> Stop migrating the consumer group someGroup via the west link"
 docker-compose exec broker-east bash -c 'echo "consumer.offset.group.filters={\"groupFilters\": [{\"name\": \"*\",\"patternType\": \"LITERAL\",\"filterType\": \"INCLUDE\"},{\"name\":\"someGroup\",\"patternType\":\"LITERAL\",\"filterType\":\"EXCLUDE\"}]}" > newGroupFilters.properties'
