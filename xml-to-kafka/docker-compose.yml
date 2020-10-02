@@ -8,9 +8,9 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
-  kafka:
+  broker:
     image: confluentinc/cp-kafka:6.0.0
-    container_name: kafka
+    container_name: broker
     depends_on:
       - zookeeper
     ports:
@@ -26,7 +26,7 @@ services:
     # remote clients
     #
     # For connections _internal_ to the docker network, such as from other services
-    # and components, use kafka:29092.
+    # and components, use broker:29092.
     #
     # See https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
     # "`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-'"`-._,-
@@ -37,7 +37,7 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
@@ -50,33 +50,29 @@ services:
     ports: 
       - 8081:8081
     depends_on:
-      - zookeeper
-      - kafka
+      - broker
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:29092'
 
   kafka-connect:
     image: confluentinc/cp-kafka-connect-base:6.0.0
     container_name: kafka-connect
     depends_on:
-      - zookeeper
-      - kafka
+      - broker
       - schema-registry
     ports:
       - 8083:8083
     environment:
-      CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
+      CONNECT_BOOTSTRAP_SERVERS: "broker:29092"
       CONNECT_REST_PORT: 8083
       CONNECT_GROUP_ID: compose-connect-group
-      CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
-      CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-offsets
-      CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
+      CONNECT_CONFIG_STORAGE_TOPIC: _docker-connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _docker-connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _docker-connect-status
       CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
       CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
       CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
@@ -90,9 +86,15 @@ services:
       - -c 
       - |
         echo "Installing connector plugins"
-        confluent-hub install --no-prompt jcustenborder/kafka-connect-spooldir:2.0.43
-        confluent-hub install --no-prompt castorm/kafka-connect-http:0.7.6
+        # confluent-hub install --no-prompt castorm/kafka-connect-http:0.7.6
+        # confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:5.5.2
         confluent-hub install --no-prompt jcustenborder/kafka-connect-transform-xml:0.1.0.18
+        confluent-hub install --no-prompt streamthoughts/kafka-connect-file-pulse:1.5.0
+        confluent-hub install --no-prompt mongodb/kafka-connect-mongodb:1.3.0
+        confluent-hub install --no-prompt confluentinc/kafka-connect-ibmmq:5.5.2
+        #
+        # Copy IBM MQ jars from the shared volume
+        cp -v /tmp/jars/* /usr/share/confluent-hub-components/confluentinc-kafka-connect-ibmmq/lib/
         #
         # -----------
         # Launch the Kafka Connect worker
@@ -102,34 +104,81 @@ services:
         sleep infinity
     volumes:
       - $PWD/data:/data
+      - mq-jars:/tmp/jars
 
   ksqldb:
-    image: confluentinc/ksqldb-server:0.11.0
+    image: confluentinc/ksqldb-server:0.12.0
     container_name: ksqldb
     depends_on:
-      - kafka
+      - broker
       - kafka-connect
     ports:
       - "8088:8088"
     environment:
       KSQL_LISTENERS: http://0.0.0.0:8088
-      KSQL_BOOTSTRAP_SERVERS: kafka:29092
+      KSQL_BOOTSTRAP_SERVERS: broker:29092
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
       KSQL_KSQL_CONNECT_URL: http://kafka-connect:8083
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
+      KSQL_KSQL_SERVICE_ID: _confluent_rmoff_01
       KSQL_KSQL_HIDDEN_TOPICS: '^_.*'
 
   kafkacat:
     image: edenhill/kafkacat:1.6.0
     container_name: kafkacat
-    links:
-      - kafka
-      - schema-registry
     entrypoint: 
       - /bin/sh 
       - -c 
       - |
         apk add jq; 
         while [ 1 -eq 1 ];do sleep 60;done
+
+  ibmmq:
+    # *-----------------------------*
+    # Check the web interface & REST API is running:
+    #   docker exec ibmmq dspmqweb status
+    #
+    # Web interface: https://localhost:9443/ibmmq/console/#/ (admin/Admin123)
+    #
+    # REST API: https://www.ibm.com/support/knowledgecenter/SSFKSJ_9.1.0/com.ibm.mq.ref.dev.doc/q130750_.htm
+    #
+    # CLI to put message onto queue: 
+    #   docker exec ibmmq /opt/mqm/samp/bin/amqsput DEV.QUEUE.1 QM1
+    #   docker exec ibmmq /opt/mqm/samp/bin/amqsget DEV.QUEUE.1 QM1
+    # *-----------------------------*
+    image: ibmcom/mq:9.2.0.0-r2
+    container_name: ibmmq
+    ports:
+    - "9443:9443"
+    environment:
+      LICENSE: "accept"
+      MQ_ADMIN_PASSWORD: "Admin123"
+      MQ_APP_PASSWORD: "Admin123"
+      MQ_QMGR_NAME: "QM1"
+    # entrypoint: 
+    #   - bash 
+    #   - -c 
+    #   - |
+    #     #
+    #     # -----------
+    #     # Launch the MQ server
+    #     runmqdevserver
+    #     #
+    #     # Don't exit
+    #     sleep infinity
+    volumes:
+      - mq-jars:/opt/mqm/java/lib/
+
+  mongodb:
+    # *-----------------------------*
+    # To connect to mongoDB
+    #   docker exec --interactive --tty mongodb mongo localhost:27017
+    # *-----------------------------*
+    image: mongo:4.4.1
+    container_name: mongodb
+    ports: 
+    - "27017:27017"
+
+volumes:
+  mq-jars: {}
