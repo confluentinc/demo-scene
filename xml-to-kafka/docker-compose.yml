@@ -136,12 +136,10 @@ services:
 
   ibmmq:
     # *-----------------------------*
-    # Check the web interface & REST API is running:
+    # Check the web interface is running:
     #   docker exec ibmmq dspmqweb status
     #
     # Web interface: https://localhost:9443/ibmmq/console/#/ (admin/Admin123)
-    #
-    # REST API: https://www.ibm.com/support/knowledgecenter/SSFKSJ_9.1.0/com.ibm.mq.ref.dev.doc/q130750_.htm
     #
     # CLI to put message onto queue: 
     #   docker exec ibmmq /opt/mqm/samp/bin/amqsput DEV.QUEUE.1 QM1
@@ -154,19 +152,7 @@ services:
     environment:
       LICENSE: "accept"
       MQ_ADMIN_PASSWORD: "Admin123"
-      MQ_APP_PASSWORD: "Admin123"
       MQ_QMGR_NAME: "QM1"
-    # entrypoint: 
-    #   - bash 
-    #   - -c 
-    #   - |
-    #     #
-    #     # -----------
-    #     # Launch the MQ server
-    #     runmqdevserver
-    #     #
-    #     # Don't exit
-    #     sleep infinity
     volumes:
       - mq-jars:/opt/mqm/java/lib/
 
