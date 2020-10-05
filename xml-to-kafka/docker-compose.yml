@@ -144,6 +144,10 @@ services:
     # CLI to put message onto queue: 
     #   docker exec ibmmq /opt/mqm/samp/bin/amqsput DEV.QUEUE.1 QM1
     #   docker exec ibmmq /opt/mqm/samp/bin/amqsget DEV.QUEUE.1 QM1
+    #
+    # View channel details: 
+    #
+    #   docker exec ibmmq bash -c 'echo "DISPLAY CHSTATUS(*)" | runmqsc QM1'
     # *-----------------------------*
     image: ibmcom/mq:9.2.0.0-r2
     container_name: ibmmq
@@ -152,6 +156,7 @@ services:
     environment:
       LICENSE: "accept"
       MQ_ADMIN_PASSWORD: "Admin123"
+      MQ_APP_PASSWORD: "password123"
       MQ_QMGR_NAME: "QM1"
     volumes:
       - mq-jars:/opt/mqm/java/lib/
