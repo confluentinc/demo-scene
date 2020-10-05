@@ -1,0 +1,14 @@
+= Streaming XML into Kafka
+Robin Moffatt <robin@rmoff.net>
+v1.00 (5 October 2020)
+
+The theory: 
+
+* https://rmoff.net/2020/10/01/ingesting-xml-data-into-kafka-introduction/[Ingesting XML data into Kafka - Introduction]
+* https://rmoff.net/2020/10/01/ingesting-xml-data-into-kafka-option-1-the-dirty-hack/[Ingesting XML data into Kafka - Option 1: The Dirty Hack]
+* https://rmoff.net/2020/10/01/ingesting-xml-data-into-kafka-option-2-kafka-connect-plus-single-message-transform/[Ingesting XML data into Kafka - Option 2: Kafka Connect plus Single Message Transform]
+* https://rmoff.net/2020/10/01/ingesting-xml-data-into-kafka-option-3-kafka-connect-filepulse-connector/[Ingesting XML data into Kafka - Option 3: Kafka Connect FilePulse connector]
+
+Theory, in action: 
+
+* https://rmoff.net/2020/10/05/streaming-xml-messages-from-ibm-mq-into-kafka-into-mongodb/[Streaming XML messages from IBM MQ into Kafka into MongoDB]
