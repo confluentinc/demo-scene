@@ -1,0 +1,29 @@
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="stations">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="station" maxOccurs="unbounded" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element type="xs:short" name="id"/>
+              <xs:element type="xs:string" name="name"/>
+              <xs:element type="xs:int" name="terminalName"/>
+              <xs:element type="xs:float" name="lat"/>
+              <xs:element type="xs:float" name="long"/>
+              <xs:element type="xs:string" name="installed"/>
+              <xs:element type="xs:string" name="locked"/>
+              <xs:element type="xs:string" name="installDate"/>
+              <xs:element type="xs:string" name="removalDate"/>
+              <xs:element type="xs:string" name="temporary"/>
+              <xs:element type="xs:byte" name="nbBikes"/>
+              <xs:element type="xs:byte" name="nbEmptyDocks"/>
+              <xs:element type="xs:byte" name="nbDocks"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute type="xs:long" name="lastUpdate"/>
+      <xs:attribute type="xs:float" name="version"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
