@@ -1,0 +1,49 @@
+plugins {
+  id 'org.springframework.boot' version '2.3.4.RELEASE'
+  id 'io.spring.dependency-management' version '1.0.10.RELEASE'
+  id 'java'
+}
+
+group = 'io.confluent.developer'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+configurations {
+  compileOnly {
+    extendsFrom annotationProcessor
+  }
+}
+
+repositories {
+  jcenter()
+  // and other repositories
+
+  // jitpack repo for github artifacts
+  maven { url 'https://jitpack.io' }
+
+  // temp repositories for ksqlDB artifacts
+  maven { url "https://ksqldb-maven.s3.amazonaws.com/maven/" }
+  maven { url "https://jenkins-confluent-packages-beta-maven.s3.amazonaws.com/6.1.0-beta200825192044/1/maven/" }
+}
+
+dependencies {
+  implementation 'org.springframework.boot:spring-boot-starter-webflux'
+  // ksqlDB Reactor Client
+  implementation 'com.github.gAmUssA:reactor-ksqldb:e81f4a7fc0'
+
+  // exclude some logger lib
+  implementation("io.confluent.ksql:ksqldb-api-client:0.12.0") {
+    exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+  }
+
+  compileOnly 'org.projectlombok:lombok'
+  annotationProcessor 'org.projectlombok:lombok'
+  testImplementation('org.springframework.boot:spring-boot-starter-test') {
+    exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+  }
+  testImplementation 'io.projectreactor:reactor-test'
+}
+
+test {
+  useJUnitPlatform()
+}
