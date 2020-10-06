@@ -2,7 +2,7 @@ version: "3"
 
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
+    image: confluentinc/cp-zookeeper:6.0.0
     hostname: zookeeper
     container_name: zookeeper
     ports:
@@ -13,7 +13,7 @@ services:
       ZOOKEEPER_SERVERS: zookeeper:2888:3888
 
   broker:
-    image: confluentinc/cp-server:latest
+    image: confluentinc/cp-server:6.0.0
     hostname: broker
     container_name: broker
     ports:
@@ -44,7 +44,7 @@ services:
       - zookeeper
 
   control-center:
-    image: confluentinc/cp-enterprise-control-center:latest
+    image: confluentinc/cp-enterprise-control-center:6.0.0
     hostname: control-center
     container_name: control-center
     depends_on:
