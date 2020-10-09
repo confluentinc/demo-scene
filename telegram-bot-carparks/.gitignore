@@ -1,3 +1,4 @@
 kafka-connect-rest
 data/connectors
-go/telegram_token.go
+go/telegram_config.go
+go/ksqldb_config.go

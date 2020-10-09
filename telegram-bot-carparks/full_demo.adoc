@@ -1,20 +1,38 @@
-Load historic data
+Start Docker Compose (hosting kafkacat) 
 
 [source,bash]
 ----
-curl -s https://datahub.bradford.gov.uk/ebase/api/getData/v2/Council/CarParkHistoric | \
-  docker exec -i kafkacat kafkacat -b broker:29092 -t carparks_historic -P
+docker-compose up -d
+----
+Create a Confluent Cloud account, put details in `.env`. 
+
+Create topics: 
+
+[source,bash]
+----
+ccloud login --save
+ccloud kafka cluster list
+ccloud kafka cluster use <i>
+ccloud kafka topic create carparks
 ----
 
 Stream the current data from the REST endpoint into Kafka, piping the output from `curl` into `kafkacat`, polling every three minutes: 
 
 [source,bash]
 ----
+source .env
 while [ 1 -eq 1 ];
 do 
-    curl -s https://datahub.bradford.gov.uk/ebase/api/getData/v2/Council/CarParkCurrent | \
+    curl --show-error --silent https://datahub.bradford.gov.uk/ebase/api/getData/v2/Council/CarParkCurrent | \
         tail -n +2 | \
-        docker exec -i kafkacat kafkacat -b broker:29092 -t carparks -P -T
+        docker exec --interactive kafkacat \
+          kafkacat \
+            -X security.protocol=SASL_SSL -X sasl.mechanisms=PLAIN \
+            -X ssl.ca.location=./etc/ssl/cert.pem -X api.version.request=true \
+            -b $CCLOUD_BROKER_HOST \
+            -X sasl.username="$CCLOUD_API_KEY" \
+            -X sasl.password="$CCLOUD_API_SECRET" \
+            -t carparks -P -T
     sleep 180
 done
 ----
@@ -94,6 +112,14 @@ SELECT * FROM CARPARK_SRC EMIT CHANGES LIMIT 5;
 |             |       |             |         |             |             |             |             |google.com/?d|
 |             |       |             |         |             |             |             |             |addr=53.79183|
 |             |       |             |         |             |             |             |             |8,-1.752201  |
+----
+
+Load historic data
+
+[source,bash]
+----
+curl -s https://datahub.bradford.gov.uk/ebase/api/getData/v2/Council/CarParkHistoric | \
+  docker exec -i kafkacat kafkacat -b broker:29092 -t carparks_historic -P
 ----
 
 Apply schema to historic
