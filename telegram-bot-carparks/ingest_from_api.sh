@@ -1,3 +1,4 @@
+#!/bin/bash
 source .env
 while [ 1 -eq 1 ];
 do
