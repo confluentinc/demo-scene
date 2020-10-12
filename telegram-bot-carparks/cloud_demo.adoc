@@ -1,4 +1,12 @@
-== Setting up Confluent Cloud including KSQL 
+= 🤖 Building a Telegram bot with Apache Kafka, Go, and ksqlDB
+Robin Moffatt <robin@confluent.io>
+v1.10, 12 October 2020
+
+@toc
+
+== Environment build
+
+=== Setting up Confluent Cloud including KSQL 
 
 Create a Confluent Cloud account, put details in `.env`. 
 
@@ -14,7 +22,7 @@ ccloud kafka topic create carparks_historic
 ccloud kafka topic create --config cleanup.policy=compact,retention.ms=900000,retention.bytes=-1 carpark_table_15min
 ----
 
-=== ksqlDB on Confluent Cloud
+==== ksqlDB on Confluent Cloud
 
 Set up ksqlDB API key and ACLs so we can use the CLI
 
@@ -34,6 +42,40 @@ ccloud kafka acl create --allow --service-account <ServiceAccountID> --operation
 
 # Create an API key for accessing ksqlDB - make a note of these!
 ccloud api-key create --resource <Id>
+----
+
+== Demo 
+
+=== Pre-flight checklist
+
+1. Log out of Telegram personal account
+2. Log in to demo Telegram account
+3. Clear chat history with bot (https://t.me/kafka_alert_bot)
+4. Start bot
++
+[source,bash]
+----
+cd ~/git/demo-scene/telegram-bot-carparks/go
+go run .
+----
+
+5. Run data ingest
+[source,bash]
+----
+source .env
+while [ 1 -eq 1 ];
+do
+    curl --show-error --silent https://datahub.bradford.gov.uk/ebase/api/getData/v2/Council/CarParkCurrent | \
+        tail -n +2 | \
+        docker run --rm --interactive edenhill/kafkacat:1.6.0 \
+            -X security.protocol=SASL_SSL -X sasl.mechanisms=PLAIN \
+            -X ssl.ca.location=./etc/ssl/cert.pem -X api.version.request=true \
+            -b $CCLOUD_BROKER_HOST \
+            -X sasl.username="$CCLOUD_API_KEY" \
+            -X sasl.password="$CCLOUD_API_SECRET" \
+            -t carparks -P -T
+    sleep 180
+done
 ----
 
 == Stream the data into the topic
@@ -237,19 +279,6 @@ SELECT NAME,
     GROUP BY NAME
     EMIT CHANGES;
 ----
-
-// Create a compacted topic with the car park as the key (i.e. hold the latest value for each car park): 
-
-// [source,sql]
-// ----
-// SET 'auto.offset.reset' = 'earliest';
-
-// CREATE STREAM CARPARK_LATEST WITH (VALUE_FORMAT='PROTOBUF', KAFKA_TOPIC='carpark_15min') AS 
-// SELECT * 
-//   FROM CARPARK_EVENTS
-//   PARTITION BY NAME 
-//   EMIT CHANGES;
-// ----
 
 == Push and pull queries
 
@@ -555,62 +584,81 @@ We just need a `TOPN` function now :)
 
 == Stream the data to Elasticsearch. 
 
-Create mapping template in Elasticsearch to force timestamp and location to be handled correctly:
+Createn index template in Elasticsearch to make sure the timestamp and location are handled correctly:
 
 [source,javascript]
 ----
-curl -s -XPUT "http://localhost:9200/_template/rmoff/" \
+source .env
+curl --silent --show-error -u $ELASTIC_USER:$ELASTIC_PW \
+      -XPUT \
+      $ELASTIC_ENDPOINT"/_index_template/rmoff_template01/" \
       -H 'Content-Type: application/json' \
-      -d' {
-          "template": "*", "mappings": {
-              "dynamic_templates": [
-                  { "dates": { "match": "TS", "mapping": { "type": "date" } } },
-                  { "geopoint": { "match": "location", "mapping": { "type": "geo_point" } } }
-              ] }
-          }'
+      -d'{
+          "index_patterns": [ "carpark*" ],
+          "template": {
+              "mappings": {
+                  "properties": {
+                      "TS": {
+                          "type": "date"
+                      },
+                      "location": {
+                          "type": "geo_point"
+                      }
+                  }
+              }
+          } }'
 ----
 
-Create a sink connector from ksqlDB: 
+Create a sink connector in Confluent Cloud
 
-[source,sql]
+[source,javascript]
 ----
-CREATE SINK CONNECTOR SINK_ELASTIC_01 WITH (
-  'connector.class'                     = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
-  'topics'                              = 'CARPARK_EVENTS',
-  'key.converter'                       = 'org.apache.kafka.connect.storage.StringConverter',
-  'value.converter'                     = 'io.confluent.connect.protobuf.ProtobufConverter',
-  'value.converter.schema.registry.url' = 'http://schema-registry:8081',
-  'connection.url'                      = 'http://elasticsearch:9200',
-  'type.name'                           = '_doc',
-  'key.ignore'                          = 'true',
-  'schema.ignore'                       = 'true');
+{
+  "topics": "CARPARK_EVENTS_v00",
+  "input.data.format": "PROTOBUF",
+  "connector.class": "ElasticsearchSink",
+  "name": "ElasticsearchSinkConnector_0",
+  "kafka.api.key": "",
+  "kafka.api.secret": "",
+  "connection.url":  "https://xxx.aws.found.io:9243",
+  "connection.username": "",
+  "connection.password": "",
+  "type.name": "_doc",
+  "key.ignore": "true",
+  "schema.ignore": "true",
+  "behavior.on.malformed.documents": "fail",
+  "tasks.max": "1"
+}
 ----
 
-Check the status of the connector in ksqlDB
-
-[source,sql]
+[source,bash]
 ----
-SHOW CONNECTORS
+ccloud connector create --config elastic-sink.json
 ----
 
-[source,sql]
+Check the status
+
+[source,bash]
 ----
- Connector Name  | Type | Class                                                         | Status
-----------------------------------------------------------------------------------------------------------------------
- SINK_ELASTIC_01 | SINK | io.confluent.connect.elasticsearch.ElasticsearchSinkConnector | RUNNING (1/1 tasks RUNNING)
-----------------------------------------------------------------------------------------------------------------------
+ccloud connector list
+----
+
+[source,bash]
+----
+     ID     |             Name             | Status  | Type | Trace
++-----------+------------------------------+---------+------+-------+
+  lcc-k6qmm | ElasticsearchSinkConnector_0 | RUNNING | sink |
 ----
 
 Check that data is arriving: 
 
 [source,bash]
 ----
-➜ docker exec elasticsearch curl -s "http://localhost:9200/_cat/indices/*?h=idx,docsCount"
+source .env
+curl -XGET --silent --show-error $ELASTIC_ENDPOINT"/_cat/indices/carpark_events*?h=idx,docsCount" \
+      -u $ELASTIC_USER:$ELASTIC_PW 
 
-.kibana_task_manager_1        2
-.apm-agent-configuration      0
-.kibana_1                     1
-carpark_events           265793
+carpark_events_v00 18072
 ----
 
 Visualise it in Kibana: 
@@ -619,14 +667,9 @@ image::images/carpark_kibana01.png[]
 
 === Automating the generation of the report and export to PNG
 
-Exporting to PNG requires Elastic licence, so start the 30-day trial (if not already done with `xpack.license.self_generated.type: "trial"` in Docker Compose):
+NOTE: Exporting to PNG requires Elastic licence
 
-[source,bash]
-----
-curl -X POST "localhost:9200/_license/start_trial?acknowledge=true&pretty"
-----
-
-Now run a `POST` to trigger the PNG generation based on a saved dashboard
+Run a `POST` to trigger the PNG generation based on a saved dashboard
 
 [source,bash]
 ----

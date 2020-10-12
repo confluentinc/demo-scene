@@ -109,7 +109,7 @@ services:
 
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.8.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.2
     container_name: elasticsearch
     ports:
       - 9200:9200
@@ -130,19 +130,26 @@ services:
           sleep 5 
         done
 
-        curl -s -XPUT "http://localhost:9200/_template/rmoff/" -H 'Content-Type: application/json' \
-            -d' {
-                "template": "*", "mappings": {
-                    "dynamic_templates": [
-                        { "dates": { "match": "TS", "mapping": { "type": "date" } } },
-                        { "geopoint": { "match": "location", "mapping": { "type": "geo_point" } } }
-                    ] }
-                }'
+        curl -s -XPUT "http://localhost:9200/_index_template/rmoff_template01/" -H 'Content-Type: application/json' \
+                  -d'{
+          "index_patterns": [ "carpark*" ],
+          "template": {
+              "mappings": {
+                  "properties": {
+                      "TS": {
+                          "type": "date"
+                      },
+                      "location": {
+                          "type": "geo_point"
+                      }
+                  }
+              }
+          } }'
 
         sleep infinity
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.8.1
+    image: docker.elastic.co/kibana/kibana:7.9.2
     container_name: kibana
     depends_on:
       - elasticsearch
