@@ -36,7 +36,7 @@ func main() {
 
 		chatID = update.Message.Chat.ID
 		t := update.Message.Text
-		log.Printf("[%s] %s (command: %v)", update.Message.From.UserName, t, update.Message.IsCommand())
+		log.Printf("Received message from %s: %s (command: %v)", update.Message.From.UserName, t, update.Message.IsCommand())
 		switch {
 		case update.Message.IsCommand():
 			// Handle commands

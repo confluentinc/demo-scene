@@ -10,6 +10,9 @@ import (
 	ksqldb "github.com/rmoff/ksqldb-go"
 )
 
+// Takes the name of a carpark and returns the number
+// of empty places, the percentage occupied, and
+// the timestamp of the data reported
 func checkSpaces(c string) (latestTS string, emptyPlaces float64, pctFull float64, err error) {
 
 	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
@@ -37,7 +40,13 @@ func checkSpaces(c string) (latestTS string, emptyPlaces float64, pctFull float6
 
 }
 
+// Returns a channel, to which a carpark's details are
+// written each time data is received in which more
+// than the specified number of places are available
 func alertSpaces(a chan<- string, c int) (e error) {
+	// Whilst this is implemented using ksqlDB, perhaps it could be done
+	// using a normal Kafka consumer and use Golang to apply the filter
+	//
 	// TODO01 add a channel so that user can run another
 	// command to delete an alert
 	//
@@ -47,7 +56,7 @@ func alertSpaces(a chan<- string, c int) (e error) {
 
 	// Run this for five minutes and then exit
 	// TODO: does this actually do this?
-	const queryResultTimeoutSeconds = 600
+	const queryResultTimeoutSeconds = 300
 
 	// Prepare the request
 	k := "SELECT NAME, TS, CAPACITY, EMPTY_PLACES"
@@ -98,6 +107,9 @@ func alertSpaces(a chan<- string, c int) (e error) {
 	return nil
 }
 
+// Returns the details of the carpark that is nearest
+// to the provided location (lat/long), with more
+// than 10 spaces available.
 func getClosest(lat float64, lon float64) (c carPark, e error) {
 	const availableThreshold = 10
 	const queryResultTimeoutSeconds = 20

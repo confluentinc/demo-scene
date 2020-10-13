@@ -1,4 +1,5 @@
 kafka-connect-rest
+elastic-sink.json
 data/connectors
 go/telegram_config.go
 go/ksqldb_config.go
