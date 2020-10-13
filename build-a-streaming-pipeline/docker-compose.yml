@@ -2,14 +2,14 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.5.1
+    image: confluentinc/cp-zookeeper:6.0.0
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.5.1
+    image: confluentinc/cp-kafka:6.0.0
     container_name: kafka
     depends_on:
       - zookeeper
@@ -57,7 +57,7 @@ services:
         sleep infinity  
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.5.1
+    image: confluentinc/cp-schema-registry:6.0.0
     container_name: schema-registry
     depends_on:
       - zookeeper
@@ -72,7 +72,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   kafka-connect-01:
-    image: confluentinc/cp-kafka-connect:5.5.1
+    image: confluentinc/cp-kafka-connect-base:6.0.0
     container_name: kafka-connect-01
     depends_on:
       - kafka
@@ -121,8 +121,9 @@ services:
         echo '127.0.0.1 kafka-connect-01' >> /etc/hosts
         #
         echo "Installing connector plugins"
-        confluent-hub install --no-prompt debezium/debezium-connector-mysql:1.1.0
-        confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.3.1
+        confluent-hub install --no-prompt debezium/debezium-connector-mysql:1.2.2
+        confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.4.0
+        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:10.0.1
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 
@@ -150,7 +151,7 @@ services:
         sleep infinity
 
   ksqldb:
-    image: confluentinc/ksqldb-server:0.11.0
+    image: confluentinc/ksqldb-server:0.12.0
     hostname: ksqldb
     container_name: ksqldb
     links:
@@ -333,7 +334,7 @@ services:
         sleep infinity
 
   kafkacat:
-    image: edenhill/kafkacat:1.5.0
+    image: edenhill/kafkacat:1.6.0
     container_name: kafkacat
     links:
       - kafka

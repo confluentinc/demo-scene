@@ -1,7 +1,7 @@
 = Streaming ETL demo - Enriching event stream data with CDC data from MySQL, stream into Elasticsearch
 :toc:
 Robin Moffatt <robin@confluent.io>
-v1.50, 6 July 2020
+v1.51, 13 October 2020
 
 image:images/ksql-debezium-es.png[Kafka Connect / ksqlDB / Elasticsearch]
 
