@@ -8,4 +8,5 @@ docker-compose exec broker-west kafka-console-consumer \
     --bootstrap-server broker-west:19091 \
     --topic west-trades \
     --from-beginning \
-    --consumer.config consumer.properties
+    --consumer.config consumer.properties \
+    --timeout-ms 10000
