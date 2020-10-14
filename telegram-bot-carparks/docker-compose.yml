@@ -90,7 +90,7 @@ services:
       - -c
       - |
         echo "Installing Connector"
-        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:5.5.1
+        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:10.0.1
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run &
