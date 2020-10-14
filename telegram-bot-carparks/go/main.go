@@ -1,5 +1,5 @@
 // @rmoff
-// 24 July 2020
+// 8 October 2020
 //
 package main
 
@@ -36,7 +36,7 @@ func main() {
 
 		chatID = update.Message.Chat.ID
 		t := update.Message.Text
-		log.Printf("[%s] %s (command: %v)", update.Message.From.UserName, t, update.Message.IsCommand())
+		log.Printf("Received message from %s: %s (command: %v)", update.Message.From.UserName, t, update.Message.IsCommand())
 		switch {
 		case update.Message.IsCommand():
 			// Handle commands
@@ -76,8 +76,8 @@ func main() {
 					}
 
 				}
-			case "start":
-				msg := tgbotapi.NewMessage(chatID, "Welcome to the 🚗 *Car Park Telegram Bot* 🚗\n_Powered by Apache Kafka™ and [ksqlDB](https://ksqldb.io)_ 😃\n\n👉 Use `/alert \\<x\\>` to receive an alert when a car park has more than \\<x\\> places available\n👉 Send me the name of a car park to find out how many spaces are currently available in it\n👉 Send me your location to find out the nearest car park to you with more than 10 spaces\\.")
+			case "start", "help":
+				msg := tgbotapi.NewMessage(chatID, "Welcome to the 🚗 *Car Park Telegram Bot* 🚗\n_Powered by Apache Kafka® and [ksqlDB](https://ksqldb.io)_ 😃\n\n👉 Use `/alert \\<x\\>` to receive an alert when a car park has more than \\<x\\> places available\n👉 Send me the name of a car park to find out how many spaces are currently available in it\n👉 Send me your location to find out the nearest car park to you with more than 10 spaces\\.")
 				msg.ParseMode = "MarkdownV2"
 				if _, e := bot.Send(msg); e != nil {
 					log.Printf("Error sending message to telegram.\nMessage: %v\nError: %v", msg, e)
@@ -107,9 +107,9 @@ func main() {
 
 		default:
 
-			// We've got a carpark status request
-			if p, f, e := checkSpaces(t); e == nil {
-				resp = fmt.Sprintf("ℹ️ 🚗 Car park %v is %.2f%% full (%v spaces available)\n\n", t, f, p)
+			// Let's assume that we've got a carpark status request
+			if ts, p, f, e := checkSpaces(t); e == nil {
+				resp = fmt.Sprintf("ℹ️ 🚗 Car park %v is %.2f%% full (%v spaces available) as of %v\n\n", t, f, p, ts)
 			} else {
 				resp = fmt.Sprintf("⚠️ There was an error calling `checkSpaces` for %v:\n\n%v\n\n", t, e)
 			}

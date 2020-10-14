@@ -1,0 +1,16 @@
+{
+  "topics": "CARPARK_EVENTS_v00",
+  "input.data.format": "PROTOBUF",
+  "connector.class": "ElasticsearchSink",
+  "name": "ElasticsearchSinkConnector_1",
+  "kafka.api.key": "",
+  "kafka.api.secret": "",
+  "connection.url":  "https://xxxxxxxx.eu-west-1.aws.found.io:9243",
+  "connection.username": "elastic",
+  "connection.password": "",
+  "type.name": "_doc",
+  "key.ignore": "true",
+  "schema.ignore": "true",
+  "behavior.on.malformed.documents": "fail",
+  "tasks.max": "1"
+}

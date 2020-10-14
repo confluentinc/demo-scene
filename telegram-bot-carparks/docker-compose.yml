@@ -2,14 +2,14 @@
 version: '2'
 services:
   zookeeper:
-    image: "confluentinc/cp-zookeeper:5.5.1"
+    image: "confluentinc/cp-zookeeper:6.0.0"
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   broker:
-    image: "confluentinc/cp-kafka:5.5.1"
+    image: "confluentinc/cp-kafka:6.0.0"
     container_name: broker
     ports:
       - '9092:9092'
@@ -28,7 +28,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
 
   schema-registry:
-    image: "confluentinc/cp-schema-registry:5.5.1"
+    image: "confluentinc/cp-schema-registry:6.0.0"
     container_name: schema-registry
     depends_on:
       - zookeeper
@@ -40,7 +40,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   ksqldb:
-    image: confluentinc/ksqldb-server:0.10.1
+    image: confluentinc/ksqldb-server:0.12.0
     container_name: ksqldb
     ports:
       - "8088:8088"
@@ -56,7 +56,7 @@ services:
       KSQL_KSQL_HIDDEN_TOPICS: '^_.*,default_ksql_processing_log'
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect-base:5.5.1
+    image: confluentinc/cp-kafka-connect-base:6.0.0
     container_name: kafka-connect
     ports:
       - "8083:8083"
@@ -90,7 +90,7 @@ services:
       - -c
       - |
         echo "Installing Connector"
-        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:5.5.1
+        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:10.0.1
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run &
@@ -109,7 +109,7 @@ services:
 
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.8.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.2
     container_name: elasticsearch
     ports:
       - 9200:9200
@@ -130,19 +130,26 @@ services:
           sleep 5 
         done
 
-        curl -s -XPUT "http://localhost:9200/_template/rmoff/" -H 'Content-Type: application/json' \
-            -d' {
-                "template": "*", "mappings": {
-                    "dynamic_templates": [
-                        { "dates": { "match": "TS", "mapping": { "type": "date" } } },
-                        { "geopoint": { "match": "location", "mapping": { "type": "geo_point" } } }
-                    ] }
-                }'
+        curl -s -XPUT "http://localhost:9200/_index_template/rmoff_template01/" -H 'Content-Type: application/json' \
+                  -d'{
+          "index_patterns": [ "carpark*" ],
+          "template": {
+              "mappings": {
+                  "properties": {
+                      "TS": {
+                          "type": "date"
+                      },
+                      "location": {
+                          "type": "geo_point"
+                      }
+                  }
+              }
+          } }'
 
         sleep infinity
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.8.1
+    image: docker.elastic.co/kibana/kibana:7.9.2
     container_name: kibana
     depends_on:
       - elasticsearch
