@@ -9,7 +9,7 @@ v0.01, 19 August 2020
 == 📘 Slides
 
 ++++
-<p data-notist="rmoff/JG780y">View <a href="https://noti.st/rmoff/JG780y">🤖Building a Telegram bot with Apache Kafka and ksqlDB</a> on Notist.</p><script async src="https://on.notist.cloud/embed/002.js"></script>
+<p data-notist="rmoff/Dyohiq">View <a href="https://noti.st/rmoff/Dyohiq">🤖Building a Telegram bot with Apache Kafka and ksqlDB</a> on Notist.</p><script async src="https://on.notist.cloud/embed/002.js"></script>
 ++++
 
 == 🎥  Recording
