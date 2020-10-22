@@ -195,17 +195,18 @@ SELECT NAME,
 [source,sql]
 ----
 SELECT LATEST_TS, 
-        CURRENT_EMPTY_PLACES
+       CURRENT_EMPTY_PLACES,
+       AVG_EMPTY_PLACES
   FROM CARPARK 
   WHERE NAME='Westgate';
 ----
 
 [source,sql]
 ----
-+----------------------+--------------------+
-|CURRENT_EMPTY_PLACES  |PCT_FULL            |
-+----------------------+--------------------+
-|111                   |4.310344827586207   |
++----------------------+----------------------+------------------+
+|LATEST_TS             |CURRENT_EMPTY_PLACES  |AVG_EMPTY_PLACES  |
++----------------------+----------------------+------------------+
+|2020-10-22 14:59:00   |81                    |80.25             |
 ----
 
 === Use the REST API
@@ -214,7 +215,7 @@ SELECT LATEST_TS,
 ----
 curl --silent --http2 --location --request POST 'http://localhost:8088/query-stream' \
 --header 'Content-Type: application/vnd.ksql.v1+json; charset=utf-8' --header 'Accept: application/json' \
---data-raw '{"sql":"SELECT LATEST_TS, CURRENT_EMPTY_PLACES FROM CARPARK WHERE NAME='\''Westgate'\'';"}' | jq '.'
+--data-raw '{"sql":"SELECT LATEST_TS, CURRENT_EMPTY_PLACES, AVG_EMPTY_PLACES FROM CARPARK WHERE NAME='\''Westgate'\'';"}' | jq '.'
 ----
 
 [source,javascript]
@@ -242,6 +243,8 @@ curl --silent --http2 --location --request POST 'http://localhost:8088/query-str
 
 [source,sql]
 ----
+SET 'auto.offset.reset' = 'latest';
+
 SELECT NAME AS CARPARK,
       TIMESTAMPTOSTRING(TS,'yyyy-MM-dd HH:mm:ss','Europe/London') AS DATA_TS,
       CAPACITY,

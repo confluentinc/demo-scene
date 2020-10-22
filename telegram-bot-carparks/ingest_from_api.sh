@@ -11,5 +11,5 @@ do
             -X sasl.username="$CCLOUD_API_KEY" \
             -X sasl.password="$CCLOUD_API_SECRET" \
             -t carparks -P -T
-    sleep 180
+    sleep 10
 done
