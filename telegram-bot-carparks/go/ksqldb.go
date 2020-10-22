@@ -20,7 +20,7 @@ func checkSpaces(c string) (latestTS string, emptyPlaces float64, pctFull float6
 
 	client := ksqldb.NewClient(KSQLDB_ENDPOINT, KSQLDB_API_KEY, KSQLDB_API_SECRET).Debug()
 
-	k := "SELECT LATEST_TS, CURRENT_EMPTY_PLACES, PCT_FULL FROM CARPARK WHERE NAME='" + c + "';"
+	k := "SELECT LATEST_TS, CURRENT_EMPTY_PLACES, CURRENT_PCT_FULL FROM CARPARK WHERE NAME='" + c + "';"
 	_, r, e := client.Pull(ctx, k)
 
 	if e != nil {
