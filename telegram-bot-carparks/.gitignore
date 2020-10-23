@@ -4,3 +4,4 @@ data/connectors
 go/telegram_config.go
 go/ksqldb_config.go
 leeds.txt
+.env
