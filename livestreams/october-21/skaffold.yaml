@@ -1,0 +1,15 @@
+apiVersion: skaffold/v2beta8
+kind: Config
+metadata:
+  name: mywebservice
+build:
+  artifacts:
+    - image: docker.io/gamussa/webservice
+      context: webservice
+      buildpacks:
+        builder: "gcr.io/buildpacks/builder:v1"
+deploy:
+  kubectl:
+    manifests:
+    - deployment.yaml
+
