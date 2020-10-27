@@ -1,4 +1,4 @@
-= Workshop — Developing Event-driven Microservices with Spring Boot, Confluent Cloud, Kotlin, and Java.
+= Workshop — Developing Event-driven Microservices with Spring Boot, Confluent Cloud, and Java.
 Viktor Gamov <viktor@confluent.io>, © 2020 Confluent, Inc.
 2020-08-25
 :revdate: 2020-08-25 19:22:48 -0600
