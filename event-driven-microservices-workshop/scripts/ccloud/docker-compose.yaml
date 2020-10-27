@@ -1,0 +1,91 @@
+# docker-compose supports environment variable substitution with the ${VARIABLE-NAME} syntax.
+# Environment variables can be sourced in a variety of ways.  
+# One of those ways is through a well known '.env' file located in the same folder as the docker-compose.yml file.  
+# See the Docker documentation for details: https://docs.docker.com/compose/environment-variables/#the-env-file
+# 
+# This feature is being used to parameterize some values within this file.  
+# In this directory is also a .env file, which is actually a symbolic link to <examples-root>/utils/config.env.  
+# That file contains values which get substituted here when docker-compose parses this file.
+#
+# If you'd like to view the docker-compose.yml file rendered with its environment variable substituions
+# you can execute the `docker-compose config` command.  Take note that some demos provide additional 
+# environment variable values by exporting them in a script prior to running `docker-compose up`.
+---
+version: '3.7'
+services:
+  connect-cloud:
+    image: confluentinc/cp-kafka-connect:5.5.1
+    hostname: connect-cloud
+    container_name: connect-cloud
+    ports:
+      - "8083:8083"
+    volumes:
+      - mi2:/usr/share/java/monitoring-interceptors/
+      - $PWD/delta_configs/ak-tools-ccloud.delta:/tmp/ak-tools-ccloud.delta
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: $BOOTSTRAP_SERVERS
+      CONNECT_REST_ADVERTISED_HOST_NAME: connect-cloud
+      CONNECT_PRODUCER_CLIENT_ID: "connect-cloud-worker-producer"
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: "connect-cloud"
+
+      CONNECT_CONFIG_STORAGE_TOPIC: connect-demo-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: connect-demo-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: connect-demo-statuses
+
+      CONNECT_REPLICATION_FACTOR: 3
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 3
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 3
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 3
+
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+      CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: $SCHEMA_REGISTRY_URL
+      CONNECT_VALUE_CONVERTER_BASIC_AUTH_CREDENTIALS_SOURCE: $BASIC_AUTH_CREDENTIALS_SOURCE
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_BASIC_AUTH_USER_INFO: $SCHEMA_REGISTRY_BASIC_AUTH_USER_INFO
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
+      CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
+      CONNECT_LOG4J_LOGGERS: org.reflections=ERROR
+      # CLASSPATH required due to CC-2422
+      CLASSPATH: "/usr/share/java/monitoring-interceptors/monitoring-interceptors-${CONFLUENT}.jar"
+
+      # Connect worker
+      CONNECT_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_SASL_JAAS_CONFIG: $SASL_JAAS_CONFIG
+      CONNECT_SASL_MECHANISM: PLAIN
+      CONNECT_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "HTTPS"
+
+      # Connect embedded producer
+      CONNECT_PRODUCER_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_PRODUCER_SASL_JAAS_CONFIG: $SASL_JAAS_CONFIG
+      CONNECT_PRODUCER_SASL_MECHANISM: PLAIN
+      CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      CONNECT_PRODUCER_CONFLUENT_MONITORING_INTERCEPTOR_BOOTSTRAP_SERVERS: $BOOTSTRAP_SERVERS
+      CONNECT_PRODUCER_CONFLUENT_MONITORING_INTERCEPTOR_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_PRODUCER_CONFLUENT_MONITORING_INTERCEPTOR_SASL_JAAS_CONFIG: $SASL_JAAS_CONFIG
+      CONNECT_PRODUCER_CONFLUENT_MONITORING_INTERCEPTOR_SASL_MECHANISM: PLAIN
+
+      # Connect embedded consumer
+      CONNECT_CONSUMER_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_CONSUMER_SASL_JAAS_CONFIG: $SASL_JAAS_CONFIG
+      CONNECT_CONSUMER_SASL_MECHANISM: PLAIN
+      CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      CONNECT_CONSUMER_CONFLUENT_MONITORING_INTERCEPTOR_BOOTSTRAP_SERVERS: $BOOTSTRAP_SERVERS
+      CONNECT_CONSUMER_CONFLUENT_MONITORING_INTERCEPTOR_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_CONSUMER_CONFLUENT_MONITORING_INTERCEPTOR_SASL_JAAS_CONFIG: $SASL_JAAS_CONFIG
+      CONNECT_CONSUMER_CONFLUENT_MONITORING_INTERCEPTOR_SASL_MECHANISM: PLAIN
+
+  account-db:
+    container_name: kstreams-demo-account-db
+    image: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: account-store
+      POSTGRES_PASSWORD: account-store
+volumes:
+  mi2: {}
