@@ -2,6 +2,13 @@ spring:
   kafka:
     properties:
       bootstrap.servers: localhost:9092
+#     Confluent Cloud config      
+#      bootstrap.servers: bootstrap.us-east4.gcp.confluent.cloud:9092
+#      sasl.mechanism: PLAIN
+#      sasl.jaas.config: "org.apache.kafka.common.security.plain.PlainLoginModule   required username='blah'   password='blah';"
+#      security.protocol: SASL_SSL
+#    streams:
+#      replication-factor: 3
   cloud:
     stream:
       function:
