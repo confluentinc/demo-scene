@@ -55,7 +55,7 @@ Before you proceed, be sure to complete the following steps:
 .Getting code
 [source,shell script]
 ----
-git clone https://github.com/confluentinc/event-driven-microservices-workshop    #<1>
+git clone https://github.com/confluentinc/demo-scene    #<1>
 cd event-driven-microservices-workshop                                      #<2>
 ----
 <1> Clone the repository
