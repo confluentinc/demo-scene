@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>Topic list</title>
+    <script>
+      function getTopics() {
+        fetch('http://localhost:8090/kafka/v3/clusters')
+          .then(response => response.json())
+          .then(({data}) => fetch(data[0].metadata.self + '/topics'))
+          .then(response => response.json())
+          .then(({data}) => {
+            document.getElementById('topics').innerHTML += data
+              .filter(({topic_name}) => !topic_name.startsWith('_')) // Skip internal topics
+              .map(topic => '<li><a href="./details.html?topic_name=' + topic.topic_name + '">' + topic.topic_name + '</a></li>')
+              .join('');
+          })
+          .catch(error => console.warn(error));
+      }
+      window.onload = getTopics;
+    </script>
+  </head>
+  <body>
+    <ul id="topics">
+      <li style="font-weight: bold;"><a href="./new.html">New topic ...</a></li>
+    </ul>
+  </body>
+</html>
