@@ -1,4 +1,4 @@
-# Overview
+# Self-Balancing Clusters Demo
 
 ## Product
 
