@@ -71,9 +71,14 @@ list topics, create topics, and delete topics.
 
 ## Listing topics
 
+We'll start by going to the Topics list page in the UI, then exploring the code
+to see how it's implemented.
+
+### Try this on the UI
+
 Go to [localhost](http://localhost:80) in your web browser (`localhost` on port: `80`).
    
-The Topics list page, backed by `src/index.html`, lists existing topics, and
+The Topics list page, backed by [src/index.html](src/index.html), lists existing topics, and
 provides a link to a page where you can create new topics.
 
 At first, no topics are listed because you haven't created any yet.
@@ -84,7 +89,7 @@ Here is what the list looks like when it's populated with a single topic.
 
 ### Explore sample code for listing topics
 
-The index page (`src/index.html`), which shows a list of all topics, is
+The index page ([src/index.html](src/index.html)), which shows a list of all topics, is
 constructed using the following code:
 
 ``` html
@@ -138,14 +143,18 @@ You might have noticed that our code above also filters topics that start with
 list currently shows nothing. Therefore, the next step is to set up a page that
 allows us to create topics.
 
-Return to the topics list in your web browser and, if you haven't done so already, click **New topic..**.
+### Try this on the UI
+
+Return to the topics list in your [web browser](http://localhost:80) and, if you
+haven't done so already, click **New topic..**.
 
 <img src="docs/images/new-topic-create-00.png" alt="create topic form" width="60%"/>
 
-## Explore the code for creating topics
+### Explore the sample code for creating topics
 
-The create topics page (`src/new.html`), displays a form that allows users to input a topic name, partitions
-count and replication factor. It is constructed using the following code:
+The create topics page ([src/new.html](src/new.html)), displays a form that
+allows users to input a topic name, partitions count and replication factor. It
+is constructed using the following code:
 
 ``` html
 <!doctype html>
@@ -215,17 +224,20 @@ When you click **Create**, you are returned to the updated topics list.
 Now that you have some topics, you need a page where you can see more details on a
 topic and possibly delete it.
 
-In your web browser, go to the topics list:
+### Try this on the UI
 
-<img src="docs/images/topics-list-02.png" alt="topics list" width="60%"/>
+1. In your [web browser](http://localhost:80), go to the topics list:
 
-Select a topic to view details on it. This page also gives you an option to delete the selected topic.
+   <img src="docs/images/topics-list-02.png" alt="topics list" width="60%"/>
 
-<img src="docs/images/topics-describe.png" alt="topics describe" width="60%"/>
+2. Select a topic to view details on it. This page also gives you an option to
+   delete the selected topic.
+
+   <img src="docs/images/topics-describe.png" alt="topics describe" width="60%"/>
 
 ### Explore sample code for describing and deleting a topic
 
-The topic details page (`src/details.html`) displays the topic name, partitions
+The topic details page ([src/details.html](src/details.html))displays the topic name, partitions
 count and replication factor, along with a button to delete the topic.
 
 ``` html
