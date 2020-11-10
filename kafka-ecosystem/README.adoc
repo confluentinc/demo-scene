@@ -1,7 +1,7 @@
 # Kafka as a Platform: the Ecosystem from the Ground Up
 
-📕Slides: https://talks.rmoff.net/JZQj6r
-🎥Recording: https://www.youtube.com/watch?v=qjTZ4UeJdoI
+* 📕Slides: https://talks.rmoff.net/JZQj6r
+* 🎥Recording: https://www.youtube.com/watch?v=qjTZ4UeJdoI
 
 ## Try it out for yourself! 
 
