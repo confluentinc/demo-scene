@@ -1,0 +1,15 @@
+apiVersion: skaffold/v2beta8
+kind: Config
+metadata:
+  name: livestreams-orders-view-app
+build:
+  artifacts:
+    - image: docker.io/gamussa/livestreams-orders-view-app
+      context: orders-view
+      buildpacks:
+        builder: "gcr.io/buildpacks/builder:v1"
+deploy:
+  kubectl:
+    manifests:
+      - orders-app-secret.yaml
+      - orders-app-deployment.yaml
