@@ -1,0 +1,44 @@
+plugins {
+  id 'java'
+  id 'application'
+  id "io.spring.dependency-management" version "1.0.7.RELEASE"
+
+}
+
+repositories {
+
+  jcenter()
+  maven() {
+    url "https://ksqldb-maven.s3.amazonaws.com/maven/"
+  }
+  maven() {
+    url "https://jenkins-confluent-packages-beta-maven.s3.amazonaws.com/6.1.0-beta200715032424/1/maven/"
+  }
+}
+
+dependencyManagement {
+  imports {
+    mavenBom "io.projectreactor:reactor-bom:Dysprosium-SR12"
+  }
+}
+
+dependencies {
+
+  implementation "io.confluent.ksql:ksqldb-api-client:0.11.0"
+
+  implementation 'io.projectreactor:reactor-core'
+  // Use JUnit Jupiter API for testing.
+  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.2'
+  // Use JUnit Jupiter Engine for testing.
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.6.2'
+}
+
+application {
+  // Define the main class for the application.
+  mainClassName = 'io.confluent.developer.livestreams.App'
+}
+
+test {
+  // Use junit platform for unit tests
+  useJUnitPlatform()
+}
