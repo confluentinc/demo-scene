@@ -1,0 +1,25 @@
+= Livestreams November 17th log
+Viktor Gamov <viktor@confluent.io>, © 2020 Confluent, Inc.
+2020-10-20
+
+The materials form live stream on November 17th 2020.
+
+toc::[]
+
+== Stream recording
+
+https://www.youtube.com/watch?v=ptdS9Qhyr_k[Livestreams recording]
+
+== Agenda and links
+
+* Kubernetes
+** gcp
+* https://skaffold.dev/[skaffold] - building and running apps in Kubernetes 
+* scale Kafka Streams apps on Kubernetes
+* scaling state stores 
+
+* code https://github.com/confluentinc/demo-scene/tree/master/livestreams/november-3
+*** update `orders-app-secret.yaml` with relevant Confluent Cloud credentials.
+*** run: `skaffold run`
+
+* Twitter https://twitter.com/gamussa[@gAmUssA]
