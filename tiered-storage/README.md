@@ -98,7 +98,7 @@ Because the topic has a short hotset period, log segments that are uploaded to t
 kafka-consumer-perf-test --topic multi-region-async \
     --messages 5000 \
     --threads 1 \
-    --broker-list localhost:9092 \
+    --broker-list localhost:9091 \
     --timeout 20000 \
     --consumer.config config/consumer.config
 ```
