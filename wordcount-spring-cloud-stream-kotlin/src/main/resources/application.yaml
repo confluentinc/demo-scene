@@ -1,0 +1,47 @@
+spring:
+  kafka:
+    properties:
+      bootstrap.servers: localhost:9092
+  #     Confluent Cloud config      
+  #      bootstrap.servers: bootstrap.us-east4.gcp.confluent.cloud:9092
+  #      sasl.mechanism: PLAIN
+  #      sasl.jaas.config: "org.apache.kafka.common.security.plain.PlainLoginModule   required username='blah'   password='blah';"
+  #      security.protocol: SASL_SSL
+  #    streams:
+  #      replication-factor: 3
+  cloud:
+    stream:
+      function:
+        definition: produceChuckNorris;consumeChuckNorris;processWords
+        bindings:
+          # input and output of KStreams topology
+          processWords-in-0: facts
+          processWords-out-0: counts
+      bindings:
+        # kafka producer
+        produceChuckNorris-out-0:
+          binder: kafka
+          destination: facts
+          producer:
+            partition-count: 4
+            useNativeEncoding: true
+        # kafka consumer
+        consumeChuckNorris-in-0:
+          binder: kafka
+          destination: facts
+          group: myGroup
+      kafka:
+        binder:
+          consumer-properties:
+            key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+            value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          producer-properties:
+            key.serializer: org.apache.kafka.common.serialization.StringSerializer
+            value.serializer: org.apache.kafka.common.serialization.StringSerializer
+        streams:
+          binder:
+            applicationId: chuck-norris-word-count
+            configuration:
+              default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+              default.value.serde: org.apache.kafka.common.serialization.Serdes$BytesSerde
+              commit.interval.ms: 1000 
