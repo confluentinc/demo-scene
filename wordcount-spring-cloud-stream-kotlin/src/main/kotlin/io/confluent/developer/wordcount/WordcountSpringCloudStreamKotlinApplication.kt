@@ -1,9 +1,12 @@
-package io.confluent.developer.wordcountspringcloudstreamkotlin
+package io.confluent.developer.wordcount
 
 import com.github.javafaker.Faker
+import io.confluent.developer.kotlin.extensions.KSerdes.grouped
+import io.confluent.developer.kotlin.extensions.KSerdes.producedWith
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.KeyValue
-import org.apache.kafka.streams.kstream.*
+import org.apache.kafka.streams.kstream.KStream
+import org.apache.kafka.streams.kstream.Materialized
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.Bean
@@ -33,38 +36,22 @@ class WordcountSpringCloudStreamKotlinApplication {
     }
   }
 
-
   @Bean
-  fun processWords(): Function<KStream<String?, String>, KStream<String, Long>>? {
+  fun processWords(): Function<KStream<String?, String>, KStream<String, Long>> {
     return Function { inputStream: KStream<String?, String> ->
       val stringSerde = Serdes.String()
-      val stringStringKStream: KStream<String?, String> = inputStream
-        .flatMapValues { value: String ->
-          var list: Iterable<String> = value.toLowerCase().split("\\W+")
-          list
-        }
-      stringStringKStream.print(Printed.toSysOut())
-
-      val map = stringStringKStream
-        .map { _: String?, value: String ->
-          KeyValue(value, value)
-        }
-      map.print(Printed.toSysOut())
-
-      val countsStream = map
-        .groupByKey(Grouped.with(stringSerde, stringSerde))
+      val countsStream = inputStream
+        .flatMapValues { value: String -> value.toLowerCase().split("\\W+".toRegex()) }
+        .map { _: String?, value: String -> KeyValue(value, value) }
+        .groupByKey(grouped<String, String>())
         .count(Materialized.`as`("word-count-state-store"))
         .toStream()
-      countsStream.to("counts", Produced.with(stringSerde, Serdes.Long()))
+      countsStream.to("counts", producedWith<String,Long>())
       countsStream
     }
   }
 }
 
-
 fun main(args: Array<String>) {
   runApplication<WordcountSpringCloudStreamKotlinApplication>(*args)
-
-
 }
-

@@ -1,0 +1,18 @@
+= Stream Processing like you have never seen before! 
+
+== The presentation script
+
+// This is a livecode presentation
+
+* [ ] 🍃 Go https://start.spring.io
+* [ ] Kotlin, Gradle, Spring 2.4.0 
+** [ ] _Spring for Apache Kafka_ 
+** [ ] _Spring for Apache Kafka Streams_ 
+** [ ] _Cloud Stream_
+** [ ] _Spring Reactive Web_
+
+* [ ] How to _Produce_ messages to **Kafka**
+* [ ] How to _Consume_ messages to **Kafka**
+* [ ] How to _Process_ messages with **Kafka Streams**
+** [ ] start with count without `Materialized.as`
+** [ ] add materialized store and IQ + `@RestController`
