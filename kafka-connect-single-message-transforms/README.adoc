@@ -1,0 +1,171 @@
+= Kafka Connect - Single Message Transformations (SMT)
+Robin Moffatt <robin@confluent.io>
+v0.01, 8 December 2020
+
+== Setup
+
+1. Clone the repository 
++
+[source,bash]
+----
+git clone https://github.com/confluentinc/demo-scene.git
+cd demo-scene/kafka-connect-single-message-transforms
+----
+
+2. If you want to write to S3:
+** Create the S3 bucket, make a note of the region
+** Obtain your access key pair
+** Update `aws_credentials`
+*** Alternatively, uncomment the `environment` lines for `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` and set the values here instead
+
+3. Bring the stack up
++
+[source,bash]
+----
+docker-compose up -d
+----
+
+=== Create data generator
+
+[source,javascript]
+----
+curl -i -X PUT -H  "Content-Type:application/json" \
+    http://localhost:8083/connectors/source-voluble-datagen-00/config \
+    -d '{
+        "connector.class"                      : "io.mdrogalis.voluble.VolubleSourceConnector",
+        "genkp.customers.with"                 : "#{Internet.uuid}",
+        "genv.customers.name.with"             : "#{HitchhikersGuideToTheGalaxy.character}",
+        "genv.customers.email.with"            : "#{Internet.emailAddress}",
+        "genv.customers.location->city.with"   : "#{HitchhikersGuideToTheGalaxy.location}",
+        "genv.customers.location->planet.with" : "#{HitchhikersGuideToTheGalaxy.planet}",
+        "topic.customers.records.exactly"      : 10,
+
+        "genkp.transactions.with"                : "#{Internet.uuid}",
+        "genv.transactions.customer_id.matching" : "customers.key",
+        "genv.transactions.cost.with"            : "#{Commerce.price}",
+        "genv.transactions.card_type.with"       : "#{Business.creditCardType}",
+        "genv.transactions.item.with"            : "#{Beer.name}",
+        "topic.transactions.throttle.ms"         : 500 
+    }'
+----
+
+== Create default sink connectors
+
+=== Sink data from Kafka to AWS S3
+
+[source,javascript]
+----
+curl -i -X PUT -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-s3-00/config \
+    -d '{
+          "connector.class"        : "io.confluent.connect.s3.S3SinkConnector",
+          "storage.class"          : "io.confluent.connect.s3.storage.S3Storage",
+          "s3.region"              : "us-west-2",
+          "s3.bucket.name"         : "rmoff-smt-demo-01",
+          "topics"                 : "customers,transactions",
+          "tasks.max"              : "4",
+          "flush.size"             : "16",
+          "format.class"           : "io.confluent.connect.s3.format.json.JsonFormat",
+          "schema.generator.class" : "io.confluent.connect.storage.hive.schema.DefaultSchemaGenerator",
+          "schema.compatibility"   : "NONE",
+          "partitioner.class"      : "io.confluent.connect.storage.partitioner.DefaultPartitioner"
+        }'
+----
+
+`flush.size` of `16` is stupidly low, but if it's too high you have to wait for your files to show up in S3 and I get bored waiting. 
+
+=== Sink data from Kafka to MySQL (JDBC Sink connector)
+
+[source,javascript]
+----
+curl -i -X PUT -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-jdbc-mysql-00/config \
+    -d '{
+          "connector.class"     : "io.confluent.connect.jdbc.JdbcSinkConnector",
+          "connection.url"      : "jdbc:mysql://mysql:3306/demo",
+          "connection.user"     : "mysqluser",
+          "connection.password" : "mysqlpw",
+          "topics"              : "transactions",
+          "tasks.max"           : "4",
+          "auto.create"         : "true"
+        }'
+----
+
+== Add Message Timestamp to payload sent to sinks
+
+* https://docs.confluent.io/platform/current/connect/transforms/insertfield.html[`InsertField`] Single Message Transform
+
+=== Add Message timestamp in JDBC Sink
+
+[source,javascript]
+----
+curl -i -X PUT -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-jdbc-mysql-00/config \
+    -d '{
+          "connector.class"     : "io.confluent.connect.jdbc.JdbcSinkConnector",
+          "connection.url"      : "jdbc:mysql://mysql:3306/demo",
+          "connection.user"     : "mysqluser",
+          "connection.password" : "mysqlpw",
+          "topics"              : "transactions",
+          "tasks.max"           : "4",
+          "auto.create"         : "true",
+          "auto.evolve"         : "true",
+          "transforms"          : "insertTS",
+          "transforms.insertTS.type": "org.apache.kafka.connect.transforms.InsertField$Value",
+          "transforms.insertTS.timestamp.field": "messageTS"
+        }'
+----
+
+Note `auto.evolve=true` otherwise the target table won't hold the new field unless it happens to exist already.
+
+=== Add Message timestamp to S3
+
+[source,javascript]
+----
+curl -i -X PUT -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-s3-00/config \
+    -d '{
+          "connector.class"        : "io.confluent.connect.s3.S3SinkConnector",
+          "storage.class"          : "io.confluent.connect.s3.storage.S3Storage",
+          "s3.region"              : "us-west-2",
+          "s3.bucket.name"         : "rmoff-smt-demo-01",
+          "topics"                 : "customers,transactions",
+          "tasks.max"              : "4",
+          "flush.size"             : "16",
+          "format.class"           : "io.confluent.connect.s3.format.json.JsonFormat",
+          "schema.generator.class" : "io.confluent.connect.storage.hive.schema.DefaultSchemaGenerator",
+          "schema.compatibility"   : "NONE",
+          "partitioner.class"      : "io.confluent.connect.storage.partitioner.DefaultPartitioner",
+          "transforms"             : "insertTS",
+          "transforms.insertTS.type": "org.apache.kafka.connect.transforms.InsertField$Value",
+          "transforms.insertTS.timestamp.field": "messageTS"
+        }'
+----
+
+This writes it as a unix epoch value - if you'd rather it in a string then you can use an additional Single Message Transform, https://docs.confluent.io/platform/current/connect/transforms/timestampconverter.html[`TimestampConverter`]:
+
+[source,javascript]
+----
+curl -i -X PUT -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-s3-00/config \
+    -d '{
+          "connector.class"        : "io.confluent.connect.s3.S3SinkConnector",
+          "storage.class"          : "io.confluent.connect.s3.storage.S3Storage",
+          "s3.region"              : "us-west-2",
+          "s3.bucket.name"         : "rmoff-smt-demo-01",
+          "topics"                 : "customers,transactions",
+          "tasks.max"              : "4",
+          "flush.size"             : "16",
+          "format.class"           : "io.confluent.connect.s3.format.json.JsonFormat",
+          "schema.generator.class" : "io.confluent.connect.storage.hive.schema.DefaultSchemaGenerator",
+          "schema.compatibility"   : "NONE",
+          "partitioner.class"      : "io.confluent.connect.storage.partitioner.DefaultPartitioner",
+          "transforms"                          : "insertTS,formatTS",
+          "transforms.insertTS.type"            : "org.apache.kafka.connect.transforms.InsertField$Value",
+          "transforms.insertTS.timestamp.field" : "messageTS",
+          "transforms.formatTS.type"            : "org.apache.kafka.connect.transforms.TimestampConverter$Value",
+          "transforms.formatTS.format"          : "yyyy-MM-dd HH:mm:ss:SSS",
+          "transforms.formatTS.field"           : "messageTS",
+          "transforms.formatTS.target.type"     : "string"        
+        }'
+----
