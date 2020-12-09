@@ -1,6 +1,10 @@
-= Twelve Days of Single Message Transforms - Day 2
+= Twelve Days of Single Message Transforms - Day 2 - `ValueToKey` and `ExtractField`
 Robin Moffatt <robin@confluent.io>
 v0.01, 9 December 2020
+
+== 🎥 Recording
+
+image::https://img.youtube.com/vi/gSaCtaHt1k4/maxresdefault.jpg[link=https://youtu.be/gSaCtaHt1k4]
 
 == Setup
 
@@ -12,20 +16,14 @@ git clone https://github.com/confluentinc/demo-scene.git
 cd demo-scene/kafka-connect-single-message-transforms
 ----
 
-2. If you want to write to S3:
-** Create the S3 bucket, make a note of the region
-** Obtain your access key pair
-** Update `.env` with your AWS credentials (see `sample.env` for the format to use)
-*** Alternatively, hard code them in the Docker Compose file - just make sure you don't check it back in to GitHub :D
-
-3. Bring the stack up
+2. Bring the stack up
 +
 [source,bash]
 ----
 docker-compose up -d
 ----
 
-4. Wait for Kafka Connect to start up
+3. Wait for Kafka Connect to start up
 
 [source,bash]
 ----

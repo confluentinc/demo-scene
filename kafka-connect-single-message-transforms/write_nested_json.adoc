@@ -1,0 +1,46 @@
+Source: https://environment.data.gov.uk/flood-monitoring/doc/reference
+
+[source,bash]
+----
+curl --show-error --silent https://environment.data.gov.uk/flood-monitoring/id/stations\?riverName\=River+Wharfe | jq -c '.items[]' | docker exec -i kafkacat kafkacat -b broker:29092 -t flood-monitoring -P
+----
+
+Examine the data: 
+
+[source,bash]
+----
+docker exec kafkacat kafkacat -b broker:29092 -t flood-monitoring -C -c1 -o beginning -u -q | jq  '.'
+----
+
+[source,javascript]
+----
+{
+  "@id": "http://environment.data.gov.uk/flood-monitoring/id/stations/L2404",
+  "RLOIid": "8081",
+  "catchmentName": "Swale, Ure, Nidd and Upper Ouse",
+  "dateOpened": "1996-03-31",
+  "easting": 460574,
+  "gridReference": "SE6057451084",
+  "label": "York Foss Barrier",
+  "lat": 53.952302,
+  "long": -1.078455,
+  "measures": [
+    {
+      "@id": "http://environment.data.gov.uk/flood-monitoring/id/measures/L2404-level-stage-i-15_min-mAOD",
+      "parameter": "level",
+      "parameterName": "Water Level",
+      "period": 900,
+      "qualifier": "Stage",
+      "unitName": "mAOD"
+    }
+  ],
+  "northing": 451084,
+  "notation": "L2404",
+  "riverName": "River Ouse",
+  "stageScale": "http://environment.data.gov.uk/flood-monitoring/id/stations/L2404/stageScale",
+  "stationReference": "L2404",
+  "status": "http://environment.data.gov.uk/flood-monitoring/def/core/statusActive",
+  "town": "York",
+  "wiskiID": "L2404"
+}
+----
