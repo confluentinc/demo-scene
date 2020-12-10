@@ -4,7 +4,7 @@ Kafka Connect's Single Message Transform functionality is really useful for buil
 
 * link:day1.adoc[Day 1] - `InsertField` to add message timestamp as a field to a sink
 * link:day2.adoc[Day 2] - `ValueToKey` and `ExtractField` to set the message key to a field from the value
-* Day 3 - 📺 Stay tuned
+* link:day3.adoc[Day 3] - `Flatten` to turn a nested structure into a flat one
 * Day 4 - 📺 Stay tuned
 * Day 5 - 📺 Stay tuned
 * Day 6 - 📺 Stay tuned
