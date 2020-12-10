@@ -156,3 +156,26 @@ mysql> select * from transactions limit 1;
 1 row in set (0.00 sec)
 ----
 
+You could also take it a step further with the regex and if the `day4` was important handle it with a second capture group - see https://regexr.com/5i7eb for details. 
+
+[source,javascript]
+----
+curl -i -X PUT -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-jdbc-mysql-day4-transactions-00/config \
+    -d '{
+          "connector.class"                       : "io.confluent.connect.jdbc.JdbcSinkConnector",
+          "connection.url"                        : "jdbc:mysql://mysql:3306/demo",
+          "connection.user"                       : "mysqluser",
+          "connection.password"                   : "mysqlpw",
+          "topics"                                : "day4-transactions",
+          "tasks.max"                             : "4",
+          "auto.create"                           : "true",
+          "auto.evolve"                           : "true",
+          "transforms"                            : "dropTopicPrefix",
+          "transforms.dropTopicPrefix.type"       : "org.apache.kafka.connect.transforms.RegexRouter",
+          "transforms.dropTopicPrefix.regex"      : "day(\\d+)-(.*)",
+          "transforms.dropTopicPrefix.replacement": "$2_day$1"
+        }'
+----
+
+NOTE: You need to escape the `\` when passing it through `curl`, so `\` becomes `\\`.
