@@ -24,7 +24,7 @@ docker-compose up -d
 ----
 
 3. Wait for Kafka Connect to start up
-
++
 [source,bash]
 ----
 bash -c ' \
