@@ -52,7 +52,7 @@ curl -i -X PUT -H  "Content-Type:application/json" \
     }'
 ----
 
-== Stream the nested data to MySQL 
+== Stream the data to MySQL 
 
 👉 https://www.confluent.io/hub/confluentinc/kafka-connect-jdbc
 
@@ -119,18 +119,18 @@ Let's modify the above connector to route data to a table called `transactions` 
 curl -i -X PUT -H "Accept:application/json" \
     -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-jdbc-mysql-day4-transactions-00/config \
     -d '{
-          "connector.class"               : "io.confluent.connect.jdbc.JdbcSinkConnector",
-          "connection.url"                : "jdbc:mysql://mysql:3306/demo",
-          "connection.user"               : "mysqluser",
-          "connection.password"           : "mysqlpw",
-          "topics"                        : "day4-transactions",
-          "tasks.max"                     : "4",
-          "auto.create"                   : "true",
-          "auto.evolve"                   : "true",
-          "transforms"                             : "dropTopicPrefix",
-          "transforms.dropTopicPrefix.type"        : "org.apache.kafka.connect.transforms.RegexRouter",
-          "transforms.dropTopicPrefix.regex"       : "day4-(.*)",
-          "transforms.dropTopicPrefix.replacement" : "$1"
+          "connector.class"                       : "io.confluent.connect.jdbc.JdbcSinkConnector",
+          "connection.url"                        : "jdbc:mysql://mysql:3306/demo",
+          "connection.user"                       : "mysqluser",
+          "connection.password"                   : "mysqlpw",
+          "topics"                                : "day4-transactions",
+          "tasks.max"                             : "4",
+          "auto.create"                           : "true",
+          "auto.evolve"                           : "true",
+          "transforms"                            : "dropTopicPrefix",
+          "transforms.dropTopicPrefix.type"       : "org.apache.kafka.connect.transforms.RegexRouter",
+          "transforms.dropTopicPrefix.regex"      : "day4-(.*)",
+          "transforms.dropTopicPrefix.replacement": "$1"
         }'
 ----
 
