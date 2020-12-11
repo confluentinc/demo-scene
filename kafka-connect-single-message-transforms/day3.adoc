@@ -2,6 +2,10 @@
 Robin Moffatt <robin@confluent.io>
 v0.01, 10 December 2020
 
+== 🎥 Recording
+
+image::https://img.youtube.com/vi/7A_fCNUrlGQ/maxresdefault.jpg[link=https://youtu.be/7A_fCNUrlGQ]
+
 == Setup
 
 1. Clone the repository 
@@ -20,7 +24,7 @@ docker-compose up -d
 ----
 
 3. Wait for Kafka Connect to start up
-
++
 [source,bash]
 ----
 bash -c ' \

@@ -2,6 +2,11 @@
 Robin Moffatt <robin@confluent.io>
 v0.01, 11 December 2020
 
+
+== 🎥 Recording
+
+image::https://img.youtube.com/vi/btphhOn5hcw/maxresdefault.jpg[link=https://youtu.be/btphhOn5hcw]
+
 == Setup
 
 1. Clone the repository 
