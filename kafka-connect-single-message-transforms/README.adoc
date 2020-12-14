@@ -1,13 +1,13 @@
 = 🎅 🎄 Twelve Days of SMT 🎄 🎅 
 
-Kafka Connect's Single Message Transform functionality is really useful for building data pipelines that modify the data passing through, without needing to use stream processing like Kafka Streams or ksqlDB. 
+Kafka Connect's Single Message Transform functionality is really useful for building data pipelines that modify the data passing through, without needing - use stream processing like Kafka Streams or ksqlDB. 
 
-* link:day1.adoc[Day 1] - `InsertField` to add message timestamp as a field to a sink
-* link:day2.adoc[Day 2] - `ValueToKey` and `ExtractField` to set the message key to a field from the value
-* link:day3.adoc[Day 3] - `Flatten` to turn a nested structure into a flat one
-* link:day4.adoc[Day 4] - `RegexRouter` to change the topic name based on a pattern match and replacement
-* link:day5.adoc[Day 5] - `MaskField` to mask the value of fields with a fixed replacement string
-* Day 6 - 📺 Stay tuned
+* link:day1.adoc[Day 1] - `InsertField` - add message timestamp as a field - a sink
+* link:day2.adoc[Day 2] - `ValueToKey` and `ExtractField` - set the message key - a field from the value
+* link:day3.adoc[Day 3] - `Flatten` - turn a nested structure into a flat one
+* link:day4.adoc[Day 4] - `RegexRouter` - change the topic name based on a pattern match and replacement
+* link:day5.adoc[Day 5] - `MaskField` - mask the value of fields with a fixed replacement string
+* link:day6.adoc[Day 6] - `InsertField` - same SMT as link:day1.adoc[Day 1], this time showing adding to the payload the topic name, Kafka message partition and offset, as well as hardcoded values 
 * Day 7 - 📺 Stay tuned
 * Day 8 - 📺 Stay tuned
 * Day 9 - 📺 Stay tuned
