@@ -11,8 +11,8 @@
 ** [ ] _Cloud Stream_
 ** [ ] _Spring Reactive Web_
 
-* [ ] How to _Produce_ messages to **Kafka**
-* [ ] How to _Consume_ messages to **Kafka**
-* [ ] How to _Process_ messages with **Kafka Streams**
+* [ ] How to _Produce_ messages to **Kafka** using `Supplier`
+* [ ] How to _Consume_ messages to **Kafka** using `Consumer`
+* [ ] How to _Process_ messages with **Kafka Streams**  using `Function`
 ** [ ] start with count without `Materialized.as`
 ** [ ] add materialized store and IQ + `@RestController`
