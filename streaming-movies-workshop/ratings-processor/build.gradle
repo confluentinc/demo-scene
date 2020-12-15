@@ -1,0 +1,26 @@
+configurations {
+  compileOnly {
+    extendsFrom annotationProcessor
+  }
+}
+
+dependencies {
+  implementation project(':core-model')
+  implementation 'org.springframework.boot:spring-boot-starter'
+  implementation 'org.apache.kafka:kafka-streams'
+  implementation 'org.springframework.kafka:spring-kafka'
+  implementation 'io.confluent:kafka-streams-avro-serde:6.0.0'
+  testCompileOnly 'org.projectlombok:lombok'
+  annotationProcessor 'org.projectlombok:lombok'
+  testAnnotationProcessor 'org.projectlombok:lombok'
+
+  testImplementation 'org.springframework.kafka:spring-kafka-test'
+  testImplementation "org.assertj:assertj-core:3.17.2"
+  testImplementation('org.springframework.boot:spring-boot-starter-test') {
+    exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+  }
+}
+
+test {
+  useJUnitPlatform()
+}
