@@ -1,0 +1,2 @@
+curl -s -X PUT -H "Content-Type:application/json" \\n    http://localhost:8083/admin/loggers/org.apache.kafka.connect.runtime.WorkerSinkTask \\n    -d '{"level": "DEBUG"}' \\n    | jq '.'
+curl -s -X PUT -H "Content-Type:application/json" \\n    http://localhost:8083/admin/loggers/org.apache.kafka.connect.runtime.TransformationChain \\n    -d '{"level": "TRACE"}' \\n    | jq '.'
