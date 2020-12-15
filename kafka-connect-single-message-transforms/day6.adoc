@@ -4,7 +4,7 @@ v0.01, 15 December 2020
 
 == 🎥 Recording
 
-image::https://img.youtube.com/vi/TODO/maxresdefault.jpg[link=https://youtu.be/TODO]
+image::https://img.youtube.com/vi/6XfwZUnZLlI/maxresdefault.jpg[link=https://youtu.be/6XfwZUnZLlI]
 
 == Setup
 
