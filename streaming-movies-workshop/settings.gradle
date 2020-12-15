@@ -1,0 +1,3 @@
+rootProject.name = 'streaming-movies-workshop'
+
+include 'core-model', 'movies-generator', 'ratings-processor'

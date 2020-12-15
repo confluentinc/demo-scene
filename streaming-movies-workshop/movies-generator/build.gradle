@@ -1,0 +1,20 @@
+
+dependencies {
+  implementation project(':core-model')
+  implementation 'org.springframework.boot:spring-boot-starter'
+  implementation 'org.apache.kafka:kafka-streams'
+  implementation 'org.springframework.kafka:spring-kafka'
+  implementation 'io.confluent:kafka-streams-avro-serde:6.0.0'
+  compileOnly 'org.projectlombok:lombok'
+  annotationProcessor 'org.projectlombok:lombok'
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+  testImplementation 'org.springframework.kafka:spring-kafka-test'
+}
+
+test {
+  useJUnitPlatform()
+}
+
+bootBuildImage{
+  imageName = "docker.io/gamussa/movies-generator"
+}
