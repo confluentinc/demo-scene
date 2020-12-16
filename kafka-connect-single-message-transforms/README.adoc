@@ -1,6 +1,6 @@
 = 🎅 🎄 Twelve Days of SMT 🎄 🎅 
 
-Kafka Connect's Single Message Transform functionality is really useful for building data pipelines that modify the data passing through, without needing - use stream processing like Kafka Streams or ksqlDB. 
+Kafka Connect's Single Message Transform functionality is really useful for building data pipelines that modify the data passing through. For more complex transformations (such as those requiring state, or joins, etc) check out Kafka Streams or ksqlDB. 
 
 * link:day1.adoc[Day 1] - `InsertField` - add message timestamp as a field - a sink
 * link:day2.adoc[Day 2] - `ValueToKey` and `ExtractField` - set the message key - a field from the value
