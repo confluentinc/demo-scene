@@ -4,7 +4,7 @@ v0.01, 17 December 2020
 
 == 🎥 Recording
 
-image::https://img.youtube.com/vi/TODO/maxresdefault.jpg[link=https://youtu.be/TODO]
+image::https://img.youtube.com/vi/D0AZU6TMCAW/maxresdefault.jpg[link=https://youtu.be/D0AZU6TMCAW]
 
 == Setup
 
@@ -149,7 +149,7 @@ curl -i -X PUT -H "Accept:application/json" \
           "transforms"                      : "convertTS,changeTopic",
           "transforms.convertTS.type"       : "org.apache.kafka.connect.transforms.TimestampConverter$Value",
           "transforms.convertTS.field"      : "txn_date",
-          "transforms.convertTS.format"     : "EEE MMM dd HH:mm:ss zzz YYYY",
+          "transforms.convertTS.format"     : "EEE MMM dd HH:mm:ss zzz yyyy",
           "transforms.convertTS.target.type": "Timestamp",
           "transforms.changeTopic.type"       : "org.apache.kafka.connect.transforms.RegexRouter",
           "transforms.changeTopic.regex"      : "(.*)",
@@ -194,7 +194,7 @@ curl -i -X PUT -H "Accept:application/json" \
           "transforms"                      : "convertTS,changeTopic",
           "transforms.convertTS.type"       : "org.apache.kafka.connect.transforms.TimestampConverter$Value",
           "transforms.convertTS.field"      : "txn_date",
-          "transforms.convertTS.format"     : "EEE MMM dd HH:mm:ss zzz YYYY",
+          "transforms.convertTS.format"     : "EEE MMM dd HH:mm:ss zzz yyyy",
           "transforms.convertTS.target.type": "Date",
           "transforms.changeTopic.type"       : "org.apache.kafka.connect.transforms.RegexRouter",
           "transforms.changeTopic.regex"      : "(.*)",
@@ -252,7 +252,7 @@ curl -i -X PUT -H "Accept:application/json" \
           "transforms"                      : "convertTS,changeTopic",
           "transforms.convertTS.type"       : "org.apache.kafka.connect.transforms.TimestampConverter$Value",
           "transforms.convertTS.field"      : "txn_date",
-          "transforms.convertTS.format"     : "EEE MMM dd HH:mm:ss zzz YYYY",
+          "transforms.convertTS.format"     : "EEE MMM dd HH:mm:ss zzz yyyy",
           "transforms.convertTS.target.type": "Time",
           "transforms.changeTopic.type"       : "org.apache.kafka.connect.transforms.RegexRouter",
           "transforms.changeTopic.regex"      : "(.*)",
@@ -310,7 +310,7 @@ curl -i -X PUT -H "Accept:application/json" \
           "transforms"                      : "convertTS,changeTopic",
           "transforms.convertTS.type"       : "org.apache.kafka.connect.transforms.TimestampConverter$Value",
           "transforms.convertTS.field"      : "txn_date",
-          "transforms.convertTS.format"     : "EEE MMM dd HH:mm:ss zzz YYYY",
+          "transforms.convertTS.format"     : "EEE MMM dd HH:mm:ss zzz yyyy",
           "transforms.convertTS.target.type": "unix",
           "transforms.changeTopic.type"       : "org.apache.kafka.connect.transforms.RegexRouter",
           "transforms.changeTopic.regex"      : "(.*)",
