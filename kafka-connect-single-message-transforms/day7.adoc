@@ -4,7 +4,7 @@ v0.01, 16 December 2020
 
 == 🎥 Recording
 
-image::https://img.youtube.com/vi/TODO/maxresdefault.jpg[link=https://youtu.be/TODO]
+image::https://img.youtube.com/vi/KNDQWZ53II8/maxresdefault.jpg[link=https://youtu.be/KNDQWZ53II8]
 
 == Setup
 
@@ -91,7 +91,7 @@ mysql> show tables;
 +-------------------------------+
 | Tables_in_demo                |
 +-------------------------------+
-| day7-transactions_2020-12-11  |
+| day7-transactions_2020-12-16  |
 +-------------------------------+
 ----
 
@@ -140,7 +140,7 @@ curl -i -X PUT -H "Accept:application/json" \
           "transforms"                                                      : "addTimestampToTopicFromField",
           "transforms.addTimestampToTopicFromField.type"                    : "io.confluent.connect.transforms.MessageTimestampRouter",
           "transforms.addTimestampToTopicFromField.message.timestamp.keys"  : "txn_date",
-          "transforms.addTimestampToTopicFromField.message.timestamp.format": "EEE MMM dd HH:mm:ss zzz YYYY",
+          "transforms.addTimestampToTopicFromField.message.timestamp.format": "EEE MMM dd HH:mm:ss zzz yyyy",
           "transforms.addTimestampToTopicFromField.topic.format"            : "${topic}_${timestamp}",
           "transforms.addTimestampToTopicFromField.topic.timestamp.format"  : "YYYY-MM-dd"
         }'
@@ -159,3 +159,5 @@ org.apache.kafka.connect.errors.DataException: Only Map objects supported in abs
 
 TRACE [sink-jdbc-mysql-day7-00|task-2] Applying transformation io.confluent.connect.transforms.MessageTimestampRouter to SinkRecord{kafkaOffset=2300, timestampType=CreateTime} ConnectRecord{topic='day7-transactions', kafkaPartition=0, key=013e350e-ac03-44cd-bc2b-7b348ec4df6b, keySchema=Schema{STRING}, value=Struct{txn_date=Thu Dec 03 02:25:24 GMT 2020,cost=73.58,item=Delirium Noctorum,card_type=mastercard,customer_remarks=He laid out Biff in one punch. I didn't know he had it in him. He's never stood up to Biff in his life!}, valueSchema=Schema{io.mdrogalis.Gen0:STRUCT}, timestamp=1607681956641, headers=ConnectHeaders(headers=)} (org.apache.kafka.connect.runtime.TransformationChain:47)
 ```
+
+The cause of this is that the Single Message Transform currently expects to handle raw JSON formatted records - not Avro/Protobuf/JSON Schema.

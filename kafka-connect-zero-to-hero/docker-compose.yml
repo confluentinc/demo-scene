@@ -120,7 +120,7 @@ services:
     # To connect to ksqlDB CLI
     #   docker exec --interactive --tty ksqldb ksql http://localhost:8088
     # *-----------------------------*
-    image: confluentinc/ksqldb-server:0.12.0
+    image: confluentinc/ksqldb-server:0.13.0
     hostname: ksqldb
     container_name: ksqldb
     depends_on:

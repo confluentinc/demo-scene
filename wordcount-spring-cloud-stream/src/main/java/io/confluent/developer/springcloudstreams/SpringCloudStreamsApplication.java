@@ -9,7 +9,6 @@ import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Produced;
-import org.apache.kafka.streams.kstream.ValueMapper;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 import org.springframework.boot.SpringApplication;
@@ -22,14 +21,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import lombok.RequiredArgsConstructor;
 
+import static java.lang.System.out;
 import static java.util.Arrays.asList;
 
 @SpringBootApplication
@@ -41,16 +39,12 @@ public class SpringCloudStreamsApplication {
 
   @Bean
   Supplier<Message<String>> produceChuckNorris() {
-    return () ->
-        MessageBuilder
-            .withPayload(Faker.instance().chuckNorris().fact())
-            .build();
+    return () -> MessageBuilder.withPayload(Faker.instance().chuckNorris().fact()).build();
   }
 
   @Bean
   Consumer<Message<String>> consumeChuckNorris() {
-    return s ->
-        System.out.println("FACT: \u001B[3m «" + s.getPayload() + "\u001B[0m»");
+    return s -> out.println("FACT: \u001B[3m «" + s.getPayload() + "\u001B[0m»");
   }
 
   @Bean
