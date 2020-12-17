@@ -1,0 +1,160 @@
+= Microservices with Kafka Streams, Spring Boot and Kubernetes
+Viktor Gamov <viktor@confluent.io>, © 2020 Confluent, Inc.
+2020-12-15
+:revdate: 2020-12-15 8:36:08 -0600
+:linkattrs:
+:ast: &ast;
+:y: &#10003;
+:n: &#10008;
+:y: icon:check-sign[role="green"]
+:n: icon:check-minus[role="red"]
+:c: icon:file-text-alt[role="blue"]
+:toc: auto
+:toc-placement: auto
+:toc-position: auto
+:toc-title: Table of content
+:toclevels: 3
+:idprefix:
+:idseparator: -
+:sectanchors:
+:icons: font
+:source-highlighter: highlight.js
+:highlightjs-theme: idea
+:experimental:
+
+This is a brief manual for a workshop that taken place online at https://youtube.com/confluent
+
+toc::[]
+
+== Workshop prerequisites and setup
+
+=== Prerequisites
+
+Ensure you install the following toolset on your computer:
+
+* https://confluent.cloud[Confluent Cloud]
++
+
+TIP: You should have your login and password information handy after you sign up for Confluent Cloud.
+The `ccloud` init script will ask you for your login information.
+
+* https://docs.confluent.io/current/cloud/cli/install.html[Confluent Cloud CLI]
+* Docker (We use Docker to build images locally)
+** https://docs.docker.com/docker-for-mac/install/[install Docker Desktop for MacOS]
+* Git
+* https://jdk.dev[Java 11 (or later)]
+* Your favorite IDE or text editor
+** Personally, I recommend https://www.jetbrains.com/idea/[IntelliJ IDEA].
+* https://kubernetes.io/docs/tasks/tools/install-kubectl/[`kubectl`] 
+* https://k3d.io[`k3d`] to run a local Kubernetes cluster
+* https://stedolan.github.io/jq/[`jq`] for fancy json manipulation 
+* https://skaffold.dev[`skaffold`] to build, run and deploy images
+* https://k9scli.io[`k9s`] a fancy console GUI for Kubernetes
+
+Before you proceed, be sure to complete the following steps:
+
+===  Getting code
+
+[source,shell script]
+----
+git clone https://github.com/confluentinc/demo-scene            #<1>
+cd streaming-movies-workshop                                    #<2>
+----
+<1> Clone the repository
+<2> Change directory of the workshop folder
+
+.Getting only what you need
+****
+If you follow steps below, you should check out only directory that has source code relevant to this post.
+
+[source, shell script]
+----
+mkdir ~/temp/demo-scene
+cd ~/temp/demo-scene
+git init .
+git remote add origin -f https://github.com/confluentinc/demo-scene/
+git config core.sparsecheckout true
+echo "streaming-movies-workshop/*" >> .git/info/sparse-checkout
+git pull --depth=1 origin master
+cd streaming-movies-workshop
+ls -lh
+----
+// http://scriptedonachip.com/git-sparse-checkout
+****
+
+NOTE: If you are on Mac, you can use https://brew.sh[brew] to install all dependencies by running `make install-deps`.
+
+== ☸️ Kubernetes
+
+NOTE: You can try to deploy apps to local Kubernetes clusters.
+There are plenty of options available - `minikube`, `k3d`, Docker for Desktop.
+Frankly, I was having hard times to use those.
+You can try local `minikube` cluster with `make create-local-minikube-cluster`.
+In this tutorial, I will use Google Kubernetes Service to run my test apps.
+If you want to follow same route you need to install https://cloud.google.com/sdk/docs/install[Google Cloud SDK tools].
+You can create GKE Kubernetes cluster by calling `make create-gke-cluster` command.
+You can destroy GKE Kubernetes cluster after that by calling `make destroy-gke-cluster`.
+
+== 0️⃣ Provisioning Confluent Cloud cluster
+
+[source,shell script]
+----
+$ ccloud login --save       #<1>
+$ make create-ccloud-cluster  #<2>
+----
+<1> Login to your Confluent Cloud account.
+<2> The CCloud Stack script will ask you to log in to your CCloud account.
+
+It will automatically provision Kafka and ksqlDB cluster.
+
+== 1️⃣ Build and Deploy apps
+
+This workshop includes two apps - the microservices developed with Spring Boot.
+- `movies-generator` - loads movie data to Kafka cluster, and randomly generates new ratings.
+- `ratings-processor` - processes new ratings, and constantly recalculates new rating for given movie. 
+
+[source,shell script]
+.Build and Smoke test
+----
+./gradlew test  #<1>
+----
+<1> This command will download gradle wrapper (if it wasn't previously installed )
+
+=== Explore applications
+
+* [ ] Model generation from AVRO Schema (`Movie`, `Rating`)
+* [ ] Producer application using `KafkaTemplate`
+* [ ] Ratings Processor App
+** Explore tests using TTD
+** Overview of the topologies using https://zz85.github.io/kafka-streams-viz/[Kafka Streams Topology Visualizer]
+
+[source,shell script]
+.deploy to Kubernetes
+----
+skaffold run #<1>
+----
+<1> This command will build images for
+
+== 2️⃣ Create Materialized view 
+
+[NOTE]
+====
+If you are getting error about accessing the `movies` and `ratings` topic you need grant access to Kafka topic `movies` and `ratings` to ksqlDB server with command
+
+[source,shell script]
+----
+CCLOUD_KSQL_ID=`ccloud ksql app list -ojson | jq -r '.[0].id'`
+CCLOUD_KAFKA_ID=`ccloud kafka cluster list -ojson | jq -r '.[0].id'`
+ccloud ksql app configure-acls ${CCLOUD_KSQL_ID} "*" --cluster ${CCLOUD_KAFKA_ID}
+
+# or 
+ccloud ksql app configure-acls `ccloud ksql app list -ojson | jq -r '.[0].id'` "*" --cluster `ccloud kafka cluster list -ojson | jq -r '.[0].id'`
+----
+
+where `ccloud ksql app list -ojson | jq -r '.[0].id'` gives your id of ksqlDB cluster
+and `ccloud kafka cluster list -ojson | jq -r '.[0].id'` gives you id of Kafka cluster
+
+====
+
+
+
