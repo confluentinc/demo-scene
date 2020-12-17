@@ -301,3 +301,50 @@ mysql> select * from `day11-sys01`;
 +------------------------------+--------+--------+------------------------------+-------+
 8 rows in set (0.00 sec)
 ----
+
+If you want to filter on numerics then make sure the data type is correct; use `Cast` if necessary, as shown here. In this case, the order of the `"transforms"` is important: 
+
+[source,javascript]
+----
+curl -i -X PUT -H "Accept:application/json" \
+  -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-jdbc-mysql-day11-02/config \
+  -d '{
+      "connector.class"                        : "io.confluent.connect.jdbc.JdbcSinkConnector",
+      "connection.url"                         : "jdbc:mysql://mysql:3306/demo",
+      "connection.user"                        : "mysqluser",
+      "connection.password"                    : "mysqlpw",
+      "topics"                                 : "day11-sys01",
+      "tasks.max"                              : "4",
+      "auto.create"                            : "true",
+      "auto.evolve"                            : "true",
+      
+      "transforms"                                  : "castTypes,filterSmallOrder",
+      "transforms.filterSmallOrder.type"            : "io.confluent.connect.transforms.Filter$Value",
+      "transforms.filterSmallOrder.filter.condition": "$[?(@.amount < 42)]",
+      "transforms.filterSmallOrder.filter.type"     : "include",
+      "transforms.castTypes.type"                   : "org.apache.kafka.connect.transforms.Cast$Value",
+      "transforms.castTypes.spec"                   : "amount:float32"
+      }'
+----
+
+In the resulting data you can see that all the values in `amount` are less than 42, per the specified filter 
+
+[source,sql]
+----
+mysql> select * from `day11-sys01` LIMIT 10;
++------------------------------+--------+--------+-------------------------------------------+-------+
+| txn_date                     | source | amount | product                                   | units |
++------------------------------+--------+--------+-------------------------------------------+-------+
+| Thu Dec 10 00:57:55 GMT 2020 | SYS01  |   3.53 | Sierra Nevada Celebration Ale             | 26    |
+| Mon Dec 14 01:01:00 GMT 2020 | SYS01  |  10.19 | Racer 5 India Pale Ale, Bear Republic Bre | 26    |
+| Wed Dec 09 13:57:03 GMT 2020 | SYS01  |  20.29 | Hennepin                                  | 32    |
+| Wed Dec 09 19:58:35 GMT 2020 | SYS01  |  33.27 | 90 Minute IPA                             | 44    |
+| Fri Dec 11 14:21:57 GMT 2020 | SYS01  |  14.87 | Yeti Imperial Stout                       | 52    |
+| Wed Dec 09 17:19:18 GMT 2020 | SYS01  |  28.58 | Yeti Imperial Stout                       | 60    |
+| Wed Dec 09 18:59:01 GMT 2020 | SYS01  |  34.28 | Two Hearted Ale                           | 67    |
+| Mon Dec 07 18:47:19 GMT 2020 | SYS01  |  14.62 | Shakespeare Oatmeal                       | 47    |
+| Sat Dec 12 23:07:38 GMT 2020 | SYS01  |  35.98 | Samuel Smiths Oatmeal Stout               | 31    |
+| Fri Dec 11 19:14:25 GMT 2020 | SYS01  |  32.12 | Founders Breakfast Stout                  | 73    |
++------------------------------+--------+--------+-------------------------------------------+-------+
+10 rows in set (0.00 sec)
+----
