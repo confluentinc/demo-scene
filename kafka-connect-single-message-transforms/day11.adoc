@@ -302,7 +302,7 @@ mysql> select * from `day11-sys01`;
 8 rows in set (0.00 sec)
 ----
 
-If you want to filter on numerics then make sure the data type is correct; use `Cast` if necessary, as shown here. In this case, the order of the `"transforms"` is important: 
+If you want to filter on numerics then make sure the data type is correct; use link:day9.adoc[`Cast`] if necessary, as shown here. In this case, the order of the `"transforms"` is important: 
 
 [source,javascript]
 ----
