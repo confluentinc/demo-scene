@@ -4,9 +4,11 @@ v0.01, 21 December 2020
 
 The https://docs.confluent.io/platform/current/connect/transforms/replacefield.html[`ReplaceField`] Single Message Transform has three modes of operation on fields of data passing through Kafka Connect, either in a Source connector or Sink connector. 
 
-* Include *only* the fields specified in the list (`whitelist`)
-* Include all fields *except* the ones specified (`blacklist`)
+* Include *only* the fields specified in the list (`include`)
+* Include all fields *except* the ones specified (`exclude`)
 * Rename field(s) (`renames`)
+
+_(https://cwiki.apache.org/confluence/display/KAFKA/KIP-629%3A+Use+racially+neutral+terms+in+our+codebase[KIP-629] has started to be implemented in Apache Kafka 2.6. If you are using an earlier version then you will have to use `blacklist` in place of `exclude` and `whitelist` in place of `include`)_
 
 == 🎥 Recording
 
@@ -118,17 +120,17 @@ This data is in Kafka, but the system to which we're going to stream it with a s
 curl -i -X PUT -H "Accept:application/json" \
   -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-jdbc-mysql-day10-01/config \
   -d '{
-      "connector.class"            : "io.confluent.connect.jdbc.JdbcSinkConnector",
-      "connection.url"             : "jdbc:mysql://mysql:3306/demo",
-      "connection.user"            : "mysqluser",
-      "connection.password"        : "mysqlpw",
-      "topics"                     : "day10-transactions",
-      "tasks.max"                  : "4",
-      "auto.create"                : "true",
-      "auto.evolve"                : "true",
-      "transforms"                 : "dropCC",
-      "transforms.dropCC.type"     : "org.apache.kafka.connect.transforms.ReplaceField$Value",
-      "transforms.dropCC.blacklist": "cc_num,cc_exp,card_type"
+      "connector.class"          : "io.confluent.connect.jdbc.JdbcSinkConnector",
+      "connection.url"           : "jdbc:mysql://mysql:3306/demo",
+      "connection.user"          : "mysqluser",
+      "connection.password"      : "mysqlpw",
+      "topics"                   : "day10-transactions",
+      "tasks.max"                : "4",
+      "auto.create"              : "true",
+      "auto.evolve"              : "true",
+      "transforms"               : "dropCC",
+      "transforms.dropCC.type"   : "org.apache.kafka.connect.transforms.ReplaceField$Value",
+      "transforms.dropCC.exclude": "cc_num,cc_exp,card_type"
       }'
 ----
 
@@ -186,11 +188,11 @@ curl -X PUT http://localhost:8083/connectors/source-jdbc-mysql-day10-00/config \
     "topic.prefix"                     : "day10-",
     "poll.interval.ms"                 : 10000,
     "tasks.max"                        : 1,
-    "table.whitelist"                  : "production_data",
+    "table.include"                    : "production_data",
     "mode"                             : "bulk",
     "transforms"                       : "selectFields",
     "transforms.selectFields.type"     : "org.apache.kafka.connect.transforms.ReplaceField$Value",
-    "transforms.selectFields.whitelist": "item,cost,units,txn_date"
+    "transforms.selectFields.include": "item,cost,units,txn_date"
   }'
 ----
 
