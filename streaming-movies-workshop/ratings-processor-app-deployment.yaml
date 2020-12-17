@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ratings-processor
+spec:
+  serviceName: ratings-processor
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ratings-processor
+  template:
+    metadata:
+      labels:
+        app: ratings-processor
+    spec:
+      containers:
+        - name: ratings-processor
+          image: docker.io/gamussa/ratings-processor
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_CONFIG_LOCATION
+              value: /mnt/app/application.properties
+          volumeMounts:
+            - name: spring-boot-ratings-processor-application-properties
+              mountPath: /mnt/app
+          resources:
+            requests:
+              memory: 512Mi # 768Mi
+              cpu: 500m # 1000m
+      volumes:
+        - name: spring-boot-ratings-processor-application-properties
+          secret:
+            secretName: spring-boot-ratings-processor-application-properties
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ratings-processor
+spec:
+  clusterIP: None
+  

@@ -4,13 +4,15 @@ v0.01, 21 December 2020
 
 The https://docs.confluent.io/platform/current/connect/transforms/replacefield.html[`ReplaceField`] Single Message Transform has three modes of operation on fields of data passing through Kafka Connect, either in a Source connector or Sink connector. 
 
-* Include *only* the fields specified in the list (`whitelist`)
-* Include all fields *except* the ones specified (`blacklist`)
+* Include *only* the fields specified in the list (`include`)
+* Include all fields *except* the ones specified (`exclude`)
 * Rename field(s) (`renames`)
+
+_(https://cwiki.apache.org/confluence/display/KAFKA/KIP-629%3A+Use+racially+neutral+terms+in+our+codebase[KIP-629] has started to be implemented in Apache Kafka 2.7. If you are using an earlier version then you will have to use `blacklist` and `whitelist` in place of `exclude` and `include` respectively)_
 
 == 🎥 Recording
 
-image::https://img.youtube.com/vi/TODO/maxresdefault.jpg[link=https://youtu.be/TODO]
+image::https://img.youtube.com/vi/I0nd3GH_VzY/maxresdefault.jpg[link=https://youtu.be/I0nd3GH_VzY]
 
 == Setup
 

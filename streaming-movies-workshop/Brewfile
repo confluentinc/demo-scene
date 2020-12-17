@@ -1,0 +1,7 @@
+brew "kubernetes-cli"
+brew "k3d"
+brew "jq"
+brew "skaffold"
+brew "k9s"
+brew "minikube"
+
