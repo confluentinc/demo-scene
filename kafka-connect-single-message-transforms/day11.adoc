@@ -266,19 +266,19 @@ Here's an example that filters out all messages except those that include `Stout
 curl -i -X PUT -H "Accept:application/json" \
   -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-jdbc-mysql-day11-02/config \
   -d '{
-      "connector.class"                              : "io.confluent.connect.jdbc.JdbcSinkConnector",
-      "connection.url"                               : "jdbc:mysql://mysql:3306/demo",
-      "connection.user"                              : "mysqluser",
-      "connection.password"                          : "mysqlpw",
-      "topics"                                       : "day11-sys01",
-      "tasks.max"                                    : "4",
-      "auto.create"                                  : "true",
-      "auto.evolve"                                  : "true",
-
-      "transforms"                                   : "filterSmallOrders",
-      "transforms.filterSmallOrders.type"            : "io.confluent.connect.transforms.Filter$Value",
-      "transforms.filterSmallOrders.filter.condition": "$[?(@.product =~ /.*Stout/)]",
-      "transforms.filterSmallOrders.filter.type"     : "include"
+      "connector.class"                        : "io.confluent.connect.jdbc.JdbcSinkConnector",
+      "connection.url"                         : "jdbc:mysql://mysql:3306/demo",
+      "connection.user"                        : "mysqluser",
+      "connection.password"                    : "mysqlpw",
+      "topics"                                 : "day11-sys01",
+      "tasks.max"                              : "4",
+      "auto.create"                            : "true",
+      "auto.evolve"                            : "true",
+      
+      "transforms"                             : "filterStout",
+      "transforms.filterStout.type"            : "io.confluent.connect.transforms.Filter$Value",
+      "transforms.filterStout.filter.condition": "$[?(@.product =~ /.*Stout/)]",
+      "transforms.filterStout.filter.type"     : "include"
       }'
 ----
 
