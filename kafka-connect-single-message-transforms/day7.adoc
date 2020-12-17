@@ -140,7 +140,7 @@ curl -i -X PUT -H "Accept:application/json" \
           "transforms"                                                      : "addTimestampToTopicFromField",
           "transforms.addTimestampToTopicFromField.type"                    : "io.confluent.connect.transforms.MessageTimestampRouter",
           "transforms.addTimestampToTopicFromField.message.timestamp.keys"  : "txn_date",
-          "transforms.addTimestampToTopicFromField.message.timestamp.format": "EEE MMM dd HH:mm:ss zzz YYYY",
+          "transforms.addTimestampToTopicFromField.message.timestamp.format": "EEE MMM dd HH:mm:ss zzz yyyy",
           "transforms.addTimestampToTopicFromField.topic.format"            : "${topic}_${timestamp}",
           "transforms.addTimestampToTopicFromField.topic.timestamp.format"  : "YYYY-MM-dd"
         }'
