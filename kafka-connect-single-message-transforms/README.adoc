@@ -12,5 +12,5 @@ Kafka Connect's Single Message Transform functionality is really useful for buil
 * link:day8.adoc[Day 8] - `TimestampConverter` - Convert timestamp fields between unix epoch, string, Timestamp, Date, and Time
 * link:day9.adoc[Day 9] - `Cast` - Convert string, numeric, and boolean field types
 * link:day10.adoc[Day 10] - `ReplaceField` - Drop or rename fields
-* Day 11 - 📺 Stay tuned
+* link:day11.adoc[Day 11] - `Filter` and `predicates` - Drop messages based on conditions
 * Day 12 - 📺 Stay tuned
