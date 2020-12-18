@@ -2,7 +2,7 @@
 Robin Moffatt <robin@confluent.io>
 v0.01, 22 December 2020
 
-Apache Kafka 2.6 included https://cwiki.apache.org/confluence/display/KAFKA/KIP-585%3A+Filter+and+Conditional+SMTs[KIP-585] which adds support for defining predicates against which transforms are conditionally executed, as well as a https://docs.confluent.io/platform/current/connect/transforms/filter-ak.html[`Filter`] Single Message Transform to drop messages - which in combination means that you can conditionally drop messages. 
+Apache Kafka 2.6 https://cwiki.apache.org/confluence/display/KAFKA/KIP-585%3A+Filter+and+Conditional+SMTs[added support] for defining predicates against which transforms are conditionally executed, as well as a https://docs.confluent.io/platform/current/connect/transforms/filter-ak.html[`Filter`] Single Message Transform to drop messages - which in combination means that you can conditionally drop messages. 
 
 As part of Apache Kafka, Kafka Connect ships with pre-built Single Message Transforms and Predicates, but you can also write you own. The API for each is documented: https://kafka.apache.org/26/javadoc/org/apache/kafka/connect/transforms/Transformation.html[`Transformation`] / https://kafka.apache.org/26/javadoc/index.html?org/apache/kafka/connect/transforms/predicates/Predicate.html[`Predicate`]. The predicates that ship with Apache Kafka are: 
 
@@ -12,7 +12,7 @@ As part of Apache Kafka, Kafka Connect ships with pre-built Single Message Trans
 
 == 🎥 Recording
 
-image::https://img.youtube.com/vi/TODO/maxresdefault.jpg[link=https://youtu.be/TODO]
+image::https://img.youtube.com/vi/Cojm4Mkf6to/maxresdefault.jpg[link=https://youtu.be/Cojm4Mkf6to]
 
 == Setup
 

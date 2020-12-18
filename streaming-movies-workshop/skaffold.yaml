@@ -1,0 +1,19 @@
+apiVersion: skaffold/v2beta10
+kind: Config
+metadata:
+  name: livestreams-workshop
+build:
+  artifacts:
+    - image: docker.io/gamussa/movies-generator
+      custom:
+        buildCommand: ./gradlew :movies-generator:bootBuildImage --imageName $IMAGE && docker push $IMAGE
+    - image: docker.io/gamussa/ratings-processor
+      custom:
+        buildCommand: ./gradlew :ratings-processor:bootBuildImage --imageName $IMAGE && docker push $IMAGE
+deploy:
+  kubectl:
+    manifests:
+      - movies-generator-app-secret.yaml
+      - movies-generator-app-deployment.yaml
+      - ratings-processor-secret.yaml
+      - ratings-processor-app-deployment.yaml
