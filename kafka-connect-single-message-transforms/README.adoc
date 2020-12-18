@@ -10,7 +10,7 @@ Kafka Connect's Single Message Transform functionality is really useful for buil
 * link:day6.adoc[Day 6] - `InsertField` - same SMT as link:day1.adoc[Day 1], this time showing adding to the payload the topic name, Kafka message partition and offset, as well as hardcoded values 
 * link:day7.adoc[Day 7] - `TimestampRouter` - change the topic name based on the timestamp of the Kafka message
 * link:day8.adoc[Day 8] - `TimestampConverter` - Convert timestamp fields between unix epoch, string, Timestamp, Date, and Time
-* Day 9 - 📺 Stay tuned
+* link:day9.adoc[Day 9] - `Cast` - Convert string, numeric, and boolean field types
 * Day 10 - 📺 Stay tuned
 * Day 11 - 📺 Stay tuned
 * Day 12 - 📺 Stay tuned
