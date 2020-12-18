@@ -1,12 +1,12 @@
-= Twelve Days of Single Message Transforms - Day 12 - `kafka-connect-transform-common`
+= Twelve Days of Single Message Transforms - Day 12 - Community Transformations
 Robin Moffatt <robin@confluent.io>
 v0.01, 23 December 2020
 
-< TODO >
+Apache Kafka ships with https://kafka.apache.org/documentation/#connect_included_transformation[many Single Message Transformations included] - but the great thing about it being an https://kafka.apache.org/26/javadoc/org/apache/kafka/connect/transforms/Transformation.html[open API] is that people can, and do, write their own transformations. Many of these are shared with the wider community, and in this final installment of the series I'm going to look at some of the transformations written by Jeremy Custenborder and available in https://jcustenborder.github.io/kafka-connect-documentation/projects/kafka-connect-transform-common[`kafka-connect-transform-common`] which can be https://www.confluent.io/hub/jcustenborder/kafka-connect-transform-common[downloaded and installed from Confluent Hub] (or built from https://github.com/jcustenborder/kafka-connect-transform-common[source], if you like that kind of thing). Also check out the XML transformation by the same author, which https://rmoff.net/2020/10/01/ingesting-xml-data-into-kafka-option-2-kafka-connect-plus-single-message-transform/[I've written about previously]. 
 
 == 🎥 Recording
 
-image::https://img.youtube.com/vi/TODO/maxresdefault.jpg[link=https://youtu.be/TODO]
+image::https://img.youtube.com/vi/Z7k_6vGRrkc/maxresdefault.jpg[link=https://youtu.be/Z7k_6vGRrkc]
 
 == Setup
 
@@ -57,35 +57,54 @@ curl -i -X PUT -H  "Content-Type:application/json" \
     }'
 ----
 
-
 == Change the topic case
 
+👉 https://jcustenborder.github.io/kafka-connect-documentation/projects/kafka-connect-transform-common/transformations/ChangeTopicCase.html[Reference]
+
+[source,javascript]
+----
 curl -i -X PUT -H "Accept:application/json" \
   -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-jdbc-mysql-day12-00/config \
   -d '{
-      "connector.class"                        : "io.confluent.connect.jdbc.JdbcSinkConnector",
-      "connection.url"                         : "jdbc:mysql://mysql:3306/demo",
-      "connection.user"                        : "mysqluser",
-      "connection.password"                    : "mysqlpw",
-      "topics"                                 : "day12-sys01",
-      "tasks.max"                              : "4",
-      "auto.create"                            : "true",
-      "auto.evolve"                            : "true",
-      
-      "transforms"                             : "topicCase",
-      "transforms.topicCase.type"            : "com.github.jcustenborder.kafka.connect.transform.common.ChangeTopicCase",
-      "transforms.topicCase.from": "LOWER_HYPHEN",
-      "transforms.topicCase.to": "UPPER_CAMEL"
-      }'
+      "connector.class"          : "io.confluent.connect.jdbc.JdbcSinkConnector",
+      "connection.url"           : "jdbc:mysql://mysql:3306/demo",
+      "connection.user"          : "mysqluser",
+      "connection.password"      : "mysqlpw",
+      "topics"                   : "day12-sys01",
+      "tasks.max"                : "4",
+      "auto.create"              : "true",
+      "auto.evolve"              : "true",
 
+      "transforms"               : "topicCase",
+      "transforms.topicCase.type": "com.github.jcustenborder.kafka.connect.transform.common.ChangeTopicCase",
+      "transforms.topicCase.from": "LOWER_HYPHEN",
+      "transforms.topicCase.to"  : "UPPER_CAMEL"
+      }'
+----
+
+The source topic name of `day12-sys01` gets modified to `Day12Sys01`: 
+
+[source,sql]
+----
 mysql> show tables;
 +----------------+
 | Tables_in_demo |
 +----------------+
 | Day12Sys01     |
+----
 
 == Use the timestamp of a field as the message timestamp
 
+A nice little triumvirate of transformations here, which use the _timestamp in a field of a message_ to modify the topic name. 
+
+The three steps are: 
+
+1. link:day8.adoc[TimestampConverter] to transform the field from a string to a Timestamp (not necessary if it already is)
+2. https://jcustenborder.github.io/kafka-connect-documentation/projects/kafka-connect-transform-common/transformations/ExtractTimestamp.html[ExtractTimestamp] to set the timestamp of the Kafka message to the value of the specified field
+3. link:day7.adoc[TimestampRouter] to modify the topic name to include the timestamp components required
+
+[source,javascript]
+----
 curl -i -X PUT -H "Accept:application/json" \
   -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-jdbc-mysql-day12-01/config \
   -d '{
@@ -109,7 +128,12 @@ curl -i -X PUT -H "Accept:application/json" \
       "transforms.setTopicName.topic.format"    : "${topic}_${timestamp}",
       "transforms.setTopicName.timestamp.format": "YYYY-MM-dd"
       }'
+----
 
+Resulting topic takes the date from the message field `txn_date` and generates table names accordingly: 
+
+[source,sql]
+----
 mysql> show tables;
 +------------------------+
 | Tables_in_demo         |
@@ -126,9 +150,14 @@ mysql> show tables;
 | day12-sys01_2020-12-16 |
 +------------------------+
 12 rows in set (0.01 sec)      
+----
 
 == Add the current timestamp to the message payload
 
+👉 https://jcustenborder.github.io/kafka-connect-documentation/projects/kafka-connect-transform-common/transformations/TimestampNowField.html[Reference]
+
+[source,javascript]
+----
 curl -i -X PUT -H "Accept:application/json" \
   -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-jdbc-mysql-day12-02/config \
   -d '{
@@ -145,7 +174,10 @@ curl -i -X PUT -H "Accept:application/json" \
       "transforms.addTSNow.type"  : "com.github.jcustenborder.kafka.connect.transform.common.TimestampNowField$Value",
       "transforms.addTSNow.fields": "processingTS"
       }'
+----
 
+[source,sql]
+----
 mysql> select product, amount, txn_date, processingTS from `day12-sys01` ORDER BY units  LIMIT 5;
 +------------------------------+--------+------------------------------+-------------------------+
 | product                      | amount | txn_date                     | processingTS            |
@@ -157,9 +189,14 @@ mysql> select product, amount, txn_date, processingTS from `day12-sys01` ORDER B
 | Sublimely Self-Righteous Ale | 56.95  | Wed Dec 16 23:12:23 GMT 2020 | 2020-12-17 00:43:02.233 |
 +------------------------------+--------+------------------------------+-------------------------+
 5 rows in set (0.00 sec)      
+----
 
-== Using `SimulatorSinkConnector` 
+== Using `SimulatorSinkConnector` (and Single Message Transform `TRACE` logging)
 
+Not a transformation as such, but a useful tip for examining the output of Transforms without needing to route the data to an actual target: 
+
+[source,javascript]
+----
 curl -i -X PUT -H  "Content-Type:application/json" \
     http://localhost:8083/connectors/sink-simulator-day12-02/config \
     -d '{
@@ -170,3 +207,26 @@ curl -i -X PUT -H  "Content-Type:application/json" \
         "transforms.addTSNow.type"  : "com.github.jcustenborder.kafka.connect.transform.common.TimestampNowField$Value",
         "transforms.addTSNow.fields": "processingTS"
     }'
+----
+
+You can see the message after it's been processed by the transform(s) in the Kafka Connect worker log: 
+
+[source,bash]
+----
+[2020-12-18 00:29:59,651] INFO [sink-simulator-day12-02|task-0] record.value=Struct{units=39,product=Delirium Tremens,amount=32.60,txn_date=Wed Dec 16 07:27:19 GMT 2020,source=SYS01,processingTS=Fri Dec 18 00:29:59 GMT 2020} (com.github.jcustenborder.kafka.connect.simulator.SimulatorSinkTask:50)
+----
+
+You can also get the Kafka Connect runtime to log `TRACE` messages that show the source messages before a transformation (c.f. https://rmoff.net/2020/01/16/changing-the-logging-level-for-kafka-connect-dynamically/[Changing the Logging Level for Kafka Connect Dynamically]): 
+
+[source,bash]
+----
+curl -s -X PUT -H "Content-Type:application/json" \\n    http://localhost:8083/admin/loggers/org.apache.kafka.connect.runtime.TransformationChain \\n    -d '{"level": "TRACE"}' \\n    | jq '.'
+----
+
+With that set the Kafka Connect worker then logs the record before it is transformed, and then from the SimulatorSink its state after transform: 
+
+[source,bash]
+----
+[2020-12-18 00:31:54,572] TRACE [sink-simulator-day12-02|task-0] Applying transformation com.github.jcustenborder.kafka.connect.transform.common.TimestampNowField$Value to SinkRecord{kafkaOffset=121, timestampType=CreateTime} ConnectRecord{topic='day12-sys01', kafkaPartition=0, key=fd403528-90c3-45a1-a1c5-3f9ebe2799be, keySchema=Schema{STRING}, value=Struct{units=6,product=Nugget Nectar,amount=91.30,txn_date=Thu Dec 10 06:51:22 GMT 2020,source=SYS01}, valueSchema=Schema{io.mdrogalis.Gen0:STRUCT}, timestamp=1608251514568, headers=ConnectHeaders(headers=)} (org.apache.kafka.connect.runtime.TransformationChain:47)
+[2020-12-18 00:31:54,572] INFO [sink-simulator-day12-02|task-0] record.value=Struct{units=6,product=Nugget Nectar,amount=91.30,txn_date=Thu Dec 10 06:51:22 GMT 2020,source=SYS01,processingTS=Fri Dec 18 00:31:54 GMT 2020} (com.github.jcustenborder.kafka.connect.simulator.SimulatorSinkTask:50)
+----
