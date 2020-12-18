@@ -188,11 +188,11 @@ curl -X PUT http://localhost:8083/connectors/source-jdbc-mysql-day10-00/config \
     "topic.prefix"                     : "day10-",
     "poll.interval.ms"                 : 10000,
     "tasks.max"                        : 1,
-    "table.whitelist"                  : "production_data",
+    "table.include"                  : "production_data",
     "mode"                             : "bulk",
     "transforms"                       : "selectFields",
     "transforms.selectFields.type"     : "org.apache.kafka.connect.transforms.ReplaceField$Value",
-    "transforms.selectFields.whitelist": "item,cost,units,txn_date"
+    "transforms.selectFields.include": "item,cost,units,txn_date"
   }'
 ----
 
