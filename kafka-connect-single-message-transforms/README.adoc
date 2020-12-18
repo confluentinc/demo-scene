@@ -2,6 +2,8 @@
 
 Kafka Connect's Single Message Transform functionality is really useful for building data pipelines that modify the data passing through. For more complex transformations (such as those requiring state, or joins, etc) check out Kafka Streams or ksqlDB. 
 
+_Each of the tutorials below has the full code available for you to try using the provided Docker Compose, and a complete 🎥 https://www.youtube.com/watch?v=3Gj_SoyuTYk&list=PL5T99fPsK7pq7LiaaL-S6b7wQqzxyjgya[recording] to go with it._
+
 * link:day1.adoc[Day 1] - `InsertField` - add message timestamp as a field - a sink
 * link:day2.adoc[Day 2] - `ValueToKey` and `ExtractField` - set the message key - a field from the value
 * link:day3.adoc[Day 3] - `Flatten` - turn a nested structure into a flat one
@@ -13,4 +15,6 @@ Kafka Connect's Single Message Transform functionality is really useful for buil
 * link:day9.adoc[Day 9] - `Cast` - Convert string, numeric, and boolean field types
 * link:day10.adoc[Day 10] - `ReplaceField` - Drop or rename fields
 * link:day11.adoc[Day 11] - `Filter` and `predicates` - Drop messages based on conditions
-* link:day12.adoc[Day 12] - Community Transformations
+* link:day12.adoc[Day 12] - Community Transformations (`ChangeTopicCase`, `ExtractTimestamp`, `TimestampNowField`)
+
+🎥 **Check out the recordings for all of these in https://www.youtube.com/watch?v=3Gj_SoyuTYk&list=PL5T99fPsK7pq7LiaaL-S6b7wQqzxyjgya[this YouTube playlist]**
