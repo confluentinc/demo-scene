@@ -17,7 +17,7 @@ curl -i -X POST -H "Accept:application/json" \
     "jms.destination.name":"darwin.pushport-v16",
     "kafka.topic":"darwin.pushport-v16",
     "confluent.license":"",
-    "confluent.topic.bootstrap.servers":"kafka:29092",
+    "confluent.topic.bootstrap.servers":"broker:29092",
     "confluent.topic.replication.factor":1
   }
 }'

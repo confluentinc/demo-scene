@@ -16,7 +16,7 @@ curl -X PUT -H "Content-Type: application/json" http://localhost:38083/connector
               "regex.replacements": "\"text\":\"$1\"",
               "regex.separator": "~",
               "confluent.license": "",
-              "confluent.topic.bootstrap.servers": "kafka:29092",
+              "confluent.topic.bootstrap.servers": "broker:29092",
               "confluent.topic.replication.factor": 1,
               "key.converter": "org.apache.kafka.connect.storage.StringConverter"
           }' 

@@ -1,8 +1,7 @@
 -- https://wiki.openraildata.com/index.php?title=Delay_Attribution_Guide
 -- https://wiki.openraildata.com/index.php?title=Train_Cancellation
 
-CREATE TABLE CANX_REASON (canx_reason_code VARCHAR, 
+CREATE TABLE CANX_REASON (canx_reason_code VARCHAR PRIMARY KEY, 
                           canx_reason VARCHAR) 
                     WITH (KAFKA_TOPIC='canx_reason_code', 
-                    VALUE_FORMAT='JSON', 
-                    KEY='canx_reason_code');
+                    VALUE_FORMAT='JSON');

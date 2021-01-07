@@ -1,16 +1,16 @@
 = Building a Streaming Data Pipeline with Rail Data
 Robin Moffatt <robin@confluent.io>
-v1.20, 7 August 2019
+v1.30, 4 January 2021
 
 == What is it?
 
-A PoC showing what can be done with streaming and batch sources of data, Apache Kafka and KSQL, and various data stores and tools. 
+A PoC showing what can be done with streaming and batch sources of data, Apache Kafka and ksqlDB, and various data stores and tools. 
 
 image::images/overview.png[]
 
 == What can it do? 
 
-image::images/trains_dashboard.png[]
+image::images/es_dashboard_02.png[]
 image::images/telegram01.png[]
 image::images/graph01.jpg[]
 image::images/pgadmin.jpg[]
@@ -57,26 +57,27 @@ docker-compose up -d
 docker-compose ps
 ----
 
-* Launch KSQL CLI
+* Launch ksqlDB CLI
 +
 [source,bash]
 ----
-$ docker exec -it ksql-cli ksql http://ksql-server:8088
+$ docker exec -it ksqldb bash -c 'echo -e "\n\n⏳ Waiting for ksqlDB to be available before launching CLI\n"; while : ; do curl_status=$(curl -s -o /dev/null -w %{http_code} http://ksqldb:8088/info) ; echo -e $(date) " ksqlDB server listener HTTP state: " $curl_status " (waiting for 200)" ; if [ $curl_status -eq 200 ] ; then  break ; fi ; sleep 5 ; done ; ksql http://ksqldb:8088'
 
                   ===========================================
-                  =        _  __ _____  ____  _             =
-                  =       | |/ // ____|/ __ \| |            =
-                  =       | ' /| (___ | |  | | |            =
-                  =       |  <  \___ \| |  | | |            =
-                  =       | . \ ____) | |__| | |____        =
-                  =       |_|\_\_____/ \___\_\______|       =
-                  =                                         =
-                  =  Streaming SQL Engine for Apache Kafka® =
+                  =       _              _ ____  ____       =
+                  =      | | _____  __ _| |  _ \| __ )      =
+                  =      | |/ / __|/ _` | | | | |  _ \      =
+                  =      |   <\__ \ (_| | | |_| | |_) |     =
+                  =      |_|\_\___/\__, |_|____/|____/      =
+                  =                   |_|                   =
+                  =  Event Streaming Database purpose-built =
+                  =        for stream processing apps       =
                   ===========================================
 
-Copyright 2017-2018 Confluent Inc.
+Copyright 2017-2020 Confluent Inc.
 
-CLI v5.3.0, Server v5.3.0 located at http://ksql-server:8088
+CLI v0.14.0-rc732, Server v0.14.0-rc732 located at http://ksqldb:8088
+Server Status: RUNNING
 
 Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
 
@@ -99,33 +100,32 @@ N.B. A lot of the code is complete, but not documented below. The canonical vers
 
 [source,bash]
 ----
-source ./data/set_credentials_env.sh
-cd ./data/ingest/movements/
+cd data
+source ./set_credentials_env.sh
+cd ./ingest/movements/
 ./00_load_canx_reason_code.sh
 cd ../cif_schedule
 ./00_load_opencage.sh
-./00_process_schedule.sh &
-./01_ingest_schedule.sh
+./00_ingest_schedule.sh
 ----
 
-_So long as you've `source`d the credentials filer, you can ignore the `readlink`/`set_credentials_env.sh: No such file or directory` error on the Mac when running `./00_ingest_schedule.sh`_
+_You can ignore the `jq: error (at <stdin>:16515): Cannot iterate over null (null)` messages._
 
-_You can also ignore the `jq: error (at <stdin>:16515): Cannot iterate over null (null)` messages._
-
-[source,bash]
+[source,sql]
 ----
-$ kafkacat -b localhost:9092 -t CIF_FULL_DAILY -C -c1
-{"JsonTimetableV1":{"classification":"public","timestamp":1558653193,"owner":"Network Rail","Sender":{"organisation":"Rockshore","application":"NTROD","component":"SCHEDULE"},"Metadata":{"type":"full","sequence":2535}}}
-
-$ kafkacat -b localhost:9092 -t JsonScheduleV1 -C -c1 
-{"CIF_bank_holiday_running":null,"CIF_stp_indicator":"P","CIF_train_uid":"C02207","applicable_timetable":"Y","atoc_code":"NT","new_schedule_segment":{"traction_class":"","uic_code":""},"schedule_days_runs":"0000010","schedule_end_date":"2019-12-14","schedule_segment":{"signalling_id":"5A99","CIF_train_category":"EE","CIF_headcode":"5102","CIF_course_indicator":1,"CIF_train_service_code":"21791000","CIF_business_sector":"??","CIF_power_type":"DMU","CIF_timing_load":"A","CIF_speed":"075","CIF_operating_characteristics":null,"CIF_train_class":null,"CIF_sleepers":null,"CIF_reservations":null,"CIF_connection_indicator":null,"CIF_catering_code":null,"CIF_service_branding":"","schedule_location":[{"location_type":"LO","record_identity":"LO","tiploc_code":"DLTN","tiploc_instance":null,"ORIGIN":"2319","public_ORIGIN":null,"platform":"1","line":null,"engineering_allowance":null,"pathing_allowance":null,"performance_allowance":null},{"location_type":"LI","record_identity":"LI","tiploc_code":"FYHLSJN","tiploc_instance":null,"DESTINATION":null,"ORIGIN":null,"pass":"2331","public_DESTINATION":null,"public_ORIGIN":null,"platform":null,"line":null,"path":null,"engineering_allowance":null,"pathing_allowance":null,"performance_allowance":null},{"location_type":"LI","record_identity":"LI","tiploc_code":"TURSDLJ","tiploc_instance":null,"DESTINATION":null,"ORIGIN":null,"pass":"2333","public_DESTINATION":null,"public_ORIGIN":null,"platform":null,"line":null,"path":null,"engineering_allowance":null,"pathing_allowance":null,"performance_allowance":null},{"location_type":"LI","record_identity":"LI","tiploc_code":"DRHM","tiploc_instance":null,"DESTINATION":null,"ORIGIN":null,"pass":"2339","public_DESTINATION":null,"public_ORIGIN":null,"platform":"DM","line":null,"path":null,"engineering_allowance":"1","pathing_allowance":null,"performance_allowance":null},{"location_type":"LI","record_identity":"LI","tiploc_code":"BRTLYJN","tiploc_instance":null,"DESTINATION":null,"ORIGIN":null,"pass":"2347","public_DESTINATION":null,"public_ORIGIN":null,"platform":null,"line":null,"path":null,"engineering_allowance":null,"pathing_allowance":null,"performance_allowance":null},{"location_type":"LI","record_identity":"LI","tiploc_code":"KEBGSJN","tiploc_instance":null,"DESTINATION":null,"ORIGIN":null,"pass":"2350H","public_DESTINATION":null,"public_ORIGIN":null,"platform":null,"line":null,"path":null,"engineering_allowance":null,"pathing_allowance":null,"performance_allowance":null},{"location_type":"LT","record_identity":"LT","tiploc_code":"NWCSTLE","tiploc_instance":null,"DESTINATION":"2353","public_DESTINATION":null,"platform":"6","path":null}]},"schedule_start_date":"2019-05-25","train_status":"P","transaction_type":"Create","last_schedule_segment":{"location_type":"LT","record_identity":"LT","tiploc_code":"NWCSTLE","tiploc_instance":null,"DESTINATION":"2353","public_DESTINATION":null,"platform":"6","path":null}}
+ksql> PRINT CIF_FULL_DAILY FROM BEGINNING LIMIT 1;
+Key format: ¯\_(ツ)_/¯ - no data processed
+Value format: JSON or KAFKA_STRING
+rowtime: 2021/01/05 11:49:54.286 Z, key: <null>, value: {"JsonTimetableV1":{"classification":"public","timestamp":1609805484,"owner":"Network Rail","Sender":{"organisation":"Rockshore","application":"NTROD","component":"SCHEDULE"},"Metadata":{"type":"full","sequence":3127}}}
+Topic printing ceased
+ksql>
 ----
 
-=== KSQL 
+=== ksqlDB 
 
 **Do this before starting on the movement/cancellation data below**
 
-From KSQL CLI: 
+From ksqlDB CLI: 
 
 [source,sql]
 ----
@@ -135,10 +135,10 @@ run script '/data/ksql/02_cif_schedule/01_geocode_table.ksql';
 run script '/data/ksql/02_cif_schedule/01_schedule_raw.ksql';
 run script '/data/ksql/02_cif_schedule/02_location.ksql';
 PRINT 'TIPLOC_FLAT_KEYED' FROM BEGINNING LIMIT 1;
-PRINT 'STANOX_FLAT_KEYED' FROM BEGINNING LIMIT 1;
+PRINT 'STANOX_GEO' FROM BEGINNING LIMIT 1;
 run script '/data/ksql/02_cif_schedule/03_location_table.ksql';
 run script '/data/ksql/02_cif_schedule/04_schedule.ksql';
-PRINT 'SCHEDULE_02' FROM BEGINNING LIMIT 1;
+PRINT 'SCHEDULE_00' FROM BEGINNING LIMIT 1;
 run script '/data/ksql/02_cif_schedule/05_schedule_table.ksql';
 ----
 
@@ -148,23 +148,19 @@ If you get `Avro schema for message values on topic TIPLOC_FLAT_KEYED does not e
 ----
 ksql> SHOW STREAMS;
 
- Stream Name       | Kafka Topic       | Format
-------------------------------------------------
- JSONSCHEDULEV1    | JsonScheduleV1    | JSON
- LOCATION_GEOCODE  | LOCATION_GEOCODE  | AVRO
- OPENCAGE          | opencage          | JSON
- SCHEDULE_00       | SCHEDULE_00       | AVRO
- SCHEDULE_01       | SCHEDULE_01       | AVRO
- SCHEDULE_02       | SCHEDULE_02       | AVRO
- SCHEDULE_RAW      | CIF_FULL_DAILY    | JSON
- STANOX_FLAT       | STANOX_FLAT       | AVRO
- STANOX_FLAT_KEYED | STANOX_FLAT_KEYED | AVRO
- STANOX_GEO        | STANOX_GEO        | AVRO
- TIPLOC_FLAT_KEYED | TIPLOC_FLAT_KEYED | AVRO
-------------------------------------------------
- […]
+ Stream Name           | Kafka Topic                           | Key Format | Value Format | Windowed
+------------------------------------------------------------------------------------------------------
+ CIF_RAW               | CIF_FULL_DAILY                        | KAFKA      | JSON         | false
+ KSQL_PROCESSING_LOG   | confluent_rmoff_02ksql_processing_log | KAFKA      | JSON         | false
+ LOCATION_GEOCODE      | LOCATION_GEOCODE                      | KAFKA      | AVRO         | false
+ OPENCAGE              | opencage                              | KAFKA      | JSON         | false
+ SCHEDULE_00           | SCHEDULE_00                           | KAFKA      | AVRO         | false
+ STANOX_FLAT           | STANOX_FLAT                           | KAFKA      | AVRO         | false
+ STANOX_GEO            | STANOX_GEO                            | KAFKA      | AVRO         | false
+ TIPLOC_FLAT_KEYED     | TIPLOC_FLAT_KEYED                     | KAFKA      | AVRO         | false
+ TIPLOC_FLAT_KEYED_DUP | TIPLOC_FLAT_KEYED_DUP                 | KAFKA      | AVRO         | false
+------------------------------------------------------------------------------------------------------
 ----
-
 
 [source,sql]
 ----
@@ -176,8 +172,9 @@ SELECT SCHEDULE_KEY,
        SEATING_CLASSES,
        ORIGIN_TPS_DESCRIPTION, ORIGIN_PUBLIC_DEPARTURE_TIME,
        DESTINATION_TPS_DESCRIPTION, DESTINATION_PUBLIC_ARRIVAL_TIME 
-  FROM SCHEDULE_02_T
+  FROM SCHEDULE_00
  WHERE ORIGIN_PUBLIC_DEPARTURE_TIME IS NOT NULL
+ EMIT CHANGES
  LIMIT 1;
 ----
 
@@ -192,13 +189,14 @@ Query terminated
 ----
 ksql> SHOW TABLES;
 
- Table Name         | Kafka Topic       | Format | Windowed
-------------------------------------------------------------
- LOCATION_GEOCODE_T | LOCATION_GEOCODE  | AVRO   | false
- SCHEDULE_02_T      | SCHEDULE_02       | AVRO   | false
- STANOX             | STANOX_FLAT_KEYED | AVRO   | false
- TIPLOC             | TIPLOC_FLAT_KEYED | AVRO   | false
-------------------------------------------------------------
+ Table Name         | Kafka Topic           | Key Format | Value Format | Windowed
+-----------------------------------------------------------------------------------
+ LOCATION_GEOCODE_T | LOCATION_GEOCODE      | KAFKA      | AVRO         | false
+ SCHEDULE_T         | SCHEDULE_00           | KAFKA      | AVRO         | false
+ STANOX             | STANOX_GEO            | KAFKA      | AVRO         | false
+ TIPLOC             | TIPLOC_FLAT_KEYED     | KAFKA      | AVRO         | false
+ TIPLOC_DUP         | TIPLOC_FLAT_KEYED_DUP | KAFKA      | AVRO         | false
+-----------------------------------------------------------------------------------
 ----
 
 [source,sql]
@@ -212,18 +210,16 @@ SELECT TIPLOC_CODE,
        GEO_OSM_URL 
   FROM STANOX 
 WHERE OPENCAGE_TOTAL_RESULTS>0 
+EMIT CHANGES
  LIMIT 1;
 ----
 
 [source,sql]
 ----
-ksql> SELECT TIPLOC_CODE, STANOX, TPS_DESCRIPTION, OPENCAGE_TOTAL_RESULTS, GEO_OSM_URL FROM STANOX WHERE OPENCAGE_TOTAL_RESULTS>0 LIMIT 1;
-+-----------------------------------+-----------------------------------+-----------------------------------+-----------------------------------+-----------------------------------+
-|TIPLOC_CODE                        |STANOX                             |TPS_DESCRIPTION                    |OPENCAGE_TOTAL_RESULTS             |GEO_OSM_URL                        |
-+-----------------------------------+-----------------------------------+-----------------------------------+-----------------------------------+-----------------------------------+
-|IRNVLJN                            |56508                              |IRONVILLE JUNCTION                 |2                                  |https://www.openstreetmap.org/?mlat|
-|                                   |                                   |                                   |                                   |=53.06611&mlon=-1.34247#map=16/53.0|
-|                                   |                                   |                                   |                                   |6611/-1.34247                      |
++---------------+-------+----------------+-----------------------+-----------+
+|TIPLOC_CODE    |STANOX |TPS_DESCRIPTION |OPENCAGE_TOTAL_RESULTS |GEO_OSM_URL|
++---------------+-------+----------------+-----------------------+-----------+
+|SHDN           |15831  |SHILDON         |4                      |null       |
 Limit Reached
 Query terminated
 ----
@@ -244,37 +240,26 @@ Check status:
 +
 [source,bash]
 ----
-# Apache Kafka >=2.3 - nicer output! Optional to use.
 curl -s "http://localhost:8083/connectors?expand=info&expand=status" | \
          jq '. | to_entries[] | [ .value.info.type, .key, .value.status.connector.state,.value.status.tasks[].state,.value.info.config."connector.class"]|join(":|:")' | \
          column -s : -t| sed 's/\"//g'| sort
-
-# Apache Kafka <2.3
-curl -s "http://localhost:8083/connectors"| jq '.[]'| xargs -I{connector_name} curl -s "http://localhost:8083/connectors/"{connector_name}"/status"| jq -c -M '[.name,.connector.state,.tasks[].state]|join(":|:")'| column -s : -t| sed 's/\"//g'| sort
 ----
 +
 [source,bash]
 ----
-# Apache Kafka >=2.3
 source  |  source-activemq-networkrail-TRAIN_MVT_EA_TOC-01  |  RUNNING  |  RUNNING  |  io.confluent.connect.activemq.ActiveMQSourceConnector
 source  |  source-activemq-networkrail-TRAIN_MVT_ED_TOC-01  |  RUNNING  |  RUNNING  |  io.confluent.connect.activemq.ActiveMQSourceConnector
 source  |  source-activemq-networkrail-TRAIN_MVT_EM_TOC-01  |  RUNNING  |  RUNNING  |  io.confluent.connect.activemq.ActiveMQSourceConnector
 source  |  source-activemq-networkrail-TRAIN_MVT_HB_TOC-01  |  RUNNING  |  RUNNING  |  io.confluent.connect.activemq.ActiveMQSourceConnector
-
-# Apache Kafka <2.3
-source-activemq-networkrail-TRAIN_MVT_EA_TOC-01  |  RUNNING  |  RUNNING
-source-activemq-networkrail-TRAIN_MVT_ED_TOC-01  |  RUNNING  |  RUNNING
 ----
 +
 Check there's some data: 
 +
 [source,bash]
 ----
-kafkacat -b localhost:9092 -t networkrail_TRAIN_MVT -C -c1
+docker exec kafkacat kafkacat -b broker:29092 -t networkrail_TRAIN_MVT -C -c1
 
-{"messageID":"ID:opendata-backend.rockshore.net-42259-1558600921537-11:1:1:40:2938","messageType":"text","timestamp":1558693449805,"deliveryMode":2,"correlationID":null,"replyTo":null,"destination":{"desti
-nationType":"topic","name":"TRAIN_MVT_ED_TOC"},"redelivered":false,"type":null,"expiration":1558693749805,"priority":4,"properties":{},"bytes":null,"map":null,"text":"[{\"header\":{\"msg_type\":\"0003\",\"
-source_dev_id\":\"\",\"user_id\":\"\",\"original_data_source\":\"SMART\",\"msg_queue_timestamp\":\"1558693442000\",\"source_system_id\":\"TRUST\"},\"body\":{\"event_type\":\"ARR…
+{"messageID":"ID:opendata-backend.rockshore.net-38745-1609843645734-11:1:2:32:1194"}{"messageID":"ID:opendata-backend.rockshore.net-38745-1609843645734-11:1:2:32:1194","messageType":"text","timestamp":1609868889020,"deliveryMode":2,"correlationID":null,"replyTo":null,"destination":{"destinationType":"topic","name":"TRAIN_MVT_EA_TOC"},"redelivered":false,"type":null,"expiration":1609869189020,"priority":4,"properties":{},"bytes":null,"map":null,"text":"[{\"header\":{\"msg_type\":\"0003\",\"source_dev_id\":\"\",\"user_id\":\"\",\"original_data_source\":\"SMART\",\"msg_queue_timestamp\":\"1609868887000\",\"source_system_id\":\"TRUST\"},\"body\":{\"event_type\":\"DEPARTURE\",\"gbtt_timestamp\":\"\",\"original_loc_stanox\":\"\",\"planned_timestamp\":\"1609868910000\",\"timetable_variation\":\"1\",\"original_loc_timestamp\":\"\",\"current_train_id\":\"\",\"delay_monitoring_point\":\"false\",\"next_report_run_time\":\"2\",\"reporting_stanox\":\"00000\",\"actual_timestamp\":\"1609868820000\",\"correction_ind\":\"false\",\"event_source\":\"AUTOMATIC\",\"train_file_address\":null,\"platform\":\"\",\"division_code\":\"20\",\"train_terminated\":\"false\",\"train_id\":\"129M30MP05\",\"offroute_ind\":\"false\",\"variation_status\":\"EARLY\",\"train_service_code\":\"21731000\",\"toc_id\":\"20\",\"loc_stanox\":\"35439\",\"auto_expected\":\"true\",\"direction_ind\":\"DOWN\",\"route\":\"2\",\"planned_event_type\":\"DEPARTURE\",\"next_report_stanox\":\"36605\",\"line_ind\":\"\"}},{\"header\":{\"msg_type\":\"0003\",\"source_dev_id\":\"\",\"user_id\":\"\",\"original_data_source\":\"SMART\",\"msg_queue_timestamp\":\"1609868887000\",\"source_system_id\":\"TRUST\"},\"body\":{\"event_type\":\"DEPARTURE\",\"gbtt_timestamp\":\"\",\"original_loc_stanox\":\"\",\"planned_timestamp\":\"1609868940000\",\"timetable_variation\":\"2\",\"original_loc_timestamp\":\"\",\"current_train_id\":\"\",\"delay_monitoring_point\":\"true\",\"next_report_run_time\":\"6\",\"reporting_stanox\":\"16602\",\"actual_timestamp\":\"1609868820000\",\"correction_ind\":\"false\",\"event_source\":\"AUTOMATIC\",\"train_file_address\":null,\"platform\":\" 2\",\"division_code\":\"20\",\"train_terminated\":\"false\",\"train_id\":\"191K28MU05\",\"offroute_ind\":\"false\",\"variation_status\":\"EARLY\",\"train_service_code\":\"21733000\",\"toc_id\":\"20\",\"loc_stanox\":\"16602\",\"auto_expected\":\"true\",\"direction_ind\":\"UP\",\"route\":\"1\",\"planned_event_type\":\"DEPARTURE\",\"next_report_stanox\":\"17112\",\"line_ind\":\"M\"}}]"}
 ----
 
 2. Set pipeline running to split out payload batches into single messages
@@ -295,7 +280,8 @@ Check the data on the target topic
 +
 [source,bash]
 ----
-$ kafkacat -b localhost:9092 -t networkrail_TRAIN_MVT_X -C -c1 | jq '.'
+$ docker exec kafkacat kafkacat -b broker:29092 -t networkrail_TRAIN_MVT_X -C -c1 | jq '.'
+
 {
   "header": {
     "msg_type": "0003",
@@ -340,7 +326,7 @@ $ kafkacat -b localhost:9092 -t networkrail_TRAIN_MVT_X -C -c1 | jq '.'
 ----
 
 
-=== KSQL
+=== ksqlDB
 
 [source,sql]
 ----
@@ -349,7 +335,7 @@ RUN SCRIPT '/data/ksql/03_movements/01_movement_raw.ksql';
 RUN SCRIPT '/data/ksql/03_movements/02_activations.ksql';
 RUN SCRIPT '/data/ksql/03_movements/02_cancellations.ksql';
 RUN SCRIPT '/data/ksql/03_movements/02_movements.ksql';
-PRINT 'TRAIN_ACTIVATIONS_01_T' FROM BEGINNING LIMIT 1;
+PRINT 'TRAIN_ACTIVATIONS_00' FROM BEGINNING LIMIT 1;
 RUN SCRIPT '/data/ksql/03_movements/03_activations_table.ksql';
 RUN SCRIPT '/data/ksql/03_movements/04_cancellations_activations.ksql';
 RUN SCRIPT '/data/ksql/03_movements/04_movements_activations.ksql';
@@ -372,7 +358,8 @@ SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') as ACTUAL_TIMESTAMP,
        VARIATION_STATUS,
        TOC,
        TRAIN_ID, SCHEDULE_KEY
-  FROM TRAIN_MOVEMENTS_ACTIVATIONS_SCHEDULE_00;
+  FROM TRAIN_MOVEMENTS_ACTIVATIONS_SCHEDULE_00
+  EMIT CHANGES;
 
 
   WHERE ORIGIN_TPS_DESCRIPTION = 'ILKLEY'

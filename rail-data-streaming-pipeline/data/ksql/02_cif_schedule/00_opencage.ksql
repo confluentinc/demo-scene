@@ -8,12 +8,12 @@ SET 'auto.offset.reset' = 'earliest';
 
 CREATE STREAM LOCATION_GEOCODE 
     WITH (VALUE_FORMAT='AVRO') AS 
-    SELECT  REST_QUERY AS TPS_DESCRIPTION, 
+    SELECT  REST_QUERY, 
             TOTAL_RESULTS, 
-            EXTRACTJSONFIELD(RESULTS[0],'$.annotations.geohash') AS GEOHASH, 
-            EXTRACTJSONFIELD(RESULTS[0],'$.annotations.OSM.url') AS OSM_URL, 
-            EXTRACTJSONFIELD(RESULTS[0],'$.components') AS COMPONENTS, 
-            EXTRACTJSONFIELD(RESULTS[0],'$.geometry.lat') + ',' 
-            + EXTRACTJSONFIELD(RESULTS[0],'$.geometry.lng') AS GEO_LATLON
+            EXTRACTJSONFIELD(RESULTS[1],'$.annotations.geohash') AS GEOHASH, 
+            EXTRACTJSONFIELD(RESULTS[1],'$.annotations.OSM.url') AS OSM_URL, 
+            EXTRACTJSONFIELD(RESULTS[1],'$.components') AS COMPONENTS, 
+            EXTRACTJSONFIELD(RESULTS[1],'$.geometry.lat') + ',' 
+            + EXTRACTJSONFIELD(RESULTS[1],'$.geometry.lng') AS GEO_LATLON
     FROM    OPENCAGE 
-    PARTITION BY TPS_DESCRIPTION;
+    PARTITION BY REST_QUERY;
