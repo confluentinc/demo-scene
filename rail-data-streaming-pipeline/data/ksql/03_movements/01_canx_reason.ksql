@@ -2,6 +2,7 @@
 -- https://wiki.openraildata.com/index.php?title=Train_Cancellation
 
 CREATE TABLE CANX_REASON (canx_reason_code VARCHAR PRIMARY KEY, 
-                          canx_reason VARCHAR) 
+                          canx_reason VARCHAR, 
+                          canx_abbrev VARCHAR) 
                     WITH (KAFKA_TOPIC='canx_reason_code', 
                     VALUE_FORMAT='JSON');
