@@ -1,0 +1,357 @@
+= Twelve Days of Single Message Transforms - Day 8 - `TimestampConverter`
+Robin Moffatt <robin@confluent.io>
+v0.01, 17 December 2020
+
+== 🎥 Recording
+
+image::https://img.youtube.com/vi/D0AZU6TMCAW/maxresdefault.jpg[link=https://youtu.be/D0AZU6TMCAW]
+
+== Setup
+
+1. Clone the repository 
++
+[source,bash]
+----
+git clone https://github.com/confluentinc/demo-scene.git
+cd demo-scene/kafka-connect-single-message-transforms
+----
+
+2. Bring the stack up
++
+[source,bash]
+----
+docker-compose up -d
+----
+
+3. Wait for Kafka Connect to start up
++
+[source,bash]
+----
+bash -c ' \
+echo -e "\n\n=============\nWaiting for Kafka Connect to start listening on localhost ⏳\n=============\n"
+while [ $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) -ne 200 ] ; do
+  echo -e "\t" $(date) " Kafka Connect listener HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) " (waiting for 200)"
+  sleep 5
+done
+echo -e $(date) "\n\n--------------\n\o/ Kafka Connect is ready! Listener HTTP state: " $(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors) "\n--------------\n"
+'
+----
+
+=== Generate test data
+
+[source,javascript]
+----
+curl -i -X PUT -H  "Content-Type:application/json" \
+    http://localhost:8083/connectors/source-voluble-datagen-day8-00/config \
+    -d '{
+        "connector.class"                             : "io.mdrogalis.voluble.VolubleSourceConnector",
+        "genkp.day8-transactions.with"                : "#{Internet.uuid}",
+        "genv.day8-transactions.cost.with"            : "#{Commerce.price}",
+        "genv.day8-transactions.txn_date.with"        : "#{date.past '\''10'\'','\''DAYS'\''}",
+        "genv.day8-transactions.card_type.with"       : "#{Business.creditCardType}",
+        "genv.day8-transactions.customer_remarks.with": "#{BackToTheFuture.quote}",
+        "genv.day8-transactions.item.with"            : "#{Beer.name}",
+        "topic.day8-transactions.throttle.ms"         : 1000
+    }'
+----
+
+== Change string-based timestamp into timestamp 
+
+In the payload the `txn_date` field looks like a timestamp: 
+
+[source,bash]
+----
+$ docker exec kafkacat kafkacat -b broker:29092 -r http://schema-registry:8081 -s key=s -s value=avro -t day8-transactions -C -c5 -o-5 -u -q -J | \
+  jq  '.payload.Gen0.txn_date.string'
+
+"Thu Dec 10 17:06:59 GMT 2020"
+"Sat Dec 05 16:39:40 GMT 2020"
+"Sat Dec 05 21:43:46 GMT 2020"
+"Sun Dec 13 20:30:21 GMT 2020"
+"Wed Dec 09 06:18:31 GMT 2020"
+----
+
+But if we have a look at the actual schema for the value (since it's serialised as Avro; the same would apply for Protobuf or JSON Schema) we can see that it might look like a timestamp, quack like a timestamp, but is in fact not a timestamp per se, but a string: 
+
+[source,bash]
+----
+$ curl -s "http://localhost:8081/subjects/day8-transactions-value/versions/latest" | jq '.schema|fromjson[]'
+----
+
+[source,javascript]
+----
+"null"
+{
+  "type": "record",
+  "name": "Gen0",
+  "namespace": "io.mdrogalis",
+  "fields": [
+[…]      
+    {
+      "name": "txn_date",
+      "type": [
+        "null",
+        "string"
+      ]
+[…]      
+----
+
+This means that when the data is used by a consumer, such as a Kafka Connect sink, it's still handled as a string with the result that the target object type will usually inherit the same. Here's an example of the https://www.confluent.io/hub/confluentinc/kafka-connect-jdbc[JDBC sink connector] (_See also 🎥 https://rmoff.dev/kafka-jdbc-video[Kafka Connect in Action : JDBC Sink] (👾 link:../kafka-to-database/README.adoc[`demo code`]) and 🎥 https://rmoff.dev/ksqldb-jdbc-sink-video[ksqlDB & Kafka Connect JDBC Sink in action] (👾 link:../kafka-to-database/ksqldb-jdbc-sink.adoc[`demo code`])_):
+
+[source,javascript]
+----
+curl -i -X PUT -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-jdbc-mysql-day8-00/config \
+    -d '{
+          "connector.class"    : "io.confluent.connect.jdbc.JdbcSinkConnector",
+          "connection.url"     : "jdbc:mysql://mysql:3306/demo",
+          "connection.user"    : "mysqluser",
+          "connection.password": "mysqlpw",
+          "topics"             : "day8-transactions",
+          "tasks.max"          : "4",
+          "auto.create"        : "true",
+          "auto.evolve"        : "true"
+        }'
+----
+
+[source,sql]
+----
+mysql> describe `day8-transactions`;
++------------------+------+------+-----+---------+-------+
+| Field            | Type | Null | Key | Default | Extra |
++------------------+------+------+-----+---------+-------+
+| customer_remarks | text | YES  |     | NULL    |       |
+| item             | text | YES  |     | NULL    |       |
+| cost             | text | YES  |     | NULL    |       |
+| card_type        | text | YES  |     | NULL    |       |
+| txn_date         | text | YES  |     | NULL    |       |
++------------------+------+------+-----+---------+-------+
+5 rows in set (0.00 sec)
+----
+
+Note that `txn_date` is a `text` field, which is no use for anyone who wants to use it as the timestamp that it is. 
+
+This is where the https://docs.confluent.io/platform/current/connect/transforms/timestampconverter.html[`TimestampConverter`] comes in. In our example it's going to cast the string as it passes through Kafka Connect with the supplied date and time format string to a timestamp. You can also use it to convert between epoch timestamp value, and also to target a string, epoch, date, or time (as well as actual timestamp). 
+
+[source,javascript]
+----
+curl -i -X PUT -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-jdbc-mysql-day8-01/config \
+    -d '{
+          "connector.class"                 : "io.confluent.connect.jdbc.JdbcSinkConnector",
+          "connection.url"                  : "jdbc:mysql://mysql:3306/demo",
+          "connection.user"                 : "mysqluser",
+          "connection.password"             : "mysqlpw",
+          "topics"                          : "day8-transactions",
+          "tasks.max"                       : "4",
+          "auto.create"                     : "true",
+          "auto.evolve"                     : "true",
+          "transforms"                      : "convertTS,changeTopic",
+          "transforms.convertTS.type"       : "org.apache.kafka.connect.transforms.TimestampConverter$Value",
+          "transforms.convertTS.field"      : "txn_date",
+          "transforms.convertTS.format"     : "EEE MMM dd HH:mm:ss zzz yyyy",
+          "transforms.convertTS.target.type": "Timestamp",
+          "transforms.changeTopic.type"       : "org.apache.kafka.connect.transforms.RegexRouter",
+          "transforms.changeTopic.regex"      : "(.*)",
+          "transforms.changeTopic.replacement": "$1_withTS"
+        }'
+----
+
+Here's the resulting table in MySQL: 
+
+[source,sql]
+----
+mysql> describe `day8-transactions_withTS`;
++------------------+-------------+------+-----+---------+-------+
+| Field            | Type        | Null | Key | Default | Extra |
++------------------+-------------+------+-----+---------+-------+
+| customer_remarks | text        | YES  |     | NULL    |       |
+| item             | text        | YES  |     | NULL    |       |
+| cost             | text        | YES  |     | NULL    |       |
+| card_type        | text        | YES  |     | NULL    |       |
+| txn_date         | datetime(3) | YES  |     | NULL    |       |
++------------------+-------------+------+-----+---------+-------+
+5 rows in set (0.00 sec)
+----
+
+As mentioned above, you can also extract just the date or time components of the timestamp by changing the `target.type`: 
+
+* Date only 
++
+[source,javascript]
+----
+curl -i -X PUT -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-jdbc-mysql-day8-02/config \
+    -d '{
+          "connector.class"                 : "io.confluent.connect.jdbc.JdbcSinkConnector",
+          "connection.url"                  : "jdbc:mysql://mysql:3306/demo",
+          "connection.user"                 : "mysqluser",
+          "connection.password"             : "mysqlpw",
+          "topics"                          : "day8-transactions",
+          "tasks.max"                       : "4",
+          "auto.create"                     : "true",
+          "auto.evolve"                     : "true",
+          "transforms"                      : "convertTS,changeTopic",
+          "transforms.convertTS.type"       : "org.apache.kafka.connect.transforms.TimestampConverter$Value",
+          "transforms.convertTS.field"      : "txn_date",
+          "transforms.convertTS.format"     : "EEE MMM dd HH:mm:ss zzz yyyy",
+          "transforms.convertTS.target.type": "Date",
+          "transforms.changeTopic.type"       : "org.apache.kafka.connect.transforms.RegexRouter",
+          "transforms.changeTopic.regex"      : "(.*)",
+          "transforms.changeTopic.replacement": "$1_withDate"
+        }'
+----
++
+Resulting table in MySQL: 
++
+[source,sql]
+----
+mysql> describe `day8-transactions_withDate`;
++------------------+------+------+-----+---------+-------+
+| Field            | Type | Null | Key | Default | Extra |
++------------------+------+------+-----+---------+-------+
+| customer_remarks | text | YES  |     | NULL    |       |
+| item             | text | YES  |     | NULL    |       |
+| cost             | text | YES  |     | NULL    |       |
+| card_type        | text | YES  |     | NULL    |       |
+| txn_date         | date | YES  |     | NULL    |       |
++------------------+------+------+-----+---------+-------+
+5 rows in set (0.01 sec)
+----
++
+[source,sql]
+----
+mysql> select txn_date from `day8-transactions_withDate` LIMIT 5;
++------------+
+| txn_date   |
++------------+
+| 2020-01-04 |
+| 2020-01-04 |
+| 2019-12-29 |
+| 2020-01-01 |
+| 2019-12-29 |
++------------+
+5 rows in set (0.00 sec)
+----
+
+* Time only 
++
+[source,javascript]
+----
+curl -i -X PUT -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-jdbc-mysql-day8-03/config \
+    -d '{
+          "connector.class"                 : "io.confluent.connect.jdbc.JdbcSinkConnector",
+          "connection.url"                  : "jdbc:mysql://mysql:3306/demo",
+          "connection.user"                 : "mysqluser",
+          "connection.password"             : "mysqlpw",
+          "topics"                          : "day8-transactions",
+          "tasks.max"                       : "4",
+          "auto.create"                     : "true",
+          "auto.evolve"                     : "true",
+          "transforms"                      : "convertTS,changeTopic",
+          "transforms.convertTS.type"       : "org.apache.kafka.connect.transforms.TimestampConverter$Value",
+          "transforms.convertTS.field"      : "txn_date",
+          "transforms.convertTS.format"     : "EEE MMM dd HH:mm:ss zzz yyyy",
+          "transforms.convertTS.target.type": "Time",
+          "transforms.changeTopic.type"       : "org.apache.kafka.connect.transforms.RegexRouter",
+          "transforms.changeTopic.regex"      : "(.*)",
+          "transforms.changeTopic.replacement": "$1_withTime"
+        }'
+----
++
+Resulting table in MySQL: 
++
+[source,sql]
+----
+mysql> describe `day8-transactions_withTime`;
++------------------+---------+------+-----+---------+-------+
+| Field            | Type    | Null | Key | Default | Extra |
++------------------+---------+------+-----+---------+-------+
+| customer_remarks | text    | YES  |     | NULL    |       |
+| item             | text    | YES  |     | NULL    |       |
+| cost             | text    | YES  |     | NULL    |       |
+| card_type        | text    | YES  |     | NULL    |       |
+| txn_date         | time(3) | YES  |     | NULL    |       |
++------------------+---------+------+-----+---------+-------+
+5 rows in set (0.00 sec)
+----
++
+[source,sql]
+----
+mysql> select txn_date from `day8-transactions_withTime` LIMIT 5;
++--------------+
+| txn_date     |
++--------------+
+| 14:05:19.000 |
+| 14:09:11.000 |
+| 19:18:25.000 |
+| 03:22:06.000 |
+| 09:57:44.000 |
++--------------+
+5 rows in set (0.00 sec)
+----
+
+You can also write an unix epoch: 
+
+[source,javascript]
+----
+curl -i -X PUT -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/sink-jdbc-mysql-day8-04/config \
+    -d '{
+          "connector.class"                 : "io.confluent.connect.jdbc.JdbcSinkConnector",
+          "connection.url"                  : "jdbc:mysql://mysql:3306/demo",
+          "connection.user"                 : "mysqluser",
+          "connection.password"             : "mysqlpw",
+          "topics"                          : "day8-transactions",
+          "tasks.max"                       : "4",
+          "auto.create"                     : "true",
+          "auto.evolve"                     : "true",
+          "transforms"                      : "convertTS,changeTopic",
+          "transforms.convertTS.type"       : "org.apache.kafka.connect.transforms.TimestampConverter$Value",
+          "transforms.convertTS.field"      : "txn_date",
+          "transforms.convertTS.format"     : "EEE MMM dd HH:mm:ss zzz yyyy",
+          "transforms.convertTS.target.type": "unix",
+          "transforms.changeTopic.type"       : "org.apache.kafka.connect.transforms.RegexRouter",
+          "transforms.changeTopic.regex"      : "(.*)",
+          "transforms.changeTopic.replacement": "$1_withUnixEpoch"
+        }'
+----
+
+Resulting table in MySQL: 
+
+[source,sql]
+----
+mysql> describe `day8-transactions_withUnixEpoch`;
++------------------+--------+------+-----+---------+-------+
+| Field            | Type   | Null | Key | Default | Extra |
++------------------+--------+------+-----+---------+-------+
+| customer_remarks | text   | YES  |     | NULL    |       |
+| item             | text   | YES  |     | NULL    |       |
+| cost             | text   | YES  |     | NULL    |       |
+| card_type        | text   | YES  |     | NULL    |       |
+| txn_date         | bigint | YES  |     | NULL    |       |
++------------------+--------+------+-----+---------+-------+
+5 rows in set (0.00 sec)
+----
++
+[source,sql]
+----
+mysql> select txn_date from `day8-transactions_withUnixEpoch` LIMIT 5;
++---------------+
+| txn_date      |
++---------------+
+| 1577973919000 |
+| 1577714951000 |
+| 1577819905000 |
+| 1577762526000 |
+| 1577786264000 |
++---------------+
+5 rows in set (0.00 sec)
+----
+
+If you have timestamp in unix epoch (bigint) as the source, you can use `TimestampConverter` to write it as a timestamp/date/time, and also as a string - if you do the latter then the `format` configuration applies to the format in which the string will be written. 
+
+== Accessing timestamps in nested fields
+
+Unfortunately the `TimestampConverter` only works on root-level elements; it can't be used on timestamp fields that are nested in other fields. You'd need to either use link:day3.adoc[`Flatten`] first, or write your own transformation. 
