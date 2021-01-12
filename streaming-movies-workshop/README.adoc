@@ -160,12 +160,12 @@ docker run -it confluentinc/ksqldb-cli:0.13.0 ksql -u $KSQL_API_KEY -p $KSQL_API
 .Materialized view
 ----
 CREATE STREAM RATED_MOVIES_STREAM WITH (
-    kafka_topic = 'RATED_MOVIES',
+    kafka_topic = 'rated-movies',
     value_format = 'avro'
 );
 
 CREATE TABLE RATED_MOVIES_VIEW AS SELECT
-  RATED_MOVIES_STREAM.TITLE as TITLE,
+  TITLE as TITLE,
   LATEST_BY_OFFSET(RELEASE_YEAR) as RELEASE_YEAR,
   LATEST_BY_OFFSET(MOVIE_ID) as MOVIE_ID,
   LATEST_BY_OFFSET(RATING) as CURRENT_RATING
