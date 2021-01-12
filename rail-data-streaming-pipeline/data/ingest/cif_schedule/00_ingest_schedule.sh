@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# https://wiki.openraildata.com/index.php?title=SCHEDULE
 
 source ../../set_credentials_env.sh
 
