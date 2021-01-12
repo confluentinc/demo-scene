@@ -21,6 +21,14 @@ Viktor Gamov <viktor@confluent.io>, © 2020 Confluent, Inc.
 :source-highlighter: highlight.js
 :highlightjs-theme: idea
 :experimental:
+ifndef::awestruct[]
+:imagesdir: ../images
+:awestruct-draft: false
+:awestruct-layout: post
+:awestruct-tags: []
+:idprefix:
+:idseparator: -
+endif::awestruct[]
 
 This is a brief manual for a workshop that taken place online at https://youtube.com/confluent
 
@@ -136,6 +144,37 @@ skaffold run #<1>
 <1> This command will build images for
 
 == 2️⃣ Create Materialized view 
+
+[TIP]
+.Connect to ksqlDB with CLI
+====
+In this exercise, we're going to use ksqlDB Cloud UI.
+But you also can run CLI using docker.
+
+[source,shell script]
+----
+docker run -it confluentinc/ksqldb-cli:0.13.0 ksql -u $KSQL_API_KEY -p $KSQL_API_SECRET $KSQLDB_ENDPOINT
+----
+
+[source,sql]
+.Materialized view
+----
+CREATE STREAM RATED_MOVIES_STREAM WITH (
+    kafka_topic = 'rated-movies',
+    value_format = 'avro'
+);
+
+CREATE TABLE RATED_MOVIES_VIEW AS SELECT
+  TITLE as TITLE,
+  LATEST_BY_OFFSET(RELEASE_YEAR) as RELEASE_YEAR,
+  LATEST_BY_OFFSET(MOVIE_ID) as MOVIE_ID,
+  LATEST_BY_OFFSET(RATING) as CURRENT_RATING
+FROM RATED_MOVIES_STREAM
+GROUP BY TITLE
+EMIT CHANGES;
+----
+
+====
 
 [NOTE]
 ====
