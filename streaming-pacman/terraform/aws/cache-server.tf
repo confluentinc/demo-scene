@@ -18,6 +18,7 @@ resource "aws_elasticache_replication_group" "cache_server" {
   automatic_failover_enabled = true
   node_type = "cache.m4.large"
   parameter_group_name = "default.redis5.0"
+  engine_version = "5.0"
   port = 6379
 }
 
