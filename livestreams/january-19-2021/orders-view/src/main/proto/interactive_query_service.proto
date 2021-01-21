@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package io.confluent.developer.livestreams;
+
+import "google/protobuf/empty.proto";
+
+option java_multiple_files = true;
+option java_package = "io.confluent.developer.livestreams.iq.proto";
+
+service InteractiveQuery {
+  rpc GetMetadataForStore(IQServiceRequest) returns (HostStoreInfoList) ;
+
+  rpc GetMetadataForStoreAndKey(IQServiceRequest) returns (HostStoreInfoList);
+
+  rpc GetAllMetadata(google.protobuf.Empty) returns (HostStoreInfoList) ;
+
+  rpc GetOrder(IQServiceRequest) returns (OrderResponse);
+}
+
+message HostStoreInfo{
+  string host = 1;
+  int32 port = 2;
+  // TODO: check how you can use java.util.Set
+  repeated string storeNames = 3;
+}
+
+message IQServiceRequest{
+  string storeName = 1;
+  int64 key = 2;
+}
+
+message HostStoreInfoList{
+  repeated HostStoreInfo metadatas = 1;
+}
+
+message OrderResponse{
+  repeated string items = 1;
+}
+
+
