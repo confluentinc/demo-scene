@@ -1,5 +1,5 @@
 = Livestreams January 19th log
-Viktor Gamov <viktor@confluent.io>, © 2020 Confluent, Inc.
+Viktor Gamov <viktor@confluent.io>, © 2021 Confluent, Inc.
 2021-01-19
 
 The materials form live stream on January 19th 2021.
