@@ -138,6 +138,9 @@ services:
         confluent-hub install --no-prompt confluentinc/kafka-connect-activemq:10.1.0
         confluent-hub install --no-prompt neo4j/kafka-connect-neo4j:1.0.9
         confluent-hub install --no-prompt confluentinc/kafka-connect-http:1.1.0
+        confluent-hub install --no-prompt jcustenborder/kafka-connect-json-schema:0.2.5
+        confluent-hub install --no-prompt jcustenborder/kafka-connect-transform-common:0.1.0.37
+        confluent-hub install --no-prompt redhatinsights/expandjsonsmt:0.0.7
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 
