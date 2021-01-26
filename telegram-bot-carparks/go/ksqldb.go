@@ -59,7 +59,7 @@ func alertSpaces(a chan<- string, c int) (e error) {
 	const queryResultTimeoutSeconds = 300
 
 	// Prepare the request
-	k := "SELECT NAME, TS, CAPACITY, EMPTY_PLACES"
+	k := "SELECT NAME, TS, EMPTY_PLACES, CAPACITY"
 	k += "  FROM CARPARK_EVENTS"
 	k += " WHERE  EMPTY_PLACES > " + strconv.Itoa(c)
 	k += " EMIT CHANGES;"
