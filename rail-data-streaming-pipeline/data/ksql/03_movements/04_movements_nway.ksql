@@ -107,3 +107,173 @@ PARTITION BY CONCAT_WS('/',
                  EXTRACTJSONFIELD(MVT.BODY,'$.train_id'),
                  EXTRACTJSONFIELD(MVT.BODY,'$.planned_event_type'),
                  EXTRACTJSONFIELD(MVT.BODY,'$.loc_stanox'));
+
+-- -- https://wiki.openraildata.com/index.php?title=TOC_Codes
+-- -- https://wiki.openraildata.com/index.php?title=Train_Movements
+
+-- SET 'auto.offset.reset' = 'earliest';
+-- CREATE OR REPLACE STREAM TRAIN_MOVEMENTS_00A 
+--      WITH (VALUE_FORMAT='AVRO') AS 
+-- SELECT MVT.HEADER, 
+--        EXTRACTJSONFIELD(MVT.BODY,'$.event_type') as event_type,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.gbtt_timestamp')  as gbtt_timestamp,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.original_loc_stanox') as original_loc_stanox,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.planned_timestamp')  as planned_timestamp,
+--        CAST(EXTRACTJSONFIELD(MVT.BODY,'$.timetable_variation') AS INT) AS TIMETABLE_VARIATION,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.original_loc_timestamp')  as original_loc_timestamp,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.current_train_id') as current_train_id,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.delay_monitoring_point') as delay_monitoring_point,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.next_report_run_time') as next_report_run_time,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.reporting_stanox') as reporting_stanox,
+--        CAST(EXTRACTJSONFIELD(MVT.BODY,'$.actual_timestamp') AS BIGINT) as actual_timestamp,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.correction_ind') as correction_ind,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.event_source') as event_source,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.train_file_address') as train_file_address,
+--        CASE WHEN LEN(EXTRACTJSONFIELD(MVT.BODY,'$.platform'))> 0 THEN 'Platform' + EXTRACTJSONFIELD(MVT.BODY,'$.platform')
+--              ELSE '' 
+--           END AS PLATFORM,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.division_code') as division_code,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.train_terminated') as train_terminated,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.train_id') as train_id,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.offroute_ind') as offroute_ind,
+--        CASE WHEN EXTRACTJSONFIELD(MVT.BODY,'$.variation_status') = 'ON TIME' THEN 'ON TIME' 
+--              WHEN EXTRACTJSONFIELD(MVT.BODY,'$.variation_status') = 'LATE' THEN EXTRACTJSONFIELD(MVT.BODY,'$.timetable_variation') + ' MINS LATE' 
+--              WHEN EXTRACTJSONFIELD(MVT.BODY,'$.variation_status')='EARLY' THEN EXTRACTJSONFIELD(MVT.BODY,'$.timetable_variation') + ' MINS EARLY' 
+--         END AS VARIATION,
+--        CASE WHEN EXTRACTJSONFIELD(MVT.BODY,'$.variation_status') = 'ON TIME' THEN 0
+--              WHEN EXTRACTJSONFIELD(MVT.BODY,'$.variation_status') = 'LATE' THEN 1
+--              WHEN EXTRACTJSONFIELD(MVT.BODY,'$.variation_status')='EARLY' THEN 0
+--         END AS LATE_IND,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.variation_status') as variation_status,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.train_service_code') as train_service_code,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.toc_id') as toc_id,
+--         CASE WHEN EXTRACTJSONFIELD(MVT.BODY,'$.toc_id') = '20' THEN 'TransPennine Express'
+--                WHEN EXTRACTJSONFIELD(MVT.BODY,'$.toc_id') = '23' THEN 'Arriva Trains Northern'
+--                WHEN EXTRACTJSONFIELD(MVT.BODY,'$.toc_id') = '28' THEN 'East Midlands Trains'
+--                WHEN EXTRACTJSONFIELD(MVT.BODY,'$.toc_id') = '61' THEN 'London North Eastern Railway'
+--               ELSE '<unknown TOC code: ' + EXTRACTJSONFIELD(MVT.BODY,'$.toc_id') + '>'
+--         END AS TOC,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.loc_stanox') as loc_stanox,
+--         S.TPS_DESCRIPTION AS LOC_NLCDESC,
+--         S.GEOHASH AS GEOHASH, 
+--         S.GEO_LATLON AS GEO_LATLON,
+--         S.GEO_OSM_URL AS GEO_OSM_URL,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.auto_expected') as auto_expected,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.direction_ind') as direction_ind,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.route') as route,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.planned_event_type') as planned_event_type,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.next_report_stanox') as next_report_stanox,
+--        EXTRACTJSONFIELD(MVT.BODY,'$.line_ind') as line_ind,
+--        CONCAT_WS('/',
+--                  EXTRACTJSONFIELD(MVT.BODY,'$.train_id'),
+--                  EXTRACTJSONFIELD(MVT.BODY,'$.planned_event_type'),
+--                  EXTRACTJSONFIELD(MVT.BODY,'$.loc_stanox')) AS MSG_KEY,
+--         TA.SCHEDULE_SOURCE AS SCHEDULE_SOURCE,
+--         TA.TP_ORIGIN_TIMESTAMP AS TP_ORIGIN_TIMESTAMP,
+--         TA.SCHEDULE_TYPE AS SCHEDULE_TYPE,
+--         TA.CREATION_TIMESTAMP AS CREATION_TIMESTAMP,
+--         TA.ORIGIN_DEP_TIMESTAMP AS ORIGIN_DEP_TIMESTAMP,
+--         TA.D1266_RECORD_NUMBER AS D1266_RECORD_NUMBER,
+--         TA.TRAIN_SERVICE_CODE AS TRAIN_SERVICE_CODE_02,
+--         TA.SCHED_ORIGIN_STANOX AS SCHED_ORIGIN_STANOX,
+--         TA.TRAIN_UID AS TRAIN_UID,
+--         TA.TRAIN_CALL_MODE AS TRAIN_CALL_MODE,
+--         TA.TP_ORIGIN_STANOX AS TP_ORIGIN_STANOX,
+--         TA.SCHEDULE_WTT_ID AS SCHEDULE_WTT_ID,
+--         TA.TRAIN_CALL_TYPE AS TRAIN_CALL_TYPE,
+--         TA.SCHEDULE_END_DATE AS SCHEDULE_END_DATE,
+--         TA.SCHEDULE_KEY AS SCHEDULE_KEY,
+--         TA.SCHED_ORIGIN_DESC AS SCHED_ORIGIN_DESC
+--   FROM NETWORKRAIL_TRAIN_MVT_X MVT
+--       LEFT JOIN TRAIN_ACTIVATIONS_01_T TA
+--         ON EXTRACTJSONFIELD(MVT.BODY,'$.train_id') = TA.TRAIN_ID
+--       LEFT JOIN STANOX S
+--          ON EXTRACTJSONFIELD(MVT.BODY,'$.loc_stanox') = S.STANOX
+-- WHERE MVT.header->msg_type = '0003'
+-- PARTITION BY CONCAT_WS('/',
+--                  EXTRACTJSONFIELD(MVT.BODY,'$.train_id'),
+--                  EXTRACTJSONFIELD(MVT.BODY,'$.planned_event_type'),
+--                  EXTRACTJSONFIELD(MVT.BODY,'$.loc_stanox'));
+
+-- CREATE OR REPLACE STREAM TRAIN_MOVEMENTS04
+--      WITH (VALUE_FORMAT='AVRO') AS 
+-- SELECT 
+--         TM.MSG_KEY AS MSG_KEY,
+--         TM.MVT_HEADER AS MVT_HEADER,
+--         TM.EVENT_TYPE AS EVENT_TYPE,
+--         TM.GBTT_TIMESTAMP AS GBTT_TIMESTAMP,
+--         TM.ORIGINAL_LOC_STANOX AS ORIGINAL_LOC_STANOX,
+--         TM.PLANNED_TIMESTAMP AS PLANNED_TIMESTAMP,
+--         TM.TIMETABLE_VARIATION AS TIMETABLE_VARIATION,
+--         TM.ORIGINAL_LOC_TIMESTAMP AS ORIGINAL_LOC_TIMESTAMP,
+--         TM.CURRENT_TRAIN_ID AS CURRENT_TRAIN_ID,
+--         TM.DELAY_MONITORING_POINT AS DELAY_MONITORING_POINT,
+--         TM.NEXT_REPORT_RUN_TIME AS NEXT_REPORT_RUN_TIME,
+--         TM.REPORTING_STANOX AS REPORTING_STANOX,
+--         TM.ACTUAL_TIMESTAMP AS ACTUAL_TIMESTAMP,
+--         TM.CORRECTION_IND AS CORRECTION_IND,
+--         TM.EVENT_SOURCE AS EVENT_SOURCE,
+--         TM.TRAIN_FILE_ADDRESS AS TRAIN_FILE_ADDRESS,
+--         TM.PLATFORM AS PLATFORM,
+--         TM.DIVISION_CODE AS DIVISION_CODE,
+--         TM.TRAIN_TERMINATED AS TRAIN_TERMINATED,
+--         TM.TRAIN_ID AS TRAIN_ID,
+--         TM.OFFROUTE_IND AS OFFROUTE_IND,
+--         TM.VARIATION AS VARIATION,
+--         TM.LATE_IND AS LATE_IND,
+--         TM.VARIATION_STATUS AS VARIATION_STATUS,
+--         TM.TRAIN_SERVICE_CODE AS TRAIN_SERVICE_CODE,
+--         TM.TOC_ID AS TOC_ID,
+--         TM.TOC AS TOC,
+--         TM.LOC_STANOX AS LOC_STANOX,
+--         TM.LOC_NLCDESC AS LOC_NLCDESC,
+--         TM.GEOHASH AS GEOHASH,
+--         TM.GEO_LATLON AS GEO_LATLON,
+--         TM.GEO_OSM_URL AS GEO_OSM_URL,
+--         TM.AUTO_EXPECTED AS AUTO_EXPECTED,
+--         TM.DIRECTION_IND AS DIRECTION_IND,
+--         TM.ROUTE AS ROUTE,
+--         TM.PLANNED_EVENT_TYPE AS PLANNED_EVENT_TYPE,
+--         TM.NEXT_REPORT_STANOX AS NEXT_REPORT_STANOX,
+--         TM.LINE_IND AS LINE_IND,
+--         TM.SCHEDULE_SOURCE AS SCHEDULE_SOURCE,
+--         TM.TP_ORIGIN_TIMESTAMP AS TP_ORIGIN_TIMESTAMP,
+--         TM.SCHEDULE_TYPE AS SCHEDULE_TYPE,
+--         TM.CREATION_TIMESTAMP AS CREATION_TIMESTAMP,
+--         TM.ORIGIN_DEP_TIMESTAMP AS ORIGIN_DEP_TIMESTAMP,
+--         TM.D1266_RECORD_NUMBER AS D1266_RECORD_NUMBER,
+--         TM.TRAIN_SERVICE_CODE_02 AS TRAIN_SERVICE_CODE_02,
+--         TM.SCHED_ORIGIN_STANOX AS SCHED_ORIGIN_STANOX,
+--         TM.TRAIN_UID AS TRAIN_UID,
+--         TM.TRAIN_CALL_MODE AS TRAIN_CALL_MODE,
+--         TM.TP_ORIGIN_STANOX AS TP_ORIGIN_STANOX,
+--         TM.SCHEDULE_WTT_ID AS SCHEDULE_WTT_ID,
+--         TM.TRAIN_CALL_TYPE AS TRAIN_CALL_TYPE,
+--         TM.SCHEDULE_END_DATE AS SCHEDULE_END_DATE,
+--         TM.SCHEDULE_KEY AS SCHEDULE_KEY,
+--         TM.SCHED_ORIGIN_DESC AS SCHED_ORIGIN_DESC,
+--         SCH.CIF_TRAIN_UID AS CIF_TRAIN_UID,
+--         SCH.SCHEDULE_START_DATE AS SCHEDULE_START_DATE,
+--         SCH.CIF_STP_INDICATOR AS CIF_STP_INDICATOR,
+--         SCH.ATOC_CODE AS ATOC_CODE,
+--         SCH.TRAIN_STATUS AS TRAIN_STATUS,
+--         SCH.POWER_TYPE AS POWER_TYPE,
+--         SCH.SEATING_CLASSES AS SEATING_CLASSES,
+--         SCH.RESERVATIONS AS RESERVATIONS,
+--         SCH.SLEEPING_ACCOMODATION AS SLEEPING_ACCOMODATION,
+--         SCH.TRAIN_CATEGORY AS TRAIN_CATEGORY,
+--         SCH.ORIGIN_TIPLOC_CODE AS ORIGIN_TIPLOC_CODE,
+--         SCH.ORIGIN_TPS_DESCRIPTION AS ORIGIN_TPS_DESCRIPTION,
+--         SCH.ORIGIN_GEOHASH AS ORIGIN_GEOHASH,
+--         SCH.ORIGIN_PUBLIC_DEPARTURE_TIME AS ORIGIN_PUBLIC_DEPARTURE_TIME,
+--         SCH.ORIGIN_PLATFORM AS ORIGIN_PLATFORM,
+--         SCH.DESTINATION_TIPLOC_CODE AS DESTINATION_TIPLOC_CODE,
+--         SCH.DESTINATION_TPS_DESCRIPTION AS DESTINATION_TPS_DESCRIPTION,
+--         SCH.DESTINATION_GEOHASH AS DESTINATION_GEOHASH,
+--         SCH.DESTINATION_PUBLIC_ARRIVAL_TIME AS DESTINATION_PUBLIC_ARRIVAL_TIME,
+--         SCH.DESTINATION_PLATFORM AS DESTINATION_PLATFORM        
+--   FROM TRAIN_MOVEMENTS_00A TM
+--       LEFT JOIN 
+--         SCHEDULE_T SCH 
+--         ON TM.SCHEDULE_KEY = SCH.SCHEDULE_KEY
+-- PARTITION BY MSG_KEY;

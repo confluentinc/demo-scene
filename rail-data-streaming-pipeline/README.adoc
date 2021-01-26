@@ -261,6 +261,17 @@ docker exec kafkacat kafkacat -b broker:29092 -t networkrail_TRAIN_MVT -C -c1
 
 {"messageID":"ID:opendata-backend.rockshore.net-38745-1609843645734-11:1:2:32:1194"}{"messageID":"ID:opendata-backend.rockshore.net-38745-1609843645734-11:1:2:32:1194","messageType":"text","timestamp":1609868889020,"deliveryMode":2,"correlationID":null,"replyTo":null,"destination":{"destinationType":"topic","name":"TRAIN_MVT_EA_TOC"},"redelivered":false,"type":null,"expiration":1609869189020,"priority":4,"properties":{},"bytes":null,"map":null,"text":"[{\"header\":{\"msg_type\":\"0003\",\"source_dev_id\":\"\",\"user_id\":\"\",\"original_data_source\":\"SMART\",\"msg_queue_timestamp\":\"1609868887000\",\"source_system_id\":\"TRUST\"},\"body\":{\"event_type\":\"DEPARTURE\",\"gbtt_timestamp\":\"\",\"original_loc_stanox\":\"\",\"planned_timestamp\":\"1609868910000\",\"timetable_variation\":\"1\",\"original_loc_timestamp\":\"\",\"current_train_id\":\"\",\"delay_monitoring_point\":\"false\",\"next_report_run_time\":\"2\",\"reporting_stanox\":\"00000\",\"actual_timestamp\":\"1609868820000\",\"correction_ind\":\"false\",\"event_source\":\"AUTOMATIC\",\"train_file_address\":null,\"platform\":\"\",\"division_code\":\"20\",\"train_terminated\":\"false\",\"train_id\":\"129M30MP05\",\"offroute_ind\":\"false\",\"variation_status\":\"EARLY\",\"train_service_code\":\"21731000\",\"toc_id\":\"20\",\"loc_stanox\":\"35439\",\"auto_expected\":\"true\",\"direction_ind\":\"DOWN\",\"route\":\"2\",\"planned_event_type\":\"DEPARTURE\",\"next_report_stanox\":\"36605\",\"line_ind\":\"\"}},{\"header\":{\"msg_type\":\"0003\",\"source_dev_id\":\"\",\"user_id\":\"\",\"original_data_source\":\"SMART\",\"msg_queue_timestamp\":\"1609868887000\",\"source_system_id\":\"TRUST\"},\"body\":{\"event_type\":\"DEPARTURE\",\"gbtt_timestamp\":\"\",\"original_loc_stanox\":\"\",\"planned_timestamp\":\"1609868940000\",\"timetable_variation\":\"2\",\"original_loc_timestamp\":\"\",\"current_train_id\":\"\",\"delay_monitoring_point\":\"true\",\"next_report_run_time\":\"6\",\"reporting_stanox\":\"16602\",\"actual_timestamp\":\"1609868820000\",\"correction_ind\":\"false\",\"event_source\":\"AUTOMATIC\",\"train_file_address\":null,\"platform\":\" 2\",\"division_code\":\"20\",\"train_terminated\":\"false\",\"train_id\":\"191K28MU05\",\"offroute_ind\":\"false\",\"variation_status\":\"EARLY\",\"train_service_code\":\"21733000\",\"toc_id\":\"20\",\"loc_stanox\":\"16602\",\"auto_expected\":\"true\",\"direction_ind\":\"UP\",\"route\":\"1\",\"planned_event_type\":\"DEPARTURE\",\"next_report_stanox\":\"17112\",\"line_ind\":\"M\"}}]"}
 ----
++
+Hacky way to keep the connector running by restarting it after network glitches etc
++
+[source,bash]
+----
+while [ 1 -eq 1 ];
+do
+    ./data/ingest/movements/check_latest_timestamp_mac.sh ; ./data/ingest/movements/restart_failed_connector_tasks.sh
+    sleep 300
+done
+----
 
 2. Set pipeline running to split out payload batches into single messages
 +
@@ -333,14 +344,10 @@ $ docker exec kafkacat kafkacat -b broker:29092 -t networkrail_TRAIN_MVT_X -C -c
 RUN SCRIPT '/data/ksql/03_movements/01_canx_reason.ksql';
 RUN SCRIPT '/data/ksql/03_movements/01_movement_raw.ksql';
 RUN SCRIPT '/data/ksql/03_movements/02_activations.ksql';
-RUN SCRIPT '/data/ksql/03_movements/02_cancellations.ksql';
-RUN SCRIPT '/data/ksql/03_movements/02_movements.ksql';
 PRINT 'TRAIN_ACTIVATIONS_00' FROM BEGINNING LIMIT 1;
 RUN SCRIPT '/data/ksql/03_movements/03_activations_table.ksql';
-RUN SCRIPT '/data/ksql/03_movements/04_cancellations_activations.ksql';
-RUN SCRIPT '/data/ksql/03_movements/04_movements_activations.ksql';
-RUN SCRIPT '/data/ksql/03_movements/05_cancellations_activations_schedules.ksql';
-RUN SCRIPT '/data/ksql/03_movements/05_movements_activations_schedules.ksql';
+RUN SCRIPT '/data/ksql/03_movements/04_cancellations_nway.ksql';
+RUN SCRIPT '/data/ksql/03_movements/04_movements_nway.ksql';
 ----
 
 ==== Movements
@@ -349,31 +356,27 @@ RUN SCRIPT '/data/ksql/03_movements/05_movements_activations_schedules.ksql';
 ----
 SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') as ACTUAL_TIMESTAMP,
        EVENT_TYPE,
-       ORIGIN_TPS_DESCRIPTION,
-       DESTINATION_TPS_DESCRIPTION,
-       CASE WHEN VARIATION_STATUS = 'ON TIME' THEN 'ON TIME' 
-            WHEN VARIATION_STATUS = 'LATE' THEN CAST(TIMETABLE_VARIATION AS VARCHAR) + ' MINS LATE' 
-            WHEN VARIATION_STATUS='EARLY' THEN CAST(TIMETABLE_VARIATION AS VARCHAR) + ' MINS EARLY' 
-         END AS VARIATION ,
-       VARIATION_STATUS,
+       LOC_NLCDESC,
+       PLATFORM,
+       VARIATION ,
        TOC,
-       TRAIN_ID, SCHEDULE_KEY
-  FROM TRAIN_MOVEMENTS_ACTIVATIONS_SCHEDULE_00
+       TRAIN_ID, 
+       GEOHASH
+  FROM TRAIN_MOVEMENTS
+  WHERE ORIGIN_TPS_DESCRIPTION = 'LEEDS'
   EMIT CHANGES;
-
-
-  WHERE ORIGIN_TPS_DESCRIPTION = 'ILKLEY'
-  LIMIT 10;
-
 ----
 
 [source,sql]
 ----
-2019-05-24 11:42:00 | DESTINATION | BEN RHYDDING | Platform 1 | 1 MINS LATE | LATE | Arriva Trains Northern | 172D48MI24 | 11821020
-2019-05-24 11:42:00 | DESTINATION | BEN RHYDDING | Platform 2 | ON TIME | ON TIME | Arriva Trains Northern | 172V27MJ24 | 11819020
-2019-05-24 11:43:00 | ORIGIN | BEN RHYDDING | Platform 2 | 1 MINS LATE | LATE | Arriva Trains Northern | 172V27MJ24 | 11819020
-2019-05-24 11:43:00 | ORIGIN | BEN RHYDDING | Platform 1 | 2 MINS LATE | LATE | Arriva Trains Northern | 172D48MI24 | 11821020
-2019-05-24 11:54:00 | DESTINATION | BEN RHYDDING | Platform 1 | ON TIME | ON TIME | Arriva Trains Northern | 172V26MJ24 | 11819020
++---------------------+-----------+-------------------+-----------+------------+-----------------------------+-----------+----------------------+
+|ACTUAL_TIMESTAMP     |EVENT_TYPE |LOC_NLCDESC        |PLATFORM   |VARIATION   |TOC                          |TRAIN_ID   |GEOHASH               |
++---------------------+-----------+-------------------+-----------+------------+-----------------------------+-----------+----------------------+
+|2021-01-25 11:16:09  |DEPARTURE  |LEEDS              |Platform 6 |ON TIME     |London North Eastern Railway |171A26MI25 |gcwfhcebdvxtmzmvpgye  |
+|2021-01-25 11:17:44  |DEPARTURE  |WHITEHALL JN       |           |1 MINS LATE |London North Eastern Railway |171A26MI25 |gcwfh2xcgev4kgnq8t02  |
+|2021-01-25 11:18:04  |DEPARTURE  |HOLBECK JUNCTION   |           |1 MINS LATE |London North Eastern Railway |171A26MI25 |gcwcuxs5fnfj87uf6hx9  |
+|2021-01-25 11:25:54  |ARRIVAL    |WAKEFIELD WESTGATE |Platform 1 |1 MINS LATE |London North Eastern Railway |171A26MI25 |gcwcmsxdb89yec9h6um3  |
+|2021-01-25 11:29:09  |DEPARTURE  |WAKEFIELD WESTGATE |Platform 1 |ON TIME     |London North Eastern Railway |171A26MI25 |gcwcmsxdb89yec9h6um3  |
 ----
 
 Regarding activations: 
