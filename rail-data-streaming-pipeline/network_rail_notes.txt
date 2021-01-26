@@ -18,7 +18,7 @@ curl -i -X POST -H "Accept:application/json" \
     "jms.destination.name":"TD_LNE_GN_SIG_AREA",
     "kafka.topic":"networkrail_TD_LNE_GN_SIG_AREA",
     "confluent.license":"",
-    "confluent.topic.bootstrap.servers":"kafka:29092",
+    "confluent.topic.bootstrap.servers":"broker:29092",
     "confluent.topic.replication.factor":1
   }
 }'
@@ -37,7 +37,7 @@ curl -i -X POST -H "Accept:application/json" \
     "jms.destination.name":"TRAIN_MVT_ED_TOC",
     "kafka.topic":"networkrail_TRAIN_MVT_ED_TOC",
     "confluent.license":"",
-    "confluent.topic.bootstrap.servers":"kafka:29092",
+    "confluent.topic.bootstrap.servers":"broker:29092",
     "confluent.topic.replication.factor":1
   }
 }'
@@ -92,7 +92,7 @@ curl -i -X POST -H "Accept:application/json" \
     "jms.destination.name":"TD_LNE_GN_SIG_AREA",
     "kafka.topic":"networkrail_TD_LNE_GN_SIG_AREA",
     "confluent.license":"",
-    "confluent.topic.bootstrap.servers":"kafka:29092",
+    "confluent.topic.bootstrap.servers":"broker:29092",
     "confluent.topic.replication.factor":1
   }
 }'
@@ -130,14 +130,13 @@ CREATE STREAM TD_LNE_GN_SIG_AREA_RAW WITH (KAFKA_TOPIC='networkrail_TD_LNE_GN_SI
 ksql> select text from TD_LNE_GN_SIG_AREA_RAW limit 1;
 [{"CT_MSG":{"time":"1558387866000","area_id":"WE","msg_type":"CT","report_time":"2215"}},{"CA_MSG":{"to":"0139","time":"1558387866000","area_id":"DR","msg_type":"CA","from":"0137","descr":"1N34"}},{"CA_MSG":{"to":"0513","time":"1558387867000","area_id":"KX","msg_type":"CA","from":"0509","descr":"2V65"}},{"CA_MSG":{"to":"0405","time":"1558387868000","area_id":"KX","msg_type":"CA","from":"0395","descr":"2C64"}},{"CA_MSG":{"to":"0981","time":"1558387869000","area_id":"KX","msg_type":"CA","from":"0977","descr":"2C60"}},{"CA_MSG":{"to":"0473","time":"1558387869000","area_id":"PB","msg_type":"CA","from":"0433","descr":"404D"}},{"CC_MSG":{"to":"0253","time":"1558387872000","area_id":"KX","msg_type":"CC","descr":"9S64"}}]
 
-ksql> select EXTRACTJSONFIELD(text,'$[0]') from TD_LNE_GN_SIG_AREA_RAW limit 1;
+ksql> select EXTRACTJSONFIELD(text,'$[1]') from TD_LNE_GN_SIG_AREA_RAW limit 1;
 {"CT_MSG":{"time":"1558387866000","area_id":"WE","msg_type":"CT","report_time":"2215"}}
 
 request-pipelining ON
 -- https://wiki.openraildata.com/index.php?title=NROD_Message_Batching
 -- Messages are in batches of up to a limit of 32 per batch
-CREATE STREAM TD_LNE_GN_SIG_AREA_EXPLODE_00 AS SELECT EXTRACTJSONFIELD(TEXT,'$[0]') AS MSG_JSON FROM TD_LNE_GN_SIG_AREA_RAW;
-INSERT INTO   TD_LNE_GN_SIG_AREA_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[1]') AS MSG_JSON FROM TD_LNE_GN_SIG_AREA_RAW;
+CREATE STREAM TD_LNE_GN_SIG_AREA_EXPLODE_00 AS SELECT EXTRACTJSONFIELD(TEXT,'$[1]') AS MSG_JSON FROM TD_LNE_GN_SIG_AREA_RAW;
 INSERT INTO   TD_LNE_GN_SIG_AREA_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[2]') AS MSG_JSON FROM TD_LNE_GN_SIG_AREA_RAW;
 INSERT INTO   TD_LNE_GN_SIG_AREA_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[3]') AS MSG_JSON FROM TD_LNE_GN_SIG_AREA_RAW;
 INSERT INTO   TD_LNE_GN_SIG_AREA_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[4]') AS MSG_JSON FROM TD_LNE_GN_SIG_AREA_RAW;
@@ -168,6 +167,7 @@ INSERT INTO   TD_LNE_GN_SIG_AREA_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[2
 INSERT INTO   TD_LNE_GN_SIG_AREA_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[29]') AS MSG_JSON FROM TD_LNE_GN_SIG_AREA_RAW;
 INSERT INTO   TD_LNE_GN_SIG_AREA_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[30]') AS MSG_JSON FROM TD_LNE_GN_SIG_AREA_RAW;
 INSERT INTO   TD_LNE_GN_SIG_AREA_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[31]') AS MSG_JSON FROM TD_LNE_GN_SIG_AREA_RAW;
+INSERT INTO   TD_LNE_GN_SIG_AREA_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[32]') AS MSG_JSON FROM TD_LNE_GN_SIG_AREA_RAW;
 
 Ref: https://wiki.openraildata.com/index.php/TD
 Ref: https://wiki.openraildata.com/index.php?title=C_Class_Messages
@@ -212,7 +212,7 @@ curl -i -X POST -H "Accept:application/json" \
     "jms.destination.name":"TD_LNE_GN_SIG_AREA",
     "kafka.topic":"networkrail_TD_LNE_GN_SIG_AREA-02",
     "confluent.license":"",
-    "confluent.topic.bootstrap.servers":"kafka:29092",
+    "confluent.topic.bootstrap.servers":"broker:29092",
     "confluent.topic.replication.factor":1, 
     "transforms": "messageField",
     "transforms.messageField.type":"org.apache.kafka.connect.transforms.ExtractField$Value",
@@ -222,7 +222,7 @@ curl -i -X POST -H "Accept:application/json" \
 
 $ docker-compose exec -T kafka-connect \
               kafka-avro-console-consumer \
-              --bootstrap-server kafka:29092 \
+              --bootstrap-server broker:29092 \
               --property schema.registry.url=http://schema-registry:8081 \
               --topic networkrail_TD_LNE_GN_SIG_AREA-02 --max-messages 1 | jq -c '.'
 "[{\"CA_MSG\":{\"to\":\"0652\",\"time\":\"1558429386000\",\"area_id\":\"KX\",\"msg_type\":\"CA\",\"from\":\"0658\",\"descr\":\"9S19\"}},{\"CA_MSG\":{\"to\":\"0484\",\"time\":\"1558429390000\",\"area_id\":\"KX\",\"msg_type\":\"CA\",\"from\":\"0494\",\"descr\":\"2K50\"}}]"
@@ -243,7 +243,7 @@ curl -i -X POST -H "Accept:application/json" \
     "jms.destination.name":"TD_LNE_GN_SIG_AREA",
     "kafka.topic":"networkrail_TD_LNE_GN_SIG_AREA-03",
     "confluent.license":"",
-    "confluent.topic.bootstrap.servers":"kafka:29092",
+    "confluent.topic.bootstrap.servers":"broker:29092",
     "confluent.topic.replication.factor":1, 
     "transforms": "messageField",
     "transforms.messageField.type":"org.apache.kafka.connect.transforms.ExtractField$Value",
@@ -293,7 +293,7 @@ Caused by: java.lang.ClassCastException: java.util.ArrayList cannot be cast to j
     "jms.destination.name":"TRAIN_MVT_ALL_TOC",
     "kafka.topic":"networkrail_TRAIN_MVT_ALL_TOC",
     "confluent.license":"",
-    "confluent.topic.bootstrap.servers":"kafka:29092",
+    "confluent.topic.bootstrap.servers":"broker:29092",
     "confluent.topic.replication.factor":1
   }
 }'
@@ -315,7 +315,7 @@ curl -i -X POST -H "Accept:application/json" \
 "key.converter": "org.apache.kafka.connect.json.JsonConverter",
 "key.converter.schemas.enable": "false",
 "confluent.license":"",
-"confluent.topic.bootstrap.servers":"kafka:29092",
+"confluent.topic.bootstrap.servers":"broker:29092",
 "confluent.topic.replication.factor":1
 }
 }'
@@ -338,7 +338,7 @@ curl -i -X POST -H "Accept:application/json" \
 "key.converter": "org.apache.kafka.connect.json.JsonConverter",
 "key.converter.schemas.enable": "false",
 "confluent.license":"",
-"confluent.topic.bootstrap.servers":"kafka:29092",
+"confluent.topic.bootstrap.servers":"broker:29092",
 "confluent.topic.replication.factor":1
 }
 }'
@@ -349,8 +349,7 @@ CREATE STREAM TRAIN_MVT_EA_TOC_RAW WITH (KAFKA_TOPIC='networkrail_TRAIN_MVT_EA_T
 request-pipelining ON
 -- https://wiki.openraildata.com/index.php?title=NROD_Message_Batching
 -- Messages are in batches of up to a limit of 32 per batch
-CREATE STREAM TRAIN_MVT_EA_TOC_EXPLODE_00 AS SELECT EXTRACTJSONFIELD(TEXT,'$[0]') AS MSG_JSON FROM TRAIN_MVT_EA_TOC_RAW;
-INSERT INTO   TRAIN_MVT_EA_TOC_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[1]') AS MSG_JSON FROM TRAIN_MVT_EA_TOC_RAW;
+CREATE STREAM TRAIN_MVT_EA_TOC_EXPLODE_00 AS SELECT EXTRACTJSONFIELD(TEXT,'$[1]') AS MSG_JSON FROM TRAIN_MVT_EA_TOC_RAW;
 INSERT INTO   TRAIN_MVT_EA_TOC_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[2]') AS MSG_JSON FROM TRAIN_MVT_EA_TOC_RAW;
 INSERT INTO   TRAIN_MVT_EA_TOC_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[3]') AS MSG_JSON FROM TRAIN_MVT_EA_TOC_RAW;
 INSERT INTO   TRAIN_MVT_EA_TOC_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[4]') AS MSG_JSON FROM TRAIN_MVT_EA_TOC_RAW;
@@ -381,6 +380,7 @@ INSERT INTO   TRAIN_MVT_EA_TOC_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[28]
 INSERT INTO   TRAIN_MVT_EA_TOC_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[29]') AS MSG_JSON FROM TRAIN_MVT_EA_TOC_RAW;
 INSERT INTO   TRAIN_MVT_EA_TOC_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[30]') AS MSG_JSON FROM TRAIN_MVT_EA_TOC_RAW;
 INSERT INTO   TRAIN_MVT_EA_TOC_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[31]') AS MSG_JSON FROM TRAIN_MVT_EA_TOC_RAW;
+INSERT INTO   TRAIN_MVT_EA_TOC_EXPLODE_00    SELECT EXTRACTJSONFIELD(TEXT,'$[32]') AS MSG_JSON FROM TRAIN_MVT_EA_TOC_RAW;
 
 CREATE STREAM TRAIN_MVT_EA_TOC_MVT_00 WITH (TIMESTAMP='header_msg_queue_timestamp') AS
    SELECT  EXTRACTJSONFIELD(MSG_JSON,'$.header.msg_type') as header_msg_type,

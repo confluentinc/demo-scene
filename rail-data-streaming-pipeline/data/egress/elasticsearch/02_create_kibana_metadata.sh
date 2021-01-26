@@ -11,20 +11,20 @@ curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/train_movemen
     -H 'Content-Type: application/json' \
     -d '{"attributes":{"title":"train_movements_activations_schedule_00","timeFieldName":"ACTUAL_TIMESTAMP"}}'
 
-curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/train_cancellations_02' \
+curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/train_cancellations_00' \
     -H 'kbn-xsrf: nevergonnagiveyouup' \
     -H 'Content-Type: application/json' \
-    -d '{"attributes":{"title":"train_cancellations_02","timeFieldName":"CANX_TIMESTAMP"}}'
+    -d '{"attributes":{"title":"train_cancellations_00","timeFieldName":"CANX_TIMESTAMP"}}'
 
-curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/train_movements_01' \
+curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/train_movements_00' \
     -H 'kbn-xsrf: nevergonnagiveyouup' \
     -H 'Content-Type: application/json' \
-    -d '{"attributes":{"title":"train_movements_01","timeFieldName":"ACTUAL_TIMESTAMP"}}'
+    -d '{"attributes":{"title":"train_movements_00","timeFieldName":"ACTUAL_TIMESTAMP"}}'
 
-curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/schedule_02' \
+curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/schedule_00' \
     -H 'kbn-xsrf: nevergonnagiveyouup' \
     -H 'Content-Type: application/json' \
-    -d '{"attributes":{"title":"schedule_02"}}'
+    -d '{"attributes":{"title":"train-schedule_00"}}'
 
 echo "Setting the index pattern as default"
 curl -XPOST 'http://localhost:5601/api/kibana/settings' \
@@ -33,7 +33,7 @@ curl -XPOST 'http://localhost:5601/api/kibana/settings' \
     -d '{"changes":{"defaultIndex":"train_movements_activations_schedule_00"}}'
 
 echo "Opting out of telemetry"
-curl -XPOST 'http://localhost:5601/api/telemetry/v1/optIn' \
-    -H 'kbn-xsrf: nevergonnagiveyouup' \
-    -H 'content-type: application/json' \
-    -d '{"enabled":false}'
+curl 'http://localhost:5601/api/telemetry/v2/optIn' \
+  -H 'kbn-xsrf: nevergonnagiveyouup' \
+  -H 'Content-Type: application/json' \
+  -d '{"enabled":false}' 

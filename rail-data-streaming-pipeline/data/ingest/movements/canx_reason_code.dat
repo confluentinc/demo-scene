@@ -1,271 +1,260 @@
-AA:{"canx_reason_code":"AA","canx_reason":"Waiting acceptance into off Network Terminal or Yard"}
-AC:{"canx_reason_code":"AC","canx_reason":"Waiting train preparation or completion of TOPS list/RT3973"}
-AD:{"canx_reason_code":"AD","canx_reason":"Off Network Terminal or Yard staff shortage including reactionary congestion caused by the shortage"}
-AE:{"canx_reason_code":"AE","canx_reason":"Congestion in off Network Terminal or Yard"}
-AG:{"canx_reason_code":"AG","canx_reason":"Wagon load incident including adjusting loads or open door"}
-AH:{"canx_reason_code":"AH","canx_reason":"Customer or off Network yard equipment breakdown/reduced capacity"}
-AJ:{"canx_reason_code":"AJ","canx_reason":"Waiting Customer’s traffic including documentation"}
-AK:{"canx_reason_code":"AK","canx_reason":"Safety incidents and mishaps (e.g. derailments, fire or chemical spill) in off Network Rail network freight yard or terminal (including private sidings, and stations – where it affects FOC services)"}
-AX:{"canx_reason_code":"AX","canx_reason":"Failure of off network infrastructure (FOC or private)"}
-AZ:{"canx_reason_code":"AZ","canx_reason":"Other Freight Operating Company. Cause to be specified, including mishaps in off Network terminals or yards"}
-DA:{"canx_reason_code":"DA","canx_reason":"Non Technical Fleet Holding Code"}
-DB:{"canx_reason_code":"DB","canx_reason":"Train Operations Holding Code"}
-DC:{"canx_reason_code":"DC","canx_reason":"Train Crew Causes Holding Code"}
-DD:{"canx_reason_code":"DD","canx_reason":"Technical Fleet Holding Code"}
-DE:{"canx_reason_code":"DE","canx_reason":"Station Causes Holding Code"}
-DF:{"canx_reason_code":"DF","canx_reason":"External Causes Holding Code"}
-DG:{"canx_reason_code":"DG","canx_reason":"Freight Terminal and or Yard Holding Code"}
-DH:{"canx_reason_code":"DH","canx_reason":"Adhesion and or Autumn Holding Code"}
-FA:{"canx_reason_code":"FA","canx_reason":"Dangerous goods incident"}
-FC:{"canx_reason_code":"FC","canx_reason":"Freight train driver"}
-FE:{"canx_reason_code":"FE","canx_reason":"Train crew not available"}
-FG:{"canx_reason_code":"FG","canx_reason":"Driver adhering to company professional driving standards or policy"}
-FH:{"canx_reason_code":"FH","canx_reason":"Planning issues including loco diagrams or RT3973 restriction not requested"}
-FI:{"canx_reason_code":"FI","canx_reason":"Delay due to incorrect ETCS system or equipment operation by Driver"}
-FJ:{"canx_reason_code":"FJ","canx_reason":"Train held at FOC request"}
-FK:{"canx_reason_code":"FK","canx_reason":"Train diverted or re-routed at FOC request"}
-FL:{"canx_reason_code":"FL","canx_reason":"Train cancelled at FOC request or planned not to run"}
-FM:{"canx_reason_code":"FM","canx_reason":"Tail lamp/head lamp out or incorrectly shown"}
-FN:{"canx_reason_code":"FN","canx_reason":"Late presentation from Europe"}
-FO:{"canx_reason_code":"FO","canx_reason":"Time lost en-route believed to be Operator cause and information required from Operator (Ops Responsibility)"}
-FP:{"canx_reason_code":"FP","canx_reason":"Incorrect route taken or route wrongly challenged by driver, including SPAD's"}
-FS:{"canx_reason_code":"FS","canx_reason":"Delay due to ETCS/ ERTMS on-board overriding driver command"}
-FT:{"canx_reason_code":"FT","canx_reason":"Freight Operator autumn-attribution Neutral Zone delays"}
-FW:{"canx_reason_code":"FW","canx_reason":"Late start or yard overtime not explained by Train Operator"}
-FX:{"canx_reason_code":"FX","canx_reason":"Freight train running at lower class or speed than planned classification or overweight"}
-FZ:{"canx_reason_code":"FZ","canx_reason":"Other FOC causes incl. FOC control directive, cause to be specified, including mishaps."}
-I0:{"canx_reason_code":"I0","canx_reason":"Telecom equipment failures legacy (inc. NRN/CSR/RETB link)"}
-I1:{"canx_reason_code":"I1","canx_reason":"Overhead line/third rail defect"}
-I2:{"canx_reason_code":"I2","canx_reason":"AC/DC trip"}
-I4:{"canx_reason_code":"I4","canx_reason":"OHL/third rail power supply failure or reduction"}
-I5:{"canx_reason_code":"I5","canx_reason":"Possession over-run from planned work"}
-I6:{"canx_reason_code":"I6","canx_reason":"Delays as a result of line blocks / track patrols"}
-I7:{"canx_reason_code":"I7","canx_reason":"Engineer's train late or failed in possession"}
-I8:{"canx_reason_code":"I8","canx_reason":"Animal Strike/Incursion within the control of Network Rail"}
-I9:{"canx_reason_code":"I9","canx_reason":"Fires starting on Network Rail Infrastructure"}
-IA:{"canx_reason_code":"IA","canx_reason":"Signal failure"}
-IB:{"canx_reason_code":"IB","canx_reason":"Points failure"}
-IC:{"canx_reason_code":"IC","canx_reason":"Track circuit failure"}
-ID:{"canx_reason_code":"ID","canx_reason":"Level crossing failure incl. barrow/foot crossings and crossing treadles"}
-IE:{"canx_reason_code":"IE","canx_reason":"Signalling functional power supply failure"}
-IF:{"canx_reason_code":"IF","canx_reason":"Train Describer/Panel/ARS/SSI/TDM/Remote Control failure"}
-IG:{"canx_reason_code":"IG","canx_reason":"Block failure"}
-IH:{"canx_reason_code":"IH","canx_reason":"Power supply and distribution system failure"}
-II:{"canx_reason_code":"II","canx_reason":"Signalling lineside cable fault"}
-IJ:{"canx_reason_code":"IJ","canx_reason":"AWS/ATP/TPWS/Train Stop/On-track equipment failure"}
-IK:{"canx_reason_code":"IK","canx_reason":"Telephone equipment failure"}
-IL:{"canx_reason_code":"IL","canx_reason":"Token equipment failure"}
-IM:{"canx_reason_code":"IM","canx_reason":"Infrastructure Balise Failure (TASS / ETCS / ERTMS)"}
-IN:{"canx_reason_code":"IN","canx_reason":"HABD/Panchex/WILD/Wheelchex"}
-IP:{"canx_reason_code":"IP","canx_reason":"Points failure caused by snow or frost where heaters are fitted but found to be not operative or defective"}
-IQ:{"canx_reason_code":"IQ","canx_reason":"Trackside sign blown down, missing, defective, mis-placed"}
-IR:{"canx_reason_code":"IR","canx_reason":"Broken/cracked/twisted/buckled/flawed rail"}
-IS:{"canx_reason_code":"IS","canx_reason":"Track defects (other than rail defects i.e. fish plates, wet beds etc)"}
-IT:{"canx_reason_code":"IT","canx_reason":"Rough ride or bumps reported - cause not known"}
-IV:{"canx_reason_code":"IV","canx_reason":"Earthslip/subsidence/breached sea defences (not the result of severe weather on the day of failure)"}
-IW:{"canx_reason_code":"IW","canx_reason":"Non severe weather - snow/ice/frost affecting infrastructure equipment"}
-IZ:{"canx_reason_code":"IZ","canx_reason":"Other infrastructure causes"}
-J0:{"canx_reason_code":"J0","canx_reason":"Telecom radio failures IVRS/GSM-R"}
-J2:{"canx_reason_code":"J2","canx_reason":"Network Rail train dispatch equipment failure excluding telecoms equipment"}
-J3:{"canx_reason_code":"J3","canx_reason":"Axle Counter Failure"}
-J4:{"canx_reason_code":"J4","canx_reason":"Infrastructure Safety Issue Reported by Member of the Public – No Fault Found"}
-J5:{"canx_reason_code":"J5","canx_reason":"Infrastructure Fault Report Proven to be mistaken"}
-J6:{"canx_reason_code":"J6","canx_reason":"Lightning strike against unprotected assets"}
-J7:{"canx_reason_code":"J7","canx_reason":"ETCS/ ERTMS Equipment Failure (excluding communications link and balises)"}
-J8:{"canx_reason_code":"J8","canx_reason":"Damage to infrastructure caused by on-track machine whilst operating in a possession"}
-J9:{"canx_reason_code":"J9","canx_reason":"Preventative Maintenance to the infrastructure in response to a Remote Condition Monitoring Alert"}
-JA:{"canx_reason_code":"JA","canx_reason":"TSR speeds for Track-work outside the Rules of the Route"}
-JB:{"canx_reason_code":"JB","canx_reason":"Reactionary Delay to 'P' coded TSR"}
-JD:{"canx_reason_code":"JD","canx_reason":"Structures - Bridges/tunnels/buildings/ embankments (not bridge strikes)"}
-JG:{"canx_reason_code":"JG","canx_reason":"ESR/TSR due to works not completed or cancelled possession (where restriction did not exist prior to possession)"}
-JH:{"canx_reason_code":"JH","canx_reason":"Critical Rail Temperature speeds, (other than buckled rails)"}
-JK:{"canx_reason_code":"JK","canx_reason":"Flooding not due to exceptional weather"}
-JL:{"canx_reason_code":"JL","canx_reason":"Network Rail staff oversight or error (Maintenance / Infrastructure)"}
-JP:{"canx_reason_code":"JP","canx_reason":"Failure to maintain vegetation within network boundaries in accordance with prevailing Network Rail standards, including where signals are obscured and a train strikes branches."}
-JR:{"canx_reason_code":"JR","canx_reason":"Delay due to RBC issues affecting ETCS / ATO operation (not balise related)"}
-JS:{"canx_reason_code":"JS","canx_reason":"Condition of Track TSR outside the Timetable Planning Rules"}
-JT:{"canx_reason_code":"JT","canx_reason":"Points failure caused by snow or frost where heaters are not fitted"}
-JX:{"canx_reason_code":"JX","canx_reason":"Miscellaneous items (including trees) causing obstructions, not the result of trespass, vandalism, weather or fallen/thrown from trains"}
-M0:{"canx_reason_code":"M0","canx_reason":"Confirmed train cab based safety system fault (including GSM-R)"}
-M1:{"canx_reason_code":"M1","canx_reason":"Confirmed Pantograph ADD, shoe beam or assoc.system faults Incl. positive PANCHEX activations"}
-M2:{"canx_reason_code":"M2","canx_reason":"Delay due to ATO / ETCS equipment"}
-M7:{"canx_reason_code":"M7","canx_reason":"Door and Door system faults"}
-M8:{"canx_reason_code":"M8","canx_reason":"Other technical failures above the Solebar"}
-M9:{"canx_reason_code":"M9","canx_reason":"Reported fleet equipment defect - no fault found"}
-MB:{"canx_reason_code":"MB","canx_reason":"Electric loco failure, defect, attention."}
-MC:{"canx_reason_code":"MC","canx_reason":"Diesel loco failure, defect, attention."}
-MD:{"canx_reason_code":"MD","canx_reason":"Other technical failures below the solebar"}
-ME:{"canx_reason_code":"ME","canx_reason":"Steam locomotive failure/defect/attention"}
-MF:{"canx_reason_code":"MF","canx_reason":"International/Channel Tunnel locomotive failure/defect/attention"}
-ML:{"canx_reason_code":"ML","canx_reason":"Wagons, coaches and parcel vehicle faults"}
-MN:{"canx_reason_code":"MN","canx_reason":"Brake and brake systems faults; including wheel flats where no other cause had been identified"}
-MP:{"canx_reason_code":"MP","canx_reason":"Rail / wheel interface, adhesion problems (including ice on the running rail)"}
-MR:{"canx_reason_code":"MR","canx_reason":"Sanders and scrubber faults"}
-MS:{"canx_reason_code":"MS","canx_reason":"Planned underpowered or shortformed service and or vehicle, incl. exam set swaps"}
-MT:{"canx_reason_code":"MT","canx_reason":"Confirmed train borne safety system faults (not cab based)"}
-MU:{"canx_reason_code":"MU","canx_reason":"Depot operating problem"}
-MV:{"canx_reason_code":"MV","canx_reason":"EngineerÕs on-track equipment failure outside possession"}
-MW:{"canx_reason_code":"MW","canx_reason":"Weather - effect on T&RS equipment"}
-MY:{"canx_reason_code":"MY","canx_reason":"Coupler and Coupler system faults"}
-NA:{"canx_reason_code":"NA","canx_reason":"On-train TASS/TILT failure"}
-OA:{"canx_reason_code":"OA","canx_reason":"Regulation decision made with best endeavours"}
-OB:{"canx_reason_code":"OB","canx_reason":"Delayed by signaller not applying applicable regulating policy"}
-OC:{"canx_reason_code":"OC","canx_reason":"Signaller, including wrong routing and wrong ETCS/ ERTMS instruction"}
-OD:{"canx_reason_code":"OD","canx_reason":"Delayed as a result of Route Control decision or directive"}
-OE:{"canx_reason_code":"OE","canx_reason":"Failure to lay Sandite or operate Railhead Conditioning train as programmed"}
-OF:{"canx_reason_code":"OF","canx_reason":"Delay due to incorrect ETCS system or equipment operation by Signaller / Controller"}
-OG:{"canx_reason_code":"OG","canx_reason":"Ice on conductor rail/OLE"}
-OH:{"canx_reason_code":"OH","canx_reason":"ARS software problem (excluding scheduling issues and technical failures)"}
-OI:{"canx_reason_code":"OI","canx_reason":"Formal Inquiry Incident - other operators"}
-OJ:{"canx_reason_code":"OJ","canx_reason":"Fire in station building or on platform, affecting operators not booked to call at that station"}
-OK:{"canx_reason_code":"OK","canx_reason":"Delay caused by Operating staff oversight, issues or absence (excluding signallers and Control)"}
-OL:{"canx_reason_code":"OL","canx_reason":"Signal Box not open during booked hours"}
-OM:{"canx_reason_code":"OM","canx_reason":"Technical failure associated with a Railhead Conditioning train"}
-ON:{"canx_reason_code":"ON","canx_reason":"Delays not properly investigated by Network Rail"}
-OP:{"canx_reason_code":"OP","canx_reason":"Failure of TRUST or SMART system preventing recording and investigation of delay"}
-OQ:{"canx_reason_code":"OQ","canx_reason":"Incorrect Simplifier (where produced by Ops staff)"}
-OS:{"canx_reason_code":"OS","canx_reason":"Late start or delays to Railhead Conditioning Train (RHC) including any reactionary delay to other trains"}
-OU:{"canx_reason_code":"OU","canx_reason":"Delays not investigated by Network Rail"}
-OV:{"canx_reason_code":"OV","canx_reason":"Fire or evacuation due to fire alarm of Network Rail buildings other than stations not due to vandalism"}
-OW:{"canx_reason_code":"OW","canx_reason":"Connections held where the prime incident causing delay to the incoming train is a FOC owned incident and service is more frequent than hourly"}
-OZ:{"canx_reason_code":"OZ","canx_reason":"Other Network Rail Operating causes"}
-PA:{"canx_reason_code":"PA","canx_reason":"TSR within Timetable Planning Rules"}
-PB:{"canx_reason_code":"PB","canx_reason":"Condition of asset TSR within Engineering Access Statement (EAS)"}
-PD:{"canx_reason_code":"PD","canx_reason":"TPS cancellation (Not to be input in TSI/TRUST)"}
-PE:{"canx_reason_code":"PE","canx_reason":"Cancelled due to planned engineering work"}
-PF:{"canx_reason_code":"PF","canx_reason":"Planned engineering work - diversion/SLW not timetabled (within Rules of the Route)"}
-PG:{"canx_reason_code":"PG","canx_reason":"Planned cancellation by Train Operator including Bank Holiday schedules"}
-PJ:{"canx_reason_code":"PJ","canx_reason":"Cancellation of a duplicate or erroneous schedule or associated duplicate delay"}
-PL:{"canx_reason_code":"PL","canx_reason":"Exclusion agreed between Network Rail and Train Operator"}
-PN:{"canx_reason_code":"PN","canx_reason":"VSTP service delays of under 5 minutes caused by regulation and or time lost in running."}
-PT:{"canx_reason_code":"PT","canx_reason":"TRUST Berth Offset inaccuracies"}
-PZ:{"canx_reason_code":"PZ","canx_reason":"Other contractual exclusion"}
-QA:{"canx_reason_code":"QA","canx_reason":"WTT Schedule and or LTP process including incorrect simplifiers (where produced by Capacity Planning)."}
-QB:{"canx_reason_code":"QB","canx_reason":"Planned engineering work - diversion/SLW not timetabled (outside the Timetable Planning Rules.)"}
-QH:{"canx_reason_code":"QH","canx_reason":"Adhesion problems due to leaf contamination"}
-QI:{"canx_reason_code":"QI","canx_reason":"Cautioning due to railhead leaf contamination"}
-QJ:{"canx_reason_code":"QJ","canx_reason":"Special working for leaf-fall track circuit operation"}
-QM:{"canx_reason_code":"QM","canx_reason":"Train Schedule VAR/STP process including incorrect simplifiers (where produced by Capacity Planning)."}
-QN:{"canx_reason_code":"QN","canx_reason":"VSTP schedule / VSTP process (TSI created schedule)"}
-QP:{"canx_reason_code":"QP","canx_reason":"Reactionary Delay to "P" coded Possession"}
-QT:{"canx_reason_code":"QT","canx_reason":"Delay accepted by Network Rail as part of a commercial agreement where no substantive delay reason is identified"}
-R1:{"canx_reason_code":"R1","canx_reason":"Incorrect train dispatch by station staff"}
-R2:{"canx_reason_code":"R2","canx_reason":"Late TRTS given by station staff"}
-R3:{"canx_reason_code":"R3","canx_reason":"Station staff unavailable - missing or uncovered"}
-R4:{"canx_reason_code":"R4","canx_reason":"Station staff split responsibility - unable to cover all duties"}
-R5:{"canx_reason_code":"R5","canx_reason":"Station staff error - e.g. wrong announcements, misdirection"}
-R7:{"canx_reason_code":"R7","canx_reason":"Station delays due to special events e.g. sports fixtures"}
-R8:{"canx_reason_code":"R8","canx_reason":"Delay at Station believed to be Operator cause and information required from Operator (Station Responsibility)"}
-RB:{"canx_reason_code":"RB","canx_reason":"Passengers joining/alighting"}
-RC:{"canx_reason_code":"RC","canx_reason":"Pre-booked assistance for a person with reduced mobility joining/alighting"}
-RD:{"canx_reason_code":"RD","canx_reason":"Attaching/detaching/shunter/watering"}
-RE:{"canx_reason_code":"RE","canx_reason":"Lift/escalator defect/failure"}
-RH:{"canx_reason_code":"RH","canx_reason":"Station evacuated due to fire alarm"}
-RI:{"canx_reason_code":"RI","canx_reason":"Waiting connections - not authorised by TOC Control"}
-RJ:{"canx_reason_code":"RJ","canx_reason":"Special Stop Orders - not authorised by TOC Control"}
-RK:{"canx_reason_code":"RK","canx_reason":"Waiting passenger connections authorised by TOC but outwith TOC/Network Rail connection policy"}
-RL:{"canx_reason_code":"RL","canx_reason":"Special Stop Orders authorised by TOC Control (including any delay at point of issue)"}
-RM:{"canx_reason_code":"RM","canx_reason":"Waiting connections from other transport modes"}
-RN:{"canx_reason_code":"RN","canx_reason":"Passengers "forcing" connections between trains outside connectional allowances"}
-RO:{"canx_reason_code":"RO","canx_reason":"Passengers taken ill on platform"}
-RP:{"canx_reason_code":"RP","canx_reason":"Passenger dropped object whilst boarding/alighting from train and train delayed at TOC request"}
-RQ:{"canx_reason_code":"RQ","canx_reason":"Un-booked assistance for a person with reduced mobility joining/alighting"}
-RR:{"canx_reason_code":"RR","canx_reason":"Loading or unloading reserved bicycles"}
-RS:{"canx_reason_code":"RS","canx_reason":"Loading or unloading unreserved bicycles"}
-RT:{"canx_reason_code":"RT","canx_reason":"Loading excessive luggage"}
-RU:{"canx_reason_code":"RU","canx_reason":"Locating lost luggage"}
-RV:{"canx_reason_code":"RV","canx_reason":"Customer Information System failure"}
-RW:{"canx_reason_code":"RW","canx_reason":"Station flooding (including issues with drains) not the result of weather, where the water has not emanated from Network Rail maintained infrastructure/network"}
-RY:{"canx_reason_code":"RY","canx_reason":"Mishap - Station Operator cause"}
-RZ:{"canx_reason_code":"RZ","canx_reason":"Other Station Operator causes"}
-T2:{"canx_reason_code":"T2","canx_reason":"Delay at unstaffed station to non-DOO train"}
-T3:{"canx_reason_code":"T3","canx_reason":"Waiting connections from other transport modes"}
-T4:{"canx_reason_code":"T4","canx_reason":"Loading Supplies (including catering)"}
-T8:{"canx_reason_code":"T8","canx_reason":"Delay at Station believed to be Operator cause and information required from Operator (Ops Responsibility)"}
-TA:{"canx_reason_code":"TA","canx_reason":"Train-crew/loco/stock/unit diagram issues"}
-TB:{"canx_reason_code":"TB","canx_reason":"Train cancelled/delayed at Train Operator's request"}
-TC:{"canx_reason_code":"TC","canx_reason":"Booked Traincrew used for additional/other service"}
-TD:{"canx_reason_code":"TD","canx_reason":"Booked loco/stock/unit used for additional/other service"}
-TE:{"canx_reason_code":"TE","canx_reason":"Injury to passenger on train"}
-TF:{"canx_reason_code":"TF","canx_reason":"Seat reservation problems"}
-TG:{"canx_reason_code":"TG","canx_reason":"Driver"}
-TH:{"canx_reason_code":"TH","canx_reason":"(Senior) Conductor/Train Manager"}
-TI:{"canx_reason_code":"TI","canx_reason":"Traincrew rostering problem"}
-TJ:{"canx_reason_code":"TJ","canx_reason":"Tail lamp or headlamp missing, not lit or wrongly displayed"}
-TK:{"canx_reason_code":"TK","canx_reason":"Train catering staff (including Contractors)"}
-TM:{"canx_reason_code":"TM","canx_reason":"Connection authorised by TOC but outwith connection policy"}
-TN:{"canx_reason_code":"TN","canx_reason":"Late presentation from the continent"}
-TO:{"canx_reason_code":"TO","canx_reason":"Time lost en-route believed to be Operator cause and information required from Operator (Ops Responsibility)"}
-TP:{"canx_reason_code":"TP","canx_reason":"Special Stop Orders"}
-TR:{"canx_reason_code":"TR","canx_reason":"Train Operating Company Directive"}
-TS:{"canx_reason_code":"TS","canx_reason":"Delay due to incorrect ETCS system or equipment operation by Driver"}
-TT:{"canx_reason_code":"TT","canx_reason":"Autumn-attribution Neutral Zone delays (See Supplementary Autumn Attribution Guidance)"}
-TW:{"canx_reason_code":"TW","canx_reason":"Driver adhering to company professional driving standards or policy"}
-TX:{"canx_reason_code":"TX","canx_reason":"Delays incurred on non-Network Rail running lines including London Underground causes (except T&RS)"}
-TY:{"canx_reason_code":"TY","canx_reason":"Mishap-Train Operating Company cause"}
-TZ:{"canx_reason_code":"TZ","canx_reason":"Other Passenger Train Operating Company causes"}
-V8:{"canx_reason_code":"V8","canx_reason":"Train striking bird (pheasant or smaller)"}
-VA:{"canx_reason_code":"VA","canx_reason":"Disorder/drunks/trespass etc"}
-VB:{"canx_reason_code":"VB","canx_reason":"Vandalism/theft"}
-VC:{"canx_reason_code":"VC","canx_reason":"Fatalities/injuries sustained whilst on a platform as the result of being struck by a train or falling from a train"}
-VD:{"canx_reason_code":"VD","canx_reason":"Passenger taken ill on train"}
-VE:{"canx_reason_code":"VE","canx_reason":"Ticket irregularities/refusals to pay"}
-VF:{"canx_reason_code":"VF","canx_reason":"Fire caused by vandalism"}
-VG:{"canx_reason_code":"VG","canx_reason":"Police searching train"}
-VH:{"canx_reason_code":"VH","canx_reason":"Communication cord or emergency train alarm operated"}
-VI:{"canx_reason_code":"VI","canx_reason":"Security alert affecting stations and depots"}
-VR:{"canx_reason_code":"VR","canx_reason":"Driver adhering to company professional driving standards or policies during severe weather conditions that are not fleet related"}
-VW:{"canx_reason_code":"VW","canx_reason":"Severe weather affecting passenger fleet equipment including following company standards/policies or Rule Book instructions"}
-VX:{"canx_reason_code":"VX","canx_reason":"Passenger charter excludable events occurring on the LUL or other non NR running lines"}
-VZ:{"canx_reason_code":"VZ","canx_reason":"Other passenger or external causes the responsibility of TOC"}
-X1:{"canx_reason_code":"X1","canx_reason":"Visibility in semaphore signalled areas, or special working for fog and falling snow implemented by Network Rail - in all signalling areas"}
-X2:{"canx_reason_code":"X2","canx_reason":"Severe flooding beyond that which could be mitigated on Network Rail infrastructure"}
-X3:{"canx_reason_code":"X3","canx_reason":"Lightning Strike - damage to protected systems."}
-X4:{"canx_reason_code":"X4","canx_reason":"Blanket speed restriction for extreme heat or high wind in accordance with the Group Standards"}
-X8:{"canx_reason_code":"X8","canx_reason":"Animal Strike/Incursion not within the control of Network Rail"}
-X9:{"canx_reason_code":"X9","canx_reason":"Points failure caused by severe snow where heaters are working as designed"}
-XA:{"canx_reason_code":"XA","canx_reason":"Trespass (Including non-intentional)"}
-XB:{"canx_reason_code":"XB","canx_reason":"Vandalism/theft (including the placing of objects on the line)"}
-XC:{"canx_reason_code":"XC","canx_reason":"Fatalities or injuries caused by being hit by train (Including non-intentional)"}
-XD:{"canx_reason_code":"XD","canx_reason":"Level Crossing Incidents"}
-XF:{"canx_reason_code":"XF","canx_reason":"Police searching line"}
-XH:{"canx_reason_code":"XH","canx_reason":"Severe heat affecting infrastructure the responsibility of Network Rail (excluding Heat speeds)"}
-XI:{"canx_reason_code":"XI","canx_reason":"Security alert affecting Network Rail Network"}
-XK:{"canx_reason_code":"XK","canx_reason":"External Power Supply Failure Network Rail Infrastructure"}
-XL:{"canx_reason_code":"XL","canx_reason":"Fire external to railway infrastructure"}
-XM:{"canx_reason_code":"XM","canx_reason":"Gas/water mains/overhead power lines"}
-XN:{"canx_reason_code":"XN","canx_reason":"Road related - excl bridge strikes/level crossing incident"}
-XO:{"canx_reason_code":"XO","canx_reason":"External trees, building or objects encroaching onto Network Rail infrastructure (not due to weather or vandalism)"}
-XP:{"canx_reason_code":"XP","canx_reason":"Bridge Strike"}
-XQ:{"canx_reason_code":"XQ","canx_reason":"Swing bridge open for river or canal traffic"}
-XR:{"canx_reason_code":"XR","canx_reason":"Cable vandalism or theft"}
-XT:{"canx_reason_code":"XT","canx_reason":"Severe cold weather affecting infrastructure the responsibility of Network Rail"}
-XU:{"canx_reason_code":"XU","canx_reason":"Sunlight on signal or dispatch equipment where all reasonable mitigation has been taken"}
-XV:{"canx_reason_code":"XV","canx_reason":"Fire or evacuation due to fire alarm of Network Rail buildings due to vandalism (not including stations)"}
-XW:{"canx_reason_code":"XW","canx_reason":"High winds affecting infrastructure the responsibility of Network Rail including objects on the line due to the effect of weather"}
-XZ:{"canx_reason_code":"XZ","canx_reason":"Other external causes the responsibility of Network Rail"}
-YA:{"canx_reason_code":"YA","canx_reason":"Lost path - regulated for train running less late"}
-YB:{"canx_reason_code":"YB","canx_reason":"Lost path - regulated for another late running train"}
-YC:{"canx_reason_code":"YC","canx_reason":"Lost path - following train running less late"}
-YD:{"canx_reason_code":"YD","canx_reason":"Lost path - following another late running train"}
-YE:{"canx_reason_code":"YE","canx_reason":"Waiting to/from single line"}
-YG:{"canx_reason_code":"YG","canx_reason":"Regulated in accordance with Regulation Policy"}
-YI:{"canx_reason_code":"YI","canx_reason":"Late arrival of booked inward stock"}
-YJ:{"canx_reason_code":"YJ","canx_reason":"Late arrival of booked Traincrew"}
-YK:{"canx_reason_code":"YK","canx_reason":"Waiting connecting Freight or Res traffic to attach"}
-YL:{"canx_reason_code":"YL","canx_reason":"Waiting passenger connections within connections policy, contingency plan or otherwise agreed by NR/TOC"}
-YM:{"canx_reason_code":"YM","canx_reason":"Special stop orders within the contingency plan or agreed by NR/TOC"}
-YN:{"canx_reason_code":"YN","canx_reason":"Service Recovery- booked train crew, not available"}
-YO:{"canx_reason_code":"YO","canx_reason":"Waiting platform/station congestion/platform alteration"}
-YP:{"canx_reason_code":"YP","canx_reason":"Delays due to diversions from booked route or line"}
-YQ:{"canx_reason_code":"YQ","canx_reason":"Passenger overcrowding caused by a train being of short formation"}
-YR:{"canx_reason_code":"YR","canx_reason":"Tactical cancellation for service recovery not caused by late running"}
-YT:{"canx_reason_code":"YT","canx_reason":"Reactionary delay to a train that is not leaving the network, by a train that is leaving the network"}
-YU:{"canx_reason_code":"YU","canx_reason":"Service Recovery - booked rolling stock, not available"}
-YX:{"canx_reason_code":"YX","canx_reason":"Passenger overcrowding caused by delay or cancellation of another train or its own late running"}
-ZW:{"canx_reason_code":"ZW","canx_reason":"Uninvestigated Cancellations System Roll-Ups only"}
-ZS:{"canx_reason_code":"ZS","canx_reason":"No cause ascertainable for a Sub Threshold Delay causing Threshold Reactionary (where agreed by both Parties)"}
-ZU:{"canx_reason_code":"ZU","canx_reason":"No Cause Identified After Full Investigation by Both Parties (A ‘Full Investigation’ will be one including all avenues of investigation agreed as reasonable by both Parties)"}
-ZX:{"canx_reason_code":"ZX","canx_reason":"Uninvestigated Late Start System Roll-Ups only"}
-ZY:{"canx_reason_code":"ZY","canx_reason":"Uninvestigated Station Overtime System Roll-Up only"}
-ZZ:{"canx_reason_code":"ZZ","canx_reason":"Uninvestigated Loss in Running System Roll-Up only"}
+AA:{"canx_reason":"Waiting acceptance into off Network Rail network Terminal or Yard","canx_abbrev":"ACCEPTANCE"}
+AC:{"canx_reason":"Waiting train preparation or completion of TOPS list/RT3973","canx_abbrev":"TRAIN PREP"}
+AD:{"canx_reason":"Off Network Rail network Terminal or Yard staff shortage including reactionary congestion caused by the shortage","canx_abbrev":"WTG STAFF"}
+AE:{"canx_reason":"Congestion in off Network Rail network Terminal or Yard","canx_abbrev":"CONGESTION"}
+AG:{"canx_reason":"Wagon load incident including adjusting loads or open door","canx_abbrev":"LOAD INCDT"}
+AH:{"canx_reason":"Customer or off Network Rail network yard equipment breakdown/reduced capacity","canx_abbrev":"YARD EQUIP"}
+AJ:{"canx_reason":"Waiting Customer's traffic including release information and documentation","canx_abbrev":"TRAF DOC"}
+AK:{"canx_reason":"Safety incidents and mishaps (e.g. derailments, fire or chemical spill) in off Network Rail network freight yard or terminal (including private sidings, and stations – where it affects FOC services)","canx_abbrev":"YARDSAFETY"}
+AX:{"canx_reason":"Failure of off network infrastructure (FOC or private)","canx_abbrev":"OFFNET INF"}
+AZ:{"canx_reason":"Other Freight Operating Company cause, to be specified, in off Network Rail network terminals or yards","canx_abbrev":"YARD OTHER"}
+DA:{"canx_reason":"Non Technical Fleet Holding Code","canx_abbrev":"HOLD NT FL"}
+DB:{"canx_reason":"Train Operations Holding Code","canx_abbrev":"HOLD T-OPS"}
+DC:{"canx_reason":"Train Crew Causes Holding Code","canx_abbrev":"HOLD T-CRW"}
+DD:{"canx_reason":"Technical Fleet Holding Code","canx_abbrev":"HOLD T FL"}
+DE:{"canx_reason":"Station Causes Holding Code","canx_abbrev":"HOLD STN"}
+DF:{"canx_reason":"External Causes Holding Code","canx_abbrev":"HOLD EXT"}
+DG:{"canx_reason":"Freight Terminal and or Yard Holding Code","canx_abbrev":"HOLD YARD"}
+DH:{"canx_reason":"Adhesion and or Autumn Holding Code","canx_abbrev":"HOLD AUTM"}
+FA:{"canx_reason":"Dangerous goods incident","canx_abbrev":"DANG GOODS"}
+FC:{"canx_reason":"Freight Train Driver error, SPAD, Wrong routing or Missed AWS/DSD","canx_abbrev":"FOC DRIVER"}
+FE:{"canx_reason":"Train crew not available including after rest","canx_abbrev":"NO T-CREW"}
+FF:{"canx_reason":"FOC Diagramming or Rostering issue","canx_abbrev":"FOC DIAG"}
+FG:{"canx_reason":"Driver adhering to company professional driving standards or policy","canx_abbrev":"PRO DRIVER"}
+FH:{"canx_reason":"FOC Planning issue (not diagramming or rostering)","canx_abbrev":"FOC PLAN"}
+FI:{"canx_reason":"Delay due to incorrect ETCS system or equipment operation by Driver","canx_abbrev":"ETCS DVR"}
+FJ:{"canx_reason":"FOC Control decision or directive","canx_abbrev":"FOC CONTRL"}
+FK:{"canx_reason":"Train diverted or re-routed at FOC request","canx_abbrev":"DIVERT REQ"}
+FL:{"canx_reason":"Train cancelled at FOC request or planned not to run","canx_abbrev":"CANCEL REQ"}
+FM:{"canx_reason":"Tail lamp or head lamp out or incorrectly shown","canx_abbrev":"LAMP ISSUE"}
+FO:{"canx_reason":"Time lost en-route believed to be Operator cause and information required from Operator (Ops Responsibility)","canx_abbrev":"LIR UNEX"}
+FS:{"canx_reason":"Delay due to ETCS/ ERTMS on-board overriding driver command","canx_abbrev":"ETCS O-RDE"}
+FW:{"canx_reason":"Late start or yard overtime not explained by Train Operator","canx_abbrev":"LATE START"}
+FX:{"canx_reason":"Freight train running at lower class or speed than planned classification or overweight","canx_abbrev":"TRAIN SPEC"}
+FZ:{"canx_reason":"Other FOC causes incl. cause to be specified, including mishaps.","canx_abbrev":"FOC OTHER"}
+IA:{"canx_reason":"Signal failure (including no fault found)","canx_abbrev":"SIGNAL FLR"}
+IB:{"canx_reason":"Points failure (including no fault found)","canx_abbrev":"POINTS FLR"}
+IC:{"canx_reason":"Track circuit failure (including no fault found)","canx_abbrev":"TC FAILURE"}
+ID:{"canx_reason":"Level crossing faults and failure incl. barrow/foot crossings and crossing treadles","canx_abbrev":"LEVEL XING"}
+IE:{"canx_reason":"Signalling functional power supply failure","canx_abbrev":"SIG FUNC PWR"}
+IF:{"canx_reason":"Train Describer/Panel/ARS/SSI/TDM/Remote Control failure","canx_abbrev":"PANEL FLR"}
+IG:{"canx_reason":"Block failure","canx_abbrev":"BLOCK FLR"}
+IH:{"canx_reason":"Power supply and distribution system failure","canx_abbrev":"PWR SUP DIS"}
+II:{"canx_reason":"Signalling lineside cable fault","canx_abbrev":"SIG CABLE"}
+IJ:{"canx_reason":"AWS/ATP/TPWS/Train Stop/On-track equipment failure","canx_abbrev":"AWS/ATP"}
+IK:{"canx_reason":"Telecom equipment failure (including no fault found)","canx_abbrev":"TELECOMS"}
+IL:{"canx_reason":"Token equipment failure (including no fault found)","canx_abbrev":"TOKEN FLR"}
+IM:{"canx_reason":"Infrastructure Balise Failure (TASS / ETCS / ERTMS)","canx_abbrev":"BALISE FLR"}
+IN:{"canx_reason":"HABD/Panchex/WILD/Wheelchex fault, failure or mis-detection","canx_abbrev":"HABD FAULT"}
+IP:{"canx_reason":"Points failure caused by snow or frost where heaters are fitted but found to be not turned on, not operative or defective","canx_abbrev":"POINT HEAT"}
+IQ:{"canx_reason":"Trackside sign blown down, fallen over, missing, defective, mis-placed","canx_abbrev":"TRACK SIGN"}
+IR:{"canx_reason":"Broken/cracked/twisted/buckled/flawed rail","canx_abbrev":"RAIL FLAW"}
+IS:{"canx_reason":"Track defects (other than rail defects) inc. fish plates, wet beds etc.","canx_abbrev":"TRACK FLT"}
+IT:{"canx_reason":"Rough ride or bumps reported - cause not known or no fault found","canx_abbrev":"TRACK NFF"}
+IV:{"canx_reason":"Cutting or embankment earthslip, rock fall or subsidence (not the result of severe weather on the day of failure)","canx_abbrev":"EARTHSLIP"}
+IW:{"canx_reason":"Non severe weather - snow/ice/frost affecting infrastructure equipment","canx_abbrev":"INF WEATHR"}
+I0:{"canx_reason":"Telecom equipment legacy radio failure (RETB)","canx_abbrev":"RETB FLR"}
+I1:{"canx_reason":"Overhead line/3rd rail defect","canx_abbrev":"OHL/3 RAIL"}
+I2:{"canx_reason":"AC/DC trip (including no fault or cause found)","canx_abbrev":"AC/DC TRIP"}
+I4:{"canx_reason":"OHLE/3rd rail power supply failure or reduction","canx_abbrev":"SUPPLY FLR"}
+I5:{"canx_reason":"Possession over-run from planned work","canx_abbrev":"OVERRUN"}
+I6:{"canx_reason":"Delays as a result of line blocks / track patrols (including late handback)","canx_abbrev":"LINE BLOCK"}
+I7:{"canx_reason":"Engineer's train late into, from or failed in possession","canx_abbrev":"ENGNRS TRN"}
+I8:{"canx_reason":"Animal Strike or Incursion within the control of Network Rail","canx_abbrev":"ANIMAL"}
+I9:{"canx_reason":"Fires starting on Network Rail Infrastructure","canx_abbrev":"INFRA FIRE"}
+JA:{"canx_reason":"TSR speed restrictions for track work outside of the Timetable Planning Rules","canx_abbrev":"TSRNOT EAS"}
+JB:{"canx_reason":"Reactionary Delay to ‘P’ coded TSR","canx_abbrev":"TSR REACTN"}
+JD:{"canx_reason":"Structures - Bridges/tunnels/buildings/retaining walls/sea defences (not bridge strikes)","canx_abbrev":"STRUCTURES"}
+JF:{"canx_reason":"Off track asset defects or issues on the Network Rail network including fencing, gates, walkways, lighting (not due to vandalism or weather or where the asset is part of the station infrastructure)","canx_abbrev":"OFFTRK ASS"}
+JG:{"canx_reason":"ESR/TSR due to works not completed or cancelled possession (where restriction did not exist prior to possession)","canx_abbrev":"ESR/TSR"}
+JH:{"canx_reason":"Critical Rail Temperature speeds, (other than buckled rails)","canx_abbrev":"HEAT SPEED"}
+JK:{"canx_reason":"Flooding not due to exceptional weather","canx_abbrev":"FLOODING"}
+JL:{"canx_reason":"Safety related incident caused by maintenance or infrastructure staff oversight or error (not Operations staff)","canx_abbrev":"SAFETY INF"}
+JP:{"canx_reason":"Failure to maintain vegetation within network boundaries in accordance with prevailing Network Rail standards, including where signals areobscured and a train strikes branches.","canx_abbrev":"VEGETATION"}
+JR:{"canx_reason":"Delay due to RBC issues affecting ETCS / ATO operation (not balise related)","canx_abbrev":"RBC ETCS"}
+JS:{"canx_reason":"Condition of Track TSR outside the Timetable Planning Rules","canx_abbrev":"TRACK COND"}
+JT:{"canx_reason":"Points failure caused by snow or frost where heaters are not fitted.","canx_abbrev":"NO PNT HTR"}
+JX:{"canx_reason":"Miscellaneous items (including litter) causing obstructions, not the result of trespass, vandalism, weather or fallen/thrown from trains","canx_abbrev":"MISC OBJCT"}
+J0:{"canx_reason":"Telecom equipment radio failure (GSM-R)","canx_abbrev":"GSM-R FLR"}
+J2:{"canx_reason":"Network Rail train dispatch equipment failure (including no fault found but excluding telecoms equipment)","canx_abbrev":"TRTS FLR"}
+J3:{"canx_reason":"Axle Counter Failure","canx_abbrev":"AXLE C FLR"}
+J4:{"canx_reason":"Infrastructure Safety Issue Reported by Member of the Public – No Fault Found","canx_abbrev":"MOP NFF"}
+J5:{"canx_reason":"Infrastructure Asset Fault Reported but Proven to be mistaken","canx_abbrev":"MIS REPORT"}
+J6:{"canx_reason":"Lightning strike against unprotected assets","canx_abbrev":"LIGHTNING"}
+J7:{"canx_reason":"ETCS/ ERTMS Equipment Failure (excluding communications link and balises)","canx_abbrev":"ETCS FLR"}
+J8:{"canx_reason":"Damage to infrastructure caused by on-track machine whilst operating in a possession","canx_abbrev":"OTM DAMAGE"}
+J9:{"canx_reason":"Preventative Maintenance to the infrastructure in response to a Remote Condition Monitoring Alert","canx_abbrev":"RCM ALERT"}
+MB:{"canx_reason":"Electric loco failure, defect, attention.","canx_abbrev":"ELEC LOCO"}
+MC:{"canx_reason":"Diesel loco failure, defect, attention.","canx_abbrev":"DIESL LOCO"}
+MD:{"canx_reason":"Other technical failures below the solebar","canx_abbrev":"BELOW SBAR"}
+ME:{"canx_reason":"Steam locomotive failure/defect/attention","canx_abbrev":"STEAM LOCO"}
+ML:{"canx_reason":"Wagons, coaches and parcel vehicle faults","canx_abbrev":"WAGN/COACH"}
+MN:{"canx_reason":"Brake and brake systemsfaults; including wheel flats where no other cause had been identified","canx_abbrev":"BRAKE/WHLS"}
+MP:{"canx_reason":"Rail/ wheel interface, adhesion problems (including ice on the running rail)","canx_abbrev":"ADHESION"}
+MR:{"canx_reason":"Sanders and scrubber faults","canx_abbrev":"SANDER"}
+MS:{"canx_reason":"Planned underpowered or shortformed service and or vehicle, incl. exam set swaps","canx_abbrev":"ALOC STOCK"}
+MT:{"canx_reason":"Confirmed train borne safety system faults (not cab based)","canx_abbrev":"SYST FAULT"}
+MU:{"canx_reason":"Depot operating problem","canx_abbrev":"DEPOT OPS"}
+MV:{"canx_reason":"Engineer’s on-track equipment failure outside possession","canx_abbrev":"ON-TRACK"}
+MW:{"canx_reason":"Weather - effect on T&RS equipment","canx_abbrev":"WEATHR FLT"}
+MY:{"canx_reason":"Coupler and Coupler system faults","canx_abbrev":"COUPLER"}
+M1:{"canx_reason":"Confirmed Pantograph ADD, shoe beam or associated system faults Incl. positive PANCHEX activations","canx_abbrev":"PANTO/SHOE"}
+M2:{"canx_reason":"Delay due to ATO / ETCS equipment","canx_abbrev":"ETCS"}
+M7:{"canx_reason":"Door and Door system faults","canx_abbrev":"DOORS"}
+M8:{"canx_reason":"Other technical failures above the Solebar","canx_abbrev":"ABOVE SBAR"}
+M9:{"canx_reason":"Reported fleet equipment defect - no fault found","canx_abbrev":"FLEET NFF"}
+M0:{"canx_reason":"Confirmed train cab based safety system fault (including GSM-R)","canx_abbrev":"CAB SAFETY"}
+NA:{"canx_reason":"On-train TASS/TILT failure","canx_abbrev":"TASS/TILT"}
+OA:{"canx_reason":"Regulation decision made with best endeavours","canx_abbrev":"ENDVR REG"}
+OB:{"canx_reason":"Delayed by signaller not applying applicable regulating policy","canx_abbrev":"REGULATION"}
+OC:{"canx_reason":"Signaller including mis-routing (not ERTM /ETCS related)","canx_abbrev":"SIGNALLER"}
+OD:{"canx_reason":"Delayed as a result of Route Control decision or directive","canx_abbrev":"NR CONTROL"}
+OE:{"canx_reason":"Failure to lay Sandite or operate Railhead Conditioning train as programmed","canx_abbrev":"RHC PROG"}
+OF:{"canx_reason":"Delay due to incorrect ETCS system or equipment operation by Signaller / Controller","canx_abbrev":"ETCS CTRL"}
+OG:{"canx_reason":"Ice on conductor rail/OHLE","canx_abbrev":"ICING"}
+OH:{"canx_reason":"ARS / TMS / SARS software problem (excluding scheduling issues and technical failures)","canx_abbrev":"ARS / TMS"}
+OJ:{"canx_reason":"Fire in station building or on platform, affecting operators not booked to call at that station","canx_abbrev":"STN FIRE"}
+OK:{"canx_reason":"Delay caused by Operating staff oversight, issues or absence (excluding signallers and Control)","canx_abbrev":"OPTG STAFF"}
+OL:{"canx_reason":"Signal Box not open during booked hours","canx_abbrev":"BOX CLOSED"}
+OM:{"canx_reason":"Technical failure associated with a Railhead Conditioning train","canx_abbrev":"RHC FAIL"}
+ON:{"canx_reason":"Delays not properly investigated by Network Rail","canx_abbrev":"MIS-INVEST"}
+OQ:{"canx_reason":"Incorrect Simplifier (where produced by Ops staff)","canx_abbrev":"SIMPLIFIER"}
+OS:{"canx_reason":"Late start or delays to Railhead Conditioning (RHC) or Ghost Train due to its own activity and not in reaction to another incident.","canx_abbrev":"RHC LATE"}
+OT:{"canx_reason":"Operational Safety TSR implemented for sighting issues relating to foot crossings, level crossings or signals (Not vegetation caused)","canx_abbrev":"SIGHT TSR"}
+OU:{"canx_reason":"Delays not investigated by Network Rail","canx_abbrev":"NOT INVEST"}
+OV:{"canx_reason":"Fire or evacuation due to fire alarm of Network Rail buildings other than stations not due to vandalism","canx_abbrev":"NR FIRE"}
+OW:{"canx_reason":"Connections held where the Prime Incident causing delay to the incoming train is a FOC responsibility incident and the next departing service is scheduled to depart less than 60 minutes later than the train being held.","canx_abbrev":"FOC CONECT"}
+OZ:{"canx_reason":"Other Network Rail Operating causes","canx_abbrev":"OPTG OTHER"}
+PA:{"canx_reason":"Published TSR associated with Planned Engineering Works where time loss is within Engineering Allowance","canx_abbrev":"PLANND ENG"}
+PB:{"canx_reason":"Published TSR due to condition of asset (not associated with Engineering Work) where time loss is within Engineering Allowance","canx_abbrev":"PLANND CON"}
+PD:{"canx_reason":"System generated cancellation (NOT to be attributed to manually)","canx_abbrev":"SYSTM CANC"}
+PF:{"canx_reason":"Planned engineering work where a published diversion/SLW is not provided for in the schedule but where time loss is within Engineering Allowance","canx_abbrev":"DIVRSN SLW"}
+PG:{"canx_reason":"Planned cancellation where that cancellation isidentified and agreed prior to 22.00 the day before the schedule runs","canx_abbrev":"PLAND CAPE"}
+PJ:{"canx_reason":"Cancellation of a duplicate or erroneous schedule or an identified duplicate, false or erroneous delay (NOT berth off set related)","canx_abbrev":"DUPLICATE"}
+PL:{"canx_reason":"Exclusion commercially agreed and documented between Network Rail and Train Operator","canx_abbrev":"AGREED EXC"}
+PN:{"canx_reason":"VSTP service delays of under 5 minutes caused by regulation and or time lost in running (VSTP Schedule delay ONLY where that delay causes no reactionary delay)","canx_abbrev":"VSTP DELAY"}
+PT:{"canx_reason":"Authorised TRUST reporting anomalies or inaccuraciesrelating to berth off sets","canx_abbrev":"TRUST ANOM"}
+QA:{"canx_reason":"WTT Schedule and or LTP process including incorrect simplifiers (where produced by Capacity Planning).","canx_abbrev":"WTT SCHED"}
+QB:{"canx_reason":"Planned engineering work- diversion/SLW not timetabled (outside the Timetable Planning Rules.)","canx_abbrev":"DIVRSN/SLW"}
+QH:{"canx_reason":"Adhesion problems due to leaf contamination","canx_abbrev":"RAILCONTAM"}
+QI:{"canx_reason":"Cautioning due to railhead leaf contamination","canx_abbrev":"CAUTCONTAM"}
+QJ:{"canx_reason":"Special working for leaf-fall track circuit operation","canx_abbrev":"LEAVES T/C"}
+QM:{"canx_reason":"Train Schedule VAR/STP process including incorrect simplifiers (where produced by Capacity Planning).","canx_abbrev":"STP SCHED"}
+QN:{"canx_reason":"VSTP schedule / VSTP process (TSI created schedule)","canx_abbrev":"VSTP SCHED"}
+QP:{"canx_reason":"Reactionary Delay to “P” coded Possession","canx_abbrev":"PLND REACT"}
+QT:{"canx_reason":"Delay accepted by Network Rail as part of a commercial agreement where no substantive delay reason is identified","canx_abbrev":"COMMERCIAL"}
+RB:{"canx_reason":"Passengers joining/alighting","canx_abbrev":"PASSENGERS"}
+RC:{"canx_reason":"Pre-booked assistance for a person with reduced mobility joining/alighting","canx_abbrev":"BKD ASSIST"}
+RD:{"canx_reason":"Attaching/detaching/Shunter/watering","canx_abbrev":"ATT/DETACH"}
+RE:{"canx_reason":"Lift/escalator defect/failure","canx_abbrev":"LIFT/ESC"}
+RH:{"canx_reason":"Station evacuated due to fire alarm","canx_abbrev":"FIRE ALARM"}
+RI:{"canx_reason":"Waiting connections - not authorised by TOC Control","canx_abbrev":"UNAUTH CON"}
+RJ:{"canx_reason":"Special Stop Orders - not authorised by TOC Control","canx_abbrev":"UNAUTH SSO"}
+RK:{"canx_reason":"Waiting passenger connections authorised by TOC but out with TOC/Network Rail connection policy","canx_abbrev":"AUTH CON"}
+RL:{"canx_reason":"Special Stop Orders authorised by TOC Control (including any delay at point of issue)","canx_abbrev":"AUTH SSO"}
+RM:{"canx_reason":"Waiting connections from other transport modes","canx_abbrev":"XTNL CONN"}
+RO:{"canx_reason":"Passengers taken ill on platform","canx_abbrev":"PASS ILL"}
+RP:{"canx_reason":"Passenger dropped object whilst boarding/alighting from train and train delayed at TOC request","canx_abbrev":"PASS DROP"}
+RQ:{"canx_reason":"Un-booked assistance for a person with reduced mobility joining/alighting","canx_abbrev":"UBKD ASST"}
+RR:{"canx_reason":"Loading or unloading reserved bicycles","canx_abbrev":"BIKE RSVD"}
+RS:{"canx_reason":"Loading or unloading unreserved bicycles","canx_abbrev":"BIKE URSVD"}
+RT:{"canx_reason":"Loading excessive luggage","canx_abbrev":"EXCES LUGG"}
+RU:{"canx_reason":"Locating lost luggage","canx_abbrev":"LOST LUGG"}
+RV:{"canx_reason":"Customer Information System failure","canx_abbrev":"PASS INFO"}
+RW:{"canx_reason":"Station flooding (including issues with drains) not the result of weather, where the water has not emanated from Network Rail maintained infrastructure/network","canx_abbrev":"STN FLOOD"}
+RX:{"canx_reason":"Station delays as a result of overcrowding due to unplanned events or incidents (e.g result of line or station closure) where causal event is not determined.","canx_abbrev":"UNPL EVENT"}
+RY:{"canx_reason":"Mishap - Station operating causes","canx_abbrev":"STN MISHAP"}
+RZ:{"canx_reason":"Other Station operating causes","canx_abbrev":"STN OTHER"}
+R1:{"canx_reason":"Incorrect train dispatch by station staff","canx_abbrev":"DISPATCH"}
+R2:{"canx_reason":"Late TRTS given by station staff","canx_abbrev":"LATE TRTS"}
+R3:{"canx_reason":"Station staff unavailable - missing or uncovered","canx_abbrev":"STAFF MSNG"}
+R4:{"canx_reason":"Station staff split responsibility - unable to cover all duties","canx_abbrev":"STAFF DUTY"}
+R5:{"canx_reason":"Station staff error - e.g. wrong announcements, misdirection","canx_abbrev":"STAFF ERR"}
+R7:{"canx_reason":"Station delays as a result of overcrowding due to planned events(e.g.sports fixtures, concerts)","canx_abbrev":"PLND EVENT"}
+R8:{"canx_reason":"Delay at Station believed to be Operator cause and information required from Operator (Station Responsibility)","canx_abbrev":"STN UNEX"}
+TA:{"canx_reason":"Train-crew/loco/stock/unit diagram issues","canx_abbrev":"DIAG ISSUE"}
+TB:{"canx_reason":"Train cancelled or delayed at Train Operator’s request","canx_abbrev":"TOC REQEST"}
+TF:{"canx_reason":"Seat reservation problems","canx_abbrev":"SEAT RESVN"}
+TG:{"canx_reason":"Driver","canx_abbrev":"TOC DRIVER"}
+TH:{"canx_reason":"(Senior) Conductor/Train Manager","canx_abbrev":"T-MGR/COND"}
+TI:{"canx_reason":"Train-crew rostering problem","canx_abbrev":"ROSTERING"}
+TJ:{"canx_reason":"Tail lamp or headlamp missing, not lit or wrongly displayed","canx_abbrev":"LAMP ISSUE"}
+TK:{"canx_reason":"Train catering staff (including Contractors)","canx_abbrev":"CATERING"}
+TM:{"canx_reason":"Connection authorised by TOC but out with connection policy","canx_abbrev":"AUTH CONN"}
+TN:{"canx_reason":"Late presentation from the continent","canx_abbrev":"LATE CHUNL"}
+TO:{"canx_reason":"Time lost en-route believed to be Operator cause and information required from Operator (Ops Responsibility)","canx_abbrev":"LIR UNEX"}
+TP:{"canx_reason":"Special Stop Orders","canx_abbrev":"AUTH SSO"}
+TR:{"canx_reason":"Train Operating Company Directive","canx_abbrev":"TOC DIRECT"}
+TS:{"canx_reason":"Delay due to incorrect ETCS system or equipment operation by Driver","canx_abbrev":"ETCS DVR"}
+TT:{"canx_reason":"Autumn-attribution Neutral Zone delays (See Supplementary Autumn Attribution Guidance)","canx_abbrev":"LF NEUTRAL"}
+TW:{"canx_reason":"Driver adhering to company professional driving standards or policy","canx_abbrev":"PRO DRIVER"}
+TX:{"canx_reason":"Delays incurred on non-Network Rail running lines or networks including London Underground (except fleet related delays)","canx_abbrev":"OTH NETWK"}
+TY:{"canx_reason":"Mishap-Train Operating Company cause","canx_abbrev":"TOC MISHAP"}
+TZ:{"canx_reason":"Other Passenger Train Operating Company causes","canx_abbrev":"TOC OTHER"}
+T2:{"canx_reason":"Delay at unstaffed station to non-DOO train","canx_abbrev":"NONDOO STN"}
+T3:{"canx_reason":"Waiting connections from other transport modes","canx_abbrev":"XTNL CONN"}
+T4:{"canx_reason":"Loading Supplies (including catering)","canx_abbrev":"SUPPLIES"}
+T8:{"canx_reason":"Delay at Station believed to be Operator cause and information required from Operator ( Ops Responsibility)","canx_abbrev":"STN UNEX"}
+VA:{"canx_reason":"Disorder, drunks or trespass","canx_abbrev":"DISORDER"}
+VB:{"canx_reason":"Vandalism and or theft","canx_abbrev":"VANDALISM"}
+VC:{"canx_reason":"Fatalities and or injuries sustained whilst on a platform as the result of being struck by a train or falling from a train","canx_abbrev":"FATALITIES"}
+VD:{"canx_reason":"Passenger taken ill on train","canx_abbrev":"ILL PASS"}
+VE:{"canx_reason":"Ticket irregularities or refusals to pay","canx_abbrev":"TICKET IRR"}
+VF:{"canx_reason":"Fire caused by vandalism","canx_abbrev":"VANDL FIRE"}
+VG:{"canx_reason":"Police searching train","canx_abbrev":"POLICE-TRN"}
+VH:{"canx_reason":"Passenger Communication cord, door egress or emergency train alarm operated","canx_abbrev":"PASS COMM"}
+VI:{"canx_reason":"Security alert affecting stations and depots","canx_abbrev":"SEC ALERT"}
+VR:{"canx_reason":"Driver adhering to company professional driving standards or policies during severe weather conditions that are not fleet related","canx_abbrev":"PRO DRIVER"}
+VW:{"canx_reason":"Severe weather affecting passenger fleet equipment including following company standards/policies or Rule Book instructions","canx_abbrev":"SEV WEATHR"}
+VX:{"canx_reason":"External events occurring on the LUL or other non NR running lines","canx_abbrev":"LUL CAUSES"}
+VZ:{"canx_reason":"Other passenger or external causes the responsibility of TOC","canx_abbrev":"EXT OTHER"}
+V8:{"canx_reason":"Train striking or being struck by a bird","canx_abbrev":"BIRDSTRIKE"}
+XA:{"canx_reason":"Trespass (Including non-intentional)","canx_abbrev":"TRESPASS"}
+XB:{"canx_reason":"Vandalism or theft (including the placing of objects on the line)","canx_abbrev":"VANDALS"}
+XC:{"canx_reason":"Fatalities or injuries caused by being hit by train (Including non-intentional)","canx_abbrev":"FATALITIES"}
+XD:{"canx_reason":"Level Crossing Incidents including misuse and emergency services being prioritised over rail services.","canx_abbrev":"XING INCDT"}
+XF:{"canx_reason":"Police searching the line","canx_abbrev":"POLICE-RLY"}
+XH:{"canx_reason":"Severe heat affecting infrastructure the responsibility of Network Rail (excluding Heat related speed restrictions)","canx_abbrev":"SEV HEAT"}
+XI:{"canx_reason":"Security alert affecting the Network Rail Network (including line blocks taken for emergency services attending an off Network Rail network incident)","canx_abbrev":"SEC ALERT"}
+XK:{"canx_reason":"External Power Supply Failure Network Rail Infrastructure","canx_abbrev":"EXTL POWER"}
+XL:{"canx_reason":"Fire external to but directly affecting the Network Rail network (including line blocks taken for emergency services attending an incident not directly affecting the Network Rail network)","canx_abbrev":"EXTL FIRES"}
+XM:{"canx_reason":"Gas/water mains/overhead power lines","canx_abbrev":"GAS/WATER"}
+XN:{"canx_reason":"Road related - excl bridge strikes/level crossing incident","canx_abbrev":"ROAD INCDT"}
+XO:{"canx_reason":"External trees, building or structures encroaching or falling onto Network Rail network infrastructure (not due to weather or vandalism) also including aircraft and airport safety or operational related incidents.","canx_abbrev":"EXT OBJECT"}
+XP:{"canx_reason":"Bridge Strike","canx_abbrev":"BRIDGE HIT"}
+XQ:{"canx_reason":"Swing bridge open for river or canal traffic","canx_abbrev":"BRIDGE OPN"}
+XR:{"canx_reason":"Cable vandalism or theft","canx_abbrev":"CABLE VAND"}
+XT:{"canx_reason":"Severe snow or ice affecting infrastructure which is the responsibility of Network Rail (including implementation of Key Route Strategy)","canx_abbrev":"SEV SNOW"}
+XU:{"canx_reason":"Sunlight on signal or dispatch equipment where all reasonable mitigation has been taken","canx_abbrev":"SUN OBSCUR"}
+XV:{"canx_reason":"Fire or evacuation due to fire alarm of Network Rail buildings due to vandalism (not including stations)","canx_abbrev":"VANDL FIRE"}
+XW:{"canx_reason":"High winds affecting infrastructure the responsibility of Network Rail including objects on the line due to the effect of weather","canx_abbrev":"HIGH WIND"}
+X1:{"canx_reason":"Visibility in semaphore signalled areas, orspecial working for fog and falling snow implemented by Network Rail – in all signalling areas (including special working for level crossing visibility)","canx_abbrev":"SPL WRKING"}
+X2:{"canx_reason":"Severe flooding beyond that which could be mitigated on Network Rail infrastructure","canx_abbrev":"SEV FLOOD"}
+X3:{"canx_reason":"Lightning Strike – damage to protected systems.","canx_abbrev":"LIGHTNING"}
+X4:{"canx_reason":"Blanket speed restriction or Key Route Strategy implemented for extreme heat or high winds (not snow) in accordance with the Group Standards","canx_abbrev":"KRS / BLKT"}
+X8:{"canx_reason":"Animal Strike or incursion not within the control of Network Rail","canx_abbrev":"EXT ANIMAL"}
+X9:{"canx_reason":"Points failure caused by severe snow or ice where heaters are fitted and working as designed","canx_abbrev":"PNTS SNOW"}
+YA:{"canx_reason":"Lost path - regulated for train running less late","canx_abbrev":"REG-ONTIME"}
+YB:{"canx_reason":"Lost path - regulated for another later running train","canx_abbrev":"REG-LATE"}
+YC:{"canx_reason":"Lost path - following train running less late","canx_abbrev":"FOL-ONTIME"}
+YD:{"canx_reason":"Lost path - following another later running train","canx_abbrev":"FOL-LATE"}
+YE:{"canx_reason":"Waiting path onto/from single line","canx_abbrev":"WTG S/LINE"}
+YG:{"canx_reason":"Regulated in accordance with Regulation Policy","canx_abbrev":"REG INSTRC"}
+YI:{"canx_reason":"Late arrival of booked inward stock (inward and outward trains are operated under the same Track Access Contract)","canx_abbrev":"INWD STOCK"}
+YJ:{"canx_reason":"Late arrival of booked inward train-crew (where the inward and outward trains worked by that train-crew are operated under the same Track Access Contract)","canx_abbrev":"INWD CREW"}
+YL:{"canx_reason":"Waiting passenger connections within connections policy, contingency plan or otherwise agreed by NR/TOC","canx_abbrev":"AUTHSD CON"}
+YM:{"canx_reason":"Special stop orders within the contingency plan or agreed by NR/TOC","canx_abbrev":"AUTHSD SSO"}
+YN:{"canx_reason":"Service Recovery- booked train crew, not available","canx_abbrev":"FIND CREW"}
+YO:{"canx_reason":"Waiting platform/station congestion/platform alteration","canx_abbrev":"PLATFORM"}
+YP:{"canx_reason":"Delays due to diversions from booked route or line","canx_abbrev":"DIVERSION"}
+YQ:{"canx_reason":"Passenger overcrowding caused by a train being of short-formation","canx_abbrev":"SHRT FRMD"}
+YR:{"canx_reason":"Tactical cancellation for service recovery not caused by late running","canx_abbrev":"SR CNCL"}
+YU:{"canx_reason":"Service Recovery- booked rolling stock, not available","canx_abbrev":"UNIT SWAPS"}
+YT:{"canx_reason":"Reactionary delay to a train that is not leaving the network, by a train that is leaving the network","canx_abbrev":"NON NR INF"}
+YX:{"canx_reason":"Passenger overcrowding caused by delay or cancellation of another train or its own late running","canx_abbrev":"OVER CRWD"}
+ZS:{"canx_reason":"No cause ascertainable for a Sub Threshold Delay causing Threshold Reactionary (where agreed by both Parties)","canx_abbrev":"NOCAUSE AS"}
+ZU:{"canx_reason":"No Cause Identified After Full Investigation by Both Parties (A ‘Full Investigation’ will be one including all avenues of investigation agreed as reasonable by both Parties)","canx_abbrev":"NOCAUSE ID"}
+ZW:{"canx_reason":"Uninvestigated Cancellations System Roll-Ups only","canx_abbrev":"SYS CANC"}
+ZX:{"canx_reason":"Uninvestigated Late Start System Roll-Ups only","canx_abbrev":"SYS L-STRT"}
+ZY:{"canx_reason":"Uninvestigated Station Overtime System Roll-Up only","canx_abbrev":"SYS OTIME"}
+ZZ:{"canx_reason":"Uninvestigated Loss in Running System Roll-Up only","canx_abbrev":"SYS LIR"}

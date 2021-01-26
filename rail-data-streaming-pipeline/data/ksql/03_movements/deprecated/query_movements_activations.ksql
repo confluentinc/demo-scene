@@ -1,0 +1,14 @@
+SET 'auto.offset.reset' = 'latest';
+
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') as actual_timestamp, 
+       EVENT_TYPE, 
+       LOC_NLCDESC, 
+       CASE WHEN LEN(PLATFORM)>0 THEN 'Platform ' + PLATFORM ELSE '' END AS PLATFORM,
+       VARIATION, 
+       TOC,
+       SCHEDULE_KEY
+  FROM TRAIN_MOVEMENTS_ACTIVATIONS_00 
+ WHERE SCHEDULE_KEY IS NOT NULL
+   AND LOC_NLCDESC='ILKLEY';
+
+ 
