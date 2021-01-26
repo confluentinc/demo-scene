@@ -205,6 +205,27 @@ mysql> SELECT * FROM transactions LIMIT 5;
 5 rows in set (0.00 sec)
 ----
 
+== Inverting a Predicate
+
+You can use the `negate` option to invert a predicate. Consider this predicate: 
+
+[source,javascript]
+----
+"predicates"                              : "isSystemBTopic",
+"predicates.isSystemBTopic.type"          : "org.apache.kafka.connect.transforms.predicates.TopicNameMatches",
+"predicates.isSystemBTopic.pattern"       : ".*-systemB"      
+----
+
+If you wanted to apply a Single Message Transform to any topic _except_ those that matched, you would use `"…negate": "true"`
+
+[source,javascript]
+----
+"transforms.renameNonSystemBFields.type"     : "org.apache.kafka.connect.transforms.ReplaceField$Value",
+"transforms.renameNonSystemBFields.renames"  : "product:item,amount:cost",
+"transforms.renameNonSystemBFields.predicate": "isSystemBTopic",
+"transforms.renameNonSystemBFields.negate"   : "true",
+----
+
 == Filtering out null records
 
 Consider a source topic in which there are tombstone (null) records being produced. These may be by design, or by error - but either way, we want to exclude them from the sink connector pipeline. 
