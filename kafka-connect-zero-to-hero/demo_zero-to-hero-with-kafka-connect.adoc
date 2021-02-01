@@ -99,7 +99,7 @@ curl -i -X PUT -H  "Content-Type:application/json" \
             "database.server.id": "42",
             "database.server.name": "asgard",
             "table.whitelist": "demo.orders",
-            "database.history.kafka.bootstrap.servers": "kafka:29092",
+            "database.history.kafka.bootstrap.servers": "broker:29092",
             "database.history.kafka.topic": "dbhistory.demo" ,
             "decimal.handling.mode": "double",
             "include.schema.changes": "true",
@@ -133,7 +133,7 @@ View the topic in the CLI:
 [source,bash]
 ----
 docker exec kafkacat kafkacat \
-        -b kafka:29092 \
+        -b broker:29092 \
         -r http://schema-registry:8081 \
         -s avro \
         -t mysql-debezium-asgard.demo.ORDERS \
