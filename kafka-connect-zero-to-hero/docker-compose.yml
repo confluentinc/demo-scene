@@ -240,7 +240,7 @@ services:
       NEO4J_ACCEPT_LICENSE_AGREEMENT: 'yes'
 
   kafkacat:
-    image: edenhill/kafkacat:1.7.0-PRE1
+    image: edenhill/kafkacat:1.6.0
     container_name: kafkacat
     entrypoint: 
       - /bin/sh 
