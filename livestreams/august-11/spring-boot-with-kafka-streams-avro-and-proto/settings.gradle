@@ -9,4 +9,4 @@ pluginManagement {
     }
   }
 }
-rootProject.name = 'livestreams'
+rootProject.name = 'livestreams-springboot-proto-aug-11-2020'
