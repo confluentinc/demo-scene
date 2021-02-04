@@ -158,16 +158,6 @@ curl -i -X PUT -H  "Content-Type:application/json" \
     }'
 ----
 
-Force Kibana to refresh its field list: 
-
-[source,bash]
-----
-curl -s 'http://localhost:5601/api/saved_objects/_bulk_get' \
-  -H 'kbn-xsrf: nevergonnagiveyouup' \
-  -H 'Content-Type: application/json' \
-  -d '[{"id":"mysql-debezium-asgard.demo.orders","type":"index-pattern"}]'
-----
-
 === Stream to Neo4j
 
 [source,bash]
@@ -180,7 +170,7 @@ curl -i -X PUT -H  "Content-Type:application/json" \
             "neo4j.server.uri": "bolt://neo4j:7687",
             "neo4j.authentication.basic.username": "neo4j",
             "neo4j.authentication.basic.password": "connect",
-            "neo4j.topic.cypher.mysql-debezium-asgard.demo.ORDERS": "MERGE (city:city{city: event.delivery_city}) MERGE (customer:customer{id: event.customer_id, delivery_address: event.delivery_address, delivery_city: event.delivery_city, delivery_company: event.delivery_company}) MERGE (vehicle:vehicle{make: event.make, model:event.model}) MERGE (city)<-[:LIVES_IN]-(customer)-[:BOUGHT{order_total_usd:event.order_total_usd,order_id:event.order_id}]->(vehicle)"
+            "neo4j.topic.cypher.mysql-debezium-asgard.demo.ORDERS": "MERGE (city:city{city: event.delivery_city}) MERGE (customer:customer{id: event.customer_id, delivery_address: event.delivery_address, delivery_city: event.delivery_city, delivery_company: event.delivery_company}) MERGE (vehicle:vehicle{make: event.make, model:event.model}) MERGE (city)<-[:LIVES_IN]-(customer)-[:BOUGHT{order_total_usd:event.order_total_usd,order_id:event.id}]->(vehicle)"
         } '
 ----
 

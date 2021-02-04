@@ -204,27 +204,33 @@ services:
       - -c
       - |
         /usr/local/bin/kibana-docker &
-        echo "Waiting for Kibana to be ready (checking http://localhost:5601/api/status) ⏳"
-        while [ $$(curl -s http://localhost:5601/api/status|grep --silent -e "\"status\":{\"overall\":{\"state\":\"green\"";echo $$?) -eq 1 ] ; do
-        sleep 5
+        echo "Waiting for Kibana to be ready ⏳"
+        while [ $$(curl -H 'kbn-xsrf: true' -s -o /dev/null -w %{http_code} http://localhost:5601/api/saved_objects/_find?type=index-pattern&search_fields=title&search=*) -ne 200 ] ; do 
+          echo -e "\t" $$(date) " Kibana saved objects request response: " $$(curl -H 'kbn-xsrf: true' -o /dev/null -w %{http_code} -s http://localhost:5601/api/saved_objects/_find?type=index-pattern&search_fields=title&search=*) $$(curl -H 'kbn-xsrf: true' -s http://localhost:5601/api/saved_objects/_find?type=index-pattern&search_fields=title&search=*) " (waiting for 200)"
+          sleep 5  
         done
-        echo "Pre-creating index pattern"
-        curl -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/mysql-debezium-asgard.demo.orders' \
+
+        echo -e "\t" $$(date) " Kibana saved objects request response: " $$(curl -H 'kbn-xsrf: true' -o /dev/null -w %{http_code} -s http://localhost:5601/api/saved_objects/_find?type=index-pattern&search_fields=title&search=*) $$(curl -H 'kbn-xsrf: true' -s http://localhost:5601/api/saved_objects/_find?type=index-pattern&search_fields=title&search=*)
+
+        echo -e "\n--\n+> Pre-creating index pattern"
+        curl -s -XPOST 'http://localhost:5601/api/saved_objects/index-pattern/mysql-debezium-asgard.demo.orders' \
           -H 'kbn-xsrf: nevergonnagiveyouup' \
           -H 'Content-Type: application/json' \
           -d '{"attributes":{"title":"mysql-debezium-asgard.demo.orders","timeFieldName":"CREATE_TS"}}'
 
-        echo "Setting the index pattern as default"
-        curl -XPOST 'http://localhost:5601/api/kibana/settings' \
+        echo -e "\n--\n+> Setting the index pattern as default"
+        curl -s -XPOST 'http://localhost:5601/api/kibana/settings' \
           -H 'kbn-xsrf: nevergonnagiveyouup' \
           -H 'content-type: application/json' \
           -d '{"changes":{"defaultIndex":"mysql-debezium-asgard.demo.orders"}}'
 
-        echo "Opting out of telemetry"
-        curl -XPOST 'http://localhost:5601/api/telemetry/v1/optIn' \
-          -H 'kbn-xsrf: nevergonnagiveyouup' \
-          -H 'content-type: application/json' \
-          -d '{"enabled":false}'
+        echo -e "\n--\n+> Opt out of Kibana telemetry"
+        curl 'http://localhost:5601/api/telemetry/v2/optIn' \
+            -H 'kbn-xsrf: nevergonnagiveyouup' \
+            -H 'content-type: application/json' \
+            -H 'accept: application/json' \
+            --data-binary '{"enabled":false}' \
+            --compressed
 
         sleep infinity
 
