@@ -1,6 +1,6 @@
-= Introduction to ksqlDB - demo script
+= Introduction to ksqlDB - demo script 01
 Robin Moffatt <robin@confluent.io>
-v1.00, 13 May 2020
+v1.10, 10 February 2021
 :toc:
 
 == Running the test rig
@@ -232,8 +232,8 @@ Add some more data into Kafka topic, show postgres updating in place.
 
 [source,sql]
 ----
-INSERT INTO MOVEMENTS (ROWTIME, ROWKEY, LOCATION) VALUES (STRINGTOTIMESTAMP('2020-02-17T15:22:00Z','yyyy-MM-dd''T''HH:mm:ssX'), 'robin', 'Leeds');
-INSERT INTO MOVEMENTS (ROWTIME, ROWKEY, LOCATION) VALUES (STRINGTOTIMESTAMP('2020-02-17T16:22:00Z','yyyy-MM-dd''T''HH:mm:ssX'), 'robin', 'Retford');
+INSERT INTO MOVEMENTS (ROWTIME, PERSON, LOCATION) VALUES (STRINGTOTIMESTAMP('2020-02-17T15:22:00Z','yyyy-MM-dd''T''HH:mm:ssX'), 'robin', 'Leeds');
+INSERT INTO MOVEMENTS (ROWTIME, PERSON, LOCATION) VALUES (STRINGTOTIMESTAMP('2020-02-17T16:22:00Z','yyyy-MM-dd''T''HH:mm:ssX'), 'robin', 'Retford');
 ----
 
 === Deploying code via REST API
@@ -254,9 +254,3 @@ docker exec -t ksqldb curl -s -X "POST" "http://localhost:8088/ksql" \
             }
         }'
 ----
-
-=== TODO
-
-* TODO add in datagen
-* TODO INSERT INTO to merge streams
-     
