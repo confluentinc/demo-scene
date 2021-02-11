@@ -1,6 +1,6 @@
 # An introduction to KSQL 
 Robin Moffatt <robin@confluent.io>
-v1.10, 17 September 2019
+v1.20, 11 February 2021
 :toc:
 
 ## Setup
@@ -19,7 +19,7 @@ _The first time that you do this, the Docker images will be pulled down from the
 +
 [source,bash]
 ----
-cd ksql-intro
+cd introduction-to-ksqldb
 docker-compose up -d
 ----
 
@@ -39,7 +39,7 @@ docker exec -it ksqldb bash -c 'echo -e "\n\n⏳ Waiting for KSQL to be availabl
 ----
 SHOW TOPICS;
 
-PRINT 'orders';
+PRINT orders;
 
 CREATE STREAM ORDERS WITH 
   (VALUE_FORMAT='AVRO', 
@@ -148,7 +148,8 @@ image::images/join01.png[]
 
 [source,sql]
 ----
-PRINT 'item_details_01' LIMIT 10;
+
+PRINT 'item_details_01' FROM BEGINNING LIMIT 10;
 
 CREATE TABLE ITEM_REFERENCE_01 (ITEM_ID VARCHAR PRIMARY KEY) 
     WITH (VALUE_FORMAT='AVRO', 
@@ -171,6 +172,7 @@ SELECT TIMESTAMPTOSTRING(O.ROWTIME, 'yyyy-MM-dd HH:mm:ss') AS ORDER_TIMESTAMP,
 EMIT CHANGES
 LIMIT 5;
 
+SET 'auto.offset.reset' = 'earliest';
 CREATE STREAM ORDERS_ENRICHED AS 
 SELECT O.ROWTIME AS ORDER_TIMESTAMP, 
        O.ORDERID, 
@@ -208,19 +210,25 @@ Check that the connector is `RUNNING`
 
 [source,sql]
 ----
-ksql> show connectors;
-
- Connector Name                 | Type   | Class                                                         | Status
----------------------------------------------------------------------------------------------------------------------------------------
- SINK_ELASTIC_ORDERS_01         | SINK   | io.confluent.connect.elasticsearch.ElasticsearchSinkConnector | RUNNING (1/1 tasks RUNNING)
- source-datagen-item_details_01 | SOURCE | io.confluent.kafka.connect.datagen.DatagenConnector           | WARNING (0/1 tasks RUNNING)
- source-datagen-orders-us       | SOURCE | io.confluent.kafka.connect.datagen.DatagenConnector           | RUNNING (1/1 tasks RUNNING)
- source-datagen-orders-uk       | SOURCE | io.confluent.kafka.connect.datagen.DatagenConnector           | RUNNING (1/1 tasks RUNNING)
----------------------------------------------------------------------------------------------------------------------------------------
+DESCRIBE CONNECTOR SINK_ELASTIC_ORDERS_01;
 ----
 
+[source,sql]
+----
+Name                 : SINK_ELASTIC_ORDERS_01
+Class                : io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
+Type                 : sink
+State                : RUNNING
+WorkerId             : ksqldb:8083
 
-View in http://localhost:5601/app/kibana#/management/kibana/index?_g=()[Kibana]
+ Task ID | State   | Error Trace
+---------------------------------
+ 0       | RUNNING |
+---------------------------------
+----
+
+View in http://localhost:5601/app/discover#/?_g=(filters:!(),refreshInterval:(pause:!f,value:2000),time:(from:now-15m,to:now))&_a=(columns:!(_source),filters:!(),index:orders_enriched,interval:auto,query:(language:kuery,query:''),sort:!())[Kibana]
+
 
 ''''
 
