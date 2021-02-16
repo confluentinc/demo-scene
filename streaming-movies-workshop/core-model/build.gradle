@@ -1,0 +1,29 @@
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'com.commercehub.gradle.plugin:gradle-avro-plugin:0.21.0'
+  }
+}
+
+plugins {
+  id 'java-library'
+}
+apply plugin: "com.commercehub.gradle.plugin.avro"
+
+repositories {
+  jcenter()
+  repositories {
+    jcenter()
+    maven {
+      url 'https://packages.confluent.io/maven'
+    }
+  }
+
+}
+
+dependencies {
+  api 'org.apache.avro:avro:1.10.0'
+  api 'io.confluent:kafka-streams-avro-serde:6.0.0'
+}

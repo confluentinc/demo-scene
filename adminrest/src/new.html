@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>New topic</title>
+    <script>
+      function createTopic(event) {
+        event.preventDefault();
+        fetch('http://localhost:8090/kafka/v3/clusters')
+          .then(response => response.json())
+          .then(({data}) =>
+            fetch(data[0].metadata.self + '/topics', {
+              method: 'post',
+              body: JSON.stringify({
+                topic_name: document.getElementById('topic_name').value,
+                partitions_count: document.getElementById('partitions_count').value,
+                replication_factor: document.getElementById('replication_factor').value
+              }),
+              headers: {'Content-Type': 'application/json'}
+            })
+          )
+          .then(_ => {
+            window.location.href = './index.html';
+          })
+          .catch(error => console.warn(error));
+      }
+    </script>
+  </head>
+  <body>
+    <form>
+      <label for="topic_name">Topic name:</label><br />
+      <input type="text" id="topic_name" name="topic_name" /><br />
+      <label for="partitions_count">Partitions count:</label><br />
+      <input type="text" id="partitions_count" name="partitions_count" /><br />
+      <label for="replication_factor">Replication factor:</label><br />
+      <input type="text" id="replication_factor" name="replication_factor" /><br />
+      <br />
+      <button onclick="createTopic(event)">Create topic</button>
+    </form>
+  </body>
+</html>

@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: movies-generator
+spec:
+  serviceName: movies-generator
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app: movies-generator
+  template:
+    metadata:
+      labels:
+        app: movies-generator
+    spec:
+      containers:
+        - name: movies-generator
+          image: docker.io/gamussa/movies-generator
+          env:
+            - name: SPRING_CONFIG_LOCATION
+              value: /mnt/app/application.properties
+          volumeMounts:
+            - name: spring-boot-application-properties
+              mountPath: /mnt/app
+          resources:
+            requests:
+              memory: 512Mi # 768Mi
+              cpu: 500m # 1000m
+      volumes:
+        - name: spring-boot-application-properties
+          secret:
+            secretName: spring-boot-application-properties
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: movies-generator
+spec:
+  clusterIP: None
+  

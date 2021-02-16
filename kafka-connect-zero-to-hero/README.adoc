@@ -1,0 +1,13 @@
+= From Zero to Hero with Kafka Connect
+
+== 👾 Demo code
+
+Follow the script link:/demo_zero-to-hero-with-kafka-connect.adoc[here]
+
+== 📔 Slides
+
+image::https://on.notist.cloud/slides/deck5965/large-0.png[link=https://talks.rmoff.net/ScGJTe]
+
+== 🎥 Recording
+
+image::https://img.youtube.com/vi/dXXfkoXXBbs/maxresdefault.jpg[link=https://youtu.be/dXXfkoXXBbs]

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>Topic details</title>
+    <script>
+      function getTopic() {
+        const topicName = new URLSearchParams(window.location.search).get('topic_name');
+        document.getElementById('topic_name').innerHTML += topicName;
+        fetch('http://localhost:8090/kafka/v3/clusters')
+          .then(response => response.json())
+          .then(({data}) => {
+            topicUrl = data[0].metadata.self + '/topics/' + topicName;
+            return fetch(topicUrl);
+          })
+          .then(response => response.json())
+          .then(data => {
+            document.getElementById('replication_factor').innerHTML += data.replication_factor;
+            return data.partitions.related;
+          })
+          .then(url => fetch(url))
+          .then(response => response.json())
+          .then(({data}) => {
+            document.getElementById('partitions_count').innerHTML += data.length;
+          })
+          .catch(error => console.warn(error));
+      }
+      function deleteTopic(event) {
+        event.preventDefault();
+        fetch(topicUrl, {method: 'delete'})
+          .then(_ => {
+            window.location.href = './index.html';
+          })
+          .catch(error => console.warn(error));
+      }
+      let topicUrl;
+      window.onload = getTopic;
+    </script>
+  </head>
+  <body>
+    <ul id="topic">
+      <li id="topic_name">Topic name: </li>
+      <li id="partitions_count">Partitions count: </li>
+      <li id="replication_factor">Replication factor: </li>
+    </ul>
+    <br />
+    <button onclick="deleteTopic(event)">Delete topic</button>
+  </body>
+</html>

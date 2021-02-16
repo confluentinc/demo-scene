@@ -20,7 +20,7 @@ func checkSpaces(c string) (latestTS string, emptyPlaces float64, pctFull float6
 
 	client := ksqldb.NewClient(KSQLDB_ENDPOINT, KSQLDB_API_KEY, KSQLDB_API_SECRET).Debug()
 
-	k := "SELECT LATEST_TS, CURRENT_EMPTY_PLACES, PCT_FULL FROM CARPARK WHERE NAME='" + c + "';"
+	k := "SELECT LATEST_TS, CURRENT_EMPTY_PLACES, CURRENT_PCT_FULL FROM CARPARK WHERE NAME='" + c + "';"
 	_, r, e := client.Pull(ctx, k)
 
 	if e != nil {
@@ -59,7 +59,7 @@ func alertSpaces(a chan<- string, c int) (e error) {
 	const queryResultTimeoutSeconds = 300
 
 	// Prepare the request
-	k := "SELECT NAME, TS, CAPACITY, EMPTY_PLACES"
+	k := "SELECT NAME, TS, EMPTY_PLACES, CAPACITY"
 	k += "  FROM CARPARK_EVENTS"
 	k += " WHERE  EMPTY_PLACES > " + strconv.Itoa(c)
 	k += " EMIT CHANGES;"
@@ -121,10 +121,18 @@ func getClosest(lat float64, lon float64) (c carPark, e error) {
 	k += "       CAST(" + fmt.Sprintf("%v", lon) + " AS DOUBLE), LATITUDE, LONGITUDE) AS DISTANCE_TO_CARPARK_KM, "
 	k += "       EMPTY_PLACES, ((CAST(CAPACITY as DOUBLE) - CAST(EMPTY_PLACES AS DOUBLE)) / CAST(CAPACITY AS DOUBLE)) * 100 AS PCT_FULL, "
 	k += "       CAPACITY, DIRECTIONSURL, LATITUDE,LONGITUDE"
-	k += "  FROM CARPARK_LATEST C "
+	k += "  FROM CARPARK_EVENTS C "
 	k += " WHERE EMPTY_PLACES > " + fmt.Sprintf("%v", availableThreshold)
 	k += " AND ROWTIME > UNIX_TIMESTAMP()-(1000 * 60 * 5)"
 	k += " EMIT CHANGES;"
+	// k := "SELECT NAME AS CARPARK, LATEST_TS, GEO_DISTANCE(CAST(" + fmt.Sprintf("%v", lat) + " AS DOUBLE), "
+	// k += "       CAST(" + fmt.Sprintf("%v", lon) + " AS DOUBLE), LATITUDE, LONGITUDE) AS DISTANCE_TO_CARPARK_KM, "
+	// k += "       CURRENT_EMPTY_PLACES, CURRENT_PCT_FULL, "
+	// k += "       CAPACITY, DIRECTIONSURL, LATITUDE,LONGITUDE"
+	// k += "  FROM CARPARK C "
+	// k += " WHERE CURRENT_EMPTY_PLACES > " + fmt.Sprintf("%v", availableThreshold)
+	// k += " AND ROWTIME > UNIX_TIMESTAMP()-(1000 * 60 * 5)"
+	// k += " EMIT CHANGES;"
 
 	// This Go routine will handle rows as and when they
 	// are sent to the channel
@@ -157,7 +165,7 @@ func getClosest(lat float64, lon float64) (c carPark, e error) {
 
 	client := ksqldb.NewClient(KSQLDB_ENDPOINT, KSQLDB_API_KEY, KSQLDB_API_SECRET).Debug()
 
-	e = client.Push(ctx, k, "earliest", rc, hc)
+	e = client.Push(ctx, k, "latest", rc, hc)
 
 	if e != nil {
 		// handle the error better here, e.g. check for no rows returned

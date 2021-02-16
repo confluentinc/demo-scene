@@ -1,0 +1,73 @@
+plugins {
+  id 'org.springframework.boot' version '2.3.4.RELEASE'
+  id 'io.spring.dependency-management' version '1.0.10.RELEASE'
+  id 'java'
+  id 'idea'
+  id "com.google.protobuf" version "0.8.13"
+}
+
+group = 'io.confluent.developer'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+configurations {
+  compileOnly {
+    extendsFrom annotationProcessor
+  }
+}
+
+repositories {
+  jcenter()
+}
+
+dependencies {
+  implementation 'org.springframework.boot:spring-boot-starter-webflux'
+  implementation 'org.apache.kafka:kafka-streams'
+  implementation 'org.springframework.kafka:spring-kafka'
+
+  implementation 'com.github.javafaker:javafaker:1.0.2'
+  
+  implementation 'io.github.lognet:grpc-spring-boot-starter:4.2.2'
+  implementation "com.google.protobuf:protobuf-java:3.12.4"
+
+  compileOnly 'org.projectlombok:lombok'
+  annotationProcessor 'org.projectlombok:lombok'
+  testImplementation('org.springframework.boot:spring-boot-starter-test') {
+    exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+  }
+  testImplementation 'io.projectreactor:reactor-test'
+  testImplementation 'org.springframework.kafka:spring-kafka-test'
+  testImplementation("org.assertj:assertj-core:3.17.2")
+}
+
+test {
+  useJUnitPlatform()
+}
+
+protobuf {
+
+  //generatedFilesBaseDir = "$buildDir/generated-main-proto-java"
+
+  // Configure the protoc executable
+  protoc {
+    // Download from repositories
+    artifact = 'com.google.protobuf:protoc:3.12.4'
+  }
+  plugins {
+    grpc {
+      artifact = 'io.grpc:protoc-gen-grpc-java:1.33.1'
+    }
+  }
+  generateProtoTasks {
+    all()*.plugins { grpc {} }
+  }
+}
+
+sourceSets {
+  main {
+    java {
+      srcDirs 'build/generated/source/proto/main/grpc'
+      srcDirs 'build/generated/source/proto/main/java'
+    }
+  }
+}

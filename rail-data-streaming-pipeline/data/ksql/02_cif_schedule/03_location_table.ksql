@@ -1,7 +1,14 @@
-CREATE TABLE TIPLOC WITH (KAFKA_TOPIC='TIPLOC_FLAT_KEYED',
-                          VALUE_FORMAT='AVRO', 
-                          KEY='TIPLOC_CODE');
+CREATE TABLE TIPLOC (TIPLOC_CODE VARCHAR PRIMARY KEY)
+                    WITH (KAFKA_TOPIC='TIPLOC_FLAT_KEYED',
+                          VALUE_FORMAT='AVRO');
 
-CREATE TABLE STANOX WITH (KAFKA_TOPIC='STANOX_FLAT_KEYED',
-                          VALUE_FORMAT='AVRO', 
-                          KEY='STANOX');
+-- We need this duplicate table so that
+-- we can do an n-way join later on
+-- c.f. https://github.com/confluentinc/ksql/issues/6484
+CREATE TABLE TIPLOC_DUP (TIPLOC_CODE VARCHAR PRIMARY KEY)
+                    WITH (KAFKA_TOPIC='TIPLOC_FLAT_KEYED_DUP',
+                          VALUE_FORMAT='AVRO');
+
+CREATE TABLE STANOX (STANOX VARCHAR PRIMARY KEY)
+                    WITH (KAFKA_TOPIC='STANOX_GEO',
+                          VALUE_FORMAT='AVRO');

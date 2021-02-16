@@ -74,6 +74,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - [Self-Balancing Clusters Demo](self-balancing)
   - [Tiered Storage Demo](tiered-storage)
   - [Cluster Linking Demo](cluster-linking)
+  - [Confluent Admin REST APIs Demo](adminrest)
 
 - Misc
   - [Hacky export/import between Kafka clusters](export-import-with-kafkacat) using `kafkacat`

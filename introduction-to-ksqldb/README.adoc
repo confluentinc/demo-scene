@@ -1,0 +1,16 @@
+= Introduction to ksqlDB
+Robin Moffatt <robin@confluent.io>
+v1.00, 11 February 2021
+
+This repository contains two (TWO!) demos that you can use to explore ksqlDB. 
+
+* link:demo_introduction_to_ksqldb_01.adoc[Demo 01] is based on the movement of people
+** 🎥 https://www.youtube.com/watch?v=7mGBxG2NhVQ[Recording]
+
+* link:demo_introduction_to_ksqldb_02.adoc[Demo 02] uses generated order data
+
+Both are run using the same Docker Compose file. See each demo script (linked above) for how to run them. 
+
+''''
+
+Got questions? https://confluent.io/community/ask-the-community/[Join the Confluent Community] to get help and assist others :) 

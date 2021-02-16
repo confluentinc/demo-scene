@@ -9,10 +9,10 @@ curl -i -X PUT -H "Accept:application/json" \
 	"value.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
 	"header.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
 	"src.kafka.bootstrap.servers": "proxmox01.moffatt.me:9092",
-	"dest.kafka.bootstrap.servers": "kafka:29092",
+	"dest.kafka.bootstrap.servers": "broker:29092",
 	"topic.whitelist": "CIF_FULL_DAILY",
 	"topic.rename.format":"${topic}",
 	"confluent.license":"",
-	"confluent.topic.bootstrap.servers":"kafka:29092",
+	"confluent.topic.bootstrap.servers":"broker:29092",
 	"confluent.topic.replication.factor":1
 	}'

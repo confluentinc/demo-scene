@@ -1,0 +1,74 @@
+-- https://wiki.openraildata.com/index.php?title=TOC_Codes
+-- https://wiki.openraildata.com/index.php?title=Train_Movements
+
+SET 'auto.offset.reset' = 'earliest';
+CREATE OR REPLACE STREAM TRAIN_MOVEMENTS_00 
+     WITH (VALUE_FORMAT='AVRO') AS 
+SELECT HEADER, 
+       EXTRACTJSONFIELD(BODY,'$.event_type') as event_type,
+       EXTRACTJSONFIELD(BODY,'$.gbtt_timestamp')  as gbtt_timestamp,
+       EXTRACTJSONFIELD(BODY,'$.original_loc_stanox') as original_loc_stanox,
+       EXTRACTJSONFIELD(BODY,'$.planned_timestamp')  as planned_timestamp,
+       CAST(EXTRACTJSONFIELD(BODY,'$.timetable_variation') AS INT) AS TIMETABLE_VARIATION,
+       EXTRACTJSONFIELD(BODY,'$.original_loc_timestamp')  as original_loc_timestamp,
+       EXTRACTJSONFIELD(BODY,'$.current_train_id') as current_train_id,
+       EXTRACTJSONFIELD(BODY,'$.delay_monitoring_point') as delay_monitoring_point,
+       EXTRACTJSONFIELD(BODY,'$.next_report_run_time') as next_report_run_time,
+       EXTRACTJSONFIELD(BODY,'$.reporting_stanox') as reporting_stanox,
+       CAST(EXTRACTJSONFIELD(BODY,'$.actual_timestamp') AS BIGINT) as actual_timestamp,
+       EXTRACTJSONFIELD(BODY,'$.correction_ind') as correction_ind,
+       EXTRACTJSONFIELD(BODY,'$.event_source') as event_source,
+       EXTRACTJSONFIELD(BODY,'$.train_file_address') as train_file_address,
+       CASE WHEN LEN(EXTRACTJSONFIELD(BODY,'$.platform'))> 0 THEN 'Platform' + EXTRACTJSONFIELD(BODY,'$.platform')
+             ELSE '' 
+          END AS PLATFORM,
+       EXTRACTJSONFIELD(BODY,'$.division_code') as division_code,
+       EXTRACTJSONFIELD(BODY,'$.train_terminated') as train_terminated,
+       EXTRACTJSONFIELD(BODY,'$.train_id') as train_id,
+       EXTRACTJSONFIELD(BODY,'$.offroute_ind') as offroute_ind,
+       CASE WHEN EXTRACTJSONFIELD(BODY,'$.variation_status') = 'ON TIME' THEN 'ON TIME' 
+             WHEN EXTRACTJSONFIELD(BODY,'$.variation_status') = 'LATE' THEN EXTRACTJSONFIELD(BODY,'$.timetable_variation') + ' MINS LATE' 
+             WHEN EXTRACTJSONFIELD(BODY,'$.variation_status')='EARLY' THEN EXTRACTJSONFIELD(BODY,'$.timetable_variation') + ' MINS EARLY' 
+        END AS VARIATION,
+       CASE WHEN EXTRACTJSONFIELD(BODY,'$.variation_status') = 'ON TIME' THEN 0
+             WHEN EXTRACTJSONFIELD(BODY,'$.variation_status') = 'LATE' THEN 1
+             WHEN EXTRACTJSONFIELD(BODY,'$.variation_status')='EARLY' THEN 0
+        END AS LATE_IND,
+       EXTRACTJSONFIELD(BODY,'$.variation_status') as variation_status,
+       EXTRACTJSONFIELD(BODY,'$.train_service_code') as train_service_code,
+       EXTRACTJSONFIELD(BODY,'$.toc_id') as toc_id,
+        CASE WHEN EXTRACTJSONFIELD(BODY,'$.toc_id') = '20' THEN 'TransPennine Express'
+               WHEN EXTRACTJSONFIELD(BODY,'$.toc_id') = '23' THEN 'Arriva Trains Northern'
+               WHEN EXTRACTJSONFIELD(BODY,'$.toc_id') = '28' THEN 'East Midlands Trains'
+               WHEN EXTRACTJSONFIELD(BODY,'$.toc_id') = '61' THEN 'London North Eastern Railway'
+              ELSE '<unknown TOC code: ' + EXTRACTJSONFIELD(BODY,'$.toc_id') + '>'
+        END AS TOC,
+       EXTRACTJSONFIELD(BODY,'$.loc_stanox') as loc_stanox,
+        S.TPS_DESCRIPTION AS LOC_NLCDESC,
+        S.GEOHASH AS GEOHASH, 
+        S.GEO_LATLON AS GEO_LATLON,
+        S.GEO_OSM_URL AS GEO_OSM_URL,
+       EXTRACTJSONFIELD(BODY,'$.auto_expected') as auto_expected,
+       EXTRACTJSONFIELD(BODY,'$.direction_ind') as direction_ind,
+       EXTRACTJSONFIELD(BODY,'$.route') as route,
+       EXTRACTJSONFIELD(BODY,'$.planned_event_type') as planned_event_type,
+       EXTRACTJSONFIELD(BODY,'$.next_report_stanox') as next_report_stanox,
+       EXTRACTJSONFIELD(BODY,'$.line_ind') as line_ind,
+       CONCAT_WS('/',
+                 EXTRACTJSONFIELD(BODY,'$.train_id'),
+                 EXTRACTJSONFIELD(BODY,'$.planned_event_type'),
+                 EXTRACTJSONFIELD(BODY,'$.loc_stanox')) AS MSG_KEY
+  FROM NETWORKRAIL_TRAIN_MVT_X 
+       LEFT JOIN STANOX S
+         ON EXTRACTJSONFIELD(BODY,'$.loc_stanox') = S.STANOX
+WHERE header->msg_type = '0003'
+PARTITION BY CONCAT_WS('/',
+                 EXTRACTJSONFIELD(BODY,'$.train_id'),
+                 EXTRACTJSONFIELD(BODY,'$.planned_event_type'),
+                 EXTRACTJSONFIELD(BODY,'$.loc_stanox'));
+
+-- SET 'auto.offset.reset' = 'earliest';
+-- CREATE STREAM TRAIN_MOVEMENTS_01 
+--      WITH (TIMESTAMP='ACTUAL_TIMESTAMP') AS 
+-- SELECT  *
+--    FROM TRAIN_MOVEMENTS_00 TM ;

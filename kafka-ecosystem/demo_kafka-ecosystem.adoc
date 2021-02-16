@@ -130,6 +130,16 @@ docker exec -it postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
 SELECT * FROM "ZWZZT_TRADES_BY_15_MIN" ORDER BY 1 DESC,2;
 ----
 
+Optional: pull query
+
+[source,sql]
+----
+SELECT TIMESTAMPTOSTRING(WINDOWSTART,'yyyy-MM-dd HH:mm:ss','Europe/London') AS WINDOW_START_TS,
+       ROWKEY,
+       TRADE_COUNT 
+  FROM ZWZZT_TRADES_BY_15_MIN 
+ WHERE ROWKEY='BUY'; 
+----
 
 🎥 https://rmoff.dev/ksqldb-jdbc-sink-video
 
