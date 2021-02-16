@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="NICE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>
+                %yellow(%d{yyyy-MM-dd HH:mm:ss}) %cyan(${HOSTNAME}) %highlight([%p]) %green((%file:%line\)) - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <appender name="KAFKA" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>
+                %yellow(%d{yyyy-MM-dd HH:mm:ss}) %highlight([%p]) %magenta((%file:%line\)) - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <logger name="org.apache.kafka" level="INFO" additivity="false">
+        <appender-ref ref="KAFKA"/>
+    </logger>
+
+    <logger name="io.confluent.testcontainers" level="INFO" additivity="false">
+        <appender-ref ref="NICE"/>
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="KAFKA"/>
+    </root>
+
+    <logger name="org.apache.http" level="WARN"/>
+    <logger name="org.testcontainers" level="INFO"/>
+    <logger name="com.github.dockerjava" level="WARN"/>
+    <logger name="io.confluent.testcontainers" level="INFO"/>
+    <logger name="org.apache.kafka" level="INFO"/>
+</configuration>
