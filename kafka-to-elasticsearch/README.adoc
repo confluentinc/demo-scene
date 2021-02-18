@@ -1,6 +1,6 @@
 = Streaming data from Kafka to Elasticsearch using Kafka Connect Elasticsearch Sink
 Robin Moffatt <robin@confluent.io>
-v1.00, 4 May 2020
+v1.10, 18 February 2021
 
 :toc:
 
@@ -68,14 +68,14 @@ docker exec -it ksqldb ksql http://ksqldb:8088
 +
 [source,sql]
 ----
-CREATE STREAM TEST01 (COL1 INT, COL2 VARCHAR)
-  WITH (KAFKA_TOPIC='test01', PARTITIONS=1, VALUE_FORMAT='AVRO');
+CREATE STREAM TEST01 (ALPHA VARCHAR KEY,COL1 INT, COL2 VARCHAR)
+  WITH (KAFKA_TOPIC='test01', PARTITIONS=1, FORMAT='AVRO');
 ----
 +
 [source,sql]
 ----
-INSERT INTO TEST01 (ROWKEY, COL1, COL2) VALUES ('X',1,'FOO');
-INSERT INTO TEST01 (ROWKEY, COL1, COL2) VALUES ('Y',2,'BAR');
+INSERT INTO TEST01 (ALPHA, COL1, COL2) VALUES ('X',1,'FOO');
+INSERT INTO TEST01 (ALPHA, COL1, COL2) VALUES ('Y',2,'BAR');
 ----
 +
 [source,sql]
@@ -91,10 +91,10 @@ PRINT test01 FROM BEGINNING LIMIT 2;
  confluent_rmoff_01ksql_processing_log | 1          | 1
  test01                                | 1          | 1
 -------------------------------------------------------------------------
-Key format: KAFKA_STRING
+Key format: AVRO or KAFKA_STRING
 Value format: AVRO or KAFKA_STRING
-rowtime: 5/4/20 10:02:51 AM UTC, key: X, value: {"COL1": 1, "COL2": "FOO"}
-rowtime: 5/4/20 10:02:51 AM UTC, key: Y, value: {"COL1": 2, "COL2": "BAR"}
+rowtime: 2021/02/18 15:38:38.411 Z, key: X, value: {"COL1": 1, "COL2": "FOO"}, partition: 0
+rowtime: 2021/02/18 15:38:38.482 Z, key: Y, value: {"COL1": 2, "COL2": "BAR"}, partition: 0
 Topic printing ceased
 ksql>
 
@@ -108,13 +108,16 @@ I'm using ksqlDB to create the connector but you can use the Kafka Connect REST 
 [source,sql]
 ----
 CREATE SINK CONNECTOR SINK_ELASTIC_TEST_01 WITH (
-  'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
-  'connection.url'  = 'http://elasticsearch:9200',
-  'key.converter'   = 'org.apache.kafka.connect.storage.StringConverter',
-  'type.name'       = '_doc',
-  'topics'          = 'test01',
-  'key.ignore'      = 'true',
-  'schema.ignore'   = 'false'
+  'connector.class'                     = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+  'connection.url'                      = 'http://elasticsearch:9200',
+  'value.converter'                     = 'io.confluent.connect.avro.AvroConverter',
+  'value.converter.schema.registry.url' = 'http://schema-registry:8081',
+  'key.converter'                       = 'io.confluent.connect.avro.AvroConverter',
+  'key.converter.schema.registry.url'   = 'http://schema-registry:8081',
+  'type.name'                           = '_doc',
+  'topics'                              = 'test01',
+  'key.ignore'                          = 'true',
+  'schema.ignore'                       = 'false'
 );
 ----
 
@@ -170,14 +173,14 @@ curl -s http://localhost:9200/test01/_mapping | jq '.'
 
 https://www.youtube.com/watch?v=Cq-2eGxOCc8&t=437s[🎥 Watch]
 
-1. But where did our `ROWKEY` go? And what happens if we insert new data against the same key and a new one? 
+1. But where did our `ALPHA` key column go? And what happens if we insert new data against the same key and a new one? 
 +
 [source,sql]
 ----
 -- New key ('Z')
-INSERT INTO TEST01 (ROWKEY, COL1, COL2) VALUES ('Z',1,'WOO');
+INSERT INTO TEST01 (ALPHA, COL1, COL2) VALUES ('Z',1,'WOO');
 -- New value for existing key ('Y')
-INSERT INTO TEST01 (ROWKEY, COL1, COL2) VALUES ('Y',4,'PFF');
+INSERT INTO TEST01 (ALPHA, COL1, COL2) VALUES ('Y',4,'PFF');
 ----
 +
 Elasticsearch:
@@ -203,7 +206,7 @@ Note that the `_id` is made up of `<topic>+<partition>+<offset>`, which we can p
 ----
 docker exec kafkacat kafkacat \
         -b broker:29092 \
-        -r http://schema-registry:8081 -s key=s -s value=avro \
+        -r http://schema-registry:8081 -s avro \
         -C -o beginning -e -q \
         -t test01 \
         -f 'Topic+Partition+Offset: %t+%p+%o\tKey: %k\tValue: %s\n'
@@ -211,10 +214,10 @@ docker exec kafkacat kafkacat \
 +
 [source,bash]
 ----
-Topic+Partition+Offset: test01+0+0      Key: X  Value: {"COL1": {"int": 1}, "COL2": {"string": "FOO"}}
-Topic+Partition+Offset: test01+0+1      Key: Y  Value: {"COL1": {"int": 2}, "COL2": {"string": "BAR"}}
-Topic+Partition+Offset: test01+0+2      Key: Z  Value: {"COL1": {"int": 1}, "COL2": {"string": "WOO"}}
-Topic+Partition+Offset: test01+0+3      Key: Y  Value: {"COL1": {"int": 4}, "COL2": {"string": "PFF"}}
+Topic+Partition+Offset: test01+0+0      Key: "X"  Value: {"COL1": {"int": 1}, "COL2": {"string": "FOO"}}
+Topic+Partition+Offset: test01+0+1      Key: "Y"  Value: {"COL1": {"int": 2}, "COL2": {"string": "BAR"}}
+Topic+Partition+Offset: test01+0+2      Key: "Z"  Value: {"COL1": {"int": 1}, "COL2": {"string": "WOO"}}
+Topic+Partition+Offset: test01+0+3      Key: "Y"  Value: {"COL1": {"int": 4}, "COL2": {"string": "PFF"}}
 ----
 
 2. Let's recreate the connector and use the Kafka message key as the document ID to enable updates & deletes against existing documents. 
@@ -231,13 +234,16 @@ NOTE: The connector is given a new name. If you give it the same as before then 
 [source,sql]
 ----
 CREATE SINK CONNECTOR SINK_ELASTIC_TEST_02 WITH (
-  'connector.class' = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
-  'connection.url'  = 'http://elasticsearch:9200',
-  'key.converter'   = 'org.apache.kafka.connect.storage.StringConverter',
-  'type.name'       = '_doc',
-  'topics'          = 'test01',
-  'key.ignore'      = 'false',
-  'schema.ignore'   = 'false'
+  'connector.class'                     = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+  'connection.url'                      = 'http://elasticsearch:9200',
+  'value.converter'                     = 'io.confluent.connect.avro.AvroConverter',
+  'value.converter.schema.registry.url' = 'http://schema-registry:8081',
+  'key.converter'                       = 'io.confluent.connect.avro.AvroConverter',
+  'key.converter.schema.registry.url'   = 'http://schema-registry:8081',
+  'type.name'                           = '_doc',
+  'topics'                              = 'test01',
+  'key.ignore'                          = 'false',
+  'schema.ignore'                       = 'false'
 );
 ----
 +
@@ -262,13 +268,13 @@ Note that `_id` now maps the key of the Kafka message, and that the value for me
 [source,sql]
 ----
 ksql> SET 'auto.offset.reset' = 'earliest';
-ksql> SELECT ROWKEY, COL1, COL2 FROM TEST01 EMIT CHANGES LIMIT 4;
+ksql> SELECT ALPHA, COL1, COL2 FROM TEST01 EMIT CHANGES LIMIT 4;
 ----
 +
 [source,sql]
 ----
 +-------+------+-----+
-|ROWKEY |COL1  |COL2 |
+|ALPHA  |COL1  |COL2 |
 +-------+------+-----+
 |X      |1     |FOO  |
 |Y      |2     |BAR  |
@@ -303,14 +309,17 @@ NOTE: The connector is given a new name. If you give it the same as before then 
 [source,sql]
 ----
 CREATE SINK CONNECTOR SINK_ELASTIC_TEST_03 WITH (
-  'connector.class'         = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
-  'connection.url'          = 'http://elasticsearch:9200',
-  'key.converter'           = 'org.apache.kafka.connect.storage.StringConverter',
-  'type.name'               = '_doc',
-  'topics'                  = 'test01',
-  'key.ignore'              = 'false',
-  'schema.ignore'           = 'false',
-  'behavior.on.null.values' = 'delete'
+  'connector.class'                     = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+  'connection.url'                      = 'http://elasticsearch:9200',
+  'value.converter'                     = 'io.confluent.connect.avro.AvroConverter',
+  'value.converter.schema.registry.url' = 'http://schema-registry:8081',
+  'key.converter'                       = 'io.confluent.connect.avro.AvroConverter',
+  'key.converter.schema.registry.url'   = 'http://schema-registry:8081',
+  'type.name'                           = '_doc',
+  'topics'                              = 'test01',
+  'key.ignore'                          = 'false',
+  'schema.ignore'                       = 'false',
+  'behavior.on.null.values'             = 'delete'
 );
 ----
 
@@ -345,18 +354,17 @@ curl -s http://localhost:9200/test01/_search \
 {"_index":"test01","_type":"_doc","_id":"Z","_score":1,"_source":{"COL1":1,"COL2":"WOO"}}
 ----
 
-Now send a tombstone message, using kafkacat (`-Z` to send empty value as tombstone, `-K` to specify key separator):
+Now send a tombstone message by writing a NULL value to the underlying topic:
 
-[source,bash]
+[source,sql]
 ----
-echo 'Y:' | \
-  docker exec -i kafkacat kafkacat \
-          -b broker:29092 \
-          -P -Z -K: \
-          -t test01
+CREATE STREAM TEST01_TOMBSTONE (ALPHA VARCHAR KEY,COL1 VARCHAR)
+  WITH (KAFKA_TOPIC='test01', VALUE_FORMAT='KAFKA', KEY_FORMAT='AVRO');
+  
+INSERT INTO TEST01_TOMBSTONE (ALPHA, COL1) VALUES ('Y',CAST(NULL AS VARCHAR));
 ----
 
-Check the topic in ksqlDB:
+Check the topic:
 
 [source,sql]
 ----
@@ -392,7 +400,7 @@ curl -s http://localhost:9200/test01/_search \
 https://www.youtube.com/watch?v=Cq-2eGxOCc8&t=974s[🎥 Watch]
 
 * `schemas.ignore=false` means that Kafka Connect will define the index mapping based on the schema of the source data
-** If you use this it is *mandatory* to have a source schema (e.g. Avro, Protobuf, etc -- _NOT_ plain JSON)
+** If you use this it is *mandatory* to have a source schema (e.g. Avro, Protobuf, JSON Schema etc -- _NOT_ plain JSON)
 * `schemas.ignore=true` means Kafka Connect will just send the values and let Elasticsearch figure out how to map them using https://www.elastic.co/guide/en/elasticsearch/reference/current/dynamic-field-mapping.html[dynamic field mapping] and optionally https://www.elastic.co/guide/en/elasticsearch/reference/current/dynamic-templates.html[dynamic templates] that you define in advance.
 
 Set up some JSON data in a topic: 
@@ -423,26 +431,44 @@ CREATE SINK CONNECTOR SINK_ELASTIC_TEST_JSON_A WITH (
 
 Connector fails. Why? 
 
-[source,bash]
+[source,sql]
 ----
-➜ curl -s http://localhost:8083/connectors/SINK_ELASTIC_TEST_JSON_A/status | jq '.'
+DESCRIBE CONNECTOR SINK_ELASTIC_TEST_JSON_A;
 
-{
-  "name": "SINK_ELASTIC_TEST_JSON_A",
-  "connector": {
-    "state": "RUNNING",
-    "worker_id": "kafka-connect:8083"
-  },
-  "tasks": [
-    {
-      "id": 0,
-      "state": "FAILED",
-      "worker_id": "kafka-connect:8083",
-      "trace": "org.apache.kafka.connect.errors.ConnectException: Tolerance exceeded in error handler\n\tat org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execAndHandleError(RetryWithToleranceOperator.java:178)\n\tat org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execute(RetryWithToleranceOperator.java:104)\n\tat org.apache.kafka.connect.runtime.WorkerSinkTask.convertAndTransformRecord(WorkerSinkTask.java:492)\n\tat org.apache.kafka.connect.runtime.WorkerSinkTask.convertMessages(WorkerSinkTask.java:469)\n\tat org.apache.kafka.connect.runtime.WorkerSinkTask.poll(WorkerSinkTask.java:325)\n\tat org.apache.kafka.connect.runtime.WorkerSinkTask.iteration(WorkerSinkTask.java:228)\n\tat org.apache.kafka.connect.runtime.WorkerSinkTask.execute(WorkerSinkTask.java:196)\n\tat org.apache.kafka.connect.runtime.WorkerTask.doRun(WorkerTask.java:184)\n\tat org.apache.kafka.connect.runtime.WorkerTask.run(WorkerTask.java:234)\n\tat java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)\n\tat java.util.concurrent.FutureTask.run(FutureTask.java:266)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)\n\tat java.lang.Thread.run(Thread.java:748)\nCaused by: org.apache.kafka.connect.errors.DataException: Failed to deserialize data for topic TEST_JSON to Avro: \n\tat io.confluent.connect.avro.AvroConverter.toConnectData(AvroConverter.java:114)\n\tat org.apache.kafka.connect.storage.Converter.toConnectData(Converter.java:87)\n\tat org.apache.kafka.connect.runtime.WorkerSinkTask.lambda$convertAndTransformRecord$2(WorkerSinkTask.java:492)\n\tat org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execAndRetry(RetryWithToleranceOperator.java:128)\n\tat org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execAndHandleError(RetryWithToleranceOperator.java:162)\n\t... 13 more\nCaused by: org.apache.kafka.common.errors.SerializationException: Unknown magic byte!\n"
-    }
-  ],
-  "type": "sink"
-}
+Name                 : SINK_ELASTIC_TEST_JSON_A
+Class                : io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
+Type                 : sink
+State                : RUNNING
+WorkerId             : kafka-connect:8083
+
+ Task ID | State  | Error Trace
+----------------------------------------------------------------------------------------------------------------------------------
+ 0       | FAILED | org.apache.kafka.connect.errors.ConnectException: Tolerance exceeded in error handler
+        at org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execAndHandleError(RetryWithToleranceOperator.java:206)
+        at org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execute(RetryWithToleranceOperator.java:132)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.convertAndTransformRecord(WorkerSinkTask.java:501)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.convertMessages(WorkerSinkTask.java:478)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.poll(WorkerSinkTask.java:328)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.iteration(WorkerSinkTask.java:232)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.execute(WorkerSinkTask.java:201)
+        at org.apache.kafka.connect.runtime.WorkerTask.doRun(WorkerTask.java:185)
+        at org.apache.kafka.connect.runtime.WorkerTask.run(WorkerTask.java:234)
+        at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:515)
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)
+        at java.base/java.lang.Thread.run(Thread.java:834)
+Caused by: org.apache.kafka.connect.errors.DataException: Failed to deserialize data for topic TEST_JSON to Avro:
+        at io.confluent.connect.avro.AvroConverter.toConnectData(AvroConverter.java:125)
+        at org.apache.kafka.connect.storage.Converter.toConnectData(Converter.java:87)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.convertValue(WorkerSinkTask.java:545)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.lambda$convertAndTransformRecord$1(WorkerSinkTask.java:501)
+        at org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execAndRetry(RetryWithToleranceOperator.java:156)
+        at org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execAndHandleError(RetryWithToleranceOperator.java:190)
+        ... 13 more
+Caused by: org.apache.kafka.common.errors.SerializationException: Unknown magic byte!
+
+----------------------------------------------------------------------------------------------------------------------------------
 ----
 
 Error within this is: 
@@ -459,7 +485,7 @@ We're reading JSON data but using the Avro converter (as specified as the defaul
 [source,yaml]
 ----
   kafka-connect:
-    image: confluentinc/cp-kafka-connect-base:5.5.0
+    image: confluentinc/cp-kafka-connect-base:6.1.0
 …
     environment:
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
@@ -490,27 +516,43 @@ CREATE SINK CONNECTOR SINK_ELASTIC_TEST_JSON_A WITH (
 
 Fails
 
-[source,bash]
+[source,sql]
 ----
-➜ curl -s http://localhost:8083/connectors/SINK_ELASTIC_TEST_JSON_A/status | jq '.'
+DESCRIBE CONNECTOR SINK_ELASTIC_TEST_JSON_A;
 
-{
-  "name": "SINK_ELASTIC_TEST_JSON_A",
-  "connector": {
-    "state": "RUNNING",
-    "worker_id": "kafka-connect:8083"
-  },
-  "tasks": [
-    {
-      "id": 0,
-      "state": "FAILED",
-      "worker_id": "kafka-connect:8083",
-      "trace": "org.apache.kafka.connect.errors.ConnectException: Tolerance exceeded in error handler\n\tat org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execAndHandleError(RetryWithToleranceOperator.java:178)\n\tat org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execute(RetryWithToleranceOperator.java:104)\n\tat org.apache.kafka.connect.runtime.WorkerSinkTask.convertAndTransformRecord(WorkerSinkTask.java:492)\n\tat org.apache.kafka.connect.runtime.WorkerSinkTask.convertMessages(WorkerSinkTask.java:469)\n\tat org.apache.kafka.connect.runtime.WorkerSinkTask.poll(WorkerSinkTask.java:325)\n\tat org.apache.kafka.connect.runtime.WorkerSinkTask.iteration(WorkerSinkTask.java:228)\n\tat org.apache.kafka.connect.runtime.WorkerSinkTask.execute(WorkerSinkTask.java:196)\n\tat org.apache.kafka.connect.runtime.WorkerTask.doRun(WorkerTask.java:184)\n\tat org.apache.kafka.connect.runtime.WorkerTask.run(WorkerTask.java:234)\n\tat java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)\n\tat java.util.concurrent.FutureTask.run(FutureTask.java:266)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)\n\tat java.lang.Thread.run(Thread.java:748)\nCaused by: org.apache.kafka.connect.errors.DataException: JsonConverter with schemas.enable requires \"schema\" and \"payload\" fields and may not contain additional fields. If you are trying to deserialize plain JSON data, set schemas.enable=false in your converter configuration.\n\tat org.apache.kafka.connect.json.JsonConverter.toConnectData(JsonConverter.java:359)\n\tat org.apache.kafka.connect.storage.Converter.toConnectData(Converter.java:87)\n\tat org.apache.kafka.connect.runtime.WorkerSinkTask.lambda$convertAndTransformRecord$2(WorkerSinkTask.java:492)\n\tat org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execAndRetry(RetryWithToleranceOperator.java:128)\n\tat org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execAndHandleError(RetryWithToleranceOperator.java:162)\n\t... 13 more\n"
-    }
-  ],
-  "type": "sink"
-}
+Name                 : SINK_ELASTIC_TEST_JSON_A
+Class                : io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
+Type                 : sink
+State                : RUNNING
+WorkerId             : kafka-connect:8083
 
+ Task ID | State  | Error Trace
+----------------------------------------------------------------------------------------------------------------------------------
+ 0       | FAILED | org.apache.kafka.connect.errors.ConnectException: Tolerance exceeded in error handler
+        at org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execAndHandleError(RetryWithToleranceOperator.java:206)
+        at org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execute(RetryWithToleranceOperator.java:132)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.convertAndTransformRecord(WorkerSinkTask.java:501)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.convertMessages(WorkerSinkTask.java:478)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.poll(WorkerSinkTask.java:328)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.iteration(WorkerSinkTask.java:232)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.execute(WorkerSinkTask.java:201)
+        at org.apache.kafka.connect.runtime.WorkerTask.doRun(WorkerTask.java:185)
+        at org.apache.kafka.connect.runtime.WorkerTask.run(WorkerTask.java:234)
+        at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:515)
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)
+        at java.base/java.lang.Thread.run(Thread.java:834)
+Caused by: org.apache.kafka.connect.errors.DataException: JsonConverter with schemas.enable requires "schema" and "payload" fields and may not contain additional fields. If you are trying to deserialize plain JSON data, set schemas.enable=false in your converter configuration.
+        at org.apache.kafka.connect.json.JsonConverter.toConnectData(JsonConverter.java:370)
+        at org.apache.kafka.connect.storage.Converter.toConnectData(Converter.java:87)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.convertValue(WorkerSinkTask.java:545)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.lambda$convertAndTransformRecord$1(WorkerSinkTask.java:501)
+        at org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execAndRetry(RetryWithToleranceOperator.java:156)
+        at org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator.execAndHandleError(RetryWithToleranceOperator.java:190)
+        ... 13 more
+
+----------------------------------------------------------------------------------------------------------------------------------
 ----
 
 Nested error: 
@@ -546,26 +588,40 @@ CREATE SINK CONNECTOR SINK_ELASTIC_TEST_JSON_A WITH (
 
 Connector fails
 
-[source,bash]
+[source,sql]
 ----
-➜ curl -s http://localhost:8083/connectors/SINK_ELASTIC_TEST_JSON_A/status | jq '.'
+ksql> DESCRIBE CONNECTOR SINK_ELASTIC_TEST_JSON_A;
 
-{
-  "name": "SINK_ELASTIC_TEST_JSON_A",
-  "connector": {
-    "state": "RUNNING",
-    "worker_id": "kafka-connect:8083"
-  },
-  "tasks": [
-    {
-      "id": 0,
-      "state": "FAILED",
-      "worker_id": "kafka-connect:8083",
-      "trace": "org.apache.kafka.connect.errors.ConnectException: Exiting WorkerSinkTask due to unrecoverable exception.\n\tat org.apache.kafka.connect.runtime.WorkerSinkTask.deliverMessages(WorkerSinkTask.java:568)\n\tat org.apache.kafka.connect.runtime.WorkerSinkTask.poll(WorkerSinkTask.java:326)\n\tat org.apache.kafka.connect.runtime.WorkerSinkTask.iteration(WorkerSinkTask.java:228)\n\tat org.apache.kafka.connect.runtime.WorkerSinkTask.execute(WorkerSinkTask.java:196)\n\tat org.apache.kafka.connect.runtime.WorkerTask.doRun(WorkerTask.java:184)\n\tat org.apache.kafka.connect.runtime.WorkerTask.run(WorkerTask.java:234)\n\tat java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)\n\tat java.util.concurrent.FutureTask.run(FutureTask.java:266)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)\n\tat java.lang.Thread.run(Thread.java:748)\nCaused by: org.apache.kafka.connect.errors.DataException: Cannot infer mapping without schema.\n\tat io.confluent.connect.elasticsearch.Mapping.inferMapping(Mapping.java:84)\n\tat io.confluent.connect.elasticsearch.jest.JestElasticsearchClient.createMapping(JestElasticsearchClient.java:391)\n\tat io.confluent.connect.elasticsearch.Mapping.createMapping(Mapping.java:66)\n\tat io.confluent.connect.elasticsearch.ElasticsearchWriter.write(ElasticsearchWriter.java:265)\n\tat io.confluent.connect.elasticsearch.ElasticsearchSinkTask.put(ElasticsearchSinkTask.java:174)\n\tat org.apache.kafka.connect.runtime.WorkerSinkTask.deliverMessages(WorkerSinkTask.java:546)\n\t... 10 more\n"
-    }
-  ],
-  "type": "sink"
-}
+Name                 : SINK_ELASTIC_TEST_JSON_A
+Class                : io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
+Type                 : sink
+State                : RUNNING
+WorkerId             : kafka-connect:8083
+
+ Task ID | State  | Error Trace
+------------------------------------------------------------------------------------------------------------------------------
+ 0       | FAILED | org.apache.kafka.connect.errors.ConnectException: Exiting WorkerSinkTask due to unrecoverable exception.
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.deliverMessages(WorkerSinkTask.java:614)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.poll(WorkerSinkTask.java:329)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.iteration(WorkerSinkTask.java:232)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.execute(WorkerSinkTask.java:201)
+        at org.apache.kafka.connect.runtime.WorkerTask.doRun(WorkerTask.java:185)
+        at org.apache.kafka.connect.runtime.WorkerTask.run(WorkerTask.java:234)
+        at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:515)
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)
+        at java.base/java.lang.Thread.run(Thread.java:834)
+Caused by: org.apache.kafka.connect.errors.DataException: Cannot infer mapping without schema.
+        at io.confluent.connect.elasticsearch.Mapping.buildMapping(Mapping.java:81)
+        at io.confluent.connect.elasticsearch.Mapping.buildMapping(Mapping.java:68)
+        at io.confluent.connect.elasticsearch.ElasticsearchClient.createMapping(ElasticsearchClient.java:212)
+        at io.confluent.connect.elasticsearch.ElasticsearchSinkTask.checkMapping(ElasticsearchSinkTask.java:121)
+        at io.confluent.connect.elasticsearch.ElasticsearchSinkTask.put(ElasticsearchSinkTask.java:91)
+        at org.apache.kafka.connect.runtime.WorkerSinkTask.deliverMessages(WorkerSinkTask.java:586)
+        ... 10 more
+
+------------------------------------------------------------------------------------------------------------------------------
 ----
 
 Nested error: 
@@ -604,25 +660,20 @@ CREATE SINK CONNECTOR SINK_ELASTIC_TEST_JSON_A WITH (
 );
 ----
 
-[source,bash]
+[source,sql]
 ----
-➜ curl -s http://localhost:8083/connectors/SINK_ELASTIC_TEST_JSON_A/status | jq '.'
+ksql> DESCRIBE CONNECTOR SINK_ELASTIC_TEST_JSON_A;
 
-{
-  "name": "SINK_ELASTIC_TEST_JSON_A",
-  "connector": {
-    "state": "RUNNING",
-    "worker_id": "kafka-connect:8083"
-  },
-  "tasks": [
-    {
-      "id": 0,
-      "state": "RUNNING",
-      "worker_id": "kafka-connect:8083"
-    }
-  ],
-  "type": "sink"
-}
+Name                 : SINK_ELASTIC_TEST_JSON_A
+Class                : io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
+Type                 : sink
+State                : RUNNING
+WorkerId             : kafka-connect:8083
+
+ Task ID | State   | Error Trace
+---------------------------------
+ 0       | RUNNING |
+---------------------------------
 ----
 
 Data is in Elasticsearch:
@@ -642,16 +693,16 @@ https://www.youtube.com/watch?v=Cq-2eGxOCc8&t=1737s[🎥 Watch]
 
 [source,sql]
 ----
-CREATE STREAM TEST02 (COL1 INT, ORDER_TS_EPOCH BIGINT, SHIP_TS_STR VARCHAR)
+CREATE STREAM TEST02 (COL0 VARCHAR KEY, COL1 INT, ORDER_TS_EPOCH BIGINT, SHIP_TS_STR VARCHAR)
   WITH (KAFKA_TOPIC='test02', PARTITIONS=1, VALUE_FORMAT='AVRO');
 
-INSERT INTO TEST02 (ROWKEY, COL1, ORDER_TS_EPOCH, SHIP_TS_STR) 
+INSERT INTO TEST02 (COL0, COL1, ORDER_TS_EPOCH, SHIP_TS_STR) 
   VALUES ('MY_KEY__X', 
           1,  
           STRINGTOTIMESTAMP('2020-02-17T15:22:00Z','yyyy-MM-dd''T''HH:mm:ssX'),
           '2020-02-17T15:22:00Z');
 
-INSERT INTO TEST02 (ROWKEY, COL1, ORDER_TS_EPOCH, SHIP_TS_STR) 
+INSERT INTO TEST02 (COL0, COL1, ORDER_TS_EPOCH, SHIP_TS_STR) 
   VALUES ('MY_KEY__Y', 
           1,  
           STRINGTOTIMESTAMP('2020-02-17T15:26:00Z','yyyy-MM-dd''T''HH:mm:ssX'),
@@ -823,16 +874,16 @@ Ref: https://docs.confluent.io/current/connect/transforms/timestampconverter.htm
 [source,sql]
 ----
 CREATE SINK CONNECTOR SINK_ELASTIC_TEST_02_C WITH (
-  'connector.class'         = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
-  'connection.url'          = 'http://elasticsearch:9200',
-  'key.converter'           = 'org.apache.kafka.connect.storage.StringConverter',
-  'value.converter'= 'io.confluent.connect.avro.AvroConverter',
-  'value.converter.schema.registry.url'= 'http://schema-registry:8081',
-  'type.name'               = '_doc',
-  'topics'                  = 'test02',
-  'key.ignore'              = 'false',
-  'schema.ignore'           = 'false',
-  'transforms'              = 'setTimestampType0',
+  'connector.class'                          = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+  'connection.url'                           = 'http://elasticsearch:9200',
+  'key.converter'                            = 'org.apache.kafka.connect.storage.StringConverter',
+  'value.converter'                          = 'io.confluent.connect.avro.AvroConverter',
+  'value.converter.schema.registry.url'      = 'http://schema-registry:8081',
+  'type.name'                                = '_doc',
+  'topics'                                   = 'test02',
+  'key.ignore'                               = 'false',
+  'schema.ignore'                            = 'false',
+  'transforms'                               = 'setTimestampType0',
   'transforms.setTimestampType0.type'        = 'org.apache.kafka.connect.transforms.TimestampConverter$Value',
   'transforms.setTimestampType0.field'       = 'ORDER_TS_EPOCH',
   'transforms.setTimestampType0.target.type' = 'Timestamp'
@@ -907,15 +958,15 @@ NOTE: `schema.ignore` is set to `true`, since we want Elasticsearch to use its d
 [source,sql]
 ----
 CREATE SINK CONNECTOR SINK_ELASTIC_TEST_02_D WITH (
-  'connector.class'         = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
-  'connection.url'          = 'http://elasticsearch:9200',
-  'key.converter'           = 'org.apache.kafka.connect.storage.StringConverter',
-  'value.converter'= 'io.confluent.connect.avro.AvroConverter',
-  'value.converter.schema.registry.url'= 'http://schema-registry:8081',
-  'type.name'               = '_doc',
-  'topics'                  = 'test02',
-  'key.ignore'              = 'false',
-  'schema.ignore'           = 'true'
+  'connector.class'                     = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+  'connection.url'                      = 'http://elasticsearch:9200',
+  'key.converter'                       = 'org.apache.kafka.connect.storage.StringConverter',
+  'value.converter'                     = 'io.confluent.connect.avro.AvroConverter',
+  'value.converter.schema.registry.url' = 'http://schema-registry:8081',
+  'type.name'                           = '_doc',
+  'topics'                              = 'test02',
+  'key.ignore'                          = 'false',
+  'schema.ignore'                       = 'true'
 );
 ----
 
@@ -983,15 +1034,15 @@ What about if we want to use the Kafka message's timestamp? Producer can set thi
 [source,sql]
 ----
 CREATE SINK CONNECTOR SINK_ELASTIC_TEST_02_E WITH (
-  'connector.class'         = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
-  'connection.url'          = 'http://elasticsearch:9200',
-  'key.converter'           = 'org.apache.kafka.connect.storage.StringConverter',
-  'value.converter'= 'io.confluent.connect.avro.AvroConverter',
-  'value.converter.schema.registry.url'= 'http://schema-registry:8081',
-  'type.name'               = '_doc',
-  'topics'                  = 'test02',
-  'key.ignore'              = 'false',
-  'schema.ignore'           = 'false',
+  'connector.class'                             = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+  'connection.url'                              = 'http://elasticsearch:9200',
+  'key.converter'                               = 'org.apache.kafka.connect.storage.StringConverter',
+  'value.converter'                             = 'io.confluent.connect.avro.AvroConverter',
+  'value.converter.schema.registry.url'         = 'http://schema-registry:8081',
+  'type.name'                                   = '_doc',
+  'topics'                                      = 'test02',
+  'key.ignore'                                  = 'false',
+  'schema.ignore'                               = 'false',
   'transforms'                                  = 'ExtractTimestamp',
   'transforms.ExtractTimestamp.type'            = 'org.apache.kafka.connect.transforms.InsertField$Value',
   'transforms.ExtractTimestamp.timestamp.field' = 'MSG_TS'
@@ -1075,15 +1126,15 @@ Create connector
 [source,sql]
 ----
 CREATE SINK CONNECTOR SINK_ELASTIC_TEST_02_F WITH (
-  'connector.class'         = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
-  'connection.url'          = 'http://elasticsearch:9200',
-  'key.converter'           = 'org.apache.kafka.connect.storage.StringConverter',
-  'value.converter'= 'io.confluent.connect.avro.AvroConverter',
-  'value.converter.schema.registry.url'= 'http://schema-registry:8081',
-  'type.name'               = '_doc',
-  'topics'                  = 'test02',
-  'key.ignore'              = 'false',
-  'schema.ignore'           = 'true',
+  'connector.class'                             = 'io.confluent.connect.elasticsearch.ElasticsearchSinkConnector',
+  'connection.url'                              = 'http://elasticsearch:9200',
+  'key.converter'                               = 'org.apache.kafka.connect.storage.StringConverter',
+  'value.converter'                             = 'io.confluent.connect.avro.AvroConverter',
+  'value.converter.schema.registry.url'         = 'http://schema-registry:8081',
+  'type.name'                                   = '_doc',
+  'topics'                                      = 'test02',
+  'key.ignore'                                  = 'false',
+  'schema.ignore'                               = 'true',
   'transforms'                                  = 'ExtractTimestamp, setTimestampType',
   'transforms.ExtractTimestamp.type'            = 'org.apache.kafka.connect.transforms.InsertField$Value',
   'transforms.ExtractTimestamp.timestamp.field' = 'MSG_TS',
@@ -1146,6 +1197,8 @@ https://www.youtube.com/watch?v=Cq-2eGxOCc8&t=2881s[🎥 Watch]
 
 Ref: https://docs.confluent.io/current/connect/transforms/regexrouter.html
 
+See also https://rmoff.net/2020/12/11/twelve-days-of-smt-day-4-regexrouter/
+
 [source,sql]
 ----
 CREATE SINK CONNECTOR SINK_ELASTIC_TEST_04 WITH (
@@ -1179,6 +1232,8 @@ foo-test                 2
 https://www.youtube.com/watch?v=Cq-2eGxOCc8&t=2975s[🎥 Watch]
 
 Ref: https://docs.confluent.io/current/connect/transforms/timestamprouter.html
+
+See also https://rmoff.net/2020/12/16/twelve-days-of-smt-day-7-timestamprouter/
 
 [source,sql]
 ----

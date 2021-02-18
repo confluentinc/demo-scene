@@ -2,13 +2,13 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.5.0
+    image: confluentinc/cp-zookeeper:6.1.0
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
 
   broker:
-    image: confluentinc/cp-kafka:5.5.0
+    image: confluentinc/cp-kafka:6.1.0
     container_name: broker
     depends_on:
       - zookeeper
@@ -47,7 +47,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.5.0
+    image: confluentinc/cp-schema-registry:6.1.0
     container_name: schema-registry
     depends_on:
       - zookeeper
@@ -56,10 +56,10 @@ services:
       - 8081:8081
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: broker:29092
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect-base:5.5.0
+    image: confluentinc/cp-kafka-connect-base:6.1.0
     container_name: kafka-connect
     depends_on:
       - broker
@@ -100,7 +100,8 @@ services:
       - -c 
       - |
         echo "Installing connector plugins"
-        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:5.5.0
+        # Check latest version here: https://www.confluent.io/hub/confluentinc/kafka-connect-elasticsearch
+        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:11.0.1
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 
@@ -108,7 +109,7 @@ services:
         sleep infinity
 
   ksqldb:
-    image: confluentinc/ksqldb-server:0.9.0
+    image: confluentinc/ksqldb-server:0.15.0
     hostname: ksqldb
     container_name: ksqldb
     depends_on:
@@ -128,7 +129,7 @@ services:
 
 # Other systems
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.11.0
     container_name: elasticsearch
     ports:
       - 9200:9200
@@ -138,7 +139,7 @@ services:
       node.store.allow_mmap: "false"
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.6.2
+    image: docker.elastic.co/kibana/kibana:7.11.0
     container_name: kibana
     depends_on:
       - elasticsearch
@@ -148,7 +149,7 @@ services:
       discovery.type: "single-node"
 
   kafkacat:
-    image: edenhill/kafkacat:1.5.0
+    image: edenhill/kafkacat:1.7.0-PRE1
     container_name: kafkacat
     entrypoint: 
       - /bin/sh 
