@@ -49,7 +49,7 @@ services:
     # To connect to the DB: 
     #   docker exec -it ksqldb bash -c 'ksql http://localhost:8088'
     # *-----------------------------*  
-    image: confluentinc/ksqldb-server:0.14.0
+    image: confluentinc/ksqldb-server:0.15.0
     container_name: ksqldb
     depends_on:
       - broker
