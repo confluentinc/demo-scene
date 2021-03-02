@@ -19,7 +19,7 @@ docker-compose up -d
 +
 [source,bash]
 ----
-docker exec -it ksqldb ksql http://localhost:8088
+docker exec -it ksqldb-cli ksql http://localhost:8088
 ----
 
 == ksqlDB basics
