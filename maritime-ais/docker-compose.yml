@@ -1,0 +1,184 @@
+---
+version: '2'
+services:
+  zookeeper:
+    image: "confluentinc/cp-zookeeper:6.1.0"
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  broker:
+    image: "confluentinc/cp-kafka:6.1.0"
+    container_name: broker
+    ports:
+      - '9092:9092'
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,HOST://localhost:9092
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
+
+  schema-registry:
+    image: "confluentinc/cp-schema-registry:6.1.0"
+    container_name: schema-registry
+    depends_on:
+      - zookeeper
+      - broker
+    ports:
+      - '8081:8081'
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: broker:29092
+
+  ksqldb:
+    image: confluentinc/ksqldb-server:0.15.0
+    container_name: ksqldb
+    ports:
+      - "8088:8088"
+    depends_on:
+      - broker
+      - schema-registry
+    environment:
+      KSQL_BOOTSTRAP_SERVERS: broker:29092
+      KSQL_LISTENERS: http://0.0.0.0:8088
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      KSQL_KSQL_CONNECT_URL: http://kafka-connect:8083
+      KSQL_KSQL_SERVICE_ID: confluent_rmoff_01
+      KSQL_KSQL_HIDDEN_TOPICS: '^_.*,default_ksql_processing_log'
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect-base:6.1.0
+    container_name: kafka-connect
+    ports:
+      - "8083:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "broker:29092"
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: compose-connect-group
+      CONNECT_CONFIG_STORAGE_TOPIC: _kafka-connect-group-01-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _kafka-connect-group-01-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _kafka-connect-group-01-status
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+      CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
+      CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/connectors,/usr/share/confluent-hub-components/'
+    depends_on:
+      - broker
+      - schema-registry
+    volumes:
+      - $PWD/data/connectors/:/connectors/
+    command:
+      - bash
+      - -c
+      - |
+        echo "Installing Connector"
+        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:10.0.2
+        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:11.0.1
+        #
+        echo "Launching Kafka Connect worker"
+        /etc/confluent/docker/run &
+        #
+        sleep infinity
+
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:6.1.0
+    container_name: control-center
+    depends_on:
+      - broker
+      - schema-registry
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker:29092'
+      CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      CONTROL_CENTER_CONNECT_CONNECT_CLUSTER: 'kafka-connect:8083'
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONTROL_CENTER_KSQL_KSQLDB_URL: "http://ksqldb:8088"
+      # The advertised URL needs to be the URL on which the browser
+      #  can access the KSQL server (e.g. http://localhost:8088/info)
+      CONTROL_CENTER_KSQL_KSQLDB_ADVERTISED_URL: "http://localhost:8088"
+      # -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v
+      # Useful settings for development/laptop use - modify as needed for Prod
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_COMMAND_TOPIC_REPLICATION: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_REPLICATION: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_REPLICATION: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONTROL_CENTER_STREAMS_NUM_STREAM_THREADS: 1
+      CONTROL_CENTER_STREAMS_CACHE_MAX_BYTES_BUFFERING: 104857600
+    command:
+      - bash
+      - -c 
+      - |
+        echo "Waiting two minutes for Kafka brokers to start and 
+               necessary topics to be available"
+        sleep 120  
+        /etc/confluent/docker/run
+
+  kafkacat:
+    image: edenhill/kafkacat:1.7.0-PRE1
+    container_name: kafkacat
+    entrypoint: 
+      - /bin/sh 
+      - -c 
+      - |
+        apk add gpsd gpsd-clients jq; 
+        while [ 1 -eq 1 ];do sleep 60;done
+
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.11.0
+    container_name: elasticsearch
+    ports:
+      - 9200:9200
+    environment:
+      xpack.security.enabled: "false"
+      xpack.license.self_generated.type: "trial"
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+      discovery.type: "single-node"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.11.0
+    container_name: kibana
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5601:5601
+    environment:
+      xpack.security.enabled: "false"
+      xpack.license.self_generated.type: "trial"
+      discovery.type: "single-node"
+      SECURITY_SHOWINSECURECLUSTERWARNING: "false"
+
+  postgres:
+    # *-----------------------------*
+    # To connect to the DB: 
+    #   docker exec -it postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+    # *-----------------------------*
+    image: postgres:12
+    container_name: postgres
+    environment:
+     - POSTGRES_USER=postgres
+     - POSTGRES_PASSWORD=postgres

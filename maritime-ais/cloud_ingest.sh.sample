@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+echo "
+Make sure you that create the target topic first
+
+-------
+ccloud login --save
+ccloud kafka cluster list
+ccloud kafka cluster use <your cluster>
+ccloud kafka topic create ais
+-------
+"
+
+echo -e "\n\t-> Press any key to confirm that you've created the topic"
+while [ true ] ; do
+read -t 3 -n 1
+if [ $? = 0 ] ; then
+break; 
+else
+echo -e "\t\t…waiting for the keypress"
+fi
+done
+
+echo -e "\n\n-------\nSpinning up VM & Container in gcloud. Standby…\n"
+
+gcloud compute instances create-with-container rmoff-ais-ingest-v05 \
+        --zone=us-east1-b \
+      	--metadata=google-logging-enabled=true \
+        --container-image edenhill/kafkacat:1.7.0-PRE1 \
+        --container-restart-policy=never \
+        --container-tty \
+        --container-command=/bin/sh \
+        --container-arg=-c \
+        --container-arg='set -x
+                        # Install stuff
+                        apk add gpsd gpsd-clients
+
+                        while [ 1 -eq 1 ];
+                        do
+                        nc 153.44.253.27 5631 | \
+                        gpsdecode | \
+                        kafkacat \
+                          -X security.protocol=SASL_SSL -X sasl.mechanisms=PLAIN \
+                          -X ssl.ca.location=./etc/ssl/cert.pem -X api.version.request=true \
+                          -b BROKER.gcp.confluent.cloud:9092 \
+                          -X sasl.username="CCLOUD_API_USER" \
+                          -X sasl.password="CCLOUD_API_PASSWORD" \
+                          -t ais -P 
+
+                        sleep 180
+                        done
+'
+
+echo -e '
+To access the VM: 
+
+    gcloud compute ssh --zone "us-east1-b" "rmoff-ais-ingest-v05"
+   
+Once connected to the VM you can list the containers: 
+
+    docker ps -a
+   
+From there, you can view the container logs with 
+
+    docker logs -f <container_name>
+    
+    
+---
+To remove the VM: 
+
+    gcloud compute instances delete --zone "us-east1-b" "rmoff-ais-ingest-v05"    '
