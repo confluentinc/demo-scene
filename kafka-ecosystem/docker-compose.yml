@@ -2,14 +2,14 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:6.0.0
+    image: confluentinc/cp-zookeeper:6.1.0
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-kafka:6.0.0
+    image: confluentinc/cp-kafka:6.1.0
     container_name: kafka
     depends_on:
       - zookeeper
@@ -45,7 +45,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:6.0.0
+    image: confluentinc/cp-schema-registry:6.1.0
     container_name: schema-registry
     ports:
       - "8081:8081"
@@ -57,7 +57,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect-base:6.0.0
+    image: confluentinc/cp-kafka-connect-base:6.1.0
     container_name: kafka-connect
     depends_on:
       - zookeeper
@@ -128,7 +128,7 @@ services:
     # To connect to ksqlDB CLI
     #   docker exec --interactive --tty ksqldb ksql http://localhost:8088
     # *-----------------------------*
-    image: confluentinc/ksqldb-server:0.13.0
+    image: confluentinc/ksqldb-server:0.15.0
     hostname: ksqldb
     container_name: ksqldb
     depends_on:
@@ -147,7 +147,7 @@ services:
       KSQL_KSQL_HIDDEN_TOPICS: '^_.*'
 
   rest-proxy:
-    image: confluentinc/cp-kafka-rest:6.0.0
+    image: confluentinc/cp-kafka-rest:6.1.0
     container_name: rest-proxy
     depends_on:
       - zookeeper
@@ -197,7 +197,7 @@ services:
      - POSTGRES_PASSWORD=postgres
 
   kafkacat:
-    image: edenhill/kafkacat:1.5.0
+    image: edenhill/kafkacat:1.6.0
     container_name: kafkacat
     links:
       - kafka
