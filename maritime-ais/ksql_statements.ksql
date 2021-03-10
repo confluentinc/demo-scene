@@ -1,0 +1,282 @@
+SET 'auto.offset.reset' = 'earliest';
+
+CREATE STREAM AIS_RAW (MSG VARCHAR) WITH (KAFKA_TOPIC='ais', FORMAT='KAFKA');
+
+-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+-- Type 1, 2, 3: Position Report Class A
+-- https://gpsd.gitlab.io/gpsd/AIVDM.html#_types_1_2_and_3_position_report_class_a
+CREATE OR REPLACE STREAM AIS_MSG_TYPE_1_2_3 WITH (FORMAT='AVRO') AS 
+SELECT
+  CAST(EXTRACTJSONFIELD(msg,'$.class') AS VARCHAR) AS class,
+  CAST(EXTRACTJSONFIELD(msg,'$.device') AS VARCHAR) AS device,
+  CAST(EXTRACTJSONFIELD(msg,'$.type') AS INT) AS msg_type,
+  CAST(EXTRACTJSONFIELD(msg,'$.repeat') AS INT) AS repeat,
+  CAST(EXTRACTJSONFIELD(msg,'$.mmsi') AS VARCHAR) AS mmsi,
+  CAST(EXTRACTJSONFIELD(msg,'$.scaled') AS BOOLEAN) AS scaled,
+  CAST(EXTRACTJSONFIELD(msg,'$.status') AS INT) AS status,
+  CAST(EXTRACTJSONFIELD(msg,'$.status_text') AS VARCHAR) AS status_text,
+  CAST(EXTRACTJSONFIELD(msg,'$.turn') AS VARCHAR) AS turn,
+  CAST(EXTRACTJSONFIELD(msg,'$.speed') AS DOUBLE) AS speed,
+  CAST(EXTRACTJSONFIELD(msg,'$.accuracy') AS BOOLEAN) AS accuracy,
+  CASE
+    WHEN (   CAST(EXTRACTJSONFIELD(msg,'$.lon') AS DOUBLE) >  180 
+          OR CAST(EXTRACTJSONFIELD(msg,'$.lon') AS DOUBLE) < -180
+          OR CAST(EXTRACTJSONFIELD(msg,'$.lat') AS DOUBLE) >   90
+          OR CAST(EXTRACTJSONFIELD(msg,'$.lat') AS DOUBLE) < - 90) THEN CAST(NULL AS DOUBLE)
+    ELSE CAST(EXTRACTJSONFIELD(msg,'$.lon') AS DOUBLE) END AS lon,
+  CASE
+    WHEN (   CAST(EXTRACTJSONFIELD(msg,'$.lon') AS DOUBLE) >  180 
+          OR CAST(EXTRACTJSONFIELD(msg,'$.lon') AS DOUBLE) < -180
+          OR CAST(EXTRACTJSONFIELD(msg,'$.lat') AS DOUBLE) >   90
+          OR CAST(EXTRACTJSONFIELD(msg,'$.lat') AS DOUBLE) < - 90) THEN CAST(NULL AS DOUBLE)
+    ELSE CAST(EXTRACTJSONFIELD(msg,'$.lat') AS DOUBLE) END AS lat,
+  CAST(EXTRACTJSONFIELD(msg,'$.course') AS DOUBLE) AS course,
+  CAST(EXTRACTJSONFIELD(msg,'$.heading') AS INT) AS heading,
+  CAST(EXTRACTJSONFIELD(msg,'$.second') AS INT) AS second,
+  CAST(EXTRACTJSONFIELD(msg,'$.maneuver') AS INT) AS maneuver,
+  CAST(EXTRACTJSONFIELD(msg,'$.raim') AS BOOLEAN) AS raim,
+  CAST(EXTRACTJSONFIELD(msg,'$.radio') AS BIGINT) AS radio
+FROM AIS_RAW
+WHERE EXTRACTJSONFIELD(msg,'$.type') IN ('1' ,'2' ,'3' ,'18' ,'27')
+   PARTITION BY CAST(EXTRACTJSONFIELD(msg,'$.mmsi') AS VARCHAR);
+
+
+-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+-- Type 4: Base Station Report
+-- https://gpsd.gitlab.io/gpsd/AIVDM.html#_type_4_base_station_report
+CREATE OR REPLACE STREAM AIS_MSG_TYPE_4 WITH (FORMAT='AVRO') AS 
+SELECT
+CAST(EXTRACTJSONFIELD(msg,'$.class') AS VARCHAR) AS class,
+CAST(EXTRACTJSONFIELD(msg,'$.device') AS VARCHAR) AS device,
+CAST(EXTRACTJSONFIELD(msg,'$.type') AS INT) AS msg_type,
+CAST(EXTRACTJSONFIELD(msg,'$.repeat') AS INT) AS repeat,
+CAST(EXTRACTJSONFIELD(msg,'$.mmsi') AS VARCHAR) AS mmsi,
+CAST(EXTRACTJSONFIELD(msg,'$.scaled') AS BOOLEAN) AS scaled,
+CAST(EXTRACTJSONFIELD(msg,'$.timestamp') AS VARCHAR) AS timestamp,
+CAST(EXTRACTJSONFIELD(msg,'$.accuracy') AS BOOLEAN) AS accuracy,
+CASE
+  WHEN (   CAST(EXTRACTJSONFIELD(msg,'$.lon') AS DOUBLE) >  180 
+        OR CAST(EXTRACTJSONFIELD(msg,'$.lon') AS DOUBLE) < -180
+        OR CAST(EXTRACTJSONFIELD(msg,'$.lat') AS DOUBLE) >   90
+        OR CAST(EXTRACTJSONFIELD(msg,'$.lat') AS DOUBLE) < - 90) THEN CAST(NULL AS DOUBLE)
+  ELSE CAST(EXTRACTJSONFIELD(msg,'$.lon') AS DOUBLE) END AS lon,
+CASE
+  WHEN (   CAST(EXTRACTJSONFIELD(msg,'$.lon') AS DOUBLE) >  180 
+        OR CAST(EXTRACTJSONFIELD(msg,'$.lon') AS DOUBLE) < -180
+        OR CAST(EXTRACTJSONFIELD(msg,'$.lat') AS DOUBLE) >   90
+        OR CAST(EXTRACTJSONFIELD(msg,'$.lat') AS DOUBLE) < - 90) THEN CAST(NULL AS DOUBLE)
+  ELSE CAST(EXTRACTJSONFIELD(msg,'$.lat') AS DOUBLE) END AS lat,
+CAST(EXTRACTJSONFIELD(msg,'$.epfd') AS INT) AS epfd,
+CAST(EXTRACTJSONFIELD(msg,'$.epfd_text') AS VARCHAR) AS epfd_text,
+CAST(EXTRACTJSONFIELD(msg,'$.raim') AS BOOLEAN) AS raim,
+CAST(EXTRACTJSONFIELD(msg,'$.radio') AS BIGINT) AS radio
+FROM AIS_RAW
+WHERE EXTRACTJSONFIELD(msg,'$.type') = '4'
+PARTITION BY CAST(EXTRACTJSONFIELD(msg,'$.mmsi') AS VARCHAR);
+
+
+-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+-- Type 5: Static and Voyage Related Data
+-- https://gpsd.gitlab.io/gpsd/AIVDM.html#_type_5_static_and_voyage_related_data
+CREATE OR REPLACE STREAM AIS_MSG_TYPE_5 WITH (FORMAT='AVRO') AS 
+SELECT
+CAST(EXTRACTJSONFIELD(msg,'$.class') AS VARCHAR) AS class, 
+CAST(EXTRACTJSONFIELD(msg,'$.device') AS VARCHAR) AS device, 
+CAST(EXTRACTJSONFIELD(msg,'$.type') AS INT) AS msg_type, 
+CAST(EXTRACTJSONFIELD(msg,'$.repeat') AS INT) AS repeat, 
+CAST(EXTRACTJSONFIELD(msg,'$.mmsi') AS VARCHAR) AS mmsi, 
+CAST(EXTRACTJSONFIELD(msg,'$.scaled') AS BOOLEAN) AS scaled, 
+CAST(EXTRACTJSONFIELD(msg,'$.imo') AS BIGINT) AS imo, 
+CAST(EXTRACTJSONFIELD(msg,'$.ais_version') AS INT) AS ais_version, 
+CAST(EXTRACTJSONFIELD(msg,'$.callsign') AS VARCHAR) AS callsign, 
+CAST(EXTRACTJSONFIELD(msg,'$.shipname') AS VARCHAR) AS shipname_raw, 
+CONCAT(CAST(EXTRACTJSONFIELD(msg,'$.shipname') AS VARCHAR),' (',CAST(EXTRACTJSONFIELD(msg,'$.callsign') AS VARCHAR),')') AS shipname,
+CAST(EXTRACTJSONFIELD(msg,'$.shiptype') AS INT) AS shiptype, 
+CAST(EXTRACTJSONFIELD(msg,'$.shiptype_text') AS VARCHAR) AS shiptype_text, 
+CAST(EXTRACTJSONFIELD(msg,'$.to_bow') AS INT) AS to_bow_m, 
+CAST(EXTRACTJSONFIELD(msg,'$.to_stern') AS INT) AS to_stern_m, 
+CAST(EXTRACTJSONFIELD(msg,'$.to_port') AS INT) AS to_port_m, 
+CAST(EXTRACTJSONFIELD(msg,'$.to_starboard') AS INT) AS to_starboard_m, 
+CAST(EXTRACTJSONFIELD(msg,'$.epfd') AS INT) AS epfd, 
+CAST(EXTRACTJSONFIELD(msg,'$.epfd_text') AS VARCHAR) AS epfd_text, 
+CAST(EXTRACTJSONFIELD(msg,'$.eta') AS VARCHAR) AS eta, 
+CAST(EXTRACTJSONFIELD(msg,'$.draught') AS DOUBLE) AS draught, 
+CAST(EXTRACTJSONFIELD(msg,'$.destination') AS VARCHAR) AS destination, 
+CAST(EXTRACTJSONFIELD(msg,'$.dte') AS INT) AS dte
+FROM AIS_RAW
+WHERE EXTRACTJSONFIELD(msg,'$.type') = '5'
+PARTITION BY CAST(EXTRACTJSONFIELD(msg,'$.mmsi') AS VARCHAR);
+
+-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+-- Type 12: Addressed Safety-Related Message
+-- https://gpsd.gitlab.io/gpsd/AIVDM.html#_type_12_addressed_safety_related_message
+CREATE OR REPLACE STREAM AIS_MSG_TYPE_12 WITH (FORMAT='AVRO') AS 
+SELECT
+CAST(EXTRACTJSONFIELD(msg,'$.class') AS VARCHAR) AS class, 
+CAST(EXTRACTJSONFIELD(msg,'$.device') AS VARCHAR) AS device, 
+CAST(EXTRACTJSONFIELD(msg,'$.type') AS INT) AS msg_type, 
+CAST(EXTRACTJSONFIELD(msg,'$.repeat') AS INT) AS repeat, 
+CAST(EXTRACTJSONFIELD(msg,'$.mmsi') AS VARCHAR) AS mmsi, 
+CAST(EXTRACTJSONFIELD(msg,'$.scaled') AS BOOLEAN) AS scaled, 
+CAST(EXTRACTJSONFIELD(msg,'$.seqno') AS INT) AS seqno, 
+CAST(EXTRACTJSONFIELD(msg,'$.dest_mmsi') AS BIGINT) AS dest_mmsi, 
+CAST(EXTRACTJSONFIELD(msg,'$.retransmit') AS BOOLEAN) AS retransmit, 
+CAST(EXTRACTJSONFIELD(msg,'$.text') AS VARCHAR) AS text
+FROM AIS_RAW
+WHERE EXTRACTJSONFIELD(msg,'$.type') = '12'
+PARTITION BY CAST(EXTRACTJSONFIELD(msg,'$.mmsi') AS VARCHAR);
+
+-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+-- Type 21: Aid-to-navigation Report
+-- https://gpsd.gitlab.io/gpsd/AIVDM.html#_type_21_aid_to_navigation_report
+CREATE OR REPLACE STREAM AIS_MSG_TYPE_21 WITH (FORMAT='AVRO') AS 
+SELECT
+CAST(EXTRACTJSONFIELD(msg,'$.class') AS VARCHAR) AS class, 
+CAST(EXTRACTJSONFIELD(msg,'$.device') AS VARCHAR) AS device, 
+CAST(EXTRACTJSONFIELD(msg,'$.type') AS INT) AS msg_type, 
+CAST(EXTRACTJSONFIELD(msg,'$.repeat') AS INT) AS repeat, 
+CAST(EXTRACTJSONFIELD(msg,'$.mmsi') AS VARCHAR) AS mmsi, 
+CAST(EXTRACTJSONFIELD(msg,'$.scaled') AS BOOLEAN) AS scaled, 
+CAST(EXTRACTJSONFIELD(msg,'$.aid_type') AS INT) AS aid_type, 
+CAST(EXTRACTJSONFIELD(msg,'$.aid_type_text') AS VARCHAR) AS aid_type_text, 
+CAST(EXTRACTJSONFIELD(msg,'$.name') AS VARCHAR) AS name, 
+CASE
+  WHEN (   CAST(EXTRACTJSONFIELD(msg,'$.lon') AS DOUBLE) >  180 
+        OR CAST(EXTRACTJSONFIELD(msg,'$.lon') AS DOUBLE) < -180
+        OR CAST(EXTRACTJSONFIELD(msg,'$.lat') AS DOUBLE) >   90
+        OR CAST(EXTRACTJSONFIELD(msg,'$.lat') AS DOUBLE) < - 90) THEN CAST(NULL AS DOUBLE)
+  ELSE CAST(EXTRACTJSONFIELD(msg,'$.lon') AS DOUBLE) END AS lon,
+CASE
+  WHEN (   CAST(EXTRACTJSONFIELD(msg,'$.lon') AS DOUBLE) >  180 
+        OR CAST(EXTRACTJSONFIELD(msg,'$.lon') AS DOUBLE) < -180
+        OR CAST(EXTRACTJSONFIELD(msg,'$.lat') AS DOUBLE) >   90
+        OR CAST(EXTRACTJSONFIELD(msg,'$.lat') AS DOUBLE) < - 90) THEN CAST(NULL AS DOUBLE)
+  ELSE CAST(EXTRACTJSONFIELD(msg,'$.lat') AS DOUBLE) END AS lat,
+CAST(EXTRACTJSONFIELD(msg,'$.accuracy') AS BOOLEAN) AS accuracy, 
+CAST(EXTRACTJSONFIELD(msg,'$.to_bow') AS INT) AS to_bow, 
+CAST(EXTRACTJSONFIELD(msg,'$.to_stern') AS INT) AS to_stern, 
+CAST(EXTRACTJSONFIELD(msg,'$.to_port') AS INT) AS to_port, 
+CAST(EXTRACTJSONFIELD(msg,'$.to_starboard') AS INT) AS to_starboard, 
+CAST(EXTRACTJSONFIELD(msg,'$.epfd') AS INT) AS epfd, 
+CAST(EXTRACTJSONFIELD(msg,'$.epfd_text') AS VARCHAR) AS epfd_text, 
+CAST(EXTRACTJSONFIELD(msg,'$.second') AS INT) AS second, 
+CAST(EXTRACTJSONFIELD(msg,'$.regional') AS INT) AS regional, 
+CAST(EXTRACTJSONFIELD(msg,'$.off_position') AS BOOLEAN) AS off_position, 
+CAST(EXTRACTJSONFIELD(msg,'$.raim') AS BOOLEAN) AS raim, 
+CAST(EXTRACTJSONFIELD(msg,'$.virtual_aid') AS BOOLEAN) AS virtual_aid
+FROM AIS_RAW
+WHERE EXTRACTJSONFIELD(msg,'$.type') = '21'
+PARTITION BY CAST(EXTRACTJSONFIELD(msg,'$.mmsi') AS VARCHAR);
+
+-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+-- Other types not handled above
+-- https://gpsd.gitlab.io/gpsd/AIVDM.html#_ais_payload_interpretation
+CREATE OR REPLACE STREAM AIS_MSG_TYPE_OTHER WITH (FORMAT='AVRO') AS 
+  SELECT CAST(EXTRACTJSONFIELD(msg,'$.type') AS INT) AS msg_type, MSG 
+    FROM AIS_RAW 
+    WHERE NOT (EXTRACTJSONFIELD(msg,'$.type') IN ( '1' ,'12' ,'18' ,'2' ,'21' ,'27' ,'3' ,'4' ,'5'))
+PARTITION BY CAST(EXTRACTJSONFIELD(msg,'$.type') AS INT);
+
+-- oOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoO
+-- 
+-- Create a state table of ship information
+
+CREATE TABLE reefers_raw (mmsi         VARCHAR PRIMARY KEY, 
+                          shipname_raw VARCHAR) 
+  WITH (KAFKA_TOPIC='reefers', 
+        FORMAT     ='DELIMITED');
+
+CREATE TABLE transshipment_vessels_raw (mmsi            VARCHAR PRIMARY KEY,
+                                        shipname        VARCHAR, 
+                                        callsign        VARCHAR,
+                                        flag            VARCHAR,
+                                        imo             VARCHAR,
+                                        first_timestamp VARCHAR,
+                                        last_timestamp  VARCHAR)
+  WITH (KAFKA_TOPIC='transshipment-vessels', 
+        FORMAT     ='DELIMITED');
+
+CREATE TABLE SHIP_INFO AS
+	SELECT A.MMSI,
+         COUNT(*) AS EVENT_CT,
+         MIN(ROWTIME)  AS FIRST_INFO_PING_TS,
+         MAX(ROWTIME)  AS LAST_INFO_PING_TS,
+         LATEST_BY_OFFSET(IMO) AS IMO,
+         LATEST_BY_OFFSET(CALLSIGN) AS CALLSIGN,
+         LATEST_BY_OFFSET(SHIPNAME_RAW) AS SHIPNAME_RAW,
+         LATEST_BY_OFFSET(SHIPNAME) AS SHIPNAME,
+         LATEST_BY_OFFSET(SHIPTYPE_TEXT) AS SHIPTYPE_TEXT,
+         LATEST_BY_OFFSET(TO_BOW_M) AS TO_BOW_M,
+         LATEST_BY_OFFSET(TO_STERN_M) AS TO_STERN_M,
+         LATEST_BY_OFFSET(TO_PORT_M) AS TO_PORT_M,
+         LATEST_BY_OFFSET(TO_STARBOARD_M) AS TO_STARBOARD_M,
+        (LATEST_BY_OFFSET(TO_BOW_M) + LATEST_BY_OFFSET(TO_STERN_M)) * (LATEST_BY_OFFSET(TO_STARBOARD_M) + LATEST_BY_OFFSET(TO_PORT_M)) AS SHIP_AREA_M_SQ,
+        (LATEST_BY_OFFSET(TO_BOW_M) + LATEST_BY_OFFSET(TO_STERN_M)) AS SHIP_LENGTH_M,
+        (LATEST_BY_OFFSET(TO_STARBOARD_M) + LATEST_BY_OFFSET(TO_PORT_M)) AS SHIP_WIDTH_M,
+         LATEST_BY_OFFSET(EPFD_TEXT) AS EPFD_TEXT,
+         LATEST_BY_OFFSET(ETA) AS ETA,
+         COLLECT_SET(ETA) AS ETA_LIST,
+         LATEST_BY_OFFSET(DRAUGHT) AS DRAUGHT,
+         LATEST_BY_OFFSET(DESTINATION) AS DESTINATION,
+         COLLECT_SET(DESTINATION) AS DESTINATION_LIST,
+         LATEST_BY_OFFSET(CASE WHEN R.MMSI IS NULL THEN 0 ELSE 1 END) AS IS_REEFER, 
+         LATEST_BY_OFFSET(CASE WHEN T.MMSI IS NULL THEN 0 ELSE 1 END) AS IS_TRANSSHIPPER
+    FROM AIS_MSG_TYPE_5 A
+        LEFT JOIN REEFERS_RAW R ON A.MMSI=R.MMSI
+        LEFT JOIN TRANSSHIPMENT_VESSELS_RAW T ON A.MMSI=T.MMSI 
+    GROUP BY A.MMSI;
+
+
+
+-- Join Position Reports with ship info to create
+-- unified stream
+CREATE OR REPLACE STREAM SHIP_STATUS_REPORTS WITH
+  (KAFKA_TOPIC='SHIP_STATUS_REPORTS_V00') AS
+SELECT STATUS_REPORT.ROWTIME AS STATUS_TS,
+       STATUS_REPORT.*, 
+       SHIP_INFO.*,
+       CASE
+         WHEN STATUS_REPORT.LAT IS NULL OR STATUS_REPORT.LON IS NULL 
+           THEN CAST(NULL AS STRUCT<`lat` DOUBLE, `lon` DOUBLE>)
+         ELSE 
+           STRUCT("lat" := STATUS_REPORT.LAT, "lon" := STATUS_REPORT.LON)
+       END AS SHIP_LOCATION,
+       1 AS DUMMY
+FROM  AIS_MSG_TYPE_1_2_3 STATUS_REPORT 
+      LEFT JOIN SHIP_INFO SHIP_INFO 
+        ON STATUS_REPORT.MMSI = SHIP_INFO.MMSI 
+;
+
+CREATE STREAM REEFER_MOVEMENTS AS 
+  SELECT *
+    FROM SHIP_STATUS_REPORTS
+   WHERE (SHIP_INFO_IS_TRANSSHIPPER=1 
+       OR SHIP_INFO_IS_REEFER=1);
+
+CREATE STREAM REEFERS_AND_VESSELS_WITHIN_500M 
+  WITH (KAFKA_TOPIC='REEFERS_AND_VESSELS_WITHIN_500M_V00') AS
+SELECT    V.ROWTIME              AS FISHING_VESSEL_TS,
+          R.ROWTIME              AS REEFER_TS,
+          V.STATUS_REPORT_MMSI   AS FISHING_VESSEL_MMSI,
+          R.STATUS_REPORT_MMSI   AS REEFER_MMSI,
+          V.SHIP_LOCATION        AS FISHING_VESSEL_LOCATION,
+          R.SHIP_LOCATION        AS REEFER_LOCATION,
+          V.STATUS_REPORT_LAT    AS FISHING_VESSEL_LAT,
+          V.STATUS_REPORT_LON    AS FISHING_VESSEL_LON,
+          R.STATUS_REPORT_LAT    AS REEFER_LAT,
+          R.STATUS_REPORT_LON    AS REEFER_LON,
+          GEO_DISTANCE(V.STATUS_REPORT_LAT, V.STATUS_REPORT_LON, R.STATUS_REPORT_LAT, R.STATUS_REPORT_LON, 'KM') AS DISTANCE_KM,
+          CASE
+            WHEN GEO_DISTANCE(V.STATUS_REPORT_LAT, V.STATUS_REPORT_LON, R.STATUS_REPORT_LAT, R.STATUS_REPORT_LON, 'KM') < 0.5
+                 AND  (    R.STATUS_REPORT_SPEED <2
+                       AND V.STATUS_REPORT_SPEED < 2) THEN 1
+                 ELSE 0
+             END AS IN_RANGE_AND_SPEED
+FROM      SHIP_STATUS_REPORTS V
+          INNER JOIN REEFER_MOVEMENTS R WITHIN 1 MINUTE
+          ON         R.DUMMY = V.DUMMY
+WHERE     V.SHIP_INFO_SHIPTYPE_TEXT = 'Fishing'
+AND       V.STATUS_REPORT_MMSI != R.STATUS_REPORT_MMSI
+AND       GEO_DISTANCE(V.STATUS_REPORT_LAT, V.STATUS_REPORT_LON, R.STATUS_REPORT_LAT, R.STATUS_REPORT_LON, 'KM') < 1 
+PARTITION BY V.STATUS_REPORT_MMSI
+;
