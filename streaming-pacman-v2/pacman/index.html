@@ -1,0 +1,56 @@
+<html>
+
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+        <link rel="apple-touch-icon" sizes="180x180" href="game/img/apple-touch-icon.png">
+		<link rel="icon" type="image/png" sizes="32x32" href="game/img/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="game/img/favicon-16x16.png">
+        <link rel="manifest" href="/site.webmanifest">
+        <title>Streaming Pac-Man with Apache Kafka</title>
+    </head>
+
+    <style>
+        input {
+            max-width: 200px;
+            border-radius: 8px;
+            padding: 0 0.5em;
+            font-size: 20px;
+        }
+    </style>
+
+    <script>
+
+        function checkName() {
+            if (window.name != null | window.name.length > 0) {
+                document.getElementById("user").value = window.name;
+            }
+        }
+
+        function enter(e) {
+            if (event.which == 13 || event.keyCode == 13) {
+                play();
+            }
+        }
+
+        function play() {
+            var user = document.getElementById("user").value;
+            if (user == '') {
+                alert('You need to provide a name.');
+                return;
+            }
+            window.name = user;
+            window.location.href = "start.html";
+        }
+
+    </script>
+
+    <body bgcolor="black" onload="checkName()">
+        <center>
+            <img src="game/img/pac-man-logo.png" width="300" height="200" />
+            <h3 style="color:white;">Enter your Name:</h3>
+            <input type="text" id="user" value="" onkeydown="enter(event)" />
+            <input type="button" value="Play" onclick="play()" />
+        </center>
+    </body>
+
+</html>

@@ -1,0 +1,7 @@
+.vscode/**/*.*
+
+stack-configs
+logs
+
+streaming-pacman_start.log
+streaming-pacman_stop.log

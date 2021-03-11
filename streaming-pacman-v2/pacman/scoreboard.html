@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+
+<html>
+
+	<head>
+
+		<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+		<link rel="stylesheet" type="text/css" href="game/css/pacman.css" />
+		<link rel="stylesheet" type="text/css" href="game/css/pacman-home.css" />
+		<link rel="apple-touch-icon" sizes="180x180" href="game/img/apple-touch-icon.png">
+		<link rel="icon" type="image/png" sizes="32x32" href="game/img/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="game/img/favicon-16x16.png">
+		<link rel="manifest" href="/site.webmanifest">
+		<script type="text/javascript" src="game/js/jquery.js"></script>
+		<script type="text/javascript" src="game/js/jquery-buzz.js"></script>
+		<script type="text/javascript" src="game/js/env-vars.js"></script>
+		<script type="text/javascript" src="game/js/shared.js"></script>
+		<script type="text/javascript" src="game/js/tools.js"></script>
+		<script type="text/javascript" src="game/js/board.js"></script>
+		<script type="text/javascript" src="game/js/paths.js"></script>
+		<script type="text/javascript" src="game/js/bubbles.js"></script>
+		<script type="text/javascript" src="game/js/fruits.js"></script>
+		<script type="text/javascript" src="game/js/pacman.js"></script>
+		<script type="text/javascript" src="game/js/ghosts.js"></script>
+		<script type="text/javascript" src="game/js/home.js"></script>
+        <script type="text/javascript" src="game/js/sound.js"></script>
+        <script type="text/javascript" src="game/js/scoreboard.js"></script>
+
+		<script type="text/javascript">
+
+			$(document).ready(function() { 
+				//$.mobile.loading().hide();
+				loadScoreboardPage();
+
+				var ctx = null;
+				var canvas = document.getElementById('canvas-panel-title-pacman');
+				canvas.setAttribute('width', '38');
+				canvas.setAttribute('height', '32');
+				if (canvas.getContext) { 
+					ctx = canvas.getContext('2d');
+				}
+
+				var x = 15;
+				var y = 16;
+
+				ctx.fillStyle = "#fff200";
+				ctx.beginPath();
+				ctx.arc(x, y, 14, (0.35 - (3 * 0.05)) * Math.PI, (1.65 + (3 * 0.05)) * Math.PI, false);
+				ctx.lineTo(x - 5, y);
+				ctx.fill();
+				ctx.closePath();
+
+				x = 32;
+				y = 16;
+
+				ctx.fillStyle = "#dca5be";
+				ctx.beginPath();
+				ctx.arc(x, y, 4, 0, 2 * Math.PI, false);
+				ctx.fill();
+				ctx.closePath();
+
+				window.setInterval(function(){
+					/// call your function here
+					loadScoreboardPage();
+				}, 5000);
+
+				$(".back-button").click(function(e) { 
+					e.stopPropagation();
+					window.location.href='start.html';
+				});
+				
+		});
+
+		</script>
+
+		<title>Streaming Pac-Man with Apache Kafka</title>
+	</head>
+
+	<body>
+
+		<div id="panel" class="scoreboardPage">
+			<h1>Pac-Man</h1>
+			<canvas id="canvas-panel-title-pacman"></canvas>
+			<div id="board">
+				<div id="scoreboard"></div>
+			</div>
+			<div class="back-button">- BACK TO GAME -</div>
+		</div>
+
+	</body>
+
+</html>

@@ -1,0 +1,12 @@
+<configuration>
+    <appender name="INFO" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <logger name="org.apache.kafka" level="INFO"/>
+    <logger name="org.apache.kafka.common.metrics" level="INFO"/>
+    <root level="info">
+        <appender-ref ref="INFO" />
+    </root>
+</configuration>
