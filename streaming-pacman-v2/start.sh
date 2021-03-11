@@ -12,13 +12,18 @@ LOG_FILE_PATH="${LOGS_FOLDER}/start.log"
 export EXAMPLE="streaming-pacman"
 export TOPICS_TO_CREATE="USER_GAME USER_LOSSES"
 
-TFVAR_S3_BUCKET=""
-if [ -v S3_BUCKET_NAME ];
-then  
-    TFVAR_S3_BUCKET="bucket_name= \"${TFVAR_S3_BUCKET}\"" 
-fi  
+
 
 function create_tfvars_file {
+    TFVAR_S3_BUCKET=""
+    if [ -z ${S3_BUCKET_NAME+x} ]; 
+    then 
+        echo "S3_BUCKET_NAME is unset"
+    else 
+        echo "S3_BUCKET_NAME is set to '$S3_BUCKET_NAME'"
+        TFVAR_S3_BUCKET="bucket_name=\"${S3_BUCKET_NAME}\"" 
+    fi
+
     cd $PRJ_DIR
     TERRAFORM_CONFIG="$TFS_PATH/configs.auto.tfvars"
     echo -e "\n# Create a local configuration file $TERRAFORM_CONFIG with the terraform variables"
