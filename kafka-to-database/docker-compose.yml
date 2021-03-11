@@ -2,14 +2,14 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.4.1
+    image: confluentinc/cp-zookeeper:6.1.0
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   broker:
-    image: confluentinc/cp-kafka:5.4.1
+    image: confluentinc/cp-kafka:6.1.0
     container_name: broker
     depends_on:
       - zookeeper
@@ -48,7 +48,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.4.1
+    image: confluentinc/cp-schema-registry:6.1.0
     container_name: schema-registry
     depends_on:
       - zookeeper
@@ -60,7 +60,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect-base:5.4.1
+    image: confluentinc/cp-kafka-connect-base:6.1.0
     container_name: kafka-connect
     depends_on:
       - broker
@@ -100,12 +100,14 @@ services:
       - -c 
       - |
         echo "Installing connector plugins"
-        confluent-hub install --no-prompt mdrogalis/voluble:0.2.0
-        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:5.4.1
+        confluent-hub install --no-prompt mdrogalis/voluble:0.3.1
+        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:5.5.3
+        # Sticking to 5.5.3 at the moment because of issue with 10.0.1 https://rmoff.net/2021/03/11/kafka-connect-sqlsyntaxerrorexception-blob/text-column-used-in-key-specification-without-a-key-length/
         #
         echo "Downloading JDBC driver"
         cd /usr/share/confluent-hub-components/confluentinc-kafka-connect-jdbc
-        curl https://cdn.mysql.com/Downloads/Connector-J/mysql-connector-java-8.0.19.tar.gz | tar xz 
+        # Find the latest version of this https://dev.mysql.com/downloads/connector/j/
+        curl https://cdn.mysql.com/Downloads/Connector-J/mysql-connector-java-8.0.23.tar.gz | tar xz 
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 
@@ -113,7 +115,7 @@ services:
         sleep infinity
 
   ksqldb:
-    image: confluentinc/ksqldb-server:0.8.0
+    image: confluentinc/ksqldb-server:0.15.0
     hostname: ksqldb
     container_name: ksqldb
     depends_on:
@@ -162,7 +164,7 @@ services:
      - ./data/postgres:/docker-entrypoint-initdb.d/
 
   kafkacat:
-    image: edenhill/kafkacat:1.5.0
+    image: edenhill/kafkacat:1.6.0
     container_name: kafkacat
     entrypoint: 
       - /bin/sh 

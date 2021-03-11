@@ -1,8 +1,10 @@
 = ksqlDB & Kafka Connect JDBC Sink in action
 Robin Moffatt <robin@confluent.io>
-v1.00, 27 March 2020
+v1.10, 11 March 2021
 
 🎥Video: https://rmoff.dev/ksqldb-jdbc-sink-video
+
+_Tested with Confluent Platform 6.1, ksqlDB 0.15, Kafka Connect JDBC connector 5.5.3_
 
 == Create source connector (data generator)
 
@@ -34,7 +36,7 @@ CREATE SOURCE CONNECTOR SOURCE_DATA WITH (
 
 [source,sql]
 ----
-CREATE TABLE CUSTOMER (ROWKEY VARCHAR KEY, 
+CREATE TABLE CUSTOMER (ID VARCHAR PRIMARY KEY, 
                        NAME VARCHAR, 
                        EMAIL VARCHAR, 
                        LOCATION STRUCT<CITY VARCHAR, 
@@ -42,7 +44,7 @@ CREATE TABLE CUSTOMER (ROWKEY VARCHAR KEY,
                  WITH (KAFKA_TOPIC='customers', 
                        VALUE_FORMAT='JSON');
 
-CREATE STREAM TXNS (ROWKEY VARCHAR KEY, 
+CREATE STREAM TXNS (ID VARCHAR KEY, 
                     CUSTOMER_ID VARCHAR, 
                     COST DOUBLE, 
                     CARD_TYPE VARCHAR, 
@@ -54,35 +56,35 @@ CREATE STREAM TXNS (ROWKEY VARCHAR KEY,
 [source,sql]
 ----
 ksql> SELECT * FROM CUSTOMER EMIT CHANGES LIMIT 2;
-+---------------------+---------------------+---------------------+---------------------+---------------------+
-|ROWTIME              |ROWKEY               |NAME                 |EMAIL                |LOCATION             |
-+---------------------+---------------------+---------------------+---------------------+---------------------+
-|1585353217743        |84e2c8d1-3ac6-461b-8a|Agrajag              |benny.skiles@hotmail.|{CITY=Lamuella, PLANE|
-|                     |6c-2a765be6bd82      |                     |com                  |T=Nano}              |
-|1585353217917        |ee4cb838-cbf3-4cb7-8d|Pasta Fasta          |peter.nikolaus@yahoo.|{CITY=Betelgeuse, PLA|
-|                     |d2-b7b3a9e9da11      |                     |com                  |NET=Krikkit}         |
++---------------------+---------------------+---------------------+---------------------+
+|ID                   |NAME                 |EMAIL                |LOCATION             |
++---------------------+---------------------+---------------------+---------------------+
+|84e2c8d1-3ac6-461b-8a|Agrajag              |benny.skiles@hotmail.|{CITY=Lamuella, PLANE|
+|6c-2a765be6bd82      |                     |com                  |T=Nano}              |
+|ee4cb838-cbf3-4cb7-8d|Pasta Fasta          |peter.nikolaus@yahoo.|{CITY=Betelgeuse, PLA|
+|d2-b7b3a9e9da11      |                     |com                  |NET=Krikkit}         |
 Limit Reached
 Query terminated
 
 ksql> SELECT * FROM TXNS EMIT CHANGES LIMIT 5;
-+-----------------+-----------------+-----------------+-----------------+-----------------+-----------------+
-|ROWTIME          |ROWKEY           |CUSTOMER_ID      |COST             |CARD_TYPE        |ITEM             |
-+-----------------+-----------------+-----------------+-----------------+-----------------+-----------------+
-|1585353217910    |1a14a135-d9c3-42b|84e2c8d1-3ac6-461|44.05            |visa             |Alpha King Pale A|
-|                 |e-b692-9bfd58beec|b-8a6c-2a765be6bd|                 |                 |le               |
-|                 |63               |82               |                 |                 |                 |
-|1585353218247    |a01765a8-6d1e-40d|ee4cb838-cbf3-4cb|25.62            |visa             |Samuel Smith’s Im|
-|                 |8-9bc2-8d8166e020|7-8dd2-b7b3a9e9da|                 |                 |perial IPA       |
-|                 |14               |11               |                 |                 |                 |
-|1585353218748    |d6047271-d28e-4c2|d83c7c98-c2f1-449|81.8             |jcb              |Storm King Stout |
-|                 |7-bfc0-8dbf31855c|e-b80a-19c38d06b4|                 |                 |                 |
-|                 |03               |76               |                 |                 |                 |
-|1585353219247    |aaf68dbd-48d0-48e|9058ef36-3ab8-491|37.54            |visa             |Nugget Nectar    |
-|                 |1-a1c2-c28d9365ae|a-8142-c059b74f06|                 |                 |                 |
-|                 |e9               |f9               |                 |                 |                 |
-|1585353219747    |a4ea8cb5-b89f-48e|9058ef36-3ab8-491|27.8             |jcb              |Racer 5 India Pal|
-|                 |5-a023-7ab33a55b5|a-8142-c059b74f06|                 |                 |e Ale, Bear Repub|
-|                 |9f               |f9               |                 |                 |lic Bre          |
++-----------------+-----------------+-----------------+-----------------+-----------------+
+|ID               |CUSTOMER_ID      |COST             |CARD_TYPE        |ITEM             |
++-----------------+-----------------+-----------------+-----------------+-----------------+
+|1a14a135-d9c3-42b|84e2c8d1-3ac6-461|44.05            |visa             |Alpha King Pale A|
+|e-b692-9bfd58beec|b-8a6c-2a765be6bd|                 |                 |le               |
+|63               |82               |                 |                 |                 |
+|a01765a8-6d1e-40d|ee4cb838-cbf3-4cb|25.62            |visa             |Samuel Smith’s Im|
+|8-9bc2-8d8166e020|7-8dd2-b7b3a9e9da|                 |                 |perial IPA       |
+|14               |11               |                 |                 |                 |
+|d6047271-d28e-4c2|d83c7c98-c2f1-449|81.8             |jcb              |Storm King Stout |
+|7-bfc0-8dbf31855c|e-b80a-19c38d06b4|                 |                 |                 |
+|03               |76               |                 |                 |                 |
+|aaf68dbd-48d0-48e|9058ef36-3ab8-491|37.54            |visa             |Nugget Nectar    |
+|1-a1c2-c28d9365ae|a-8142-c059b74f06|                 |                 |                 |
+|e9               |f9               |                 |                 |                 |
+|a4ea8cb5-b89f-48e|9058ef36-3ab8-491|27.8             |jcb              |Racer 5 India Pal|
+|5-a023-7ab33a55b5|a-8142-c059b74f06|                 |                 |e Ale, Bear Repub|
+|9f               |f9               |                 |                 |lic Bre          |
 Limit Reached
 Query terminated
 ----
@@ -93,33 +95,37 @@ Query terminated
 ----
 SET 'auto.offset.reset' = 'earliest';
 
-CREATE STREAM TXNS_ENRICHED WITH (VALUE_FORMAT='AVRO') AS
-    SELECT T.ROWTIME AS TXN_TS,
+CREATE STREAM TXNS_ENRICHED WITH (FORMAT='AVRO') AS
+    SELECT T.ID,
+           AS_VALUE(T.ID) AS TXN_ID,
+           T.ROWTIME AS TXN_TS,
            T.ITEM,
            T.COST,
            T.CARD_TYPE,
-           C.ROWKEY AS CUST_ID,
+           C.ID AS CUST_ID,
            C.NAME,
            C.EMAIL,
            C.LOCATION
       FROM TXNS T
-             LEFT JOIN 
+             LEFT OUTER JOIN 
            CUSTOMER C
-             ON T.CUSTOMER_ID=C.ROWKEY;
+             ON T.CUSTOMER_ID=C.ID
+      PARTITION BY T.ID;
 ----
 
 [source,sql]
 ----
 ksql> SELECT * FROM TXNS_ENRICHED EMIT CHANGES LIMIT 2;
-+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+
-|ROWTIME     |ROWKEY      |TXN_TS      |ITEM        |COST        |CARD_TYPE   |CUST_ID     |NAME        |EMAIL       |LOCATION    |
-+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+
-|158535321791|84e2c8d1-3ac|158535321791|Alpha King P|44.05       |visa        |84e2c8d1-3ac|Agrajag     |benny.skiles|{CITY=Lamuel|
-|0           |6-461b-8a6c-|0           |ale Ale     |            |            |6-461b-8a6c-|            |@hotmail.com|la, PLANET=N|
-|            |2a765be6bd82|            |            |            |            |2a765be6bd82|            |            |ano}        |
-|158535321824|ee4cb838-cbf|158535321824|Samuel Smith|25.62       |visa        |ee4cb838-cbf|Pasta Fasta |peter.nikola|{CITY=Betelg|
-|7           |3-4cb7-8dd2-|7           |’s Imperial |            |            |3-4cb7-8dd2-|            |us@yahoo.com|euse, PLANET|
-|            |b7b3a9e9da11|            |IPA         |            |            |b7b3a9e9da11|            |            |=Krikkit}   |
++----------------+----------------+----------------+----------------+----------------+----------------+----------------+----------------+----------------+----------------+
+|T_ID            |TXN_ID          |TXN_TS          |ITEM            |COST            |CARD_TYPE       |CUST_ID         |NAME            |EMAIL           |LOCATION        |
++----------------+----------------+----------------+----------------+----------------+----------------+----------------+----------------+----------------+----------------+
+|8640648b-961f-48|8640648b-961f-48|1615464205090   |Edmund Fitzgeral|87.52           |diners_club     |dae12f7a-3b49-43|Vroomfondel     |shaun.sauer@gmai|{CITY=Seventh Ga|
+|64-82d7-5606c7cf|64-82d7-5606c7cf|                |d Porter        |                |                |4a-9b92-2e4ea087|                |l.com           |laxy of Light an|
+|3a68            |3a68            |                |                |                |                |a2b1            |                |                |d Ingenuity, PLA|
+|                |                |                |                |                |                |                |                |                |NET=Kria}       |
+|07626615-d656-4f|07626615-d656-4f|1615464205468   |Nugget Nectar   |7.21            |laser           |c87d82e3-0f38-4e|Pizpot Gargravar|tristan.upton@ho|{CITY=Evildrome |
+|0f-8e32-ed02365c|0f-8e32-ed02365c|                |                |                |                |4b-8bd3-9ec61648|r               |tmail.com       |Boozarama, PLANE|
+|011e            |011e            |                |                |                |                |1813            |                |                |T=Xaxis}        |
 Limit Reached
 Query terminated
 ----
@@ -129,14 +135,17 @@ Query terminated
 [source,sql]
 ----
 CREATE SINK CONNECTOR SINK_TXNS_ENRICHED_PG WITH (
-    'connector.class'     = 'io.confluent.connect.jdbc.JdbcSinkConnector',
-    'connection.url'      = 'jdbc:postgresql://postgres:5432/',
-    'connection.user'     = 'postgres',
-    'connection.password' = 'postgres',
-    'topics'              = 'TXNS_ENRICHED',
-    'key.converter'       = 'org.apache.kafka.connect.storage.StringConverter',
-    'auto.create'         = 'true',
-    'auto.evolve'         = 'true'
+    'connector.class'                     = 'io.confluent.connect.jdbc.JdbcSinkConnector',
+    'connection.url'                      = 'jdbc:postgresql://postgres:5432/',
+    'connection.user'                     = 'postgres',
+    'connection.password'                 = 'postgres',
+    'topics'                              = 'TXNS_ENRICHED',
+    'key.converter'                       = 'io.confluent.connect.avro.AvroConverter',
+    'key.converter.schema.registry.url'   = 'http://schema-registry:8081',
+    'value.converter'                     = 'io.confluent.connect.avro.AvroConverter',
+    'value.converter.schema.registry.url' = 'http://schema-registry:8081',
+    'auto.create'                         = 'true',
+    'auto.evolve'                         = 'true'
   );
 ----
 
@@ -193,21 +202,29 @@ ksql>
 ----
 DROP CONNECTOR SINK_TXNS_ENRICHED_PG;
 CREATE SINK CONNECTOR SINK_TXNS_ENRICHED_PG WITH (
-    'connector.class'     = 'io.confluent.connect.jdbc.JdbcSinkConnector',
-    'connection.url'      = 'jdbc:postgresql://postgres:5432/',
-    'connection.user'     = 'postgres',
-    'connection.password' = 'postgres',
-    'topics'              = 'TXNS_ENRICHED',
-    'key.converter'       = 'org.apache.kafka.connect.storage.StringConverter',
-    'auto.create'         = 'true',
-    'auto.evolve'         = 'true',
-    'table.name.format'   = '${topic}',
-    'transforms'          = 'flatten',
-    'transforms.flatten.type'= 'org.apache.kafka.connect.transforms.Flatten$Value'
+    'connector.class'                     = 'io.confluent.connect.jdbc.JdbcSinkConnector',
+    'connection.url'                      = 'jdbc:postgresql://postgres:5432/',
+    'connection.user'                     = 'postgres',
+    'connection.password'                 = 'postgres',
+    'topics'                              = 'TXNS_ENRICHED',
+    'key.converter'                       = 'io.confluent.connect.avro.AvroConverter',
+    'key.converter.schema.registry.url'   = 'http://schema-registry:8081',
+    'value.converter'                     = 'io.confluent.connect.avro.AvroConverter',
+    'value.converter.schema.registry.url' = 'http://schema-registry:8081',
+    'auto.create'                         = 'true',
+    'auto.evolve'                         = 'true',
+    'table.name.format'                   = '${topic}',
+    'transforms'                          = 'flatten',
+    'transforms.flatten.type'             = 'org.apache.kafka.connect.transforms.Flatten$Value'
   );
 ----
 
 ✅Table is created and populated in Postgres: 
+
+[source,bash]
+----
+docker exec -it postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+----
 
 [source,sql]
 ----
@@ -215,6 +232,7 @@ postgres=# \d+ "TXNS_ENRICHED"
                                         Table "public.TXNS_ENRICHED"
      Column      |       Type       | Collation | Nullable | Default | Storage  | Stats target | Description
 -----------------+------------------+-----------+----------+---------+----------+--------------+-------------
+ TXN_ID          | text             |           |          |         | extended |              |
  TXN_TS          | bigint           |           |          |         | plain    |              |
  ITEM            | text             |           |          |         | extended |              |
  COST            | double precision |           |          |         | plain    |              |
@@ -227,10 +245,10 @@ postgres=# \d+ "TXNS_ENRICHED"
 Access method: heap
 
 postgres=# SELECT * FROM "TXNS_ENRICHED" LIMIT 2;
-    TXN_TS     |            ITEM             | COST  | CARD_TYPE |               CUST_ID                |    NAME     |          EMAIL           | LOCATION.CITY | LOCATION.PLANET
----------------+-----------------------------+-------+-----------+--------------------------------------+-------------+--------------------------+---------------+-----------------
- 1585353217910 | Alpha King Pale Ale         | 44.05 | visa      | 84e2c8d1-3ac6-461b-8a6c-2a765be6bd82 | Agrajag     | benny.skiles@hotmail.com | Lamuella      | Nano
- 1585353218247 | Samuel Smith’s Imperial IPA | 25.62 | visa      | ee4cb838-cbf3-4cb7-8dd2-b7b3a9e9da11 | Pasta Fasta | peter.nikolaus@yahoo.com | Betelgeuse    | Krikkit
+                TXN_ID                |    TXN_TS     |           ITEM           | COST  |  CARD_TYPE  |               CUST_ID                |       NAME        |           EMAIL           |             LOCATION.CITY             | LOCATION.PLANET
+--------------------------------------+---------------+--------------------------+-------+-------------+--------------------------------------+-------------------+---------------------------+---------------------------------------+-----------------
+ 8640648b-961f-4864-82d7-5606c7cf3a68 | 1615464205090 | Edmund Fitzgerald Porter | 87.52 | diners_club | dae12f7a-3b49-434a-9b92-2e4ea087a2b1 | Vroomfondel       | shaun.sauer@gmail.com     | Seventh Galaxy of Light and Ingenuity | Kria
+ 07626615-d656-4f0f-8e32-ed02365c011e | 1615464205468 | Nugget Nectar            |  7.21 | laser       | c87d82e3-0f38-4e4b-8bd3-9ec616481813 | Pizpot Gargravarr | tristan.upton@hotmail.com | Evildrome Boozarama                   | Xaxis
 (2 rows)
 ----
 
@@ -242,20 +260,23 @@ Note that the `TXN_TS` is a bigint (epoch), not an actual timestamp type.
 ----
 DROP CONNECTOR SINK_TXNS_ENRICHED_PG;
 CREATE SINK CONNECTOR SINK_TXNS_ENRICHED_PG WITH (
-    'connector.class'     = 'io.confluent.connect.jdbc.JdbcSinkConnector',
-    'connection.url'      = 'jdbc:postgresql://postgres:5432/',
-    'connection.user'     = 'postgres',
-    'connection.password' = 'postgres',
-    'topics'              = 'TXNS_ENRICHED',
-    'key.converter'       = 'org.apache.kafka.connect.storage.StringConverter',
-    'auto.create'         = 'true',
-    'auto.evolve'         = 'true',
-    'table.name.format'   = '${topic}',
-    'transforms'          = 'flatten,setTimestampType',
-    'transforms.flatten.type'= 'org.apache.kafka.connect.transforms.Flatten$Value',
-    'transforms.setTimestampType.type'= 'org.apache.kafka.connect.transforms.TimestampConverter$Value',
-    'transforms.setTimestampType.field'= 'TXN_TS',
-    'transforms.setTimestampType.target.type' ='Timestamp'
+    'connector.class'                         = 'io.confluent.connect.jdbc.JdbcSinkConnector',
+    'connection.url'                          = 'jdbc:postgresql://postgres:5432/',
+    'connection.user'                         = 'postgres',
+    'connection.password'                     = 'postgres',
+    'topics'                                  = 'TXNS_ENRICHED',
+    'key.converter'                           = 'io.confluent.connect.avro.AvroConverter',
+    'key.converter.schema.registry.url'       = 'http://schema-registry:8081',
+    'value.converter'                         = 'io.confluent.connect.avro.AvroConverter',
+    'value.converter.schema.registry.url'     = 'http://schema-registry:8081',
+    'auto.create'                             = 'true',
+    'auto.evolve'                             = 'true',
+    'table.name.format'                       = '${topic}',
+    'transforms'                              = 'flatten,setTimestampType',
+    'transforms.flatten.type'                 = 'org.apache.kafka.connect.transforms.Flatten$Value',
+    'transforms.setTimestampType.type'        = 'org.apache.kafka.connect.transforms.TimestampConverter$Value',
+    'transforms.setTimestampType.field'       = 'TXN_TS',
+    'transforms.setTimestampType.target.type' = 'Timestamp'
 );
 ----
 
@@ -328,20 +349,23 @@ So here we'll ditch the previous table, and instead populate a new one (taking a
 ----
 DROP CONNECTOR SINK_TXNS_ENRICHED_PG;
 CREATE SINK CONNECTOR SINK_TXNS_ENRICHED_PG_01 WITH (
-    'connector.class'     = 'io.confluent.connect.jdbc.JdbcSinkConnector',
-    'connection.url'      = 'jdbc:postgresql://postgres:5432/',
-    'connection.user'     = 'postgres',
-    'connection.password' = 'postgres',
-    'topics'              = 'TXNS_ENRICHED',
-    'key.converter'       = 'org.apache.kafka.connect.storage.StringConverter',
-    'auto.create'         = 'true',
-    'auto.evolve'         = 'true',
-    'table.name.format'   = '${topic}-01',
-    'transforms'          = 'flatten,setTimestampType',
-    'transforms.flatten.type'= 'org.apache.kafka.connect.transforms.Flatten$Value',
-    'transforms.setTimestampType.type'= 'org.apache.kafka.connect.transforms.TimestampConverter$Value',
-    'transforms.setTimestampType.field'= 'TXN_TS',
-    'transforms.setTimestampType.target.type' ='Timestamp'
+    'connector.class'                         = 'io.confluent.connect.jdbc.JdbcSinkConnector',
+    'connection.url'                          = 'jdbc:postgresql://postgres:5432/',
+    'connection.user'                         = 'postgres',
+    'connection.password'                     = 'postgres',
+    'topics'                                  = 'TXNS_ENRICHED',
+    'key.converter'                           = 'io.confluent.connect.avro.AvroConverter',
+    'key.converter.schema.registry.url'       = 'http://schema-registry:8081',
+    'value.converter'                         = 'io.confluent.connect.avro.AvroConverter',
+    'value.converter.schema.registry.url'     = 'http://schema-registry:8081',
+    'auto.create'                             = 'true',
+    'auto.evolve'                             = 'true',
+    'table.name.format'                       = '${topic}-01',
+    'transforms'                              = 'flatten,setTimestampType',
+    'transforms.flatten.type'                 = 'org.apache.kafka.connect.transforms.Flatten$Value',
+    'transforms.setTimestampType.type'        = 'org.apache.kafka.connect.transforms.TimestampConverter$Value',
+    'transforms.setTimestampType.field'       = 'TXN_TS',
+    'transforms.setTimestampType.target.type' = 'Timestamp'
 );
 ----
 
@@ -353,6 +377,7 @@ postgres=# \d+ "TXNS_ENRICHED-01"
                                             Table "public.TXNS_ENRICHED-01"
      Column      |            Type             | Collation | Nullable | Default | Storage  | Stats target | Description
 -----------------+-----------------------------+-----------+----------+---------+----------+--------------+-------------
+ TXN_ID          | text                        |           |          |         | extended |              |
  TXN_TS          | timestamp without time zone |           |          |         | plain    |              |
  ITEM            | text                        |           |          |         | extended |              |
  COST            | double precision            |           |          |         | plain    |              |
@@ -365,10 +390,10 @@ postgres=# \d+ "TXNS_ENRICHED-01"
 Access method: heap
 
 postgres=# SELECT * FROM "TXNS_ENRICHED-01" LIMIT 2;
-         TXN_TS          |            ITEM             | COST  | CARD_TYPE |               CUST_ID                |    NAME     |          EMAIL           | LOCATION.CITY | LOCATION.PLANET
--------------------------+-----------------------------+-------+-----------+--------------------------------------+-------------+--------------------------+---------------+-----------------
- 2020-03-27 23:53:37.91  | Alpha King Pale Ale         | 44.05 | visa      | 84e2c8d1-3ac6-461b-8a6c-2a765be6bd82 | Agrajag     | benny.skiles@hotmail.com | Lamuella      | Nano
- 2020-03-27 23:53:38.247 | Samuel Smith’s Imperial IPA | 25.62 | visa      | ee4cb838-cbf3-4cb7-8dd2-b7b3a9e9da11 | Pasta Fasta | peter.nikolaus@yahoo.com | Betelgeuse    | Krikkit
+                TXN_ID                |         TXN_TS          |           ITEM           | COST  |  CARD_TYPE  |               CUST_ID                |       NAME        |           EMAIL           |             LOCATION.CITY             | LOCATION.PLANET
+--------------------------------------+-------------------------+--------------------------+-------+-------------+--------------------------------------+-------------------+---------------------------+---------------------------------------+-----------------
+ 8640648b-961f-4864-82d7-5606c7cf3a68 | 2021-03-11 12:03:25.09  | Edmund Fitzgerald Porter | 87.52 | diners_club | dae12f7a-3b49-434a-9b92-2e4ea087a2b1 | Vroomfondel       | shaun.sauer@gmail.com     | Seventh Galaxy of Light and Ingenuity | Kria
+ 07626615-d656-4f0f-8e32-ed02365c011e | 2021-03-11 12:03:25.468 | Nugget Nectar            |  7.21 | laser       | c87d82e3-0f38-4e4b-8bd3-9ec616481813 | Pizpot Gargravarr | tristan.upton@hotmail.com | Evildrome Boozarama                   | Xaxis
 (2 rows)
 ----
 
@@ -378,7 +403,7 @@ postgres=# SELECT * FROM "TXNS_ENRICHED-01" LIMIT 2;
 ----
 SET 'auto.offset.reset' = 'earliest';
 
-CREATE TABLE BEERS_HOUR_AGG WITH (VALUE_FORMAT='AVRO') AS 
+CREATE TABLE BEERS_HOUR_AGG WITH (FORMAT='AVRO') AS 
     SELECT WINDOWSTART AS WINDOW_START_TS, 
            ITEM, 
            SUM(COST) AS TOTAL_SOLD,
@@ -407,7 +432,7 @@ SELECT TIMESTAMPTOSTRING(WINDOW_START_TS,'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_
        TOTAL_SOLD, 
        NUMBER_SOLD 
   FROM BEERS_HOUR_AGG 
- WHERE ROWKEY='Duvel';
+ WHERE ITEM='Duvel';
 ----
 
 == Build aggregate (customer summary) to push to database
@@ -416,7 +441,7 @@ SELECT TIMESTAMPTOSTRING(WINDOW_START_TS,'yyyy-MM-dd HH:mm:ss') AS WINDOW_START_
 ----
 SET 'auto.offset.reset' = 'earliest';
 
-CREATE TABLE CUSTOMER_SUMMARY WITH (VALUE_FORMAT='AVRO') AS 
+CREATE TABLE CUSTOMER_SUMMARY WITH (FORMAT='AVRO') AS 
     SELECT CUST_ID,
            NAME,
            MAX(TXN_TS) AS MOST_RECENT_ORDER_TS,
@@ -432,64 +457,72 @@ CREATE TABLE CUSTOMER_SUMMARY WITH (VALUE_FORMAT='AVRO') AS
 [source,sql]
 ----
 CREATE SINK CONNECTOR SINK_CUSTOMER_SUMMARY_PG_01 WITH (
-    'connector.class'     = 'io.confluent.connect.jdbc.JdbcSinkConnector',
-    'connection.url'      = 'jdbc:postgresql://postgres:5432/',
-    'connection.user'     = 'postgres',
-    'connection.password' = 'postgres',
-    'topics'              = 'CUSTOMER_SUMMARY',
-    'key.converter'       = 'org.apache.kafka.connect.storage.StringConverter',
-    'auto.create'         = 'true',
-    'auto.evolve'         = 'true',
-    'table.name.format'   = '${topic}-01',
-    'transforms'          = 'setTimestampType',
-    'transforms.setTimestampType.type'= 'org.apache.kafka.connect.transforms.TimestampConverter$Value',
-    'transforms.setTimestampType.field'= 'MOST_RECENT_ORDER_TS',
-    'transforms.setTimestampType.target.type' ='Timestamp'
+    'connector.class'                         = 'io.confluent.connect.jdbc.JdbcSinkConnector',
+    'connection.url'                          = 'jdbc:postgresql://postgres:5432/',
+    'connection.user'                         = 'postgres',
+    'connection.password'                     = 'postgres',
+    'topics'                                  = 'CUSTOMER_SUMMARY',
+    'key.converter'                           = 'io.confluent.connect.avro.AvroConverter',
+    'key.converter.schema.registry.url'       = 'http://schema-registry:8081',
+    'value.converter'                         = 'io.confluent.connect.avro.AvroConverter',
+    'value.converter.schema.registry.url'     = 'http://schema-registry:8081',
+    'auto.create'                             = 'true',
+    'auto.evolve'                             = 'true',
+    'table.name.format'                       = '${topic}-01',
+    'transforms'                              = 'setTimestampType',
+    'transforms.setTimestampType.type'        = 'org.apache.kafka.connect.transforms.TimestampConverter$Value',
+    'transforms.setTimestampType.field'       = 'MOST_RECENT_ORDER_TS',
+    'transforms.setTimestampType.target.type' = 'Timestamp'
 );
 ----
 
-This is fine but we get new rows in the database each time the aggregate changes, even for the same key. 
+You'll notice you don't get the key columns in the data, only the aggregate values: 
 
 [source,sql]
 ----
-postgres=# SELECT * FROM "CUSTOMER_SUMMARY-01" WHERE "NAME" = 'Vroomfondel' ;
-               CUST_ID                |    NAME     |  MOST_RECENT_ORDER_TS   | NUM_ORDERS | UNIQUE_ITEMS |     TOTAL_COST
---------------------------------------+-------------+-------------------------+------------+--------------+--------------------
- d83c7c98-c2f1-449e-b80a-19c38d06b476 | Vroomfondel | 2020-03-27 23:58:57.398 |         64 |           38 |            3520.09
- d83c7c98-c2f1-449e-b80a-19c38d06b476 | Vroomfondel | 2020-03-28 00:07:23.898 |        179 |           53 |            9851.54
- d83c7c98-c2f1-449e-b80a-19c38d06b476 | Vroomfondel | 2020-03-28 00:07:46.378 |        184 |           53 | 10213.160000000002
- d83c7c98-c2f1-449e-b80a-19c38d06b476 | Vroomfondel | 2020-03-28 00:07:51.878 |        185 |           53 | 10261.670000000002
+postgres=# select * from "CUSTOMER_SUMMARY-01" LIMIT 5;
+  MOST_RECENT_ORDER_TS   | NUM_ORDERS | UNIQUE_ITEMS |     TOTAL_COST
+-------------------------+------------+--------------+--------------------
+ 2021-03-11 12:04:21.399 |         13 |           13 |  642.1600000000001
+ 2021-03-11 12:04:45.403 |         19 |           16 |            1013.25
+ 2021-03-11 12:04:48.869 |         15 |           13 |  747.2699999999999
+ 2021-03-11 12:04:49.369 |         17 |           14 | 1117.6200000000001
+ 2021-03-11 12:04:49.869 |         21 |           14 | 1057.1499999999999
+(5 rows)
 ----
 
-=== Use upsert to push table state from ksqlDB to database
+=== Use `pk.mode` to include the key values when pushing table state from ksqlDB to database
 
 [source,sql]
 ----
 CREATE SINK CONNECTOR SINK_CUSTOMER_SUMMARY_PG_02 WITH (
-    'connector.class'     = 'io.confluent.connect.jdbc.JdbcSinkConnector',
-    'connection.url'      = 'jdbc:postgresql://postgres:5432/',
-    'connection.user'     = 'postgres',
-    'connection.password' = 'postgres',
-    'topics'              = 'CUSTOMER_SUMMARY',
-    'key.converter'       = 'org.apache.kafka.connect.storage.StringConverter',
-    'auto.create'         = 'true',
-    'auto.evolve'         = 'true',
-    'insert.mode'         = 'upsert',
-    'pk.mode'             = 'record_value',
-    'pk.fields'           = 'CUST_ID,NAME',
-    'table.name.format'   = '${topic}-02',
-    'transforms'          = 'setTimestampType',
-    'transforms.setTimestampType.type'= 'org.apache.kafka.connect.transforms.TimestampConverter$Value',
-    'transforms.setTimestampType.field'= 'MOST_RECENT_ORDER_TS',
-    'transforms.setTimestampType.target.type' ='Timestamp'
+    'connector.class'                         = 'io.confluent.connect.jdbc.JdbcSinkConnector',
+    'connection.url'                          = 'jdbc:postgresql://postgres:5432/',
+    'connection.user'                         = 'postgres',
+    'connection.password'                     = 'postgres',
+    'topics'                                  = 'CUSTOMER_SUMMARY',
+    'key.converter'                           = 'io.confluent.connect.avro.AvroConverter',
+    'key.converter.schema.registry.url'       = 'http://schema-registry:8081',
+    'value.converter'                         = 'io.confluent.connect.avro.AvroConverter',
+    'value.converter.schema.registry.url'     = 'http://schema-registry:8081',
+    'auto.create'                             = 'true',
+    'auto.evolve'                             = 'true',
+    'insert.mode'                             = 'upsert',
+    'pk.mode'                                 = 'record_key',
+    'pk.fields'                               = 'CUST_ID,NAME',
+    'table.name.format'                       = '${topic}-02',
+    'transforms'                              = 'setTimestampType',
+    'transforms.setTimestampType.type'        = 'org.apache.kafka.connect.transforms.TimestampConverter$Value',
+    'transforms.setTimestampType.field'       = 'MOST_RECENT_ORDER_TS',
+    'transforms.setTimestampType.target.type' = 'Timestamp'
 );
 ----
 
 Important settings: 
 
 * `insert.mode` is `upsert` (not the default `insert`)
-* `pk.mode` is `record_value` which says we're going to define the target table's primary key based on field(s) from the record's value
-* `pk.fields` specifies *which* field(s) from the record's value we'd like to use as the PK in the target table (for a ksqlDB aggregate table this is going to be whichever columns you declared for the `GROUP BY`)
+* `pk.mode` is `record_key` which says we're going to define the target table's primary key based on field(s) from the record's key
+* `pk.fields` specifies *which* field(s) from the record's key we'd like to use as the PK in the target table (for a ksqlDB aggregate table this is going to be whichever columns you declared for the `GROUP BY`)
 
 Note target database table is created by the sink with a primary key: 
 
@@ -499,12 +532,12 @@ postgres=# \d+ "CUSTOMER_SUMMARY-02"
                                              Table "public.CUSTOMER_SUMMARY-02"
         Column        |            Type             | Collation | Nullable | Default | Storage  | Stats target | Description
 ----------------------+-----------------------------+-----------+----------+---------+----------+--------------+-------------
- CUST_ID              | text                        |           | not null |         | extended |              |
- NAME                 | text                        |           | not null |         | extended |              |
  MOST_RECENT_ORDER_TS | timestamp without time zone |           |          |         | plain    |              |
  NUM_ORDERS           | bigint                      |           |          |         | plain    |              |
  UNIQUE_ITEMS         | bigint                      |           |          |         | plain    |              |
  TOTAL_COST           | double precision            |           |          |         | plain    |              |
+ CUST_ID              | text                        |           | not null |         | extended |              |
+ NAME                 | text                        |           | not null |         | extended |              |
 Indexes:
     "CUSTOMER_SUMMARY-02_pkey" PRIMARY KEY, btree ("CUST_ID", "NAME")
 Access method: heap
@@ -515,15 +548,15 @@ One row per unique key with aggregate values updated in-place:
 [source,sql]
 ----
 postgres=# SELECT * FROM "CUSTOMER_SUMMARY-02" WHERE "NAME" = 'Vroomfondel' ;
-               CUST_ID                |    NAME     |  MOST_RECENT_ORDER_TS   | NUM_ORDERS | UNIQUE_ITEMS |     TOTAL_COST
---------------------------------------+-------------+-------------------------+------------+--------------+--------------------
- d83c7c98-c2f1-449e-b80a-19c38d06b476 | Vroomfondel | 2020-03-28 00:13:03.072 |        254 |           53 | 14009.210000000005
+  MOST_RECENT_ORDER_TS   | NUM_ORDERS | UNIQUE_ITEMS |     TOTAL_COST     |               CUST_ID                |    NAME
+-------------------------+------------+--------------+--------------------+--------------------------------------+-------------
+ 2021-03-11 12:29:51.282 |        331 |           53 | 16004.209999999983 | dae12f7a-3b49-434a-9b92-2e4ea087a2b1 | Vroomfondel
 (1 row)
 
 postgres=# SELECT * FROM "CUSTOMER_SUMMARY-02" WHERE "NAME" = 'Vroomfondel' ;
-               CUST_ID                |    NAME     |  MOST_RECENT_ORDER_TS   | NUM_ORDERS | UNIQUE_ITEMS |     TOTAL_COST
---------------------------------------+-------------+-------------------------+------------+--------------+--------------------
- d83c7c98-c2f1-449e-b80a-19c38d06b476 | Vroomfondel | 2020-03-28 00:13:18.038 |        257 |           53 | 14122.780000000002
+  MOST_RECENT_ORDER_TS   | NUM_ORDERS | UNIQUE_ITEMS |     TOTAL_COST     |               CUST_ID                |    NAME
+-------------------------+------------+--------------+--------------------+--------------------------------------+-------------
+ 2021-03-11 12:30:11.786 |        336 |           53 | 16269.619999999983 | dae12f7a-3b49-434a-9b92-2e4ea087a2b1 | Vroomfondel
 (1 row)
 ----
 
