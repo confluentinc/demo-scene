@@ -2,6 +2,13 @@
 Robin Moffatt <robin@confluent.io>
 v1.10, 11 March 2021
 
+See also: 
+
+* link:ksqldb-jdbc-sink.adoc[ksqlDB & Kafka Connect JDBC Sink in action]
+* https://rmoff.net/2021/03/12/kafka-connect-jdbc-sink-deep-dive-working-with-primary-keys/[Kafka Connect JDBC Sink deep-dive: Working with Primary Keys]
+
+''''
+
 🎥Video: https://rmoff.dev/kafka-jdbc-video
 
 _Tested with Confluent Platform 6.1, ksqlDB 0.15, Kafka Connect JDBC connector 5.5.3_
