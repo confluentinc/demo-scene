@@ -46,39 +46,6 @@ function ccloud::create_topics(){
   done
 }
 
-# This Function will persist all the relevant info for the created resources in a file
-# The format is that of a bash file, so you can just source it in a script
-# I saw similar approach that uses the java config file but this is more straightforward and will not need to source that file
-# https://github.com/confluentinc/examples/blob/7025c9cd5b80ac4b523f82996d3b3d77b9bca853/ccloud/ccloud-generate-cp-configs.sh#L725
-#
-# Example Usage
-# ccloud::output_stack_to_file $ENV_FILEPATH "${PREFIX}_"
-# If you need to export those vars for the system....
-# ccloud::output_stack_to_file $ENV_FILEPATH "export "
-# function ccloud::output_stack_to_file(){
-#     local ENV_FILEPATH=$1
-#     local PREFIX=$2
-#     local API_KEY_SA=$(echo $CLUSTER_CREDS | awk -F: '{print $1}')
-#     local API_SECRET_SA=$(echo $CLUSTER_CREDS | awk -F: '{print $2}')
-#     local SR_API_KEY_SA=$(echo $SCHEMA_REGISTRY_CREDS | awk -F: '{print $1}')
-#     local SR_API_SECRET_SA=$(echo $SCHEMA_REGISTRY_CREDS | awk -F: '{print $2}')
-
-#     cat <<EOF >> $ENV_FILEPATH
-# ${PREFIX}SERVICE_ACCOUNT_ID="${SERVICE_ACCOUNT_ID}"
-# ${PREFIX}ENVIRONMENT="${ENVIRONMENT}"
-# ${PREFIX}CLUSTER="${CLUSTER}"
-# ${PREFIX}BOOTSTRAP_SERVERS="${BOOTSTRAP_SERVERS}"
-# ${PREFIX}API_KEY_SA="${API_KEY_SA}"
-# ${PREFIX}API_SECRET_SA="${API_SECRET_SA}"
-# ${PREFIX}SR_ID="${SCHEMA_REGISTRY}"
-# ${PREFIX}SR_ENDPOINT="${SCHEMA_REGISTRY_ENDPOINT}"
-# ${PREFIX}SR_ID="${SCHEMA_REGISTRY}"
-# ${PREFIX}SR_API_KEY_SA="${SR_API_KEY_SA}"
-# ${PREFIX}SR_API_SECRET_SA="${SR_API_SECRET_SA}"
-# EOF
-
-# }
-
 ccloud::wait_for_data_in_topic() {
     local count=0
     while [[ "$count" -le 100 ]];do 
