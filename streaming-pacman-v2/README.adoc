@@ -125,6 +125,11 @@ SELECT HIGHEST_SCORE_VALUE, USERS_SET_VALUE FROM SUMMARY_STATS WHERE SUMMARY_KEY
 select USER, HIGHEST_SCORE, HIGHEST_LEVEL, TOTAL_LOSSES from STATS_PER_USER WHERE USER IN (${userListCsv});
 ----
 
+== Troubleshooting
+
+If you face issues in the pacman app, try open the developer tools of your browser and watch what errors are in the console.
+If you see a CORS related issue, check your user in AWS IAM, we have seen issues were missing permission would result is this issues. The solution is to add your user to the relevat Groups.
+
 == License
 
 This project is licensed under the link:LICENSE[Apache 2.0 License.]
