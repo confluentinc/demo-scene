@@ -133,3 +133,7 @@ If you see a CORS related issue, check your user in AWS IAM, we have seen issues
 == License
 
 This project is licensed under the link:LICENSE[Apache 2.0 License.]
+
+== Previous Pacman Demo
+
+Are you looking for the previous version of this demo? You can find it here: https://github.com/confluentinc/demo-scene/releases/tag/pacman-v1.0
