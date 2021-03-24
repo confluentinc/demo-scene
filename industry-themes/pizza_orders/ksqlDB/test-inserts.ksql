@@ -1,0 +1,40 @@
+select * from pizza_orders_table where order_key = '2-9-2021-03-10';
+
+INSERT INTO PIZZA_ORDERS
+VALUES (2, 9, '2021-03-10', 'accepted', ARRAY[STRUCT(code := 3456)], ARRAY[
+                                                                        STRUCT(
+                                                                        product_id := 30,
+                                                                        category := 'calzone',
+                                                                        quantity := 5,
+                                                                        unit_price := 50.60,
+                                                                        net_price := 28.00
+                                                                        ),
+                                                                        STRUCT(
+                                                                        product_id := 16,
+                                                                        category := 'salad',
+                                                                        quantity := 2,
+                                                                        unit_price := 40.19,
+                                                                        net_price := 80.38
+                                                                        ),
+                                                                        STRUCT(
+                                                                        product_id := 6,
+                                                                        category := 'wings',
+                                                                        quantity := 2,
+                                                                        unit_price := 12.79,
+                                                                        net_price := 25.58
+                                                                        )]);
+
+INSERT INTO PIZZA_ORDERS_CANCELLED
+VALUES (2, 9, '2021-03-10', 'onMakeLine');
+
+INSERT INTO PIZZA_ORDERS_CANCELLED
+VALUES (2, 9, '2021-03-10', 'inOven');
+
+INSERT INTO PIZZA_ORDERS_CANCELLED
+VALUES (2, 9, '2021-03-10', 'ready');
+
+INSERT INTO PIZZA_ORDERS_CANCELLED
+VALUES (2, 9, '2021-03-10', 'dispatched');
+
+INSERT INTO PIZZA_ORDERS_COMPLETED
+VALUES (2, 9, '2021-03-10', 'completed', 132, 1795);
