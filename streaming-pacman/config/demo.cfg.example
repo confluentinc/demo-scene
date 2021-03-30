@@ -1,0 +1,7 @@
+export AWS_ACCESS_KEY="<AWS_ACCESS_KEY>"
+export AWS_SECRET_KEY="<AWS_SECRET_KEY>"
+
+# These are optional configs
+# export S3_BUCKET_NAME="ksqldbpacman"
+# export SCHEMA_REGISTRY_GEO="eu"
+# export CLUSTER_REGION="eu-west-2"

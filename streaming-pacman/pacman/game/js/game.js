@@ -45,7 +45,9 @@ function initGame(newGame) {
 	// player knows how far behind he/she might
 	// be if compared to the best player.
 
-	loadHighestScore(function(hgs) {
+	var player = window.name;
+
+	loadHighestScore(player, function(hgs) {
 		HIGHSCORE = hgs?hgs:HIGHSCORE;
 		if (HIGHSCORE === 0) {
 			$('#highscore span').html("00");
@@ -56,10 +58,11 @@ function initGame(newGame) {
 
 	// Creates a web worker that continuously update
 	// the value of the highest score every five seconds.
-	highScoreWorker = new Worker("/game/js/highscore-worker.js");
-	highScoreWorker.onmessage = function(event) {
-		HIGHSCORE = event.data;
-	};
+	//GN Disable the worker
+	// highScoreWorker = new Worker("/game/js/highscore-worker.js");
+	// highScoreWorker.onmessage = function(event) {
+	// 	HIGHSCORE = event.data;
+	// };
 
 	var lastScore = 0;
 	var lastLevel = 0;
@@ -70,25 +73,28 @@ function initGame(newGame) {
 		return;
 	}
 
-	var request = new XMLHttpRequest();
-    request.onreadystatechange = function() {
-        if (this.readyState == 4) {
-			if (this.status == 200) {
-				var result = JSON.parse(this.responseText);
-				if (result != undefined || result != null) {
-					lastScore = result.scoreboard.score;
-					lastLevel = result.scoreboard.level;
-				}
-			}
-			lastScore = lastScore == undefined ? 0 : lastScore;
-			lastLevel = lastLevel == undefined ? 0 : lastLevel;
-			doInitGame(newGame, lastScore, lastLevel);
-		}
-	};
-	var player = window.name;
-	var uri = SCOREBOARD_API + '?player=' + player
-	request.open('POST', uri, true);
-	request.send();
+	//TODO ? This code was reading the last score and level to reuse it, not sure this is what I want though... player should start from scracth
+	// var request = new XMLHttpRequest();
+    // request.onreadystatechange = function() {
+    //     if (this.readyState == 4) {
+	// 		if (this.status == 200) {
+	// 			var result = JSON.parse(this.responseText);
+	// 			if (result != undefined || result != null) {
+	// 				lastScore = result.scoreboard.score;
+	// 				lastLevel = result.scoreboard.level;
+	// 			}
+	// 		}
+	// 		lastScore = lastScore == undefined ? 0 : lastScore;
+	// 		lastLevel = lastLevel == undefined ? 0 : lastLevel;
+	// 		doInitGame(newGame, lastScore, lastLevel);
+	// 	}
+	// };
+	
+
+	// var uri = SCOREBOARD_API + '?player=' + player
+	// request.open('POST', uri, true);
+	// request.send();
+	doInitGame(newGame, lastScore, lastLevel);
 	
 }
 
@@ -359,7 +365,7 @@ function lifes(l) {
 	record.game.lives = LIFES
 	record.game.level = LEVEL
 
-	produceRecord('USER_GAME', record);
+	produceRecordUserGame(record);
 
 }
 
@@ -386,11 +392,11 @@ function gameover() {
 	// Emit event 'USER_LOSSES' event
 	var record = {};
 	record.user = window.name;
-	produceRecord('USER_LOSSES', record);
+	produceRecordUserLosses(record);
 
 	// Terminate the web worker that
 	// updates the highest score value
-	highScoreWorker.terminate();
+	//highScoreWorker.terminate();
 
 }
 
@@ -451,44 +457,27 @@ function score(s, type) {
 	record.game.lives = LIFES
 	record.game.level = LEVEL
 
-	produceRecord('USER_GAME', record);
+	produceRecordUserGame(record);
 
 }
 
-function produceRecord(topic, record) {
 
-	var contentType = "application/json";
-	var url = EVENT_HANDLER_API + "?topic=" + topic;
-	var json = JSON.stringify(record);
+function produceRecordUserGame(record) {
 
-	// The verification below is only
-	// necessary while the application
-	// is being migrated to serverless,
-	// since some implementations still
-	// rely on REST Proxy to emmit the
-	// game events.
-	
-	if (CLOUD_PROVIDER == "GCP" || CLOUD_PROVIDER == "AZR") {
-
-		// Fallback to the format that REST Proxy
-		// requires in order to emmit the events.
-
-		contentType = "application/vnd.kafka.json.v2+json";
-		url = EVENT_HANDLER_API + "/topics/" + topic;
-
-		var recordHolder = {};
-		recordHolder.value = record;
-		var recordsHolder = {};
-		recordsHolder.records = [recordHolder];
-		json = JSON.stringify(recordsHolder);
-
-	}
+	var topic = "USER_GAME"
+	var ksqlQuery =`INSERT INTO ${topic} (USER, GAME) VALUES ('${record.user}', STRUCT(SCORE:=${record.game.score},LIVES:=${record.game.lives},LEVEL:=${record.game.level}));`
 
 	const request = new XMLHttpRequest();
-	request.open("POST", url, true);
-	request.setRequestHeader("Content-Type", contentType);
-	request.send(json);
+	sendksqlDBStmt(request, ksqlQuery);
 
-	record
+}
+
+function produceRecordUserLosses(record) {
+
+	var topic = "USER_LOSSES"
+	var ksqlQuery =`INSERT INTO ${topic} (USER) VALUES ('${record.user}');`
+
+	const request = new XMLHttpRequest();
+	sendksqlDBStmt(request, ksqlQuery);
 
 }

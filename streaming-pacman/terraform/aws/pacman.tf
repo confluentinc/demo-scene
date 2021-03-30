@@ -7,6 +7,7 @@ resource "aws_s3_bucket_object" "index" {
   key = "index.html"
   content_type = "text/html"
   source = "../../pacman/index.html"
+  etag   = filemd5("../../pacman/index.html")
 }
 
 resource "aws_s3_bucket_object" "error" {
@@ -14,6 +15,7 @@ resource "aws_s3_bucket_object" "error" {
   key = "error.html"
   content_type = "text/html"
   source = "../../pacman/error.html"
+  etag   = filemd5("../../pacman/error.html")
 }
 
 resource "aws_s3_bucket_object" "start" {
@@ -21,6 +23,7 @@ resource "aws_s3_bucket_object" "start" {
   key = "start.html"
   content_type = "text/html"
   source = "../../pacman/start.html"
+  etag   = filemd5("../../pacman/start.html")
 }
 
 resource "aws_s3_bucket_object" "webmanifest" {
@@ -28,6 +31,7 @@ resource "aws_s3_bucket_object" "webmanifest" {
   key = "site.webmanifest"
   content_type = "application/manifest+json"
   source = "../../pacman/site.webmanifest"
+  etag   = filemd5("../../pacman/site.webmanifest")
 }
 
 resource "aws_s3_bucket_object" "scoreboard" {
@@ -35,6 +39,7 @@ resource "aws_s3_bucket_object" "scoreboard" {
   key = "scoreboard.html"
   content_type = "text/html"
   source = "../../pacman/scoreboard.html"
+  etag   = filemd5("../../pacman/scoreboard.html")
 }
 
 ###########################################
@@ -47,6 +52,7 @@ resource "aws_s3_bucket_object" "css_files" {
   key = replace(each.key, "../../pacman/", "")
   content_type = "text/css"
   source = each.value
+  etag   = filemd5(each.key)
 }
 
 ###########################################
@@ -59,6 +65,7 @@ resource "aws_s3_bucket_object" "img_files" {
   key = replace(each.key, "../../pacman/", "")
   content_type = "images/png"
   source = each.value
+  etag   = filemd5(each.key)
 }
 
 ###########################################
@@ -71,24 +78,27 @@ resource "aws_s3_bucket_object" "js_files" {
   key = replace(each.key, "../../pacman/", "")
   content_type = "text/javascript"
   source = each.value
+  etag   = filemd5(each.key)
 }
 
-data "template_file" "shared_js" {
-  template = file("../../pacman/game/js/shared.js")
+data "template_file" "env_vars_js" {
+  template = file("../../pacman/game/template/env-vars.js")
   vars = {
     cloud_provider = "AWS"
-    event_handler_api = "${aws_api_gateway_deployment.event_handler_v1.invoke_url}${aws_api_gateway_resource.event_handler_resource.path}"
-    ksqldb_query_api = "http://${aws_alb.ksqldb_lbr.dns_name}/query"
-    scoreboard_api = "${aws_api_gateway_deployment.scoreboard_v1.invoke_url}${aws_api_gateway_resource.scoreboard_resource.path}"
+    ksqldb_endpoint = "${aws_api_gateway_deployment.event_handler_v1.invoke_url}${aws_api_gateway_resource.event_handler_resource.path}"
+    ksql_basic_auth_user_info = var.ksql_basic_auth_user_info
+    #TODO scoreboard_api = "${aws_api_gateway_deployment.scoreboard_v1.invoke_url}${aws_api_gateway_resource.scoreboard_resource.path}"
+    scoreboard_api = ""
   }
 }
 
-resource "aws_s3_bucket_object" "shared_js" {
+resource "aws_s3_bucket_object" "env_vars_js" {
   depends_on = [aws_s3_bucket_object.js_files]
   bucket = aws_s3_bucket.pacman.bucket
-  key = "game/js/shared.js"
+  key = "game/js/env-vars.js"
   content_type = "text/javascript"
-  content = data.template_file.shared_js.rendered
+  content = data.template_file.env_vars_js.rendered
+  etag  = md5(data.template_file.env_vars_js.rendered)
 }
 
 ###########################################
@@ -101,4 +111,5 @@ resource "aws_s3_bucket_object" "snd_files" {
   key = replace(each.key, "../../pacman/", "")
   content_type = "audio/mpeg"
   source = each.value
+  etag   = filemd5(each.key)
 }

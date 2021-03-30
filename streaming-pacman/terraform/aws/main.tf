@@ -20,8 +20,20 @@ resource "random_string" "random_string" {
   number = false
 }
 
+resource "random_string" "random_string2" {
+  length = 2
+  special = false
+  upper = false
+  lower = true
+  number = false
+}
+
 data "template_file" "bucket_pacman" {
-  template = "${var.global_prefix}${random_string.random_string.result}"
+  template = "%{ if var.bucket_name != "" }${var.bucket_name}%{ else }${var.global_prefix}${random_string.random_string.result}%{ endif }"
+}
+
+data "template_file" "resource_prefix" {
+  template = "${var.global_prefix}${random_string.random_string2.result}"
 }
 
 resource "aws_s3_bucket" "pacman" {
@@ -93,15 +105,15 @@ variable "scoreboard_topic" {
 ############ Alexa Variables ##############
 ###########################################
 
-variable "alexa_enabled" {
-  type = bool
-  default = false
-}
+# variable "alexa_enabled" {
+#   type = bool
+#   default = false
+# }
 
-variable "pacman_players_skill_id" {
-  type = string
-  default = ""
-}
+# variable "pacman_players_skill_id" {
+#   type = string
+#   default = ""
+# }
 
 ###########################################
 ############ Other Variables ##############
@@ -112,31 +124,16 @@ variable "global_prefix" {
   default = "streaming-pacman"
 }
 
-variable "ksqldb_server_image" {
+variable "bucket_name" {
   type = string
-  default = "confluentinc/ksqldb-server:0.11.0"
+  default = ""
 }
 
-variable "redis_sink_image" {
+variable "ksql_endpoint" {
   type = string
-  default = "bleporini/redis-sink:latest"
 }
 
-###########################################
-############### Local Files ###############
-###########################################
-
-data "template_file" "ccloud_properties" {
-  template = file("../../scoreboard/ccloud.template")
-  vars = {
-    bootstrap_server = var.bootstrap_server
-    cluster_api_key = var.cluster_api_key
-    cluster_api_secret = var.cluster_api_secret
-    scoreboard_topic = var.scoreboard_topic
-  }
+variable "ksql_basic_auth_user_info" {
+  type = string
 }
 
-resource "local_file" "ccloud_properties" {
-  content = data.template_file.ccloud_properties.rendered
-  filename = "../../scoreboard/ccloud.properties"
-}

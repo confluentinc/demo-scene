@@ -2,242 +2,138 @@
 
 :imagesdir: images/
 
-*Streaming Pac-Man* is the funniest application that you ever see while applying principles of streaming analytics using https://kafka.apache.org[Apache Kafka]. Built around the famous Pac-Man game, this application ingest and store events from the game into Kafka topics and allow you to process them in near real-time using https://ksqldb.io/[ksqlDB]. In order to keep you focused this application is based on a Kafka cluster running in a fully managed service for Apache Kafka.
+*Streaming Pac-Man* is the funniest application that you ever see while applying principles of streaming analytics using https://kafka.apache.org[Apache Kafka]. Built around the famous Pac-Man game, this application ingest and store events from the game into Kafka topics and allow you to process them in near real-time using https://ksqldb.io/[ksqlDB]. In order to keep you focused this application is based on fully managed services in Confluent Cloud for both the Kafka cluster as well as ksqlDB.
 
 image::pacman-game.png[]
 
-To implement streaming analytics in the game you are going to build a link:pipeline/queries.sql[scoreboard using ksqlDB]. The scoreboard will be a table containing aggregated metrics of the players such as their highest score, the highest level achieved, and the number of times that the player loses. As new events arrive the scoreboard gets instantly updated by the continuous queries that keep processing those events as they happen.
+To implement streaming analytics in the game we built a  link:statements.sql[scoreboard using ksqlDB]. The scoreboard will be a table containing aggregated metrics of the players such as their highest score, the highest level achieved, and the number of times that the player loses. As new events arrive the scoreboard gets instantly updated by the continuous queries that keep processing those events as they happen.
 
 == What you are going to need?
 
 * *Managed Kafka* - You need to have an active account with https://www.confluent.io/confluent-cloud/[Confluent Cloud] to be able to spin up environments with the services required for this application. At a very minimum, you will need a Kafka cluster where your topics will be created. Optionally, you may want to create a ksqlDB application to implement the scoreboard pipeline.
-* *Terraform* - The application is automatically created using https://www.terraform.io[Terraform]. The default cloud provider supported is https://aws.amazon.com[AWS], but there are implementations for https://cloud.google.com[GCP] and https://azure.microsoft.com[Azure] as well. Besides having Terraform installed locally, will need to provide your cloud provider credentials so Terraform can create and manage the resources for you.
+* *Terraform* - The application is automatically created using https://www.terraform.io[Terraform]. The default cloud provider supported is https://aws.amazon.com[AWS], but you could port this logic also to https://cloud.google.com[GCP] and https://azure.microsoft.com[Azure] as well. Besides having Terraform installed locally, will need to provide your cloud provider credentials so Terraform can create and manage the resources for you. (tested with terraform v0.14.8)
 * *Java and Maven* - The UI layer of the application relies on two APIs that are implemented using https://openjdk.java.net/[Java], therefore you will need to have Java 11+ installed to build the source-code. The build itseld is implemented using https://maven.apache.org/[Maven], and it is triggered automatically by Terraform.
-* *Docker (Optional)* - The backend of some of the APIs is based on Redis. In order to keep Redis up-to-date with the data stored in Kafka, the application uses a sink service implemented as a Docker application. Its Docker image has been published on https://hub.docker.com/r/riferrei/redis-sink[Docker Hub] so there is no need for you to worry about this. However, if you want to use your own Docker image -- you will need to build a new image using this link:redis-sink/[code] and push it to some Docker repository. Also, you will need to modify the Terraform variable named `redis_sink_image`.
-* *Confluent Cloud CLI (Optional)* - During the creation of the pipeline, if you choose to implement it using Confluent Cloud managed ksqlDB then you will need to have the Confluent Cloud CLI installed locally to set up access permissions to the topics. You can find instructions about how to install it https://docs.confluent.io/current/cloud/cli/index.html[here].
-* *Confluent Platform (Optional)* - The pipeline implementation has some example events that can be used to test the code before you deploy it. This can be acomplished by using the https://docs.confluent.io/current/ksql/docs/developer-guide/ksql-testing-tool.html[KSQL Testing Tool] that is part of Confluent Platform. You can find instructions about how to install it https://www.confluent.io/product/confluent-platform/[here].
+* *Confluent Cloud CLI* - During the demo setup, a bash script will set up the whole Confluent Cloud environment for you. To do that it will need to have the Confluent Cloud CLI installed locally. You can find instructions about how to install it https://docs.confluent.io/current/cloud/cli/index.html[here]. v1.7.0 or later is required, logged in with the ``--save`` argument which saves your Confluent Cloud user login credentials or refresh token (in the case of SSO) to the local ``netrc`` file.
 
-== 1) Setting up Confluent Cloud
+== 1) Configure the demo
 
-As mentioned before the application uses a Kafka cluster running in a fully managed service for Apache Kafka. Therefore the first thing you need to do is https://docs.confluent.io/current/quickstart/cloud-quickstart/index.html[creating a cluster in Confluent Cloud].
+The whole demo creation is scripted. The script will perform 2 main actions:
+1. As mentioned before the application uses a Kafka cluster running in a fully managed service for Apache Kafka. Therefore the first thing it will provision is Confluent Cloud resources using the Confluent Cloud CLI. If you are interested in how you can create a cluster in Confluent Cloud via the Web UI have a look at our https://docs.confluent.io/current/quickstart/cloud-quickstart/index.html[Quick Start for Apache Kafka using Confluent Cloud].
+2. Terraform will provision all the resources need in AWS
+
+=== Configure the Confluent CLI
+
+1. Log in to the Confluent Cloud CLI:
++
+[source,bash]
+----
+ccloud login --save
+----
+
+The --save flag will save your Confluent Cloud login credentials to the ~/.netrc file.
+
+=== Configure the demo
+The demo script will do everything for you, but for it to work you need to add some configurations.
+
+
+1. Create the demo.cfg file using the example provided in the config folder
++
+[source,bash]
+----
+mv config/demo.cfg.example config/demo.cfg
+----
+
+2. Provide the required information on the 'demo.cfg' file
++
+[source,bash]
+----
+export AWS_ACCESS_KEY="<AWS_ACCESS_KEY>"
+export AWS_SECRET_KEY="<AWS_SECRET_KEY>"
+----
+
+3. Notice the optional configuration in the same file. Uncomment and define as you see fit
++
+[source,bash]
+----
+# These are optional configs
+# export S3_BUCKET_NAME="ksqldbpacman"
+# export SCHEMA_REGISTRY_GEO="eu"
+# export CLUSTER_REGION="eu-west-2"
+----
+
 
 == 2) Deploying the application
 
-The application is essentially a set of link:pacman/[HTML/CSS/JS files] that forms a microsite that can be hosted statically anywhere. But for the sake of coolness we will deploy this microsite in a S3 bucket from AWS. This bucket will be created in the same region selected for the Confluent Cloud cluster to ensure that the application will be co-located. The application will emit events that will be processed by a event handler implemented as an API Gateway which uses a Lambda function as backend. This event handler API receives the events and writes them into the respective Kafka topics.
+The application is essentially a set of link:pacman/[HTML/CSS/JS files] that forms a microsite that can be hosted statically anywhere. But for the sake of coolness we will deploy this microsite in a S3 bucket from AWS. This bucket will be created in the same region selected for the Confluent Cloud cluster to ensure that the application will be co-located. The application will emit events that will be processed by a event handler implemented as an API Gateway which uses a Lambda function as backend. This event handler API receives the events and writes them into Kafka using ksqlDB.
 
 image::pac-man-arch.png[align="left"]
 
-Please note that during deployment, the API takes care of creating the required Kafka topics. Therefore, there is no need to manually create them.
+Please note that during deployment, the script takes care of creating the required Kafka topics and also the ksqlDB queries. Therefore, there is no need to manually create them.
 
-=== Deploying on AWS
-
-1. Enter the folder that contains the AWS code
+1. Start the demo creation
 +
 [source,bash]
 ----
-cd terraform/aws
+./start.sh
 ----
 
-2. Create a variables file for Confluent Cloud
-+
-[source,bash]
-----
-mv ccloud.auto.tfvars.example ccloud.auto.tfvars
-----
-
-3. Provide the data on the 'ccloud.auto.tfvars' file
-+
-[source,bash]
-----
-bootstrap_server = "<CCLOUD_BOOTSTRA_SERVER>"
-cluster_api_key = "<CCLOUD_API_KEY>"
-cluster_api_secret = "<CCLOUD_API_SECRET>"
-----
-
-4. Create a variables file for AWS
-+
-[source,bash]
-----
-mv cloud.auto.tfvars.example cloud.auto.tfvars
-----
-
-5. Provide the credentials on the 'cloud.auto.tfvars' file
-+
-[source,bash]
-----
-aws_access_key = "<AWS_ACCESS_KEY>"
-aws_secret_key = "<AWS_SECRET_KEY>"
-----
-
-6. Initialize the Terraform plugins
-+
-[source,bash]
-----
-terraform init
-----
-
-7. Start the application deployment
-+
-[source,bash]
-----
-terraform apply -auto-approve
-----
-
-8. Output with endpoints will be shown
+2. At the end of the provisioning the Output with the demo endpoint will be shown. Paste the demo url in your browser and start playing!
 +
 [source,bash]
 ----
 Outputs:
 
-ksqlDB = http://streaming-pacman00000-ksqldb.region.elb.amazonaws.com
 Pacman = http://streaming-pacman00000.s3-website-region.amazonaws.com
 ----
 
-*Note:* When you are done with the application, you can automatically destroy all the resources created by Terraform using the command below:
+*Note:* When you are done with the application, you can automatically destroy all the resources created using the command below:
 
 [source,bash]
 ----
-terraform destroy -auto-approve
+./stop.sh
 ----
 
-== 3) Creating the pipeline
+== 3) The scoreboard
+The scoreboard can be visualized in real time by clicking on the *SCOREBOARD* link in the pacman game (top right corner). Who will be the best player?
+
+image::scoreboard.png[]
+
+
+== 4) Looking under the hood
 
 When users play with the Pac-Man game two types of events will be generated. One is called *User Game* and contains the data about the user's current game such as their score, current level, and the number of lives. The other is called *User Losses* and as the name implies contains data about whether the user lose in the game. To build a scoreboard out of this a streaming analytics pipeline will be created to transform these raw events into a table with the scoreboard that is updated in near real-time.
 
 image::pipeline.png[]
 
-To implement the pipeline you will be using ksqlDB. The link:pipeline/queries.sql[code for this pipeline has been written for you] and the only thing you need to do is to deploy it into a full-fledged ksqlDB Server. Therefore, you need to decide which ksqlDB server you are going to use. There are two options:
+To implement the pipeline we use ksqlDB. The link:statements.sql[code for this pipeline has been written for you] and it was automatically deployed  into a fully managed ksqlDB Server. 
 
-1. Using the ksqlDB cluster created by Terraform
-2. Managed ksqlDB application in Confluent Cloud
+=== the Scoreboard logic
+ksqlDB supports link:https://docs.ksqldb.io/en/0.14.0-ksqldb/concepts/queries/pull/[Pull queries], where you can get the latest value for a given key. The pacman app uses this feature in order to show you the scoreboard, with a simple trick:
 
-=== Option: ksqlDB cluster created by Terraform
-
-1. Enter the folder that contains the AWS/GCP/Azure code
+1. A first request is sent to get the SET of all user_id of the players. This collection of strings is calculated in real-time by ksqlDB continously, using a COLLECT_SET aggregated function, as you can see in the link:statements.sql[statements.sql]). By using a constant as the key for aggregation we are effectively creating an aggregation for all the events in the stream. We can then use this constant string as key in our pull query
 +
-[source,bash]
+[source,sql]
 ----
-cd terraform/<provider>
+SELECT HIGHEST_SCORE_VALUE, USERS_SET_VALUE FROM SUMMARY_STATS WHERE SUMMARY_KEY='SUMMARY_KEY';
 ----
 
-2. Execute the command to print the outputs
+
+2. A query to the scoreboard is sent using the list retrieved with the first api call in the IN where clause: 
 +
-[source,bash]
+[source,sql]
 ----
-terraform output
-----
-
-3. Select and copy the ksqlDB Server endpoint
-
-4. Enter the folder that contains the code
-+
-[source,bash]
-----
-cd ../../pipeline
+select USER, HIGHEST_SCORE, HIGHEST_LEVEL, TOTAL_LOSSES from STATS_PER_USER WHERE USER IN (${userListCsv});
 ----
 
-5. Start a new session of the ksqlDB CLI:
-+
-[source,bash]
-----
-ksql <ENDPOINT_COPIED_ON_STEP_THREE>
-----
+== Troubleshooting
 
-6. Run the queries in the ksqlDB CLI session:
-+
-[source,bash]
-----
-RUN SCRIPT 'queries.sql';
-----
-
-=== Option: Managed ksqlDB application in Confluent Cloud
-
-1. Access the Kafka cluster on Confluent Cloud
-+
-image::select-cluster.png[width="600", height="400"]
-
-2. Select the 'ksqlDB' tab and click on 'Add Application'
-+
-image::new-ksqldb-app.png[]
-
-3. Name the ksqlDB application and click on 'Continue'
-+
-image::name-ksqldb-app.png[]
-
-4. Confirm the terms and then click on 'Launch cluster'
-
-5. Log in into Confluent Cloud using the CCloud CLI
-+
-[source,bash]
-----
-ccloud login
-----
-
-6. Within your environment, list your Kafka clusters
-+
-[source,bash]
-----
-ccloud kafka cluster list
-----
-
-7. Select and copy the cluster id from the list
-
-8. Make sure your Kafka cluster is selected
-+
-[source,bash]
-----
-ccloud kafka cluster use <CLUSTER_ID_COPIED_ON_STEP_SEVEN>
-----
-
-9. Find the service account 'Id' using the CCloud CLI
-+
-[source,bash]
-----
-ccloud service-account list
-----
-
-10. Select and copy the service account id from the list
-
-11. Set up read/write permissions to the Kafka topics
-+
-[source,bash]
-----
-ccloud kafka acl create --allow --service-account <SERVICE_ACCOUNT_ID_COPIED_ON_STEP_TEN> --operation READ --topic '*'
-----
-
-12. Within the ksqlDB application, copy the entire link:pipeline/queries.sql[pipeline code] in the editor
-+
-image::create-pipeline.png[]
-
-13. Click on 'Run' to create the pipeline
-
-== Appendix: Viewing the scoreboard locally
-
-In order to verify if the pipeline is working as expected, you can execute a program written in Go that displays the content of the scoreboard. Because tables in ksqlDB ultimately are topics, this program subscribes to the `SCOREBOARD` topic and updates the display as new records arrive. Moreover, this program sorts the data based on each user's game to simulate a real game scoreboard.
-
-1. Enter the folder that contains the code
-+
-[source,bash]
-----
-cd scoreboard
-----
-
-2. Create a native executable for the program
-+
-[source,bash]
-----
-go build -o scoreboard scoreboard.go
-----
-
-3. Execute the program to display the data
-+
-[source,bash]
-----
-./scoreboard
-----
-
-*Note:* This program can only be executed after the application is deployed in the cloud provider. Reason being, to connect to Confluent Cloud this program relies on a file called 'ccloud.properties' that is generated by Terraform during deployment.
+If you face issues in the pacman app, try open the developer tools of your browser and watch what errors are in the console.
+If you see a CORS related issue, check your user in AWS IAM, we have seen issues were missing permission would result is this issues. The solution is to add your user to the relevat Groups.
 
 == License
 
 This project is licensed under the link:LICENSE[Apache 2.0 License.]
+
+== Previous Pacman Demo
+
+Are you looking for the previous version of this demo? You can find it here: https://github.com/confluentinc/demo-scene/releases/tag/pacman-v1.0

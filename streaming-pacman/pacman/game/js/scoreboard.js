@@ -1,9 +1,14 @@
 function loadScoreboardPage() {
-	getScoreboardJson(function(playersScores) {
-		var headers = ["Rank","Name", "Score", "Level", "Losses"];
-		document.getElementById('scoreboard').innerHTML = json2table(playersScores, 'table', headers);
-		window.localStorage.setItem("playersScores", JSON.stringify(playersScores));
+	loadSummaryStats(function(highestScore, usersSet) {
+		
+		getScoreboardJson(function(playersScores) {
+			var headers = ["Rank","Name", "Score", "Level", "Losses"];
+			document.getElementById('scoreboard').innerHTML = json2table(playersScores, 'table', headers);
+			window.localStorage.setItem("playersScores", JSON.stringify(playersScores));	
+			
+		}, usersSet);
 	});
+
 }
 
 function json2table(json, classes, headers) {
