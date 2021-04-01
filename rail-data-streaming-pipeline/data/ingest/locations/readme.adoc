@@ -1,0 +1,5 @@
+openraildata-talk-carl-partridge-ukrail_locations.csv source: https://groups.google.com/g/openraildata-talk/c/LOSy1oFi5CM/m/-i_j9RY9Mh0J
+
+See also http://www.solipsys.co.uk/new/TrainStationLocations.html?InternalLinks
+
+See also http://www.railwaycodes.org.uk/index.shtml

@@ -1,0 +1,10 @@
+CREATE TABLE TOC_MVT_STATS AS
+SELECT TOC,
+  sum( case when SCHEDULE_KEY = 'no_schedule_activation_found' then 1 else 0 end ) as no_activation_found,
+  sum( case when SCHEDULE_KEY = 'no_schedule_activation_found' then 0 else 1 end ) as activation_found,
+  COUNT(*) as MOVEMENT_CT,
+  count_distinct(train_id) as unique_trains,
+  timestamptostring(min(ACTUAL_TIMESTAMP),  'yyyy-MM-dd HH:mm:ss', 'Europe/London' ) as first_ts,
+  timestamptostring( max(actual_timestamp), 'yyyy-MM-dd HH:mm:ss', 'Europe/London' ) as last_ts
+FROM TRAIN_MOVEMENTS
+GROUP BY TOC EMIT CHANGES;

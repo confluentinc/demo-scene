@@ -40,3 +40,8 @@ CREATE STREAM CIF_RAW (JsonAssociationV1  VARCHAR,
                               tps_description VARCHAR>) 
       WITH (KAFKA_TOPIC='CIF_FULL_DAILY',
            VALUE_FORMAT='JSON');
+
+CREATE STREAM CIF_SCHED WITH (VALUE_FORMAT='AVRO', PARTITIONS=6) AS 
+  SELECT * FROM CIF_RAW
+  WHERE JsonScheduleV1 IS NOT NULL
+  AND ARRAY_LENGTH(JsonScheduleV1->schedule_segment->schedule_location) > 0;

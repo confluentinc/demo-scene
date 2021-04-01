@@ -1,8 +1,82 @@
+CREATE STREAM NETWORKRAIL_TRAIN_MVT_MQ_SOURCE 
+  WITH (KAFKA_TOPIC='networkrail_train_mvt', FORMAT='AVRO');
+
+CREATE STREAM NETWORKRAIL_TRAIN_MVT_JSON_STG
+  WITH (KEY_FORMAT  ='AVRO',
+        VALUE_FORMAT='KAFKA') AS
+  SELECT ROWKEY,
+         '{"MSG_ARRAY":' + TEXT + '}'
+    FROM NETWORKRAIL_TRAIN_MVT_MQ_SOURCE;
+
 -- The header is common across message types
 -- but the body fields depends on the type of message
+CREATE STREAM NETWORKRAIL_TRAIN_MVT_PAYLOAD 
+  (MSG_ARRAY array<struct<header struct< msg_type VARCHAR, source_dev_id VARCHAR, user_id VARCHAR, original_data_source VARCHAR, msg_queue_timestamp VARCHAR, source_system_id VARCHAR >,
+                          body varchar>>)
+  WITH (KAFKA_TOPIC='NETWORKRAIL_TRAIN_MVT_JSON_STG',
+        KEY_FORMAT='AVRO',
+        VALUE_FORMAT='JSON');
 
-CREATE STREAM NETWORKRAIL_TRAIN_MVT_X (
-  header STRUCT< msg_type VARCHAR, source_dev_id VARCHAR, user_id VARCHAR, original_data_source VARCHAR, msg_queue_timestamp VARCHAR, source_system_id VARCHAR >,
-  BODY VARCHAR)
-  WITH (KAFKA_TOPIC='networkrail_TRAIN_MVT_X', 
-            VALUE_FORMAT='JSON');
+CREATE STREAM NETWORKRAIL_TRAIN_MVT_X 
+  WITH (FORMAT='AVRO', PARTITIONS=6) AS
+  SELECT ROWKEY, 
+         EXPLODE(MSG_ARRAY)->HEADER AS HEADER, 
+         EXPLODE(MSG_ARRAY)->BODY AS BODY
+    FROM NETWORKRAIL_TRAIN_MVT_PAYLOAD;
+
+-- Create a stream of movements (type=0003) first for optimisation 
+-- reasons so that non-movement records are not processed in the subsequent joins
+CREATE STREAM TRAIN_MOVEMENTS_00 AS 
+SELECT MVT.HEADER AS MSG_HEADER, 
+       EXTRACTJSONFIELD(MVT.BODY,'$.event_type') as event_type,
+       EXTRACTJSONFIELD(MVT.BODY,'$.gbtt_timestamp')  as gbtt_timestamp,
+       EXTRACTJSONFIELD(MVT.BODY,'$.original_loc_stanox') as original_loc_stanox,
+       EXTRACTJSONFIELD(MVT.BODY,'$.planned_timestamp')  as planned_timestamp,
+       CAST(EXTRACTJSONFIELD(MVT.BODY,'$.timetable_variation') AS INT) AS TIMETABLE_VARIATION,
+       EXTRACTJSONFIELD(MVT.BODY,'$.original_loc_timestamp')  as original_loc_timestamp,
+       EXTRACTJSONFIELD(MVT.BODY,'$.current_train_id') as current_train_id,
+       EXTRACTJSONFIELD(MVT.BODY,'$.delay_monitoring_point') as delay_monitoring_point,
+       EXTRACTJSONFIELD(MVT.BODY,'$.next_report_run_time') as next_report_run_time,
+       EXTRACTJSONFIELD(MVT.BODY,'$.reporting_stanox') as reporting_stanox,
+       CAST(EXTRACTJSONFIELD(MVT.BODY,'$.actual_timestamp') AS BIGINT) as actual_timestamp,
+       EXTRACTJSONFIELD(MVT.BODY,'$.correction_ind') as correction_ind,
+       EXTRACTJSONFIELD(MVT.BODY,'$.event_source') as event_source,
+       EXTRACTJSONFIELD(MVT.BODY,'$.train_file_address') as train_file_address,
+       CASE WHEN LEN(EXTRACTJSONFIELD(MVT.BODY,'$.platform'))> 0 THEN 'Platform' + EXTRACTJSONFIELD(MVT.BODY,'$.platform')
+             ELSE '' 
+          END AS PLATFORM,
+       EXTRACTJSONFIELD(MVT.BODY,'$.division_code') as division_code,
+       EXTRACTJSONFIELD(MVT.BODY,'$.train_terminated') as train_terminated,
+       EXTRACTJSONFIELD(MVT.BODY,'$.train_id') as train_id,
+       EXTRACTJSONFIELD(MVT.BODY,'$.offroute_ind') as offroute_ind,
+       CASE WHEN EXTRACTJSONFIELD(MVT.BODY,'$.variation_status') = 'ON TIME' THEN 'ON TIME' 
+             WHEN EXTRACTJSONFIELD(MVT.BODY,'$.variation_status') = 'LATE' THEN EXTRACTJSONFIELD(MVT.BODY,'$.timetable_variation') + ' MINS LATE' 
+             WHEN EXTRACTJSONFIELD(MVT.BODY,'$.variation_status')='EARLY' THEN EXTRACTJSONFIELD(MVT.BODY,'$.timetable_variation') + ' MINS EARLY' 
+        END AS VARIATION,
+       CASE WHEN EXTRACTJSONFIELD(MVT.BODY,'$.variation_status') = 'ON TIME' THEN 0
+             WHEN EXTRACTJSONFIELD(MVT.BODY,'$.variation_status') = 'LATE' THEN 1
+             WHEN EXTRACTJSONFIELD(MVT.BODY,'$.variation_status')='EARLY' THEN 0
+        END AS LATE_IND,
+       EXTRACTJSONFIELD(MVT.BODY,'$.variation_status') as variation_status,
+       EXTRACTJSONFIELD(MVT.BODY,'$.train_service_code') as train_service_code,
+       EXTRACTJSONFIELD(MVT.BODY,'$.toc_id') as toc_id,
+        CASE WHEN EXTRACTJSONFIELD(MVT.BODY,'$.toc_id') = '20' THEN 'TransPennine Express'
+               WHEN EXTRACTJSONFIELD(MVT.BODY,'$.toc_id') = '23' THEN 'Arriva Trains Northern'
+               WHEN EXTRACTJSONFIELD(MVT.BODY,'$.toc_id') = '28' THEN 'East Midlands Trains'
+               WHEN EXTRACTJSONFIELD(MVT.BODY,'$.toc_id') = '61' THEN 'London North Eastern Railway'
+              ELSE '<unknown TOC code: ' + EXTRACTJSONFIELD(MVT.BODY,'$.toc_id') + '>'
+        END AS TOC,
+       EXTRACTJSONFIELD(MVT.BODY,'$.loc_stanox') as loc_stanox,
+       EXTRACTJSONFIELD(MVT.BODY,'$.auto_expected') as auto_expected,
+       EXTRACTJSONFIELD(MVT.BODY,'$.direction_ind') as direction_ind,
+       EXTRACTJSONFIELD(MVT.BODY,'$.route') as route,
+       EXTRACTJSONFIELD(MVT.BODY,'$.planned_event_type') as planned_event_type,
+       EXTRACTJSONFIELD(MVT.BODY,'$.next_report_stanox') as next_report_stanox,
+       EXTRACTJSONFIELD(MVT.BODY,'$.line_ind') as line_ind,
+       CONCAT_WS('/',
+                 EXTRACTJSONFIELD(MVT.BODY,'$.train_id'),
+                 EXTRACTJSONFIELD(MVT.BODY,'$.planned_event_type'),
+                 EXTRACTJSONFIELD(MVT.BODY,'$.loc_stanox')) AS MSG_KEY
+  FROM NETWORKRAIL_TRAIN_MVT_X MVT
+WHERE MVT.header->msg_type = '0003'
+PARTITION BY EXTRACTJSONFIELD(MVT.BODY,'$.train_id');

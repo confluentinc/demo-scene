@@ -1,0 +1,16 @@
+{
+  "name": "es_movements_and_cancellations_01",
+  "topics": "pksqlc-zmxk7TRAIN_CANCELLATIONS, pksqlc-zmxk7TRAIN_MOVEMENTS",
+  "input.data.format": "AVRO",
+  "connector.class": "ElasticsearchSink",
+  "kafka.api.key": "<CCLOUD_API_KEY>",
+  "kafka.api.secret": "<CCLOUD_API_SECRET>",
+  "connection.url": "<ES_ENDPOINT>",
+  "connection.username": "<ES_USER>",
+  "connection.password": "<ES_PW>",
+  "type.name": "_doc",
+  "key.ignore": "false",
+  "schema.ignore": "true",
+  "behavior.on.malformed.documents": "ignore",
+  "tasks.max": "1"
+}

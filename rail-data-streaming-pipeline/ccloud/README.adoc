@@ -1,0 +1,180 @@
+= Rail on Confluent Cloud
+Robin Moffatt <robin@confluent.io>
+v0.10, 1 April 2021
+
+WARN: These are rough notes only!
+
+[source,bash]
+----
+#ccloud login --save
+#ccloud kafka cluster list
+ccloud kafka cluster use lkc-7dk3w
+----
+
+[source,bash]
+----
+source .env
+----
+
+== Run local connect worker to ingest CSV location data
+
+[source,bash]
+----
+ccloud kafka topic create --config cleanup.policy=compact,retention.ms=-1,retention.bytes=-1 connect-file-pulse-status
+ccloud kafka topic create --config cleanup.policy=compact,retention.ms=-1,retention.bytes=-1 ukrail-locations
+----
+
+[source,bash]
+----
+docker-compose -f kafka_connect_ccloud.yml up -d
+----
+
+[source,javascript]
+----
+curl -i -X PUT -H "Accept:application/json" \
+-H  "Content-Type:application/json" http://localhost:8084/connectors/source-csv-ukrail-locations/config \
+-d '{
+        "connector.class"                    : "io.streamthoughts.kafka.connect.filepulse.source.FilePulseSourceConnector",
+        "task.reader.class"                  : "io.streamthoughts.kafka.connect.filepulse.reader.RowFileInputReader",
+        "fs.scan.directory.path"             : "/data/ingest/locations/",
+        "fs.scan.interval.ms"                : "10000",
+        "file.filter.regex.pattern"          : "openraildata-talk-carl-partridge-ukrail_locations.csv",
+        "fs.scan.filters"                    : "io.streamthoughts.kafka.connect.filepulse.scanner.local.filter.RegexFileListFilter",
+        "offset.strategy"                    : "name",
+        "skip.headers"                       : "1",
+        "topic"                              : "ukrail-locations",
+        "fs.cleanup.policy.class"            : "io.streamthoughts.kafka.connect.filepulse.clean.LogCleanupPolicy",
+        "tasks.max"                          : 1,
+        "filters"                            : "ParseLine,setKey",
+        "filters.ParseLine.type"             : "io.streamthoughts.kafka.connect.filepulse.filter.DelimitedRowFilter",
+        "filters.ParseLine.extractColumnName": "headers",
+        "filters.ParseLine.trimColumn"       : "true",
+        "filters.ParseLine.separator"        : ",",
+        "filters.setKey.type"                : "io.streamthoughts.kafka.connect.filepulse.filter.AppendFilter",
+        "filters.setKey.field"               : "$key",
+        "filters.setKey.value"               : "$value.location_id",
+        "internal.kafka.reporter.bootstrap.servers"                             : "<CCLOUD_BROKER>",
+        "internal.kafka.reporter.topic"                                         : "connect-file-pulse-status",
+        "internal.kafka.reporter.producer.security.protocol"                    : "SASL_SSL",
+        "internal.kafka.reporter.producer.ssl.endpoint.identification.algorithm": "https",
+        "internal.kafka.reporter.producer.sasl.mechanism"                       : "PLAIN",
+        "internal.kafka.reporter.producer.sasl.jaas.config"                     : "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"<CCLOUD_API_KEY>\" password=\"<CCLOUD_API_SECRET>\";",
+        "internal.kafka.reporter.producer.request.timeout.ms"                   : "20000",
+        "internal.kafka.reporter.producer.retry.backoff.ms"                     : "500",
+        "internal.kafka.reporter.consumer.security.protocol"                    : "SASL_SSL",
+        "internal.kafka.reporter.consumer.ssl.endpoint.identification.algorithm": "https",
+        "internal.kafka.reporter.consumer.sasl.mechanism"                       : "PLAIN",
+        "internal.kafka.reporter.consumer.sasl.jaas.config"                     : "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"<CCLOUD_API_KEY>\" password=\"<CCLOUD_API_SECRET>\";",
+        "internal.kafka.reporter.consumer.request.timeout.ms"                   : "20000",
+        "internal.kafka.reporter.consumer.retry.backoff.ms"                     : "500"
+    }'
+----
+
+== Cancellation reason codes
+
+[source,bash]
+----
+ccloud kafka topic create --config cleanup.policy=compact,retention.ms=-1,retention.bytes=-1 canx_reason_code
+
+echo "Loading data"
+
+docker run \
+  --volume ~/git/demo-scene/rail-data-streaming-pipeline/data:/data \
+  edenhill/kafkacat:1.7.0-PRE1 \
+    -b $CCLOUD_BROKER_HOST:9092 \
+    -X security.protocol=SASL_SSL -X sasl.mechanisms=PLAIN -X api.version.request=true \
+    -X sasl.username=$CCLOUD_API_KEY -X sasl.password=$CCLOUD_API_SECRET \
+    -t canx_reason_code \
+    -P -K: -l /data/ingest/movements/canx_reason_code.dat
+
+echo "Check data"
+
+docker run \
+  --volume ~/git/demo-scene/rail-data-streaming-pipeline/data:/data \
+  edenhill/kafkacat:1.7.0-PRE1 \
+    -b $CCLOUD_BROKER_HOST:9092 \
+    -X security.protocol=SASL_SSL -X sasl.mechanisms=PLAIN -X api.version.request=true \
+    -X sasl.username=$CCLOUD_API_KEY -X sasl.password=$CCLOUD_API_SECRET \
+    -t canx_reason_code -C -c1
+----
+
+
+== Schedule
+
+[source,bash]
+----
+ccloud kafka topic create --config retention.bytes=1073741824 CIF_FULL_DAILY
+
+./ccloud/ingest/load_schedule.sh
+----
+
+== Movements
+
+[source,bash]
+----
+./ccloud/ingest/00_gcloud_connect_worker_mq_source.sh
+----
+
+== Deploy ksqlDB code 
+
+[source,bash]
+----
+source ./ccloud/deploy_ksql.sh
+----
+
+[source,bash]
+----
+deploy_ccloud_ksql ./data/ksql/01_location/00_location.ksql
+deploy_ccloud_ksql ./data/ksql/03_movements/01_canx_reason.ksql
+deploy_ccloud_ksql ./data/ksql/02_cif_schedule/01_schedule_raw.ksql
+deploy_ccloud_ksql ./data/ksql/02_cif_schedule/04_schedule.ksql
+deploy_ccloud_ksql ./data/ksql/02_cif_schedule/05_schedule_table.ksql
+----
+
+In `01_movement_raw.ksql` amend the named topics for `NETWORKRAIL_TRAIN_MVT_MQ_SOURCE` and `NETWORKRAIL_TRAIN_MVT_PAYLOAD` to reflect those on the cluster. The source topic name may vary if you've used a different one in the connector, and the generated topic that `NETWORKRAIL_TRAIN_MVT_PAYLOAD` reads will have the ksqlDB application id as a prefix. 
+
+[source,bash]
+----
+deploy_ccloud_ksql ./data/ksql/03_movements/01_movement_raw.ksql
+deploy_ccloud_ksql ./data/ksql/03_movements/02_activations.ksql
+query_ksql ./data/ksql/03_movements/03_activations_query.ksql
+deploy_ccloud_ksql ./data/ksql/03_movements/03_activations_table.ksql
+deploy_ccloud_ksql ./data/ksql/03_movements/04_movements_nway.ksql
+deploy_ccloud_ksql ./data/ksql/03_movements/04_cancellations_nway.ksql
+deploy_ccloud_ksql ./data/ksql/03_movements/05_movement_stats.ksql
+query_ksql ./data/ksql/03_movements/06_movement_stats_query.ksql
+----
+
+== Set up Elasticsearch Cloud
+
+[source,bash]
+----
+source .env
+
+curl -XDELETE -u $ES_USER:$ES_PW $ES_ENDPOINT"/_index_template/rmoff_train_01/" 
+
+curl -XPUT -u $ES_USER:$ES_PW $ES_ENDPOINT"/_index_template/rmoff_train_01/" \
+     -H 'Content-Type: application/json' \
+      -d'{  "index_patterns": [    "pksql*train*","pksql*schedule"  ],   "priority": 2,
+             "template": {    "mappings": {      "dynamic_templates": [       
+                { "locations": { "match": "*_LAT_LON", "mapping": { "type": "geo_point",                    "ignore_malformed": true } } },    
+                { "numbers": { "match": "TIMETABLE_VARIATION", "mapping": { "type": "short", "ignore_malformed": true } } }, 
+                { "non_analysed_string_template": { "match": "*", "match_mapping_type": "string", "mapping": { "type": "keyword" } } },    
+                { "dates": { "match": "*_TIMESTAMP", "mapping": { "type": "date" } } }      
+              ]    }  }}'
+----
+
+[source,bash]
+----
+╭─rmoff@asgard03 ~/git/demo-scene/rail-data-streaming-pipeline ‹rail-mar-21*›
+╰─$ ccloud connector create --config ./ccloud/ccloud-es-sink.json
+Created connector es_movements_and_cancellations_01 lcc-8706r
+╭─rmoff@asgard03 ~/git/demo-scene/rail-data-streaming-pipeline ‹rail-mar-21*›
+╰─$ ccloud connector describe
+╭─rmoff@asgard03 ~/git/demo-scene/rail-data-streaming-pipeline ‹rail-mar-21*›
+╰─$ ccloud connector list
+     ID     |               Name                |    Status    | Type | Trace
++-----------+-----------------------------------+--------------+------+-------+
+  lcc-8706r | es_movements_and_cancellations_01 | PROVISIONING | sink |
+
+----

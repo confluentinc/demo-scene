@@ -1,10 +1,12 @@
 = Building a Streaming Data Pipeline with Rail Data
 Robin Moffatt <robin@confluent.io>
-v1.30, 4 January 2021
+v1.40, 23 March 2021
 
 == What is it?
 
-A PoC showing what can be done with streaming and batch sources of data, Apache Kafka and ksqlDB, and various data stores and tools. 
+A PoC showing what can be done with streaming and batch sources of data, Apache Kafka and Confluent, and various data stores and tools. 
+
+This can run locally or link:ccloud/README.adoc[using Confluent Cloud]
 
 image::images/overview.png[]
 
@@ -76,7 +78,7 @@ $ docker exec -it ksqldb bash -c 'echo -e "\n\n⏳ Waiting for ksqlDB to be avai
 
 Copyright 2017-2020 Confluent Inc.
 
-CLI v0.14.0-rc732, Server v0.14.0-rc732 located at http://ksqldb:8088
+CLI v0.15.0, Server v0.15.0 located at http://ksqldb:8088
 Server Status: RUNNING
 
 Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
@@ -94,73 +96,15 @@ image::images/pipeline.png[]
 N.B. A lot of the code is complete, but not documented below. The canonical version is the code; the docs below may or may not be accurate and/or complete. The code is sensibly named and laid out though so should be easy to follow. 
 
 
-== Schedules, location, and cancellation reason reference data
-
-=== Ingest data
+== Deploy
 
 [source,bash]
 ----
-cd data
-source ./set_credentials_env.sh
-cd ./ingest/movements/
-./00_load_canx_reason_code.sh
-cd ../cif_schedule
-./00_load_opencage.sh
-./00_ingest_schedule.sh
+./deploy.sh
 ----
 
-_You can ignore the `jq: error (at <stdin>:16515): Cannot iterate over null (null)` messages._
 
-[source,sql]
-----
-ksql> PRINT CIF_FULL_DAILY FROM BEGINNING LIMIT 1;
-Key format: ¯\_(ツ)_/¯ - no data processed
-Value format: JSON or KAFKA_STRING
-rowtime: 2021/01/05 11:49:54.286 Z, key: <null>, value: {"JsonTimetableV1":{"classification":"public","timestamp":1609805484,"owner":"Network Rail","Sender":{"organisation":"Rockshore","application":"NTROD","component":"SCHEDULE"},"Metadata":{"type":"full","sequence":3127}}}
-Topic printing ceased
-ksql>
-----
 
-=== ksqlDB 
-
-**Do this before starting on the movement/cancellation data below**
-
-From ksqlDB CLI: 
-
-[source,sql]
-----
-run script '/data/ksql/02_cif_schedule/00_opencage.ksql';
-PRINT 'LOCATION_GEOCODE' FROM BEGINNING LIMIT 1;
-run script '/data/ksql/02_cif_schedule/01_geocode_table.ksql';
-run script '/data/ksql/02_cif_schedule/01_schedule_raw.ksql';
-run script '/data/ksql/02_cif_schedule/02_location.ksql';
-PRINT 'TIPLOC_FLAT_KEYED' FROM BEGINNING LIMIT 1;
-PRINT 'STANOX_GEO' FROM BEGINNING LIMIT 1;
-run script '/data/ksql/02_cif_schedule/03_location_table.ksql';
-run script '/data/ksql/02_cif_schedule/04_schedule.ksql';
-PRINT 'SCHEDULE_00' FROM BEGINNING LIMIT 1;
-run script '/data/ksql/02_cif_schedule/05_schedule_table.ksql';
-----
-
-If you get `Avro schema for message values on topic TIPLOC_FLAT_KEYED does not exist in the Schema Registry.` after running `02_tiploc.ksql` then wait a few moments and then re-run it; the topic on which it's built is created and populated by the preceeding step, and it may not have kicked in yet. You can also run `PRINT 'SCHEDULE_02' FROM BEGINNING LIMIT 5;` and wait until you get some data.
-
-[source,sql]
-----
-ksql> SHOW STREAMS;
-
- Stream Name           | Kafka Topic                           | Key Format | Value Format | Windowed
-------------------------------------------------------------------------------------------------------
- CIF_RAW               | CIF_FULL_DAILY                        | KAFKA      | JSON         | false
- KSQL_PROCESSING_LOG   | confluent_rmoff_02ksql_processing_log | KAFKA      | JSON         | false
- LOCATION_GEOCODE      | LOCATION_GEOCODE                      | KAFKA      | AVRO         | false
- OPENCAGE              | opencage                              | KAFKA      | JSON         | false
- SCHEDULE_00           | SCHEDULE_00                           | KAFKA      | AVRO         | false
- STANOX_FLAT           | STANOX_FLAT                           | KAFKA      | AVRO         | false
- STANOX_GEO            | STANOX_GEO                            | KAFKA      | AVRO         | false
- TIPLOC_FLAT_KEYED     | TIPLOC_FLAT_KEYED                     | KAFKA      | AVRO         | false
- TIPLOC_FLAT_KEYED_DUP | TIPLOC_FLAT_KEYED_DUP                 | KAFKA      | AVRO         | false
-------------------------------------------------------------------------------------------------------
-----
 
 [source,sql]
 ----
@@ -170,8 +114,10 @@ SELECT SCHEDULE_KEY,
        TRAIN_STATUS,
        POWER_TYPE,
        SEATING_CLASSES,
-       ORIGIN_TPS_DESCRIPTION, ORIGIN_PUBLIC_DEPARTURE_TIME,
-       DESTINATION_TPS_DESCRIPTION, DESTINATION_PUBLIC_ARRIVAL_TIME 
+       ORIGIN_DESCRIPTION, 
+       ORIGIN_PUBLIC_DEPARTURE_TIME,
+       DESTINATION_DESCRIPTION, 
+       DESTINATION_PUBLIC_ARRIVAL_TIME 
   FROM SCHEDULE_00
  WHERE ORIGIN_PUBLIC_DEPARTURE_TIME IS NOT NULL
  EMIT CHANGES
@@ -180,90 +126,62 @@ SELECT SCHEDULE_KEY,
 
 [source,sql]
 ----
-Y62982/2019-09-03/O | Passenger & Parcels (Permanent - WTT) | Electric Multiple Unit | Standard only | BRADFORD FORSTER SQUARE | 1841 | SKIPTON | 1922
-Limit Reached
-Query terminated
++---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+
+|SCHEDULE_KEY         |TRAIN_STATUS         |POWER_TYPE           |SEATING_CLASSES      |ORIGIN_DESCRIPTION   |ORIGIN_PUBLIC_DEPARTU|DESTINATION_DESCRIPTI|DESTINATION_PUBLIC_AR|
+|                     |                     |                     |                     |                     |RE_TIME              |ON                   |RIVAL_TIME           |
++---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+
+|N30592/2021-05-01/N  |STP Bus              |null                 |null                 |Oxenholme            |1240                 |Carlisle             |1343                 |
+----
+
+
+[source,sql]
+----
+SELECT TIPLOC, NAME, DESCRIPTION, CRS, STANOX, LAT_LON FROM LOCATIONS WHERE TIPLOC='LEEDS';
 ----
 
 [source,sql]
 ----
-ksql> SHOW TABLES;
++--------+------+------------+-----+--------+------------------------------------+
+|TIPLOC  |NAME  |DESCRIPTION |CRS  |STANOX  |LAT_LON                             |
++--------+------+------------+-----+--------+------------------------------------+
+|LEEDS   |      |Leeds       |LDS  |17132   |{lat=53.79516409, lon=-1.549093312} |
+----
 
- Table Name         | Kafka Topic           | Key Format | Value Format | Windowed
------------------------------------------------------------------------------------
- LOCATION_GEOCODE_T | LOCATION_GEOCODE      | KAFKA      | AVRO         | false
- SCHEDULE_T         | SCHEDULE_00           | KAFKA      | AVRO         | false
- STANOX             | STANOX_GEO            | KAFKA      | AVRO         | false
- TIPLOC             | TIPLOC_FLAT_KEYED     | KAFKA      | AVRO         | false
- TIPLOC_DUP         | TIPLOC_FLAT_KEYED_DUP | KAFKA      | AVRO         | false
------------------------------------------------------------------------------------
+
+[source,sql]
+----
+SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') as ACTUAL_TIMESTAMP,
+       EVENT_TYPE,
+       MVT_DESCRIPTION, 
+       PLATFORM,
+       VARIATION ,
+       TOC,
+       TRAIN_ID,
+       MVT_LAT_LON
+  FROM TRAIN_MOVEMENTS
+  EMIT CHANGES;
 ----
 
 [source,sql]
 ----
-SET 'auto.offset.reset' = 'earliest';
-
-SELECT TIPLOC_CODE, 
-       STANOX, 
-       TPS_DESCRIPTION, 
-       OPENCAGE_TOTAL_RESULTS, 
-       GEO_OSM_URL 
-  FROM STANOX 
-WHERE OPENCAGE_TOTAL_RESULTS>0 
-EMIT CHANGES
- LIMIT 1;
-----
-
-[source,sql]
-----
-+---------------+-------+----------------+-----------------------+-----------+
-|TIPLOC_CODE    |STANOX |TPS_DESCRIPTION |OPENCAGE_TOTAL_RESULTS |GEO_OSM_URL|
-+---------------+-------+----------------+-----------------------+-----------+
-|SHDN           |15831  |SHILDON         |4                      |null       |
-Limit Reached
-Query terminated
++---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+
+|ACTUAL_TIMESTAMP     |EVENT_TYPE           |MVT_DESCRIPTION      |PLATFORM             |VARIATION            |TOC                  |TRAIN_ID             |MVT_LAT_LON          |
++---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------+
+|2021-03-23 21:03:51  |ARRIVAL              |Flixton              |                     |1 MINS EARLY         |Arriva Trains Norther|332O781Z23           |{lat=53.44395983, lon|
+|                     |                     |                     |                     |                     |n                    |                     |=-2.382366187}       |
+|2021-03-23 21:03:21  |ARRIVAL              |null                 |Platform 1           |1 MINS EARLY         |Arriva Trains Norther|092H731Z23           |null                 |
+|                     |                     |                     |                     |                     |n                    |                     |                     |
+|2021-03-23 21:04:01  |ARRIVAL              |Down Passenger Loop  |Platform 5           |ON TIME              |Arriva Trains Norther|361N841Z23           |null                 |
+|                     |                     |                     |                     |                     |n                    |                     |                     |
+|2021-03-23 21:04:01  |ARRIVAL              |Kidsgrove            |Platform 2           |1 MINS EARLY         |Arriva Trains Norther|432H841Z23           |{lat=53.08566846, lon|
+|                     |                     |                     |                     |                     |n                    |                     |=-2.24481102}        |
+|2021-03-23 21:04:06  |ARRIVAL              |Finsbury Park Sig K38|                     |4 MINS LATE          |London North Eastern |541N34MZ23           |null                 |
+|                     |                     |1                    |                     |                     |Railway              |                     |                     |
 ----
 
 
-== Train event data - activations, movements, cancellations
-
-=== Ingest data stream
-
-1. Create Kafka Connect connector(s):
-+
-[source,bash]
-----
-./data/ingest/movements/00_ingest.sh
-----
-+
-Check status: 
-+
-[source,bash]
-----
-curl -s "http://localhost:8083/connectors?expand=info&expand=status" | \
-         jq '. | to_entries[] | [ .value.info.type, .key, .value.status.connector.state,.value.status.tasks[].state,.value.info.config."connector.class"]|join(":|:")' | \
-         column -s : -t| sed 's/\"//g'| sort
-----
-+
-[source,bash]
-----
-source  |  source-activemq-networkrail-TRAIN_MVT_EA_TOC-01  |  RUNNING  |  RUNNING  |  io.confluent.connect.activemq.ActiveMQSourceConnector
-source  |  source-activemq-networkrail-TRAIN_MVT_ED_TOC-01  |  RUNNING  |  RUNNING  |  io.confluent.connect.activemq.ActiveMQSourceConnector
-source  |  source-activemq-networkrail-TRAIN_MVT_EM_TOC-01  |  RUNNING  |  RUNNING  |  io.confluent.connect.activemq.ActiveMQSourceConnector
-source  |  source-activemq-networkrail-TRAIN_MVT_HB_TOC-01  |  RUNNING  |  RUNNING  |  io.confluent.connect.activemq.ActiveMQSourceConnector
-----
-+
-Check there's some data: 
-+
-[source,bash]
-----
-docker exec kafkacat kafkacat -b broker:29092 -t networkrail_TRAIN_MVT -C -c1
-
-{"messageID":"ID:opendata-backend.rockshore.net-38745-1609843645734-11:1:2:32:1194"}{"messageID":"ID:opendata-backend.rockshore.net-38745-1609843645734-11:1:2:32:1194","messageType":"text","timestamp":1609868889020,"deliveryMode":2,"correlationID":null,"replyTo":null,"destination":{"destinationType":"topic","name":"TRAIN_MVT_EA_TOC"},"redelivered":false,"type":null,"expiration":1609869189020,"priority":4,"properties":{},"bytes":null,"map":null,"text":"[{\"header\":{\"msg_type\":\"0003\",\"source_dev_id\":\"\",\"user_id\":\"\",\"original_data_source\":\"SMART\",\"msg_queue_timestamp\":\"1609868887000\",\"source_system_id\":\"TRUST\"},\"body\":{\"event_type\":\"DEPARTURE\",\"gbtt_timestamp\":\"\",\"original_loc_stanox\":\"\",\"planned_timestamp\":\"1609868910000\",\"timetable_variation\":\"1\",\"original_loc_timestamp\":\"\",\"current_train_id\":\"\",\"delay_monitoring_point\":\"false\",\"next_report_run_time\":\"2\",\"reporting_stanox\":\"00000\",\"actual_timestamp\":\"1609868820000\",\"correction_ind\":\"false\",\"event_source\":\"AUTOMATIC\",\"train_file_address\":null,\"platform\":\"\",\"division_code\":\"20\",\"train_terminated\":\"false\",\"train_id\":\"129M30MP05\",\"offroute_ind\":\"false\",\"variation_status\":\"EARLY\",\"train_service_code\":\"21731000\",\"toc_id\":\"20\",\"loc_stanox\":\"35439\",\"auto_expected\":\"true\",\"direction_ind\":\"DOWN\",\"route\":\"2\",\"planned_event_type\":\"DEPARTURE\",\"next_report_stanox\":\"36605\",\"line_ind\":\"\"}},{\"header\":{\"msg_type\":\"0003\",\"source_dev_id\":\"\",\"user_id\":\"\",\"original_data_source\":\"SMART\",\"msg_queue_timestamp\":\"1609868887000\",\"source_system_id\":\"TRUST\"},\"body\":{\"event_type\":\"DEPARTURE\",\"gbtt_timestamp\":\"\",\"original_loc_stanox\":\"\",\"planned_timestamp\":\"1609868940000\",\"timetable_variation\":\"2\",\"original_loc_timestamp\":\"\",\"current_train_id\":\"\",\"delay_monitoring_point\":\"true\",\"next_report_run_time\":\"6\",\"reporting_stanox\":\"16602\",\"actual_timestamp\":\"1609868820000\",\"correction_ind\":\"false\",\"event_source\":\"AUTOMATIC\",\"train_file_address\":null,\"platform\":\" 2\",\"division_code\":\"20\",\"train_terminated\":\"false\",\"train_id\":\"191K28MU05\",\"offroute_ind\":\"false\",\"variation_status\":\"EARLY\",\"train_service_code\":\"21733000\",\"toc_id\":\"20\",\"loc_stanox\":\"16602\",\"auto_expected\":\"true\",\"direction_ind\":\"UP\",\"route\":\"1\",\"planned_event_type\":\"DEPARTURE\",\"next_report_stanox\":\"17112\",\"line_ind\":\"M\"}}]"}
-----
-+
 Hacky way to keep the connector running by restarting it after network glitches etc
-+
+
 [source,bash]
 ----
 while [ 1 -eq 1 ];
@@ -273,117 +191,24 @@ do
 done
 ----
 
-2. Set pipeline running to split out payload batches into single messages
-+
-[source,bash]
-----
-./data/ingest/movements/01_explode.sh &
-----
-+
-[source,bash]
-----
-Group tm_explode rebalanced (memberid rdkafka-c53a4270-e767-493a-b5de-2244b389e645): assigned: networkrail_TRAIN_MVT [0]
-% Reached end of topic networkrail_TRAIN_MVT [0] at offset 189
-…
-----
-+
-Check the data on the target topic
-+
-[source,bash]
-----
-$ docker exec kafkacat kafkacat -b broker:29092 -t networkrail_TRAIN_MVT_X -C -c1 | jq '.'
-
-{
-  "header": {
-    "msg_type": "0003",
-    "source_dev_id": "",
-    "user_id": "",
-    "original_data_source": "SMART",
-    "msg_queue_timestamp": "1567674217000",
-    "source_system_id": "TRUST"
-  },
-  "body": {
-    "event_type": "DESTINATION",
-    "gbtt_timestamp": "1567677780000",
-    "original_loc_stanox": "",
-    "planned_timestamp": "1567677660000",
-    "timetable_variation": "4",
-    "original_loc_timestamp": "",
-    "current_train_id": "",
-    "delay_monitoring_point": "true",
-    "next_report_run_time": "",
-    "reporting_stanox": "54311",
-    "actual_timestamp": "1567677900000",
-    "correction_ind": "false",
-    "event_source": "AUTOMATIC",
-    "train_file_address": null,
-    "platform": " 1",
-    "division_code": "61",
-    "train_terminated": "true",
-    "train_id": "121Y14M605",
-    "offroute_ind": "false",
-    "variation_status": "LATE",
-    "train_service_code": "21700001",
-    "toc_id": "61",
-    "loc_stanox": "54311",
-    "auto_expected": "true",
-    "direction_ind": "UP",
-    "route": "0",
-    "planned_event_type": "DESTINATION",
-    "next_report_stanox": "",
-    "line_ind": ""
-  }
-}
-----
-
-
-=== ksqlDB
-
-[source,sql]
-----
-RUN SCRIPT '/data/ksql/03_movements/01_canx_reason.ksql';
-RUN SCRIPT '/data/ksql/03_movements/01_movement_raw.ksql';
-RUN SCRIPT '/data/ksql/03_movements/02_activations.ksql';
-PRINT 'TRAIN_ACTIVATIONS_00' FROM BEGINNING LIMIT 1;
-RUN SCRIPT '/data/ksql/03_movements/03_activations_table.ksql';
-RUN SCRIPT '/data/ksql/03_movements/04_cancellations_nway.ksql';
-RUN SCRIPT '/data/ksql/03_movements/04_movements_nway.ksql';
-----
-
-==== Movements
-
-[source,sql]
-----
-SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss') as ACTUAL_TIMESTAMP,
-       EVENT_TYPE,
-       LOC_NLCDESC,
-       PLATFORM,
-       VARIATION ,
-       TOC,
-       TRAIN_ID, 
-       GEOHASH
-  FROM TRAIN_MOVEMENTS
-  WHERE ORIGIN_TPS_DESCRIPTION = 'LEEDS'
-  EMIT CHANGES;
-----
-
-[source,sql]
-----
-+---------------------+-----------+-------------------+-----------+------------+-----------------------------+-----------+----------------------+
-|ACTUAL_TIMESTAMP     |EVENT_TYPE |LOC_NLCDESC        |PLATFORM   |VARIATION   |TOC                          |TRAIN_ID   |GEOHASH               |
-+---------------------+-----------+-------------------+-----------+------------+-----------------------------+-----------+----------------------+
-|2021-01-25 11:16:09  |DEPARTURE  |LEEDS              |Platform 6 |ON TIME     |London North Eastern Railway |171A26MI25 |gcwfhcebdvxtmzmvpgye  |
-|2021-01-25 11:17:44  |DEPARTURE  |WHITEHALL JN       |           |1 MINS LATE |London North Eastern Railway |171A26MI25 |gcwfh2xcgev4kgnq8t02  |
-|2021-01-25 11:18:04  |DEPARTURE  |HOLBECK JUNCTION   |           |1 MINS LATE |London North Eastern Railway |171A26MI25 |gcwcuxs5fnfj87uf6hx9  |
-|2021-01-25 11:25:54  |ARRIVAL    |WAKEFIELD WESTGATE |Platform 1 |1 MINS LATE |London North Eastern Railway |171A26MI25 |gcwcmsxdb89yec9h6um3  |
-|2021-01-25 11:29:09  |DEPARTURE  |WAKEFIELD WESTGATE |Platform 1 |ON TIME     |London North Eastern Railway |171A26MI25 |gcwcmsxdb89yec9h6um3  |
-----
-
 Regarding activations: 
 
 > Most trains are called automatically (auto-call) before the train is due to run, either 1 or 2 hours depending on the train's class. The TRUST mainframe runs an internal process every 30 seconds throughout the day, causing potentially two lots of train activation messages to be received every minute.
 
 therefore the point at which you start the pipeline there may be movement messages for trains for which the activation message was sent prior to the pipeline starting. This consequently means that the movements won't be linked to schedules because activations provide the conduit. 
+
+create or replace table mvt_activation_ct as SELECT TOC, sum(case when SCHEDULE_KEY='no_schedule_activation_found' then 1 else 0 end) as no_activation_found,sum(case when SCHEDULE_KEY='no_schedule_activation_found' then 0 else 1 end) as activation_found, COUNT(*) as ct, count_distinct(train_id) as unique_trains FROM TRAIN_MOVEMENTS_01 WHERE SCHEDULE_KEY='no_schedule_activation_found' GROUP BY TOC EMIT CHANGES;
+
+select * from mvt_activation_ct emit changes;
++--------------------------------------------+--------------------------------------------+--------------------------------------------+--------------------------------------------+
+|TOC                                         |NO_ACTIVATION_FOUND                         |ACTIVATION_FOUND                            |CT                                          |
++--------------------------------------------+--------------------------------------------+--------------------------------------------+--------------------------------------------+
+|East Midlands Trains                        |673                                         |0                                           |673                                         |
+|London North Eastern Railway                |274                                         |0                                           |274                                         |
+|TransPennine Express                        |384                                         |0                                           |384                                         |
+|Arriva Trains Northern                      |2355                                        |0                                           |2355                                        |
+
+
 
 ==== Cancellations
 
@@ -403,7 +228,7 @@ Set up the sink connectors:
 ----
 ./data/egress/elasticsearch/00_create_template.sh
 ./data/egress/elasticsearch/01_create_sinks.sh
-./data/egress/elasticsearch/02_create_kibana_metadata.sh
+./data/egress/elasticsearch/02_set_kibana_config.sh
 ----
 
 Status

@@ -1,3 +1,4 @@
+.env
 stomp
 credentials.properties
 aws_credentials
