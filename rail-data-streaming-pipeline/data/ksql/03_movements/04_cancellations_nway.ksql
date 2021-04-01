@@ -2,13 +2,15 @@
 -- 
 
 SET 'auto.offset.reset' = 'earliest';
-CREATE STREAM TRAIN_CANCELLATIONS
-  WITH (VALUE_FORMAT='AVRO', PARTITIONS=4) AS 
-SELECT    MVT.HEADER, 
-          EXTRACTJSONFIELD(MVT.BODY,'$.train_file_address') AS TRAIN_FILE_ADDRESS, 
-          EXTRACTJSONFIELD(MVT.BODY,'$.train_service_code') AS TRAIN_SERVICE_CODE, 
-          EXTRACTJSONFIELD(MVT.BODY,'$.orig_loc_stanox')    AS ORIG_LOC_STANOX, 
-          EXTRACTJSONFIELD(MVT.BODY,'$.toc_id')             AS TOC_ID, 
+
+-- Create a stream of cancellations (type=0002) first for optimisation 
+-- reasons so that non-cancellations records are not processed in the subsequent joins
+CREATE STREAM TRAIN_CANCELLATIONS_00 AS 
+SELECT    MVT.HEADER                                                    AS MSG_HEADER, 
+          EXTRACTJSONFIELD(MVT.BODY,'$.train_file_address')             AS TRAIN_FILE_ADDRESS, 
+          EXTRACTJSONFIELD(MVT.BODY,'$.train_service_code')             AS TRAIN_SERVICE_CODE, 
+          EXTRACTJSONFIELD(MVT.BODY,'$.orig_loc_stanox')                AS ORIG_LOC_STANOX, 
+          EXTRACTJSONFIELD(MVT.BODY,'$.toc_id')                         AS TOC_ID, 
           CASE 
                     WHEN EXTRACTJSONFIELD(MVT.BODY,'$.toc_id') = '20' THEN 'TransPennine Express' 
                     WHEN EXTRACTJSONFIELD(MVT.BODY,'$.toc_id') = '23' THEN 'Arriva Trains Northern'
@@ -20,12 +22,32 @@ SELECT    MVT.HEADER,
           EXTRACTJSONFIELD(MVT.BODY,'$.division_code')                  AS DIVISION_CODE, 
           EXTRACTJSONFIELD(MVT.BODY,'$.loc_stanox')                     AS LOC_STANOX, 
           Cast(EXTRACTJSONFIELD(MVT.BODY,'$.canx_timestamp') AS BIGINT) AS CANX_TIMESTAMP, 
-          C.CANX_REASON                                                 AS CANX_REASON, 
           EXTRACTJSONFIELD(MVT.BODY,'$.canx_reason_code')               AS CANX_REASON_CODE, 
           EXTRACTJSONFIELD(MVT.BODY,'$.train_id')                       AS TRAIN_ID, 
           EXTRACTJSONFIELD(MVT.BODY,'$.orig_loc_timestamp')             AS ORIG_LOC_TIMESTAMP, 
-          EXTRACTJSONFIELD(MVT.BODY,'$.canx_type')                      AS CANX_TYPE, 
-          S.TPS_DESCRIPTION                                             AS CANCELLATION_LOCATION, 
+          EXTRACTJSONFIELD(MVT.BODY,'$.canx_type')                      AS CANX_TYPE
+FROM      NETWORKRAIL_TRAIN_MVT_X MVT 
+WHERE     MVT.HEADER->MSG_TYPE = '0002' 
+PARTITION BY EXTRACTJSONFIELD(MVT.BODY,'$.train_id');
+
+CREATE STREAM TRAIN_CANCELLATIONS_01 AS 
+SELECT    TC.MSG_HEADER AS MSG_HEADER, 
+          TC.TRAIN_FILE_ADDRESS AS TRAIN_FILE_ADDRESS, 
+          TC.TRAIN_SERVICE_CODE AS TRAIN_SERVICE_CODE, 
+          TC.ORIG_LOC_STANOX AS ORIG_LOC_STANOX, 
+          TC.TOC_ID AS TOC_ID, 
+          TC.TOC AS TOC, 
+          TC.DEP_TIMESTAMP AS DEP_TIMESTAMP, 
+          TC.DIVISION_CODE AS DIVISION_CODE, 
+          TC.LOC_STANOX AS LOC_STANOX, 
+          TC.CANX_TIMESTAMP AS CANX_TIMESTAMP, 
+          TC.CANX_REASON_CODE AS CANX_REASON_CODE, 
+          C.CANX_REASON                                                 AS CANX_REASON, 
+          L.DESCRIPTION                                             AS CANCELLATION_LOCATION, 
+          L.LAT_LON                                             AS CANCELLATION_LAT_LON, 
+          TC.TRAIN_ID AS TRAIN_ID, 
+          TC.ORIG_LOC_TIMESTAMP AS ORIG_LOC_TIMESTAMP, 
+          TC.CANX_TYPE AS CANX_TYPE,
           TA.SCHEDULE_SOURCE                                            AS SCHEDULE_SOURCE, 
           TA.TP_ORIGIN_TIMESTAMP                                        AS TP_ORIGIN_TIMESTAMP, 
           TA.SCHEDULE_TYPE                                              AS SCHEDULE_TYPE, 
@@ -40,8 +62,8 @@ SELECT    MVT.HEADER,
           TA.SCHEDULE_WTT_ID                                            AS SCHEDULE_WTT_ID, 
           TA.TRAIN_CALL_TYPE                                            AS TRAIN_CALL_TYPE, 
           TA.SCHEDULE_END_DATE                                          AS SCHEDULE_END_DATE, 
-          TA.SCHEDULE_KEY                                               AS SCHEDULE_KEY, 
-          TA.SCHED_ORIGIN_DESC                                          AS SCHED_ORIGIN_DESC, 
+          COALESCE(TA.SCHEDULE_KEY,'no_schedule_found')                 AS SCHEDULE_KEY, 
+          TA.SCHED_ORIGIN_DESC                                          AS SCHED_ORIGIN_DESC,
           SCH.CIF_TRAIN_UID                                             AS CIF_TRAIN_UID, 
           SCH.SCHEDULE_START_DATE                                       AS SCHEDULE_START_DATE, 
           SCH.CIF_STP_INDICATOR                                         AS CIF_STP_INDICATOR, 
@@ -53,21 +75,24 @@ SELECT    MVT.HEADER,
           SCH.SLEEPING_ACCOMODATION                                     AS SLEEPING_ACCOMODATION, 
           SCH.TRAIN_CATEGORY                                            AS TRAIN_CATEGORY, 
           SCH.ORIGIN_TIPLOC_CODE                                        AS ORIGIN_TIPLOC_CODE, 
-          SCH.ORIGIN_TPS_DESCRIPTION                                    AS ORIGIN_TPS_DESCRIPTION,
+          SCH.ORIGIN_DESCRIPTION                                    AS ORIGIN_DESCRIPTION,
+          SCH.ORIGIN_LAT_LON                                    AS ORIGIN_LAT_LON,
           SCH.ORIGIN_PUBLIC_DEPARTURE_TIME                              AS ORIGIN_PUBLIC_DEPARTURE_TIME,
           SCH.ORIGIN_PLATFORM                                           AS ORIGIN_PLATFORM, 
           SCH.DESTINATION_TIPLOC_CODE                                   AS DESTINATION_TIPLOC_CODE,
-          SCH.DESTINATION_TPS_DESCRIPTION                               AS DESTINATION_TPS_DESCRIPTION,
+          SCH.DESTINATION_DESCRIPTION                               AS DESTINATION_DESCRIPTION,
+          SCH.DESTINATION_LAT_LON                               AS DESTINATION_LAT_LON,
           SCH.DESTINATION_PUBLIC_ARRIVAL_TIME                           AS DESTINATION_PUBLIC_ARRIVAL_TIME,
           SCH.DESTINATION_PLATFORM                                      AS DESTINATION_PLATFORM 
-FROM      NETWORKRAIL_TRAIN_MVT_X MVT 
-LEFT JOIN STANOX S 
-          ON        EXTRACTJSONFIELD(MVT.BODY,'$.loc_stanox') = S.STANOX 
-LEFT JOIN CANX_REASON C 
-          ON        EXTRACTJSONFIELD(MVT.BODY,'$.canx_reason_code') = C.CANX_REASON_CODE 
-LEFT JOIN TRAIN_ACTIVATIONS_01_T TA 
-          ON        EXTRACTJSONFIELD(MVT.BODY,'$.train_id') = TA.TRAIN_ID 
-LEFT JOIN SCHEDULE_T SCH 
-          ON        TA.SCHEDULE_KEY = SCH.SCHEDULE_KEY 
-WHERE     MVT.HEADER->MSG_TYPE = '0002' 
-PARTITION BY EXTRACTJSONFIELD(MVT.BODY,'$.train_id');
+    FROM TRAIN_CANCELLATIONS_00 TC
+          LEFT JOIN LOCATIONS_BY_STANOX L 
+                    ON        TC.LOC_STANOX = L.STANOX 
+          LEFT JOIN CANX_REASON6P C 
+                    ON        TC.CANX_REASON_CODE = C.CANX_REASON_CODE 
+          LEFT JOIN TRAIN_ACTIVATIONS TA 
+                    ON        TC.TRAIN_ID = TA.TRAIN_ID
+          LEFT JOIN SCHEDULE SCH 
+                    ON        COALESCE(TC.SCHEDULE_KEY,'X') = SCH.SCHEDULE_KEY 
+PARTITION BY TRAIN_ID;
+-- c.f. https://github.com/confluentinc/ksql/issues/2657
+

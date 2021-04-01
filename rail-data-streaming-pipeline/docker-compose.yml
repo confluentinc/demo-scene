@@ -2,7 +2,7 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:6.0.1
+    image: confluentinc/cp-zookeeper:6.1.0
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
@@ -12,7 +12,7 @@ services:
       - ./data/container_data/zk-txn-logs:/var/lib/zookeeper/log
 
   broker:
-    image: confluentinc/cp-enterprise-kafka:6.0.1
+    image: confluentinc/cp-kafka:6.1.0
     container_name: broker
     depends_on:
       - zookeeper
@@ -43,7 +43,6 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,HOST://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,HOST://localhost:9092
-      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -52,16 +51,11 @@ services:
       # This one makes ksqlDB feel a bit more responsive when queries start running
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker:29092
-      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
-      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
-      CONFLUENT_METRICS_ENABLE: 'true'
-      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
     volumes: 
       - ./data/container_data/kafka-data:/var/lib/kafka/data
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:6.0.1
+    image: confluentinc/cp-schema-registry:6.1.0
     ports:
       - 8081:8081
     container_name: schema-registry
@@ -73,7 +67,7 @@ services:
       SCHEMA_REGISTRY_CUB_KAFKA_TIMEOUT: 300
 
   ksqldb:
-    image: confluentinc/ksqldb-server:0.14.0
+    image: confluentinc/ksqldb-server:0.15.0
     hostname: ksqldb
     container_name: ksqldb
     depends_on:
@@ -94,7 +88,7 @@ services:
       - ./data:/data
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect-base:6.0.1
+    image: confluentinc/cp-kafka-connect-base:6.1.0
     container_name: kafka-connect
     depends_on:
       - broker
@@ -135,12 +129,10 @@ services:
         echo "Installing connector plugins"
         confluent-hub install --no-prompt debezium/debezium-connector-mysql:1.3.1
         confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:11.0.0
-        confluent-hub install --no-prompt confluentinc/kafka-connect-activemq:10.1.0
+        confluent-hub install --no-prompt confluentinc/kafka-connect-activemq:11.0.2
         confluent-hub install --no-prompt neo4j/kafka-connect-neo4j:1.0.9
         confluent-hub install --no-prompt confluentinc/kafka-connect-http:1.1.0
-        confluent-hub install --no-prompt jcustenborder/kafka-connect-json-schema:0.2.5
-        confluent-hub install --no-prompt jcustenborder/kafka-connect-transform-common:0.1.0.37
-        confluent-hub install --no-prompt redhatinsights/expandjsonsmt:0.0.7
+        confluent-hub install --no-prompt streamthoughts/kafka-connect-file-pulse:1.5.0
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 
@@ -159,7 +151,7 @@ services:
         sleep infinity
 
   control-center:
-    image: confluentinc/cp-enterprise-control-center:6.0.1
+    image: confluentinc/cp-enterprise-control-center:6.1.0
     container_name: control-center
     depends_on:
       - broker
@@ -196,7 +188,7 @@ services:
         /etc/confluent/docker/run
 
   neo4j:
-    image: neo4j:4.2.1
+    image: neo4j:4.2.3
     container_name: neo4j
     ports:
     - "7474:7474"
@@ -210,7 +202,7 @@ services:
 
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.11.0
     container_name: elasticsearch
     ports:
       - 9200:9200
@@ -223,7 +215,7 @@ services:
       - ./data/container_data/elasticsearch:/usr/share/elasticsearch/data
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.10.0
+    image: docker.elastic.co/kibana/kibana:7.11.0
     container_name: kibana
     depends_on:
       - elasticsearch
@@ -231,7 +223,9 @@ services:
       - 5601:5601
     environment:
       xpack.security.enabled: "false"
+      xpack.license.self_generated.type: "trial"
       discovery.type: "single-node"
+      server.cors.enabled: "true"
 
   postgres:
     # *-----------------------------*

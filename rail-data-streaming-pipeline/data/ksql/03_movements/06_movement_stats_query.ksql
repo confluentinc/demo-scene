@@ -1,0 +1,1 @@
+select * from TOC_MVT_STATS where TOC ='Arriva Trains Northern' EMIT CHANGES LIMIT 1;

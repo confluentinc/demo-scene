@@ -1,0 +1,8 @@
+45150 Holme 55.64128752,-4.802776479
+Should be Holme Junction?
+
+27272 Chesterfield Sub-Sig S14 55.82101201,-1.432825534
+Should be 27272 Tapton Jn (53.2543998, -1.419897294)
+
+44507 Allington North Jn 55.58422684, 0.274329874
+Lat/Lon is just wrong

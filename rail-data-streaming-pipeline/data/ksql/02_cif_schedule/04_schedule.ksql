@@ -1,7 +1,7 @@
 SET 'auto.offset.reset' = 'earliest';
 
 CREATE STREAM SCHEDULE_00 
-   WITH (VALUE_FORMAT='AVRO') AS 
+   WITH (VALUE_FORMAT='AVRO', PARTITIONS=6) AS 
 SELECT JsonScheduleV1->CIF_train_uid,
        JsonScheduleV1->schedule_start_date,
        JsonScheduleV1->CIF_stp_indicator,
@@ -104,23 +104,23 @@ SELECT JsonScheduleV1->CIF_train_uid,
           WHEN JsonScheduleV1->schedule_segment->CIF_train_category =  'H6' THEN 'Railfreight Distribution (Channel Tunnel): RfD European Channel Tunnel Joint Venture'
         END AS TRAIN_CATEGORY,
         extractjsonfield(JsonScheduleV1->schedule_segment->schedule_location[1],'$.tiploc_code')      as ORIGIN_TIPLOC_CODE,
-        T_SRC.TPS_DESCRIPTION AS ORIGIN_TPS_DESCRIPTION,
-        T_SRC.GEOHASH AS ORIGIN_GEOHASH,
+        T_SRC.DESCRIPTION AS ORIGIN_DESCRIPTION,
+        T_SRC.LAT_LON AS ORIGIN_LAT_LON,
         extractjsonfield(JsonScheduleV1->schedule_segment->schedule_location[1],'$.public_departure') as ORIGIN_PUBLIC_DEPARTURE_TIME,
         extractjsonfield(JsonScheduleV1->schedule_segment->schedule_location[1],'$.platform')         as ORIGIN_PLATFORM,
         extractjsonfield(JsonScheduleV1->schedule_segment->schedule_location[-1],'$.tiploc_code')      as DESTINATION_TIPLOC_CODE,
-        T_DST.TPS_DESCRIPTION AS DESTINATION_TPS_DESCRIPTION,
-        T_DST.GEOHASH AS DESTINATION_GEOHASH,
+        T_DST.DESCRIPTION AS DESTINATION_DESCRIPTION,
+        T_DST.LAT_LON AS DESTINATION_LAT_LON,
         extractjsonfield(JsonScheduleV1->schedule_segment->schedule_location[-1],'$.public_arrival') as DESTINATION_PUBLIC_ARRIVAL_TIME,
-        extractjsonfield(JsonScheduleV1->schedule_segment->schedule_location[-1],'$.platform')         as DESTINATION_PLATFORM
-FROM    CIF_RAW C
-  LEFT JOIN TIPLOC T_SRC 
+        extractjsonfield(JsonScheduleV1->schedule_segment->schedule_location[-1],'$.platform')         as DESTINATION_PLATFORM,
+        ARRAY_LENGTH(JsonScheduleV1->schedule_segment->schedule_location) AS NUM_STOPS
+FROM    CIF_SCHED C
+  LEFT JOIN LOCATIONS T_SRC 
     ON EXTRACTJSONFIELD(JsonScheduleV1->schedule_segment->schedule_location[1],'$.tiploc_code') 
-     = T_SRC.TIPLOC_CODE
-  LEFT JOIN TIPLOC_DUP T_DST 
+     = T_SRC.TIPLOC
+  LEFT JOIN LOCATIONS_DUP T_DST 
     ON EXTRACTJSONFIELD(JsonScheduleV1->schedule_segment->schedule_location[-1],'$.tiploc_code') 
-     = T_DST.TIPLOC_CODE
-WHERE JsonScheduleV1 IS NOT NULL
+     = T_DST.TIPLOC
 PARTITION BY CONCAT_WS('/',
                        JsonScheduleV1->CIF_train_uid,
                        JsonScheduleV1->schedule_start_date,

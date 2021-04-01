@@ -1,0 +1,8 @@
+-- This will block until two records are output. 
+-- Two is an arbitrary number. We just want the activation table to populate
+-- before trying to join against it. 
+SELECT TIMESTAMPTOSTRING(ROWTIME,'yyyy-MM-dd HH','Europe/London') AS TS_HOUR, TOC_ID,
+       COUNT(*) AS ACTIVATION_CT 
+  FROM TRAIN_ACTIVATIONS 
+  GROUP BY TIMESTAMPTOSTRING(ROWTIME,'yyyy-MM-dd HH','Europe/London') , TOC_ID
+  EMIT CHANGES LIMIT 2;
