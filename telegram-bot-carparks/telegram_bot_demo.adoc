@@ -5,7 +5,9 @@ v1.01, 14 October 2020
 
 == Prep
 
-* https://t.me/kafka_alert_bot[Launch bot, clear history]
+* https://t.me/kafka_alert_bot[Launch `kafka_alert_bot` bot, clear history]
+
+* https://t.me/rmoff_golang_bot[Launch `rmoff_golang_bot` bot, clear history]
 
 * Three terminal windows
 +
