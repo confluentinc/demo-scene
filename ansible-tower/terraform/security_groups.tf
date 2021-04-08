@@ -226,52 +226,6 @@ resource "aws_security_group" "control_center" {
   }
 }
 
-resource "aws_security_group" "kerberos" {
-  name        = "kerberos_${var.unique_identifier}"
-  vpc_id      = var.vpc_id
-  description = "CP-Ansible Testing - Kerberos SG"
-
-  ingress {
-    from_port   = "88"
-    to_port     = "88"
-    protocol    = "tcp"
-    self        = true
-    security_groups = [aws_security_group.zookeeper.id, aws_security_group.kafka.id, aws_security_group.schema_registry.id, aws_security_group.rest_proxy.id, aws_security_group.connect.id, aws_security_group.ksql.id, aws_security_group.control_center.id]
-  }
-
-  ingress {
-    from_port   = "749"
-    to_port     = "749"
-    protocol    = "tcp"
-    self        = true
-    security_groups = [aws_security_group.zookeeper.id, aws_security_group.kafka.id, aws_security_group.schema_registry.id, aws_security_group.rest_proxy.id, aws_security_group.connect.id, aws_security_group.ksql.id, aws_security_group.control_center.id]
-  }
-
-  tags = {
-    unique_identifier = var.unique_identifier
-    deployed_with = "cp-ansible-tools"
-  }
-}
-
-resource "aws_security_group" "ldap" {
-  name        = "ldap_${var.unique_identifier}"
-  vpc_id      = var.vpc_id
-  description = "CP-Ansible Testing - LDAP SG"
-
-  ingress {
-    from_port   = "389"
-    to_port     = "389"
-    protocol    = "tcp"
-    self        = true
-    security_groups = [aws_security_group.zookeeper.id, aws_security_group.kafka.id, aws_security_group.schema_registry.id, aws_security_group.rest_proxy.id, aws_security_group.connect.id, aws_security_group.ksql.id, aws_security_group.control_center.id]
-  }
-
-  tags = {
-    unique_identifier = var.unique_identifier
-    deployed_with = "cp-ansible-tools"
-  }
-}
-
 # Theres a "Cycle" with kafka and schema_registry security groups, ie both reference each other, so have to do this
 resource "aws_security_group" "schema_registry" {
   name        = "schema_registry_${var.unique_identifier}"

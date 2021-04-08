@@ -20,9 +20,17 @@ export AWS_ACCESS_KEY_ID="key"
 export AWS_SECRET_ACCESS_KEY="secret"
 export TF_VAR_vpc_id=vpc-xxxx
 export TF_VAR_subnet=subnet-xxxx
+```
 
-# If subnet outside of us-west-2 set below ami variable to centos image within your region
-# export TF_VAR_ami=ami-xxxx
+If subnet outside of us-west-2 set below ami variable to centos image within your region
+```
+export TF_VAR_ami=ami-xxxx
+```
+
+If running this demo in the same subnet as someone else in your organization, to avoid naming collisions set
+```
+export TF_VAR_unique_identifier=<your-name>
+export TF_VAR_ssh_key_pair=<your-name>-key
 ```
 
 Provision AWS Infrastructure

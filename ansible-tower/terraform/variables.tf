@@ -18,13 +18,6 @@ variable "unique_identifier" {
   default = "confluent"
 }
 
-# TODO delete
-# ## NOTE: Change this variable to something unique to avoid naming collision
-# variable "security_group_prefix" {
-#   description = "Prefix for sg names to avoid errors when multiple people run this terraform"
-#   default = "cp-ansible-1"
-# }
-
 ## Set this var to existing key pair if using existing one and comment next resource
 variable "ssh_key_pair" {
   description = "SSH key pair to be provisioned on the instance"
