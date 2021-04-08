@@ -8,10 +8,6 @@ all:
     ansible_ssh_user: centos
 
     ssl_enabled: true
-    zookeeper_ssl_enabled: false
-
-    fips_enabled: true
-    #ssl_mutual_auth_enabled: true
 
     kafka_broker_custom_listeners:
       external:
