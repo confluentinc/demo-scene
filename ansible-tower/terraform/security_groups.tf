@@ -229,6 +229,7 @@ resource "aws_security_group" "control_center" {
 # Theres a "Cycle" with kafka and schema_registry security groups, ie both reference each other, so have to do this
 resource "aws_security_group" "schema_registry" {
   name        = "schema_registry_${var.unique_identifier}"
+  vpc_id      = var.vpc_id
   description = "CP-Ansible Testing - Schema Registry SG"
 
   tags = {
