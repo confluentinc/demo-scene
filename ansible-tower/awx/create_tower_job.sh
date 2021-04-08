@@ -19,7 +19,7 @@ awx projects create --wait \
 echo "________Create inventory project________"
 awx projects create --wait \
     --organization Default --name='AWS Infrastructure' \
-    --scm_type git --scm_branch='tower-demo' \
+    --scm_type git --scm_branch='master' \
     --scm_url $REPO_URL
 
 echo "________Create Inventory________"
