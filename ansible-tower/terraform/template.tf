@@ -3,8 +3,6 @@ locals {
 all:
   vars:
     ansible_become: true
-    ansible_ssh_common_args: -o StrictHostKeyChecking=no -o IdentitiesOnly=yes
-    ansible_connection: ssh
 
     ssl_enabled: true
 
