@@ -1,0 +1,6 @@
+zookeeper:ip-172-31-42-67.us-west-2.compute.internal
+zookeeper:ip-172-31-33-11.us-west-2.compute.internal
+zookeeper:ip-172-31-45-107.us-west-2.compute.internal
+kafka_broker:ip-172-31-40-249.us-west-2.compute.internal
+kafka_broker:ip-172-31-34-255.us-west-2.compute.internal
+kafka_broker:ip-172-31-46-20.us-west-2.compute.internal
