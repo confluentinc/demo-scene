@@ -17,6 +17,7 @@ ccloud-cube-demo/terraform/aws/terraform.tfstate
 ccloud-cube-demo/terraform/aws/terraform.tfstate.backup
 connect-jars
 credentials.py
+!ansible-tower/awx/credentials.py
 credentials.pyc
 delta_configs
 gcp_creds.json

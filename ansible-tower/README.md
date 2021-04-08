@@ -9,9 +9,10 @@ Fork this repo. Your fork will serve as a Repo Containing your infrastructure as
 
 Set REPO_URL environment variable and clone your fork, best to use HTTPS because Tower needs access
 ```
-export REPO_URL=https://github.com/domenicbove/tower-blog
+export REPO_URL=https://github.com/domenicbove/demo-scene
 
 git clone $REPO_URL
+
 ```
 
 Set AWS Environment Variables
@@ -49,9 +50,14 @@ make create-tower-job
 
 Go to http://localhost:8052 in your browser and login with credentials admin/password
 
-Under Jobs you can launch Deploy on AWS
+Under Templates you can launch Deploy on AWS
 
 ![](screenshots/job-output.png)
+
+Teardown Ansible Tower
+```
+make stop-tower
+```
 
 ## Next Steps
 You now have a successful Confluent Platform Deployment automated with Ansible Tower.

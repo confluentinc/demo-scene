@@ -13,13 +13,13 @@ awx organizations create --name Default
 echo "________Create cp-ansible project________"
 awx projects create --wait \
     --organization Default --name='CP-Ansible' \
-    --scm_type git --scm_branch='6.0.1-post' \
+    --scm_type git --scm_branch='6.1.1-post' \
     --scm_url 'https://github.com/confluentinc/cp-ansible'
 
 echo "________Create inventory project________"
 awx projects create --wait \
     --organization Default --name='AWS Infrastructure' \
-    --scm_type git --scm_branch='master' \
+    --scm_type git --scm_branch='tower-demo' \
     --scm_url $REPO_URL
 
 echo "________Create Inventory________"
@@ -32,14 +32,13 @@ awx inventory_sources create \
     --inventory='AWS Infrastructure' \
     --source_project='AWS Infrastructure' \
     --source scm \
-    --source_path='terraform/hosts.yml' \
+    --source_path='ansible-tower/terraform/hosts.yml' \
     --update_on_project_update true
 
 echo "________Create Machine Credential from SSH Key________"
 awx credentials create --credential_type 'Machine' \
     --name 'AWS Key' --organization Default \
     --inputs '{"username": "centos", "ssh_key_data": "@'${HOME}'/.ssh/id_rsa"}'
-
 
 echo "________Create Deployment Job________"
 awx job_templates create \

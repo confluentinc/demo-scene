@@ -18,7 +18,7 @@ services:
       - rsyslog-config:/var/lib/awx/rsyslog/
       - "$PWD/SECRET_KEY:/etc/tower/SECRET_KEY"
       - "$PWD/environment.sh:/etc/tower/conf.d/environment.sh"
-      - "$PWD/creds.py:/etc/tower/conf.d/credentials.py"
+      - "$PWD/credentials.py:/etc/tower/conf.d/credentials.py"
       - "$PWD/nginx.conf:/etc/nginx/nginx.conf:ro"
       - "$PWD/redis_socket:/var/run/redis/:rw"
     environment:
