@@ -9,7 +9,7 @@ Fork this repo. Your fork will serve as a Repo Containing your infrastructure as
 
 Set the `REPO_URL` environment variable and clone your fork. Use HTTPS (not SSH) because Tower uses this url
 ```
-export REPO_URL=https://github.com/domenicbove/demo-scene
+export REPO_URL=https://github.com/<fork>/demo-scene
 
 git clone $REPO_URL
 ```
