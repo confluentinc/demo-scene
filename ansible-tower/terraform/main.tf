@@ -9,6 +9,7 @@ resource "aws_instance" "zookeeper" {
   key_name          = var.ssh_key_pair
   vpc_security_group_ids = [aws_security_group.base.id, aws_security_group.zookeeper.id]
   subnet_id         = var.subnet
+  associate_public_ip_address = true
   user_data = <<-EOF
       #! /bin/bash
       echo "Hello world"
@@ -33,6 +34,7 @@ resource "aws_instance" "kafka" {
   key_name          = var.ssh_key_pair
   vpc_security_group_ids = [aws_security_group.base.id, aws_security_group.kafka.id, aws_security_group.mds.id]
   subnet_id         = var.subnet
+  associate_public_ip_address = true
   user_data = <<-EOF
       #! /bin/bash
       echo "Hello world"
@@ -57,6 +59,7 @@ resource "aws_instance" "schema_registry" {
   key_name          = var.ssh_key_pair
   vpc_security_group_ids = [aws_security_group.base.id, aws_security_group.schema_registry.id]
   subnet_id         = var.subnet
+  associate_public_ip_address = true
   user_data = <<-EOF
       #! /bin/bash
       echo "Hello world"
@@ -81,6 +84,7 @@ resource "aws_instance" "connect" {
   key_name          = var.ssh_key_pair
   vpc_security_group_ids = [aws_security_group.base.id, aws_security_group.connect.id]
   subnet_id         = var.subnet
+  associate_public_ip_address = true
   user_data = <<-EOF
       #! /bin/bash
       echo "Hello world"
@@ -105,6 +109,7 @@ resource "aws_instance" "rest_proxy" {
   key_name          = var.ssh_key_pair
   vpc_security_group_ids = [aws_security_group.base.id, aws_security_group.rest_proxy.id]
   subnet_id         = var.subnet
+  associate_public_ip_address = true
   user_data = <<-EOF
       #! /bin/bash
       echo "Hello world"
@@ -129,6 +134,7 @@ resource "aws_instance" "ksql" {
   key_name          = var.ssh_key_pair
   vpc_security_group_ids = [aws_security_group.base.id, aws_security_group.ksql.id]
   subnet_id         = var.subnet
+  associate_public_ip_address = true
   user_data = <<-EOF
       #! /bin/bash
       echo "Hello world"
@@ -153,6 +159,7 @@ resource "aws_instance" "control_center" {
   key_name          = var.ssh_key_pair
   vpc_security_group_ids = [aws_security_group.base.id, aws_security_group.control_center.id]
   subnet_id         = var.subnet
+  associate_public_ip_address = true
   user_data = <<-EOF
       #! /bin/bash
       echo "Hello world"
