@@ -38,7 +38,7 @@ Provision AWS infrastructure:
 make create-infra
 ```
 
-Commit the updated inventory file, and push to your fork
+Commit the updated inventory file, and push to your fork:
 ```
 git add terraform/hosts.yml
 git commit -m 'Provisioned infrastructure and updated inventory file.'
