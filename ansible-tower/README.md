@@ -65,7 +65,7 @@ When the Job completes, Confluent Platform is deployed! Find the `ansible_host` 
 
 ![](screenshots/control-center.png)
 
-Teardown Ansible Tower
+Tear down Ansible Tower:
 ```
 make stop-tower
 ```
