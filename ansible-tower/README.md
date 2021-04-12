@@ -7,7 +7,7 @@
 ## Usage
 Fork this repo. Your fork will serve as a repo containing your Infrastructure-as-Code.
 
-Set the `REPO_URL` environment variable and clone your fork. Use HTTPS (not SSH) because Tower uses this url
+Set the `REPO_URL` environment variable and clone your fork. Use HTTPS (not SSH) because Tower uses this URL.
 ```
 export REPO_URL=https://github.com/<fork>/demo-scene
 
