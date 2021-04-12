@@ -61,7 +61,7 @@ Under Templates you can launch `Deploy on AWS`
 
 ![](screenshots/job-output.png)
 
-When the Job Completes, Confluent Platform is Deployed! Find the `ansible_host` of the Control Center host in terraform/hosts.yml and go to https://<ansible_host>:9021 in your browser
+When the Job completes, Confluent Platform is deployed! Find the `ansible_host` of the Control Center host in `terraform/hosts.yml` and go to https://<ansible_host>:9021 in your browser.
 
 ![](screenshots/control-center.png)
 
