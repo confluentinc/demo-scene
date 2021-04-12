@@ -5,7 +5,7 @@
 - An AWS Subnet, preferably in us-west-2
 
 ## Usage
-Fork this repo. Your fork will serve as a Repo Containing your infrastructure as code.
+Fork this repo. Your fork will serve as a repo containing your Infrastructure-as-Code.
 
 Set the `REPO_URL` environment variable and clone your fork. Use HTTPS (not SSH) because Tower uses this url
 ```
