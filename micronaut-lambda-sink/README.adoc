@@ -1,9 +1,0 @@
-= Event Driven Applications with Micronaut, Kafka, and Lambda
-
-
-This demo consists of the following Micronaut projects:
-. *order-service* is a standard Micronaut app with the Kafka feature.
-. *order-id-lambda* is a Micronaut Serverless Function for AWS Lambda.
-. *order-fulfillment-service* is Micronaut Messging app with Kafka.
-
-= More Details Coming Soon
