@@ -22,7 +22,7 @@ export TF_VAR_vpc_id=vpc-xxxx
 export TF_VAR_subnet=subnet-xxxx
 ```
 
-If subnet outside of us-west-2 set below ami variable to centos image within your region
+If your AWS Subnet is outside of us-west-2, set the below AMI variable to a CentOS image within your region:
 ```
 export TF_VAR_ami=ami-xxxx
 ```
