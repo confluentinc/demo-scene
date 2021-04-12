@@ -55,7 +55,7 @@ Create CP-Ansible Job
 make create-tower-job
 ```
 
-Go to http://localhost:8052 in your browser and login with credentials admin/password
+Go to http://localhost:8052 in your browser and login with credentials `admin` / `password`:
 
 Under Templates you can launch `Deploy on AWS`
 
