@@ -33,7 +33,7 @@ export TF_VAR_unique_identifier=<your-name>
 export TF_VAR_ssh_key_pair=<your-name>-key
 ```
 
-Provision AWS Infrastructure
+Provision AWS infrastructure:
 ```
 make create-infra
 ```
