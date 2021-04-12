@@ -14,7 +14,7 @@ export REPO_URL=https://github.com/<fork>/demo-scene
 git clone $REPO_URL
 ```
 
-Set AWS Environment Variables
+Set environment variables:
 ```
 export AWS_ACCESS_KEY_ID="key"
 export AWS_SECRET_ACCESS_KEY="secret"
