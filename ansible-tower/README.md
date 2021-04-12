@@ -71,7 +71,7 @@ make stop-tower
 ```
 **Note**: This step stops the containers, but does not delete any tower objects. To delete everything delete the `awx/pgdocker/12` directory.
 
-Teardown AWS Infrastructure
+Tear down AWS infrastructure:
 ```
 make destroy-infra
 ```
