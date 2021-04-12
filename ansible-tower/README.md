@@ -45,7 +45,7 @@ git commit -m 'Provisioned infrastructure and updated inventory file.'
 git push origin master
 ```
 
-Stand up Ansible Tower
+Stand up Ansible Tower:
 ```
 make start-tower
 ```
