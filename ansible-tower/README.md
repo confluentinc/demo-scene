@@ -79,7 +79,7 @@ make destroy-infra
 ## Next Steps
 You now have a successful Confluent Platform deployment automated with Ansible Tower.
 
-In CP-Anisble 6.1.0 we have added [Reconfiguration](https://docs.confluent.io/ansible/current/ansible-reconfigure.html). This means you fully automate your Deployments on any changes within Git. First, add [Git Webhooks](https://docs.ansible.com/ansible-tower/latest/html/userguide/webhooks.html) as well. Next under the `Deploy on AWS`, Job Template and add the tag "package" under the skip tags field. Now  any updates to your inventory in Git will trigger Ansible Tower to reconfigure your deployment in true GitOps fashion!
+In CP-Anisble 6.1.0 we have added [Reconfiguration](https://docs.confluent.io/ansible/current/ansible-reconfigure.html). This means you fully automate your deployments on any changes within Git. First, add [Git Webhooks](https://docs.ansible.com/ansible-tower/latest/html/userguide/webhooks.html). Next, under the `Deploy on AWS` Job Template, add the tag "package" under the skip tags field. Now, any updates to your inventory in Git will trigger Ansible Tower to reconfigure your deployment in true GitOps fashion!
 
 ## Future Ideas
 The terraform code that enables this blog is great for demos, but is not a production set up. The code should be refactored into Terraform Modules. Autoscaling groups should be added to each ec2 instance. Potentially user data scripts could configure each host on start up.
