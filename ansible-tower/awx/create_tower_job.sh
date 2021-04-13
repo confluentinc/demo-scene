@@ -1,17 +1,11 @@
 #!/bin/bash
 cd "$(dirname "$0")"
 
-echo ${PWD}
-
 echo "________Build AWX CLI Docker Image________"
 docker build . -t localhost/awx:latest
 
 shopt -s expand_aliases
 alias awx="docker run --network host --rm -it -v "${PWD}/../terraform:/tmp" --env TOWER_HOST=http://localhost:8052 --env TOWER_USERNAME=admin --env TOWER_PASSWORD=password localhost/awx:latest awx"
-
-# alias awx="docker run --network host --rm -it -v "${HOME}/.ssh:${HOME}/.ssh" --env TOWER_HOST=http://localhost:8052 --env TOWER_USERNAME=admin --env TOWER_PASSWORD=password localhost/awx:latest awx"
-
-# docker run --network host --rm -it -v "${PWD}/../terraform:/tmp" --env TOWER_HOST=http://localhost:8052 --env TOWER_USERNAME=admin --env TOWER_PASSWORD=password localhost/awx:latest /bin/sh
 
 echo "________Create Default Organization________"
 awx organizations create --name Default
