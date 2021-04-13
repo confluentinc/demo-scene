@@ -17,19 +17,19 @@ Create a cluster in MongoDB and Confluent Cloud - when you do so **make sure the
 You should have credentials and endpoint details for the following. See local `.env` for values if it exists.
 
 * Confluent Cloud
-  * Broker endpoint: CCLOUD_BROKER_ENDPOINT
-  * API Key: CCLOUD_API_KEY
-  * API Secret: CCLOUD_API_SECRET
+** Broker endpoint: CCLOUD_BROKER_ENDPOINT
+** API Key: CCLOUD_API_KEY
+** API Secret: CCLOUD_API_SECRET
 
 * MongoDB Atlas
-  * Endpoint: MONGODB_ENDPOINT
-  * Username: dbUser
-  * Password: MONGODB_PW
+** Endpoint: MONGODB_ENDPOINT
+** Username: dbUser
+** Password: MONGODB_PW
 
 * Snowflake
-  * Endpoint: SNOWFLAKE_ENDPOINT
-  * User: kafka
-  * Private key: SNOWFLAKE_PRIVATE_KEY
+** Endpoint: SNOWFLAKE_ENDPOINT
+** User: kafka
+** Private key: SNOWFLAKE_PRIVATE_KEY
 
 ==== Accessing MongoDB Atlas
 
@@ -61,6 +61,8 @@ MongoDB Enterprise atlas-8rmbva-shard-0:PRIMARY>
 ==== Setting up a public keypair for Snowflake
 
 Per https://docs.confluent.io/cloud/current/connectors/cc-snowflake-sink.html#generate-a-snowflake-key-pair[the connector documentation] create a local key pair.
+
+Create necessary user and privileges on Snowflake, adding the private key generated above to the user. 
 
 
 
