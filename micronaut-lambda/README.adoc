@@ -2,11 +2,12 @@
 
 ## Description
 
-- This demo consists of the following Micronaut projects:
+This demo consists of the following Micronaut projects:
 
   - *order-service* is a standard Micronaut app with the Kafka feature.
   - *order-id-lambda* is a Micronaut Serverless Function for AWS Lambda.
   - *order-fulfillment-service* is Micronaut Messaging app with Kafka.
+
 
 The demo was built using Confluent Cloud, the Cloud-native service for Apache Kafka. If you don't have an account on Confluent Cloud, you can set that up [here](https://www.confluent.io/confluent-cloud).
 
