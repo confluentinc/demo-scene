@@ -1,11 +1,17 @@
 #!/bin/bash
 cd "$(dirname "$0")"
 
+echo ${PWD}
+
 echo "________Build AWX CLI Docker Image________"
 docker build . -t localhost/awx:latest
 
 shopt -s expand_aliases
-alias awx="docker run --network host --rm -it -v "${HOME}/.ssh:${HOME}/.ssh" --env TOWER_HOST=http://localhost:8052 --env TOWER_USERNAME=admin --env TOWER_PASSWORD=password localhost/awx:latest awx"
+alias awx="docker run --network host --rm -it -v "${PWD}/../terraform:/tmp" --env TOWER_HOST=http://localhost:8052 --env TOWER_USERNAME=admin --env TOWER_PASSWORD=password localhost/awx:latest awx"
+
+# alias awx="docker run --network host --rm -it -v "${HOME}/.ssh:${HOME}/.ssh" --env TOWER_HOST=http://localhost:8052 --env TOWER_USERNAME=admin --env TOWER_PASSWORD=password localhost/awx:latest awx"
+
+# docker run --network host --rm -it -v "${PWD}/../terraform:/tmp" --env TOWER_HOST=http://localhost:8052 --env TOWER_USERNAME=admin --env TOWER_PASSWORD=password localhost/awx:latest /bin/sh
 
 echo "________Create Default Organization________"
 awx organizations create --name Default
@@ -38,7 +44,7 @@ awx inventory_sources create \
 echo "________Create Machine Credential from SSH Key________"
 awx credentials create --credential_type 'Machine' \
     --name 'AWS Key' --organization Default \
-    --inputs '{"username": "centos", "ssh_key_data": "@'${HOME}'/.ssh/id_rsa"}'
+    --inputs '{"username": "centos", "ssh_key_data": "@/tmp/id_rsa"}'
 
 echo "________Create Deployment Job________"
 awx job_templates create \

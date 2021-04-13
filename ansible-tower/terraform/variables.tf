@@ -32,7 +32,7 @@ resource "aws_key_pair" "default" {
 
 variable "ssh_key_public_path" {
   description = "Path to local public ssh key"
-  default = "~/.ssh/id_rsa.pub"
+  default = "id_rsa.pub"
 }
 
 variable "instance_type" {
