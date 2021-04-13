@@ -1,3 +1,8 @@
+# Continuous Deployment of Confluent with Ansible Tower
+
+This repository shows how to create a CP-Ansible Job Template within Ansible Tower. 
+Ansible Tower acts as an automation server for deploying Confluent Platform on AWS Infrastructure.
+
 ## Prerequisistes:
 - [Docker](https://docs.docker.com/desktop/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
