@@ -1,0 +1,17 @@
+{
+  "name": "MongoDbAtlasSinkConnector_transactions",
+  "config": {
+    "connector.class"    : "MongoDbAtlasSink",
+    "name"               : "MongoDbAtlasSinkConnector_transactions",
+    "input.data.format"  : "JSON",
+    "kafka.api.key"      : "CCLOUD_API_KEY",
+    "kafka.api.secret"   : "CCLOUD_API_SECRET",
+    "topics"             : "abc-transactions1",
+    "connection.host"    : "MONGODB_ENDPOINT",
+    "connection.user"    : "dbUser",
+    "connection.password": "MONGODB_PW",
+    "database"           : "abc",
+    "collection"         : "transactions1",
+    "tasks.max"          : "1"
+  }
+}

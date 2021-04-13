@@ -1,0 +1,16 @@
+{
+  "name": "MongoDbAtlasSourceConnector",
+  "config": {
+    "connector.class"    : "MongoDbAtlasSource",
+    "name"               : "MongoDbAtlasSourceConnector",
+    "kafka.api.key"      : "CCLOUD_API_KEY",
+    "kafka.api.secret"   : "CCLOUD_API_SECRET",
+    "topic.prefix"       : "atlas0",
+    "connection.host"    : "MONGODB_ENDPOINT",
+    "connection.user"    : "dbUser",
+    "connection.password": "MONGODB_PW",
+    "database"           : "abc",
+    "output.data.format" : "JSON",
+    "tasks.max"          : "1"
+  }
+}

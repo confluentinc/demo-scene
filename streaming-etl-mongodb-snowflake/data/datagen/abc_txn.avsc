@@ -1,0 +1,31 @@
+{
+    "namespace": "abc",
+    "name": "transaction",
+    "type": "record",
+    "fields": [
+        {"name": "cust_id", "type": {
+            "type": "int",
+            "arg.properties": {
+                "range": {
+                    "min": 9,
+                    "max": 42
+                }
+            }
+        }},
+            {"name": "prod_id", "type": {
+                "type": "long",
+                "arg.properties": {
+                    "options": [
+                        1001,
+                        1002,
+                        1003,
+                        1002,
+                        1002,
+                        1003,
+                        1002,
+                        1003  
+                    ]
+                }
+            }}
+    ]
+}
