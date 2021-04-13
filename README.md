@@ -68,6 +68,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - [Streaming Pac-Man](streaming-pacman)
   - ["The Cube" Demo](ccloud-cube-demo)
   - [Using Replicator with Confluent Cloud](ccloud-replicator)
+  - [Micronaut & AWS Lambda on Confluent Cloud](micronaut-lambda)
 
 - Confluent Platform
 
