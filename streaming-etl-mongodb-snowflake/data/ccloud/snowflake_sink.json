@@ -1,0 +1,18 @@
+{
+  "name": "SnowflakeSinkConnector_0",
+  "config": {
+    "topics"                       : "pksqlc-7y33pABC_PROMOTIONS_01",
+    "input.data.format"            : "AVRO",
+    "kafka.api.key"                : "CCLOUD_API_KEY",
+    "kafka.api.secret"             : "CCLOUD_API_SECRET",
+    "connector.class"              : "SnowflakeSink",
+    "name"                         : "SnowflakeSinkConnector_0",
+    "snowflake.url.name"           : "SNOWFLAKE_ENDPOINT",
+    "snowflake.user.name"          : "kafka",
+    "snowflake.private.key"        : "SNOWFLAKE_PRIVATE_KEY",
+    "snowflake.database.name"      : "DEMO_DB",
+    "snowflake.schema.name"        : "public",
+    "snowflake.metadata.createtime": "true",
+    "tasks.max"                    : "1"
+  }
+}
