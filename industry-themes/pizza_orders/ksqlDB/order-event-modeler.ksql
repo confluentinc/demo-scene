@@ -1,0 +1,244 @@
+SET 'auto.offset.reset' = 'earliest';
+
+CREATE STREAM PIZZA_ORDERS
+(
+    storeNumber INT,
+    storeOrderId INT,
+    businessDate STRING,
+    status STRING,
+    coupons ARRAY<
+                STRUCT<code int>
+                >,
+    orderLines ARRAY<
+                STRUCT<
+                        product_id INT,
+                        category STRING,
+                        quantity INT,
+                        unit_price DECIMAL(10,2),
+                        net_price DECIMAL(10,2)
+                    >
+                >
+)
+WITH (
+    KAFKA_TOPIC = 'pizza_orders',
+    VALUE_FORMAT = 'JSON'
+);
+
+CREATE STREAM PIZZA_ORDERS_COMPLETED
+(
+    storeNumber INT,
+    storeOrderId INT,
+    businessDate STRING,
+    status STRING,
+    rackTimeSecs INT,
+    orderDeliveryTimeSecs INT
+)
+WITH (
+    KAFKA_TOPIC = 'pizza_orders_completed',
+    VALUE_FORMAT = 'JSON'
+);
+
+CREATE STREAM PIZZA_ORDERS_CANCELLED
+(
+    storeNumber INT,
+    storeOrderId INT,
+    businessDate STRING,
+    status STRING
+)
+WITH (
+    KAFKA_TOPIC = 'pizza_orders_cancelled',
+    VALUE_FORMAT = 'JSON'
+);
+
+--Rekey and convert to AVRO
+CREATE STREAM PIZZA_ORDERS_KEYED
+WITH (
+    KAFKA_TOPIC = 'pizza_orders_keyed',
+    VALUE_FORMAT = 'AVRO'
+)
+AS
+SELECT 
+CAST(storeNumber AS STRING) + '-' + CAST(storeOrderId AS STRING) + '-' + businessDate AS order_key,
+storeNumber,
+storeOrderId,
+businessDate,
+status,
+coupons,
+orderLines
+FROM PIZZA_ORDERS
+PARTITION BY (CAST(storeNumber AS STRING) + '-' + CAST(storeOrderId AS STRING) + '-' + businessDate);
+
+CREATE STREAM PIZZA_ORDERS_COMPLETED_KEYED
+WITH (
+    KAFKA_TOPIC = 'pizza_orders_completed_keyed',
+    VALUE_FORMAT = 'AVRO'
+)
+AS
+SELECT 
+CAST(storeNumber AS STRING) + '-' + CAST(storeOrderId AS STRING) + '-' + businessDate AS order_key,
+storeNumber,
+storeOrderId,
+businessDate,
+status,
+rackTimeSecs,
+orderDeliveryTimeSecs
+FROM PIZZA_ORDERS_COMPLETED
+PARTITION BY (CAST(storeNumber AS STRING) + '-' + CAST(storeOrderId AS STRING) + '-' + businessDate);
+
+
+CREATE STREAM PIZZA_ORDERS_CANCELLED_KEYED
+WITH (
+    KAFKA_TOPIC = 'pizza_orders_cancelled_keyed',
+    VALUE_FORMAT = 'AVRO'
+)
+AS
+SELECT 
+CAST(storeNumber AS STRING) + '-' + CAST(storeOrderId AS STRING) + '-' + businessDate AS order_key,
+storeNumber,
+storeOrderId,
+businessDate,
+status
+FROM PIZZA_ORDERS_CANCELLED
+PARTITION BY (CAST(storeNumber AS STRING) + '-' + CAST(storeOrderId AS STRING) + '-' + businessDate);
+
+CREATE STREAM PIZZA_ORDERS_COMMON
+WITH (
+    KAFKA_TOPIC = 'pizza_orders_common',
+    VALUE_FORMAT = 'AVRO'
+)
+AS
+SELECT
+order_key,
+storeNumber,
+storeOrderId,
+businessDate,
+status,
+CASE
+    WHEN ARRAY_LENGTH(coupons) > 0 THEN 'true'
+    ELSE 'false'
+END AS usedCoupon,
+ARRAY_LENGTH(orderLines) AS orderLineCount,
+0 AS rackTimeSecs,
+0 AS orderDeliveryTimeSecs
+FROM PIZZA_ORDERS_KEYED;
+
+--This is a different way to hande the join instead of doing
+--insert into statements and allows for ksqlDB to manage the
+--the state store better. It does require correct ordering of
+--the event types in the coalesce function.
+--CREATE STREAM PIZZA_ORDERS_COMMON_ALT
+--WITH (
+--    KAFKA_TOPIC = 'pizza_orders_common_alt',
+--    VALUE_FORMAT = 'AVRO'
+--)
+--AS
+--SELECT
+--ROWKEY AS order_key,
+--COALESCE(podk.storeNumber, popk.storeNumber, pok.storeNumber) as storeNumber,
+--COALESCE(podk.storeOrderId, popk.storeOrderId, pok.storeOrderId) as storeOrderId,
+--COALESCE(podk.businessDate, popk.businessDate, pok.businessDate) as businessDate,
+--COALESCE(popk.status, podk.status, pok.status) AS status,
+--CASE
+--    WHEN ARRAY_LENGTH(coupons) > 0 THEN 'true'
+--    ELSE 'false'
+--END AS usedCoupon,
+--ARRAY_LENGTH(orderLines) AS orderLineCount,
+--COALESCE(popk.rackTimeSecs, 0) AS rackTimeSecs,
+--COALESCE(popk.orderDeliveryTimeSecs, 0) AS orderDeliveryTimeSecs
+--FROM PIZZA_ORDERS_KEYED pok
+--FULL OUTER JOIN PIZZA_ORDERS_COMPLETED_KEYED popk
+--WITHIN 2 HOURS
+--ON pok.order_key = popk.order_key
+--FULL OUTER JOIN PIZZA_ORDERS_CANCELLED_KEYED podk 
+--WITHIN 2 HOURS
+--ON pok.order_key = podk.order_key;
+
+
+--this is the materialized table for storing current state of each order based
+--on the common model.
+CREATE TABLE PIZZA_ORDERS_TABLE
+WITH (
+    KAFKA_TOPIC = 'pizza_orders_table',
+    VALUE_FORMAT = 'AVRO'
+)
+AS
+SELECT
+order_key,
+LATEST_BY_OFFSET(storeNumber) AS latest_storeNumber,
+LATEST_BY_OFFSET(storeOrderId) AS latest_storeOrderId,
+LATEST_BY_OFFSET(businessDate) AS latest_businessDate,
+LATEST_BY_OFFSET(status) AS latest_status,
+LATEST_BY_OFFSET(usedCoupon) AS latest_usedCoupon,
+LATEST_BY_OFFSET(orderLineCount) AS latest_orderLineCount,
+LATEST_BY_OFFSET(rackTimeSecs) AS latest_rackTimeSecs,
+LATEST_BY_OFFSET(orderDeliveryTimeSecs) AS latest_orderDeliveryTimeSecs
+FROM PIZZA_ORDERS_COMMON
+WINDOW TUMBLING(SIZE 2 HOURS, RETENTION 6 HOURS, GRACE PERIOD 30 MINUTES)
+GROUP BY order_key;
+
+--now we insert back into the common model the other order types
+--and join to the table to get the latest values for feeds we don't
+--have in that type. This can easily be expanding for multiple order event types.
+INSERT INTO PIZZA_ORDERS_COMMON
+SELECT
+poc.order_key AS order_key,
+poc.storeNumber AS storeNumber,
+poc.storeOrderId AS storeOrderId,
+poc.businessDate AS businessDate,
+poc.status AS status,
+pot.latest_usedCoupon AS usedCoupon,
+pot.latest_orderLineCount AS orderLineCount,
+pot.latest_rackTimeSecs AS rackTimeSecs,
+pot.latest_orderDeliveryTimeSecs AS orderDeliveryTimeSecs
+FROM PIZZA_ORDERS_CANCELLED_KEYED poc
+LEFT OUTER JOIN PIZZA_ORDERS_TABLE pot
+ON poc.order_key = pot.order_key;
+
+INSERT INTO PIZZA_ORDERS_COMMON
+SELECT
+poc.order_key AS order_key,
+poc.storeNumber AS storeNumber,
+poc.storeOrderId AS storeOrderId,
+poc.businessDate AS businessDate,
+poc.status AS status,
+pot.latest_usedCoupon AS usedCoupon,
+pot.latest_orderLineCount AS orderLineCount,
+poc.rackTimeSecs AS rackTimeSecs,
+poc.orderDeliveryTimeSecs AS orderDeliveryTimeSecs
+FROM PIZZA_ORDERS_COMPLETED_KEYED poc
+LEFT OUTER JOIN PIZZA_ORDERS_TABLE pot
+ON poc.order_key = pot.order_key;
+
+--This section creates event from the order lines detail
+--and flattens the products out to a easy to consume model.
+CREATE STREAM PIZZA_ORDER_LINES
+WITH (
+    KAFKA_TOPIC = 'pizza_order_lines',
+    VALUE_FORMAT = 'AVRO'
+)
+AS
+SELECT 
+order_key,
+storeNumber,
+storeOrderId,
+businessDate,
+EXPLODE(orderLines) AS orderLine
+FROM PIZZA_ORDERS_KEYED;
+
+CREATE STREAM PIZZA_ORDER_LINES_FLAT
+WITH (
+    KAFKA_TOPIC = 'pizza_order_lines_flat',
+    VALUE_FORMAT = 'AVRO'
+)
+AS
+SELECT 
+order_key,
+storeNumber,
+storeOrderId,
+businessDate,
+orderLine->product_id AS product_id,
+orderLine->category AS category,
+orderLine->quantity AS quantity,
+orderLine->unit_price AS unit_price,
+orderLine->net_price AS net_price
+FROM PIZZA_ORDER_LINES; 
