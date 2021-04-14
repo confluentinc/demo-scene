@@ -1,3 +1,5 @@
+## Welcome to Industry Themes
+
 Modest interpretations on various industry based use cases can be found here. Most include the data, producers and ksqlDB code necessary for demonstrating how stream processing can be applied to business problems.
 
 ## Requirements
