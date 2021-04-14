@@ -1,0 +1,6 @@
+applicationType: messaging
+defaultPackage: io.confluent
+testFramework: spock
+sourceLanguage: java
+buildTool: gradle
+features: [annotation-api, app-name, gradle, java, java-application, kafka, logback, readme, shade, spock, yaml]

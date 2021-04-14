@@ -1,0 +1,6 @@
+applicationType: function
+defaultPackage: io.confluent
+testFramework: spock
+sourceLanguage: java
+buildTool: gradle
+features: [annotation-api, app-name, aws-lambda, gradle, java, logback, readme, shade, spock, yaml]

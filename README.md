@@ -71,7 +71,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - ["The Cube" Demo](ccloud-cube-demo)
   - [Using Replicator with Confluent Cloud](ccloud-replicator)
   - [Streaming ETL pipeline from MongoDB to Snowflake with Apache Kafka®](streaming-etl-mongodb-snowflake)
-
+  - [Micronaut & AWS Lambda on Confluent Cloud](micronaut-lambda)
 
 - Confluent Platform
 
