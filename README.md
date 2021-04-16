@@ -4,7 +4,7 @@ Scripts and samples to support Confluent Platform talks. May be rough around the
 
 ## Requirements
 
-You need to allocate Docker 8GB when running these. Avoid allocating all your machine's cores to Docker as this may cause the machine to become unresponsive when running large stacks. On a four-core Mac Book two cores for Docker should be fine. 
+You need to allocate Docker 8GB when running these. Avoid allocating all your machine's cores to Docker as this may cause the machine to become unresponsive when running large stacks. On a four-core Mac Book two cores for Docker should be fine.
 
 ## Contents
 
@@ -12,7 +12,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
 
   - [Building a Telegram bot with Go, Apache Kafka, and ksqlDB](telegram-bot-carparks) ([🎥 talk](https://rmoff.dev/carpark-telegram-bot))
   - [Streaming Pac-Man](streaming-pacman)
-  
+
 - Data pipelines (Database + KSQL + Elasticsearch)
 
   - [Pipeline to the cloud](pipeline-to-the-cloud) - on-premises RDBMS to Cloud datawarehouse e.g. Snowflake ([✍️ blog](https://www.confluent.io/blog/cloud-analytics-for-on-premises-data-streams-with-kafka/?utm_campaign=rmoff&utm_source=demo-scene))
@@ -79,6 +79,7 @@ You need to allocate Docker 8GB when running these. Avoid allocating all your ma
   - [Tiered Storage Demo](tiered-storage)
   - [Cluster Linking Demo](cluster-linking)
   - [Confluent Admin REST APIs Demo](adminrest)
+  - [CP-Ansible on Ansible Tower](ansible-tower)
 
 - Misc
   - [Hacky export/import between Kafka clusters](export-import-with-kafkacat) using `kafkacat`
