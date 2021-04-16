@@ -7,7 +7,7 @@ within Ansible Tower. Ansible Tower acts as an automation server for deploying C
 - [Docker](https://docs.docker.com/desktop/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 - [Terraform](https://www.terraform.io/downloads.html)
-- An AWS VPC with `Enabled DNS hostnames` set to true created
+- An AWS VPC with `Enabled DNS hostnames` set to true, preferably in `us-west-2`
 - An AWS Subnet, preferably in us-west-2, created
 
 ## Usage
