@@ -7,7 +7,7 @@ The associated blog article can be found at https://www.confluent.io/blog/kafka-
 .Current environment
 
 |=====================================================================
-|Confluent Platform | 5.1.0
+|Confluent Platform | 5.4.0
 |MySQL              | 8.0.13
 |Postgres           | 11.1
 |MS SQL Server      | 2017 (RTM-CU13) (KB4466404) - 14.0.3048.4 (X64)
