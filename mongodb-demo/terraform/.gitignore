@@ -1,0 +1,11 @@
+
+
+**/cert.pem
+**/config.auto.tfvars
+**/configs.auto.tfvars
+**/.terraform
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/.terraform.tfstate.lock.info
+**/.terraform.lock.hcl
+

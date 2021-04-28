@@ -1,0 +1,5 @@
+# These files are downloaded from https://github.com/confluentinc/examples
+helper.sh
+config.env
+ccloud_library.sh
+confluent-hybrid-cloud-workshop

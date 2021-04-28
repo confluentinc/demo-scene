@@ -1,0 +1,65 @@
+workshop:
+
+  # A name for the workshop, used to uniquely identify individual resources
+  # IMPORTANT: can only contain of lowercase letters and numbers
+  name: <My Workshop Name>   
+ 
+  # The number of people attending the workshop ssh password
+  participant_count: 2
+  participant_password: <VM OS Password>
+
+  #
+  # workshop-core
+  #
+  core:
+
+    # The workshop cloud provider & VM configuration
+    cloud_provider: aws
+    access_key: <access key>
+    secret_key: <secret key>
+    region: eu-west-2
+    vm_type: t2.xlarge
+    # EU - does not exist in SG
+    ami: ami-0eb89db7593b5d434
+    # SG - Ubuntu Server 18.04 LTS (HVM), SSD Volume Type
+    #ami: ami-0f7719e8b7ba25c61
+
+    # The workshop Confluent Cloud configuration
+    ccloud_bootstrap_servers: <CCloud Bootstrap Server>
+    ccloud_api_key: <CCloud API Key>
+    ccloud_api_secret: <CCloud API Secret>
+
+    # List of ccloud topics to pre-create
+    ccloud_topics: sales_orders,sales_order_details,purchase_orders,purchase_order_details,customers,suppliers,products,mdb.demo.estore
+
+    #Feedback Form url (Optional)
+    #feedback_form_url: "<Feedback Form Url>"
+
+  #
+  # workshop extensions
+  #
+  # Uncomment the required extensions
+  extensions:
+
+    # aws-s3:
+
+    # aws-redshift:
+      # https://docs.aws.amazon.com/redshift/latest/dg/r_CREATE_USER.html
+      # For clear text, the password must meet the following constraints:
+      # It must be 8 to 64 characters in length.
+      # It must contain at least one uppercase letter, one lowercase letter, and one number.
+      # It can use any ASCII characters with ASCII codes 33–126, except ' (single quote), " (double quote), \, /, or @.
+      #rs_username: < Redshift DB Master Username >
+      #rs_password: < Redshift DB Master Password >
+  
+    # mongodbatlas:
+    #   mongodbatlas_public_key: <MongoDB Atlas public key>
+    #   mongodbatlas_private_key: <MongoDB Atlas public key>
+    #   mongodbatlas_project_id: <MongoDB Project ID>
+    #   mongodbatlas_provider_name: Azure
+    #   mongodbatlas_provider_instance_size_name: M10
+    #   mongodbatlas_provider_region_name: WESTERN_EUROPE
+    #   mongodbatlas_disk_size_gb: 2
+    #   mongodbatlas_mongo_db_major_version: 4.0
+    #   mongodbatlas_dbuser_username: confluent
+    #   mongodbatlas_dbuser_password: <MongoDB DB Password>
