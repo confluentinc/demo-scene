@@ -24,7 +24,7 @@ source $DELTA_CONFIGS_DIR/env.delta
 #################################################################
 # Confluent Cloud ksqlDB application
 #################################################################
-echo -e "\nConfluent Cloud ksqlDB application\n"
+echo -e "\nConfluent Cloud ksqlDB application endpoin $KSQLDB_ENDPOINT\n"
 ccloud::validate_ksqldb_up "$KSQLDB_ENDPOINT" || exit 1
 
 # Create required topics and ACLs
@@ -34,12 +34,16 @@ do
   ccloud kafka topic create "$TOPIC"   
 done
 
+ccloud ksql app list
+
 ksqlDBAppId=$(ccloud ksql app list | grep "$KSQLDB_ENDPOINT" | awk '{print $1}')
+echo "ksqldb app id: ksqlDBAppId"
 ccloud ksql app configure-acls $ksqlDBAppId $TOPICS_TO_CREATE
 
+SERVICE_ACCOUNT_ID=$(ccloud kafka cluster list -o json | jq -r '.[0].name' | awk -F'-' '{print $4;}')
 for TOPIC in $TOPICS_TO_CREATE
 do
-  ccloud kafka acl create --allow --service-account $(ccloud service-account list | grep $ksqlDBAppId | awk '{print $1;}') --operation WRITE --topic $TOPIC      
+  ccloud kafka acl create --allow --service-account $SERVICE_ACCOUNT_ID --operation WRITE --topic $TOPIC      
 done
 
 # Submit KSQL queries

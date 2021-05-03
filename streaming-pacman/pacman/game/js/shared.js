@@ -10,8 +10,8 @@ function loadHighestScore(player, callback) {
 			if (this.status == 200) {
 				var result = JSON.parse(this.responseText);
 				if (result[1] != undefined || result[1] != null) {
-					var row = result[1].row;
-					highestScore = row.columns[0];
+					var row = result[1];
+					highestScore = row[0];
 				}
             }
             callback(highestScore);
@@ -34,9 +34,9 @@ function loadSummaryStats(callback) {
 			if (this.status == 200) {
 				var result = JSON.parse(this.responseText);
 				if (result[1] != undefined || result[1] != null) {
-					var row = result[1].row;
-					highestScore = row.columns[0];
-					usersSet = row.columns[1];
+					var row = result[1];
+					highestScore = row[0];
+					usersSet = row[1];
 				}
             }
             callback(highestScore, usersSet);
@@ -59,8 +59,8 @@ function sendksqlDBStmt(request, ksqlQuery){
 
 function sendksqlDBQuery(request, ksqlQuery){
 	var query = {};
-	query.ksql = ksqlQuery;
-	query.endpoint = "query";
+	query.sql = ksqlQuery;
+	query.endpoint = "query-stream";
 	request.open('POST', KSQLDB_QUERY_API, true);
 	request.setRequestHeader('Accept', 'application/json');
 	request.setRequestHeader('Content-Type', 'application/json');
@@ -84,7 +84,7 @@ function getScoreboardJson(callback,userList) {
 
 			//First element is the header
 			result.shift();
-			var playersScores = result.map((item) => ({ user: item.row.columns[0], score:item.row.columns[1],level:item.row.columns[2],losses:item.row.columns[3] }));
+			var playersScores = result.map((item) => ({ user: item[0], score:item[1],level:item[2],losses:item[3] }));
 
 			playersScores = playersScores.sort(function(a, b) {
 				var res=0
