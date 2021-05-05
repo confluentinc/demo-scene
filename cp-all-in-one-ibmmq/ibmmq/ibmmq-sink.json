@@ -1,0 +1,19 @@
+{
+    "connector.class": "io.confluent.connect.jms.IbmMqSinkConnector",
+    "topics": "VIP_USERS",
+    "mq.hostname": "ibmmq",
+    "mq.port": "1414",
+    "mq.transport.type": "client",
+    "mq.queue.manager": "MQ1",
+    "mq.channel": "DEV.APP.SVRCONN",
+    "mq.username": "app",
+    "mq.password": "passw0rd",
+    "jms.destination.name": "DEV.QUEUE.2",
+    "jms.destination.type": "queue",
+    "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "confluent.license": "",
+    "confluent.topic.bootstrap.servers": "broker:29092",
+    "confluent.topic.replication.factor": "1",
+    "name":"ibmmq-sink"
+}
