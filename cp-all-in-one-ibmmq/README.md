@@ -1,4 +1,4 @@
-![image](../images/confluent-logo-300-2.png)
+![image](../images/architecture.png)
 
 # IBM MQ demo
 
@@ -41,16 +41,18 @@ You need to send a message to IBM MQ before the schema will appear in the topic 
 ![add image](images/addmessage.png)
 ![add image](images/addmessage2.png)
 
-- You can now see the schema assigned to the `ibmmq` topic
-
-![ibmmq topic](images/ibmmq-schema.png)
-
 ## Make the source connectors
 
 ```bash
 make connectsource
 # wait a minute before moving on to the next step
 ```
+
+- You can now see the schema assigned to the `ibmmq` topic
+
+![ibmmq topic](images/ibmmq-schema.png)
+
+
 
 ## AVRO message appear in consumer
 
