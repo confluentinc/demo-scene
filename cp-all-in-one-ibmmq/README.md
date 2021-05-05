@@ -16,7 +16,6 @@ make cluster
 
 ```bash
 make topic
-# wait a minute before moving on to the next step
 ```
 
 ## Open the IBM MQ Dashboard
