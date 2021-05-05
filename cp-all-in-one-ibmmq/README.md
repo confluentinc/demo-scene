@@ -1,4 +1,4 @@
-![image](../images/architecture.png)
+![image](images/architecture.png)
 
 # IBM MQ demo
 
@@ -51,8 +51,6 @@ make connectsource
 - You can now see the schema assigned to the `ibmmq` topic
 
 ![ibmmq topic](images/ibmmq-schema.png)
-
-
 
 ## AVRO message appear in consumer
 
