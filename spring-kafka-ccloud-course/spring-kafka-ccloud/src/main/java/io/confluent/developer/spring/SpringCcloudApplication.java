@@ -103,9 +103,9 @@ class Processor {
     final Serde<String> stringSerde = Serdes.String();
     final Serde<Long> longSerde = Serdes.Long();
 
-// Construct a `KStream` from the input topic "streams-plaintext-input", where message values
-// represent lines of text (for the sake of this example, we ignore whatever may be stored
-// in the message keys).
+    // Construct a `KStream` from the input topic "streams-plaintext-input", where message values
+    // represent lines of text (for the sake of this example, we ignore whatever may be stored
+    // in the message keys).
     KStream<Integer, String> textLines = builder
         .stream("hobbit", Consumed.with(integerSerde, stringSerde));
 
