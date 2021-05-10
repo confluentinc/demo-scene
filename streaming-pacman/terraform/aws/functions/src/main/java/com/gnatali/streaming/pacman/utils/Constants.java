@@ -16,7 +16,7 @@ public interface Constants {
 
     public static final String ENDPOINT_PARAMETER = "endpoint";
     public static final String QUERY_PARAMETER = "ksql";
-    public static final String KSQLDB_ENDPOINT_QUERY = "query";
+    public static final String KSQLDB_ENDPOINT_QUERY = "query-stream";
     public static final String KSQLDB_ENDPOINT_KSQL = "ksql";
 
     public static final String USER_GAME_TOPIC = "USER_GAME";

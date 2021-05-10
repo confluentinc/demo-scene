@@ -29,8 +29,8 @@ import static com.gnatali.streaming.pacman.utils.Constants.*;
 
 public class EventHandler implements RequestHandler<Map<String, Object>, Map<String, Object>> {
 
-    public static final MediaType MEDIATYPE_JSON = MediaType.get("application/json; charset=utf-8");
-    public static final MediaType MEDIATYPE_KSQL = MediaType.get("application/vnd.ksql.v1+json");
+    public static final MediaType MEDIATYPE_JSON = MediaType.parse("application/json; charset=utf-8");
+    public static final MediaType MEDIATYPE_KSQL = MediaType.parse("application/vnd.ksql.v1+json; charset=utf-8");
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     OkHttpClient client = new OkHttpClient.Builder().authenticator(new Authenticator() {
@@ -51,10 +51,17 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
     .build();
   
 
-    private String post(String url, String json) throws IOException {
-        RequestBody body = RequestBody.create(json, MEDIATYPE_KSQL);
-        Request request = new Request.Builder()
-            .url(url)
+    private String post(String url, String json, String accept) throws IOException {
+        RequestBody body = RequestBody.create(MEDIATYPE_KSQL, json);
+        okhttp3.Request.Builder requestBuilder = new Request.Builder()
+            .url(url);
+
+            if(accept != null){
+                requestBuilder.addHeader("Accept", accept);
+            }
+            
+
+            Request request = requestBuilder
             .post(body)
             .build();
         try (Response response = client.newCall(request).execute()) {
@@ -101,17 +108,25 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
                     if (event != null ) {
 
                         JsonElement payloadRoot = JsonParser.parseString(event);
-                        String payloadQuery = payloadRoot.getAsJsonObject().get("ksql").getAsString();
+                        
                         String payloadEndpoint = payloadRoot.getAsJsonObject().get("endpoint").getAsString();
-
-                        logger.log("payloadQuery: "+payloadQuery);
+                        String payloadQuery;
+                       
                         logger.log("payloadEndpoint: "+payloadEndpoint);
 
                         String endpoint;
+                        String queryObjName;
+                        String accept = null;
+                        
+                        
                         if(Constants.KSQLDB_ENDPOINT_QUERY.equals(payloadEndpoint)){
                             endpoint = Constants.KSQLDB_ENDPOINT_QUERY;
+                            queryObjName = "sql";
+                            accept = "application/json";
                         }else if(Constants.KSQLDB_ENDPOINT_KSQL.equals(payloadEndpoint)){
                             endpoint = Constants.KSQLDB_ENDPOINT_KSQL;
+                            queryObjName = "ksql";
+                            
                         } else {
                             StringBuilder message = new StringBuilder();
                             message.append("The endpoint provided ("+payloadEndpoint+") is not supported");
@@ -121,14 +136,18 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
                             return response;
                         }
 
+                        payloadQuery = payloadRoot.getAsJsonObject().get(queryObjName).getAsString();
+                        logger.log("payloadQuery: "+payloadQuery);
+
                         JsonObject newPayload = new JsonObject();
-                        newPayload.add("ksql", payloadRoot.getAsJsonObject().get("ksql"));
+                        newPayload.add(queryObjName, payloadRoot.getAsJsonObject().get(queryObjName));
+                        
 
                         try {
                             logger.log("Sending POST to : "+Constants.KSQLDB_ENDPOINT + "/" + endpoint);
                             logger.log("Payload : "+ gson.toJson(newPayload));
-                            result = post(Constants.KSQLDB_ENDPOINT + "/" + endpoint, gson.toJson(newPayload));
-                            logger.log("Post worked: "+endpoint);
+                            result = post(Constants.KSQLDB_ENDPOINT + "/" + endpoint, gson.toJson(newPayload), accept);
+                            logger.log("Post worked: "+endpoint+" result: "+result);
                         } catch (Exception e) {
                             logger.log("Error! "+e.getMessage());
                             logger.log(ExceptionUtils.getStackTrace(e));
@@ -161,8 +180,9 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
             logger.log("No origin!");
         }
         
+        logger.log("Response will be sent : "+ gson.toJson(response));
         return response;
-
+    
     }
 
 
