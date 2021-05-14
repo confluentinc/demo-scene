@@ -42,7 +42,7 @@ You may well need to allocate Docker 8GB when running these. Avoid allocating al
 ###  ksqlDB (previously known as KSQL)
 - [Introduction to ksqlDB 01](introduction-to-ksqldb) ([🗣️talk](https://rmoff.dev/ksqldb-slides))
 - [Introduction to KSQL   02](ksql-intro)
-- [ksqlDB tombstones]((ksqldb-tombstones))
+- [ksqlDB tombstones](ksqldb-tombstones)
 - [Using Twitter data with ksqlDB](ksqldb-twitter)
 - [KSQL UDF Advanced Example](ksql-udf-advanced-example)
 - [KSQL Troubleshooting](ksql-troubleshooting)
@@ -56,7 +56,7 @@ You may well need to allocate Docker 8GB when running these. Avoid allocating al
 
 ###  Kafka Connect
 
-- [Single Message Transform in Kafka Connect]((kafka-connect-single-message-transforms))
+- [Single Message Transform in Kafka Connect](kafka-connect-single-message-transforms)
 - [Improvements Kafka Connect in Apache Kafka 2.3](connect-5.3-improvements)
 - [From Zero to Hero with Kafka Connect](kafka-connect-zero-to-hero) ([🗣️talk](https://rmoff.dev/crunch19-zero-to-hero-kafka-connect))
 - [Kafka Connect Converters and Serialization](connect-deepdive) ([✍️ blog](https://www.confluent.io/blog/kafka-connect-deep-dive-converters-serialization-explained/?utm_campaign=rmoff&utm_source=demo-scene))
