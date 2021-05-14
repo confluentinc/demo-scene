@@ -26,7 +26,7 @@ You may well need to allocate Docker 8GB when running these. Avoid allocating al
   
 ###  Data pipelines (Database + KSQL + Elasticsearch)
 
-- [Streaming ETL and Analytics on Confluent with Maritime AIS data]((maritime-ais))
+- [Streaming ETL and Analytics on Confluent with Maritime AIS data](maritime-ais)
 - [Pipeline to the cloud](pipeline-to-the-cloud) - on-premises RDBMS to Cloud datawarehouse e.g. Snowflake ([✍️ blog](https://www.confluent.io/blog/cloud-analytics-for-on-premises-data-streams-with-kafka/?utm_campaign=rmoff&utm_source=demo-scene))
 - [Rail data streaming pipeline](rail-data-streaming-pipeline) ([🗣️talk](https://rmoff.dev/oredev19-on-track-with-kafka))
 - [Apache Kafka and KSQL in Action: Let’s Build a Streaming Data Pipeline!](build-a-streaming-pipeline) ([🗣️talk](https://go.rmoff.net/devoxxuk19))
