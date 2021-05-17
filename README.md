@@ -26,7 +26,7 @@ You may well need to allocate Docker 8GB when running these. Avoid allocating al
   
 ###  Data pipelines (Database + KSQL + Elasticsearch)
 
-- [Streaming ETL and Analytics on Confluent with Maritime AIS data]((maritime-ais))
+- [Streaming ETL and Analytics on Confluent with Maritime AIS data](maritime-ais)
 - [Pipeline to the cloud](pipeline-to-the-cloud) - on-premises RDBMS to Cloud datawarehouse e.g. Snowflake ([✍️ blog](https://www.confluent.io/blog/cloud-analytics-for-on-premises-data-streams-with-kafka/?utm_campaign=rmoff&utm_source=demo-scene))
 - [Rail data streaming pipeline](rail-data-streaming-pipeline) ([🗣️talk](https://rmoff.dev/oredev19-on-track-with-kafka))
 - [Apache Kafka and KSQL in Action: Let’s Build a Streaming Data Pipeline!](build-a-streaming-pipeline) ([🗣️talk](https://go.rmoff.net/devoxxuk19))
@@ -42,7 +42,7 @@ You may well need to allocate Docker 8GB when running these. Avoid allocating al
 ###  ksqlDB (previously known as KSQL)
 - [Introduction to ksqlDB 01](introduction-to-ksqldb) ([🗣️talk](https://rmoff.dev/ksqldb-slides))
 - [Introduction to KSQL   02](ksql-intro)
-- [ksqlDB tombstones]((ksqldb-tombstones))
+- [ksqlDB tombstones](ksqldb-tombstones)
 - [Using Twitter data with ksqlDB](ksqldb-twitter)
 - [KSQL UDF Advanced Example](ksql-udf-advanced-example)
 - [KSQL Troubleshooting](ksql-troubleshooting)
@@ -56,7 +56,7 @@ You may well need to allocate Docker 8GB when running these. Avoid allocating al
 
 ###  Kafka Connect
 
-- [Single Message Transform in Kafka Connect]((kafka-connect-single-message-transforms))
+- [Single Message Transform in Kafka Connect](kafka-connect-single-message-transforms)
 - [Improvements Kafka Connect in Apache Kafka 2.3](connect-5.3-improvements)
 - [From Zero to Hero with Kafka Connect](kafka-connect-zero-to-hero) ([🗣️talk](https://rmoff.dev/crunch19-zero-to-hero-kafka-connect))
 - [Kafka Connect Converters and Serialization](connect-deepdive) ([✍️ blog](https://www.confluent.io/blog/kafka-connect-deep-dive-converters-serialization-explained/?utm_campaign=rmoff&utm_source=demo-scene))
