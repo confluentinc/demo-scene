@@ -58,7 +58,7 @@ docker exec kafkacat kafkacat -b kafka:29092 -t test -C -u
 
 [source,bash]
 ----
-docker exec kafkacat kafkacat -b kafka:29092 -t test -C -u -f '[Topic %t/partition %p/offset %o] Key: %k, Value: %s\n'
+docker exec kafkacat kafkacat -b kafka:29092 -t test -C -u -f '[Topic %t/partition %p/offset %o]\tKey: %k\tValue: %s\n'
 ----
 
 == Demo 2 - Stream processing

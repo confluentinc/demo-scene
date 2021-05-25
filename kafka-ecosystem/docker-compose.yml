@@ -97,9 +97,9 @@ services:
       - -c
       - |
         echo "Installing Connector"
-        confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.3.2
-        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:10.0.1
-        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:10.0.0
+        confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.5.0
+        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:11.0.4
+        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:10.2.0
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run &
@@ -128,7 +128,7 @@ services:
     # To connect to ksqlDB CLI
     #   docker exec --interactive --tty ksqldb ksql http://localhost:8088
     # *-----------------------------*
-    image: confluentinc/ksqldb-server:0.15.0
+    image: confluentinc/ksqldb-server:0.17.0
     hostname: ksqldb
     container_name: ksqldb
     depends_on:
