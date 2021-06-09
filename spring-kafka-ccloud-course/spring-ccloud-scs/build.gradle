@@ -1,0 +1,50 @@
+plugins {
+  id 'org.springframework.boot' version '2.3.10.RELEASE'
+  id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+  id 'java'
+}
+
+group = 'io.confluent.developer'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+configurations {
+  compileOnly {
+    extendsFrom annotationProcessor
+  }
+}
+
+repositories {
+  mavenCentral()
+}
+
+ext {
+  set('springCloudVersion', "Hoxton.SR11")
+}
+
+dependencies {
+  implementation 'org.springframework.boot:spring-boot-starter-webflux'
+  implementation 'org.apache.kafka:kafka-streams'
+  implementation 'org.springframework.cloud:spring-cloud-stream'
+  implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka'
+  implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka-streams'
+  implementation 'org.springframework.kafka:spring-kafka'
+  compileOnly 'org.projectlombok:lombok'
+  implementation("com.github.javafaker:javafaker:1.0.2")
+  annotationProcessor 'org.projectlombok:lombok'
+  testImplementation('org.springframework.boot:spring-boot-starter-test') {
+    exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+  }
+  testImplementation 'io.projectreactor:reactor-test'
+  testImplementation 'org.springframework.kafka:spring-kafka-test'
+}
+
+dependencyManagement {
+  imports {
+    mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+  }
+}
+
+test {
+  useJUnitPlatform()
+}

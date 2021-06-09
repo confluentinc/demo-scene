@@ -1,0 +1,55 @@
+plugins {
+  id 'org.springframework.boot' version '2.4.5'
+  id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+  id 'java'
+  id 'idea'
+  id "com.commercehub.gradle.plugin.avro" version "0.99.99"
+}
+
+group = 'io.confluent.developer'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+configurations {
+  compileOnly {
+    extendsFrom annotationProcessor
+  }
+}
+
+repositories {
+  mavenCentral()
+  maven {
+    url "https://packages.confluent.io/maven"
+  }
+}
+
+ext {
+  set('springCloudVersion', "2020.0.2")
+}
+
+dependencies {
+  implementation 'org.apache.avro:avro:1.10.2'
+  implementation 'io.confluent:kafka-avro-serializer:6.1.0'
+  implementation 'org.springframework.boot:spring-boot-starter-webflux'
+  implementation 'org.apache.kafka:kafka-streams'
+  implementation 'org.springframework.cloud:spring-cloud-stream'
+  implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka'
+  implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka-streams'
+  implementation 'org.springframework.kafka:spring-kafka'
+  implementation("com.github.javafaker:javafaker:1.0.2")
+  compileOnly 'org.projectlombok:lombok'
+  annotationProcessor 'org.projectlombok:lombok'
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+  testImplementation 'io.projectreactor:reactor-test'
+  testImplementation 'org.springframework.kafka:spring-kafka-test'
+}
+
+dependencyManagement {
+  imports {
+    mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+  }
+}
+
+test {
+  useJUnitPlatform()
+}
