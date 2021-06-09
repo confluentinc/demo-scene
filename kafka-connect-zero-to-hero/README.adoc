@@ -2,7 +2,7 @@
 
 == 👾 Demo code
 
-Follow the script link:/demo_zero-to-hero-with-kafka-connect.adoc[here]
+Follow the script link:/kafka-connect-zero-to-hero/demo_zero-to-hero-with-kafka-connect.adoc[here]
 
 == 📔 Slides
 
