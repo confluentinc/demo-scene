@@ -8,7 +8,7 @@ DIR_DEMO_HELPER="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 #
 # (This step will be skipped if the files are already in the utils folder)
 ################################################################
-EXAMPLES_URL="https://raw.githubusercontent.com/confluentinc/examples/6.1.0-post"
+EXAMPLES_URL="https://raw.githubusercontent.com/confluentinc/examples/6.1.1-post"
 EXAMPLES_UTILS_URL="${EXAMPLES_URL}/utils"
 
 [ ! -f $DIR_DEMO_HELPER/helper.sh ] && wget $EXAMPLES_UTILS_URL/helper.sh -P $DIR_DEMO_HELPER
