@@ -54,7 +54,7 @@ function welcome_screen {
     echo " ";
     echo " ";
     echo "Handy links: "
-    echo " - Demo main page: ${DEMO_SITE} ";
+    echo " - External IP: ${DEMO_IP} ";
     echo " - Confluent Control Center: ${C3_LINK}";
     echo " - MongoDB Atlas Realm App: ${REALM_APP_LINK}";
 }
