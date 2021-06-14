@@ -1,9 +1,10 @@
 version: "2.1"
 services:
-  dbtrans-simulator:
+  mongodb-demo-launcher:
     container_name: mongodb-demo-launcher
     command: tail -f /dev/null
     volumes:
-      - ./../../mongodb-demo:/mongodb-demo
+      - ./../../mongodb-demo/config/demo.cfg:/demo-scene/mongodb-demo/config/demo.cfg
+      - ./../../mongodb-demo/tmp/gcp-license.json:/gcp-license.json
     build:
       context: ./demo-launcher    

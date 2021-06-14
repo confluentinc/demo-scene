@@ -13,6 +13,7 @@ RUN apt-get install wget unzip -y
 RUN apt-get install curl -y
 RUN apt-get install jq -y
 RUN apt-get install git -y
+RUN apt-get install nano -y
 
 RUN wget --quiet https://releases.hashicorp.com/terraform/1.0.0/terraform_1.0.0_linux_amd64.zip \
   && unzip terraform_1.0.0_linux_amd64.zip \
@@ -23,4 +24,13 @@ RUN curl -L --http1.1 https://cnfl.io/ccloud-cli | sh -s -- -b /opt
 
 RUN apt-get install nodejs npm -y
 RUN npm install -g mongodb-realm-cli
+
+ENV GIT_BRANCH gn-mongodb-demo
+ENV GIT_REPO gianlucanatali/demo-scene
+ENV WS_REPO_FOLDER $DIR_DEMO_HELPER/demo-scene
+
+RUN git clone https://github.com/${GIT_REPO}.git $WS_REPO_FOLDER
+
+RUN cd $WS_REPO_FOLDER && git fetch && git checkout ${GIT_BRANCH} && git pull
+
 

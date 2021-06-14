@@ -39,13 +39,13 @@ In this demo we'll use:
 ## Spin Up the Demo (using Docker, Easier)
 This approach uses Docker tosandbox the environment needed to spin up the demo, if you prefer a direct approach see next chapter.
 
-1. Copy the gcp json license to the tmp folder, rename it to gcp-license.json then in the config file you should point to it like: `/mongodb-demo/tmp/gcp-license.json`
+1. Copy the gcp json license you downloaded earlier to the tmp folder, rename it to gcp-license.json then in the config file you should point to it like: `/gcp-license.json`
 1. In your terminal, navigate to the folder docker
 1. Run `docker-compose up -d`
 1. Enter in the bash terminal of the docker container using: 
    `docker exec -it mongodb-demo-launcher /bin/bash`
-1. Navigate to the right folder: `cd mongodb-demo`
-Login to your Confluent Cloud account and save the credentials:
+1. Navigate to the right folder: `cd /demo-scene/mongodb-demo`
+1. Login to your Confluent Cloud account and save the credentials:
    `ccloud login --save`
 1. execute `./create_demo_environment.sh`
 1. At the end of the script you will receive an output with the IP of your demo. Copy that ip in your browser to continue
@@ -163,7 +163,30 @@ This Demo uses Confluent Replicator to stream the messages created by Debezium c
 
 Confluent Replicator uses Kafka Connect under the covers and can be considered a special type of connector, however, unlike other connectors, the source _and_ target technology for the connector is a Kafka Cluster.
 
-You can see the replicator instances running using Control Center. On the left menu select `Replicators`
+We can view the status of Replicator in Confluent Control Center by selecting `Replicators` on the left-hand navigation pane. Here we can see throughput and latency statistics.
+
+![Control Center Replicators](docs/resources/images/c3_72.png)
+
+### Confirm that Messages are Arriving in Confluent Cloud
+
+In Control Center you can always reach back the home by clicking on the confluent logo on the top left, or by clicking ont the HOME in the top navigation bar.
+Select the "ccloud" cluster and then select "Topics". 
+
+You can filter the list of topics by using the search box, type your data center name, dc01, into the search box at the top to filter.
+
+![Control Center Ccloud topics](docs/resources/images/c3_60.png)
+
+Select the `dc01_sales_order_details` topic and finally the "Messages" tab under the topic heading. You should see messages streaming in from your on-premise Kafka cluster.
+
+![Control Center Ccloud dc01_sales_order_details topic](docs/resources/images/c3_70.png)
+
+### ksqlDB Application
+
+We now have all the data we need being streamed, in realtime, to Confluent Cloud. You have a ksqlDB Server. You can find it in Control Center, ccloud cluster, click on ksqlDB on the left menu.
+Now click on the Flow Tab, you will see the topology of the ksqlDB application. Spend some time in understanding how the data is transformed, and see the data flowing in and being enriched in real time.
+
+![Demo ksqlDB Flow](docs/resources/images/ksql_flow.png)
+
 
 
 
@@ -426,99 +449,19 @@ You should see a similar result
 }
 ```
 
-## Further Reading
-If you want to dig deeper here some useful links:
+### ksqlDB Application
 
-* [Debezium MySQL Configuration Options](https://debezium.io/documentation/reference/1.1/connectors/mysql.html#mysql-connector-configuration-properties_debezium)
-* [Kafka Connect REST API](https://docs.confluent.io/current/connect/references/restapi.html)
-* [cURL manpage](https://curl.haxx.se/docs/manpage.html)
-* [Confluent Control Center Documentation](https://docs.confluent.io/current/control-center/index.html)
+Below is an illustration of the completed Supply & Demand ksqlDB Application that is built in this demo.
 
-## Troubleshooting
+![Demo ksqlDB Topology](docs/resources/images/ksqlDB_topology.png)
 
-### No data generated in the `sales_order` topic
-
-The orders application will continuously create new sales orders to simulate product demand. The application will also raise purchase orders when told to do so, we'll cover this aspect later on in the workshop. If you don't see data flowing in, check if the simulator is working as expected.
-
-```
-docker logs -f db-trans-simulator
-```
-
-You should see an output like this:
-```
-Sales Order 1 Created
-Sales Order 2 Created
-Sales Order 3 Created
-Sales Order 4 Created
-Sales Order 5 Created
-Sales Order 6 Created
-...
-```
-
-Press `ctrl-c` to quit
-
-If you need to restart the generator you can use the following command:
-```
-docker exec -dit db-trans-simulator sh -c "python -u /simulate_dbtrans.py > /proc/1/fd/1 2>&1"
-```
-
-We now have `sales_order` and `sales_order_details` rows being created for us by the orders application.
-
-
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
-
-=== Confirm that Messages are Arriving in Confluent Cloud
-
-Jump back to link:http://{externalip}:9021[Confluent Control Center, window=_blank]
-
-You can always reach back the home by clicking on the confluent logo on the top left, or by clicking ont the HOME in the top navigation bar.
-Select the "ccloud" cluster and then select "Topics". 
-
-This Confluent Cloud Instance is being shared by other users of the workshop and as a result you will see topics being replicated from other data centers. To see just your topics, type your data center name, {dc}, into the search box at the top to filter.
-
-image::./images/c3_60.png[]
-
-Select the `{dc}_sales_order_details` topic and finally the "Messages" tab under the topic heading. You should see messages streaming in from your on-premise Kafka cluster.
-
-image::./images/c3_70.png[]
-
-We can also view the status of Replicator in Confluent Control Center by selecting "Replicators" on the left-hand navigation pane. Here we can see throughput and latency statistics.
-
-image::./images/c3_72.png[]
-
-.Further Reading
-[TIP]
-====
-* link:https://docs.confluent.io/current/connect/kafka-connect-replicator/index.html[Confluent Replicator]
-* link:https://docs.confluent.io/current/connect/kafka-connect-replicator/configuration_options.html[Confluent Replicator Configuration Properties]
-====
-
-== Lab 5: Creating a ksqlDB Application
-
-We now have all the data we need being streamed, in realtime, to Confluent Cloud. You have a ksqlDB Server running inside a docker container that is configured to point to our Confluent Cloud cluster. In a real world deployment, it is likely that this ksqlDB Server would be running closer to Confluent Cloud but for the purposes of this workshop it is not important.
-
-image::./images/4_ksql_application.png[]
-
-Below is an illustration of the completed Supply & Demand ksqlDB Application, over the next few labs you will be building this step-by-step.
-
-image::./images/ksqlDB_topology.png[]
-
-=== Start the ksqlDB CLI
+### Start the ksqlDB CLI
 
 To start the ksqlDB CLI run the following command:-
 
-[IMPORTANT]
-====
-[source,subs="attributes"]
-----
+```
 docker exec -it ksqldb-cli ksql http://ksqldb-server-ccloud:8088
-----
-====
+```
 
 You should see something like this:-
 
@@ -572,7 +515,7 @@ ksql> show topics;
 ...
 ```
 
-=== Inspect a topic\'s contents
+### Inspect a topic\'s contents
 
 To inspect the contents of a topic run the following:-
 
@@ -580,8 +523,7 @@ To inspect the contents of a topic run the following:-
 
 You should see something similar:-
 
-[source,subs="attributes"]
-----
+```
 ksql> PRINT {dc}_sales_orders;
 Key format: AVRO
 Value format: AVRO
@@ -589,67 +531,23 @@ rowtime: 2020/05/20 10:10:29.264 Z, key: {"id": 1}, value: {"id": 1, "order_date
 rowtime: 2020/05/20 10:10:29.265 Z, key: {"id": 2}, value: {"id": 2, "order_date": 1589969392000, "customer_id": 14, "sourcedc": "{dc}"}
 rowtime: 2020/05/20 10:10:29.265 Z, key: {"id": 3}, value: {"id": 3, "order_date": 1589969397000, "customer_id": 14, "sourcedc": "{dc}"}
 rowtime: 2020/05/20 10:10:29.265 Z, key: {"id": 4}, value: {"id": 4, "order_date": 1589969402000, "customer_id": 7, "sourcedc": "{dc}"}
-...
-----
+```
 
 Press `ctrl-c` to stop
 
-=== ksqlDB Streams
+### ksqlDB Streams
 
 In order to work with a stream of data in ksqlDB we first need to register a stream over an existing topic.
 
-We can do this using a `CREATE STREAM` statement. Run the following command to create your first ksqlDB stream:-
-
-[IMPORTANT]
-====
-[source,subs="quotes,attributes"]
-----
-*CREATE STREAM* sales_orders *WITH* (KAFKA_TOPIC='{dc}_sales_orders', PARTITIONS=1, VALUE_FORMAT='AVRO');
-----
-====
-
-image::./images/ksql_001.png[align="center"]
-
-You should see the following output
-
-[source,subs="attributes"]
-----
-ksql> CREATE STREAM sales_orders WITH (KAFKA_TOPIC='{dc}_sales_orders', PARTITIONS=1, VALUE_FORMAT='AVRO');
-
- Message
-----------------
- Stream created
-----------------
-----
-
-Create streams for each of your remaining topics
-
-[IMPORTANT]
-====
-[source,subs="quotes,attributes"]
-----
-*CREATE STREAM* sales_order_details *WITH* (KAFKA_TOPIC='{dc}_sales_order_details', PARTITIONS=1, VALUE_FORMAT='AVRO');
-*CREATE STREAM* purchase_orders *WITH* (KAFKA_TOPIC='{dc}_purchase_orders', PARTITIONS=1, VALUE_FORMAT='AVRO');
-*CREATE STREAM* purchase_order_details *WITH* (KAFKA_TOPIC='{dc}_purchase_order_details', PARTITIONS=1, VALUE_FORMAT='AVRO');
-*CREATE STREAM* products *WITH* (KAFKA_TOPIC='{dc}_products', PARTITIONS=1, VALUE_FORMAT='AVRO');
-*CREATE STREAM* customers *WITH* (KAFKA_TOPIC='{dc}_customers', PARTITIONS=1, VALUE_FORMAT='AVRO');
-*CREATE STREAM* suppliers *WITH* (KAFKA_TOPIC='{dc}_suppliers', PARTITIONS=1, VALUE_FORMAT='AVRO');
-----
-====
-
-image::./images/ksql_002.png[align="center"]
-
 To view your current streams run the following command:-
 
-[source,subs="quotes,attributes"]
-----
+```
 SHOW STREAMS;
-----
+```
 
 Notice that each stream is mapped to an underlying Kafka topic and that the format is AVRO. 
 
-[source,subs="attributes"]
-----
+```
  Stream Name            | Kafka Topic                 | Format
 ---------------------------------------------------------------
  CUSTOMERS              | {dc}_customers              | AVRO
@@ -659,22 +557,18 @@ Notice that each stream is mapped to an underlying Kafka topic and that the form
  SALES_ORDERS           | {dc}_sales_orders           | AVRO
  SALES_ORDER_DETAILS    | {dc}_sales_order_details    | AVRO
  SUPPLIERS              | {dc}_suppliers              | AVRO
----------------------------------------------------------------
-----
+```
 
 To view the details of an individual topic you can you can use the `describe` command:-
-
-[source,subs="quotes,attributes"]
-----
-*DESCRIBE* sales_order_details;
-----
+```
+DESCRIBE sales_order_details;
+```
 
 Notice that all the columns have been created for us and we didn't need to explicitly set their names and data types when we created the stream, this is one of the advantages of using AVRO and the Schema Registry.
 
 Also notice that ksqlDB adds an implicit `ROWKEY` column to every stream and table, which represents the corresponding Kafka message key.
 
-[source,subs="attributes"]
-----
+```
 Name                 : SALES_ORDER_DETAILS
  Field          | Type
 -----------------------------------------
@@ -687,16 +581,9 @@ Name                 : SALES_ORDER_DETAILS
  SOURCEDC       | VARCHAR(STRING)
 -----------------------------------------
 For runtime statistics and query details run: DESCRIBE EXTENDED <Stream,Table>;
-----
+```
 
-.Further Reading
-[TIP]
-====
-* link:https://docs.ksqldb.io/en/latest/[ksqlDB Overview]
-* link:https://docs.ksqldb.io/en/latest/developer-guide/create-a-stream/[ksqlDB Streams]
-====
-
-== Lab 6: Querying Streams with ksqlDB
+### Querying Streams with ksqlDB
 
 There are two types of query in ksqlDB, *Push* queries and *Pull* queries.
 
@@ -705,55 +592,19 @@ There are two types of query in ksqlDB, *Push* queries and *Pull* queries.
 
 Another important point to understand is where within a stream a query starts to read from. You can control this behaviour using the `ksql.streams.auto.offset.reset` property. This property can either be set to `earliest` where data is consumed from the very beginning of the topic or `latest` where only new data is consumed.
 
-To see the current values for _all_ properties run the following command 
- 
-[source,subs="quotes,attributes"]
-----
-SHOW PROPERTIES;
-----
-
-Look out for a property called `ksql.streams.auto.offset.reset`, it should currently be set to `earliest`.
-
-[source,subs="attributes"]
-----
- Property                                               | Default override | Effective Value                                                                 
---------------------------------------------------------------------------------------------
- ...          
- ksql.streams.auto.offset.reset                         |                  | earliest
- ...                                             
---------------------------------------------------------------------------------------------
-ksql>
-----
-
-You can override this setting to suit you needs:-
-
-[source,subs="quotes,attributes"]
-----
-*SET* 'ksql.streams.auto.offset.reset'='earliest';
-*SET* 'ksql.streams.auto.offset.reset'='latest';
-----
-
-Or preferably, using the abbreviated property names:-
-
-[source,subs="quotes,attributes"]
-----
-*SET* 'auto.offset.reset' = 'latest';
-*SET* 'auto.offset.reset' = 'earliest';
-----
 
 Let's start by running a Push query and consume all messages from the beginning of a stream.
 
-[source,subs="quotes,attributes"]
-----
-*SET* 'auto.offset.reset'='earliest';
-*SELECT*  id, 
+```
+SET 'auto.offset.reset'='earliest';
+SELECT  id, 
         sales_order_id, 
         product_id, 
         quantity, 
         price 
-*FROM*  sales_order_details 
-*EMIT CHANGES*;
-----
+FROM  sales_order_details 
+EMIT CHANGES;
+```
 
 You should see something similar to this:-
 ```
@@ -787,21 +638,20 @@ Notice that events continue to stream to the console until you explicitly cancel
 
 To inspect a bounded set of data, you can use the `LIMIT` clause.
 
-[source,subs="quotes,attributes"]
-----
-*SELECT*  id, 
+```
+SELECT  id, 
         sales_order_id, 
         product_id, 
         quantity, 
         price 
-*FROM*  sales_order_details 
-*EMIT CHANGES*
-*LIMIT* 10;
-----
+FROM  sales_order_details 
+EMIT CHANGES
+LIMIT 10;
+```
 
 Here we are seeing the first 10 messages that were written to the topic. Notice that the query automatically terminates when the limit of 10 events is reached.
-[source,subs="attributes"]
-----
+
+```
 +-----------------+-----------------+-----------------+-----------------+-----------------+
 |ID               |SALES_ORDER_ID   |PRODUCT_ID       |QUANTITY         |PRICE            |
 +-----------------+-----------------+-----------------+-----------------+-----------------+
@@ -818,27 +668,26 @@ Here we are seeing the first 10 messages that were written to the topic. Notice 
 Limit Reached
 Query terminated
 ksql>
-----
+```
 
-=== Filtering Streams
+
+### Filtering Streams
 
 Since ksqlDB is based on SQL, you can do many of the standard SQL things you'd expect to be able to do, including predicates and projections. The following query will return a stream of  you the latest sales orders where the `quantity` column is greater than 3.
 
-[source,subs="quotes,attributes"]
-----
-*SET* 'auto.offset.reset'='latest';
-*SELECT*  id, 
+```
+SET 'auto.offset.reset'='latest';
+SELECT  id, 
         product_id, 
         quantity
-*FROM*    sales_order_details
-*WHERE*   quantity > 3 
-*EMIT CHANGES*;
-----
+FROM    sales_order_details
+WHERE  quantity > 3 
+EMIT CHANGES;
+```
 
 You should only see events where the `quantity` column value is greater than `3`.
 
-[source]
-----
+```
 +------------------------------+------------------------------+------------------------------+
 |ID                            |PRODUCT_ID                    |QUANTITY                      |
 +------------------------------+------------------------------+------------------------------+
@@ -854,117 +703,26 @@ You should only see events where the `quantity` column value is greater than `3`
 |3165                          |5                             |8                             |
 |3167                          |21                            |9                             |
 
-----
+```
 
 Press `ctrl-c` to stop
 
-.Further Reading
-[TIP]
-====
-* link:https://docs.confluent.io/current/ksql/docs/developer-guide/syntax-reference.html#push-query[Push Query Syntax]
-* link:https://docs.confluent.io/current/ksql/docs/developer-guide/syntax-reference.html#pull-query[Pull Query Syntax]
-* link:https://docs.confluent.io/current/ksql/docs/installation/server-config/config-reference.html#ksql-streams-auto-offset-reset[ksqlDB Offset Management]
-====
 
-== Lab 7: Creating ksqlDB tables
+### Creating ksqlDB tables
 
-ksqlDB tables allow you to work the data in topics as key/value pairs, with a single value for each key. Tables can be created from an existing topic or from the query results from other tables or streams. You can read more about this https://docs.confluent.io/current/streams/concepts.html#duality-of-streams-and-tables[here].
+ksqlDB tables allow you to work the data in topics as key/value pairs, with a single value for each key. Tables can be created from an existing topic or from the query results from other tables or streams. You can read more about this [here](https://docs.confluent.io/current/streams/concepts.html#duality-of-streams-and-tables).
 
-=== Creating Tables
+We created tables over our `customers`, `suppliers` and `products` streams so we can look up the current state for each customer, supplier and product. Later on we'll be joining these tables to other streams. To successfully join to a table in ksqlDB you need to ensure that the table is keyed on the column you are going to use in the join. Our underlying topics already have the correct key set thanks to the Debezium MySQL connector configuration so we just need to use the `PRIMARY KEY` clause when we create each table.
 
-We want to create tables over our `customers`, `suppliers` and `products` streams so we can look up the current state for each customer, supplier and product. Later on we'll be joining these tables to other streams. To successfully join to a table in ksqlDB you need to ensure that the table is keyed on the column you are going to use in the join. Our underlying topics already have the correct key set thanks to the Debezium MySQL connector configuration so we just need to use the `PRIMARY KEY` clause when we create each table.
-
-Create your 3 ksqlDB tables.
-
-[IMPORTANT]
-====
-[source,subs="quotes,attributes"]
-----
-
-*CREATE TABLE* customers_tbl (
-  ROWKEY      INT PRIMARY KEY, 
-  FIRST_NAME  VARCHAR, 
-  LAST_NAME   VARCHAR,
-  EMAIL       VARCHAR,
-  CITY        VARCHAR,
-  COUNTRY     VARCHAR,
-  SOURCEDC    VARCHAR
-) 
-*WITH* (
-  KAFKA_TOPIC='{dc}_customers', 
-  VALUE_FORMAT='AVRO'
-);
-----
-====
-
-[IMPORTANT]
-====
-[source,subs="quotes,attributes"]
-----
-*CREATE TABLE* suppliers_tbl (
-  ROWKEY      INT PRIMARY KEY,
-  NAME        VARCHAR, 
-  EMAIL       VARCHAR,
-  CITY        VARCHAR,
-  COUNTRY     VARCHAR,
-  SOURCEDC    VARCHAR
-) 
-*WITH* (
-  KAFKA_TOPIC='{dc}_suppliers', 
-  VALUE_FORMAT='AVRO'
-);
-----
-====
-
-[IMPORTANT]
-====
-[source,subs="quotes,attributes"]
-----
-*CREATE TABLE* products_tbl (
-  ROWKEY      INT PRIMARY KEY,
-  NAME        VARCHAR, 
-  DESCRIPTION VARCHAR,
-  PRICE       DECIMAL(10,2),
-  COST        DECIMAL(10,2),
-  SOURCEDC    VARCHAR
-) 
-*WITH* (
-  KAFKA_TOPIC='{dc}_products', 
-  VALUE_FORMAT='AVRO'
-);
-----
-====
-
-image::./images/ksql_005.png[align="center"]
 
 We can view our current tables using the following command:-
 
-[source,subs="attributes"]
-----
+```
 SHOW TABLES;
-----
+```
 
-[source,subs="attributes"]
-----
- Table Name    | Kafka Topic    | Format | Windowed
-----------------------------------------------------
- CUSTOMERS_TBL | {dc}_customers | AVRO   | false
- PRODUCTS_TBL  | {dc}_products  | AVRO   | false
- SUPPLIERS_TBL | {dc}_suppliers | AVRO   | false
-----------------------------------------------------
-----
 
-We'll use these tables soon and join them to our streams.
-
-.Further Reading
-[TIP]
-====
-* link:https://docs.confluent.io/current/ksql/docs/developer-guide/syntax-reference.html#create-table[CREATE TABLE Syntax]
-* link:https://docs.confluent.io/current/ksql/docs/developer-guide/syntax-reference.html#describe[DESCRIBE Syntax]
-* link:https://docs.confluent.io/current/ksql/docs/developer-guide/syntax-reference.html#create-stream-as-select[CREATE STREAM AS SELECT Syntax]
-====
-
-== Lab 8: Joining Streams & Tables with ksqlDB
+### Joining Streams & Tables with ksqlDB
 
 We can join two streams together in ksqlDB using a windowed join. When using a windowed join, you must specify a windowing scheme by using the `WITHIN` clause. A new input record on one side produces a join output for each matching record on the other side, and there can be multiple such matching records within a join window.
 
@@ -972,187 +730,55 @@ In the example below you can see that we are joining the `sales_orders` stream t
 
 We are also joining to the `customers_tbl` and `products_tbl` tables
 
-[IMPORTANT]
-====
-[source,subs="quotes,attributes"]
-----
-SET 'auto.offset.reset'='earliest';
-*CREATE STREAM* sales_enriched *WITH* (PARTITIONS = 1, KAFKA_TOPIC = '{dc}_sales_enriched') AS SELECT
-    o.id order_id,
-    od.id order_details_id,
-    o.order_date,
-    od.product_id product_id,
-    pt.name product_name,
-    pt.description product_desc,
-    od.price product_price,
-    od.quantity product_qty,
-    o.customer_id customer_id,
-    ct.first_name customer_fname,
-    ct.last_name customer_lname,
-    ct.email customer_email,
-    ct.city customer_city,
-    ct.country customer_country
-*FROM* sales_orders o
-*INNER JOIN* sales_order_details od WITHIN 1 SECONDS ON (o.id = od.sales_order_id)
-*INNER JOIN* customers_tbl ct ON (o.customer_id = ct.rowkey)
-*INNER JOIN* products_tbl pt ON (od.product_id = pt.rowkey);
-----
-====
+## Further Reading
+If you want to dig deeper here some useful links:
 
-image::./images/ksql_006.png[align="center"]
+* [Debezium MySQL Configuration Options](https://debezium.io/documentation/reference/1.1/connectors/mysql.html#mysql-connector-configuration-properties_debezium)
+* [Kafka Connect REST API](https://docs.confluent.io/current/connect/references/restapi.html)
+* [cURL manpage](https://curl.haxx.se/docs/manpage.html)
+* [Confluent Control Center Documentation](https://docs.confluent.io/current/control-center/index.html)
+* [Confluent Replicator](https://docs.confluent.io/current/connect/kafka-connect-replicator/index.html)
+* [Confluent Replicator Configuration Properties](https://docs.confluent.io/current/connect/kafka-connect-replicator/configuration_options.html)
+* [ksqlDB Overview](https://docs.ksqldb.io/en/latest/)
+* [ksqlDB Streams](https://docs.ksqldb.io/en/latest/developer-guide/create-a-stream/)
 
-If we run a describe on this stream... 
+## Troubleshooting
 
-[source,subs="quotes,attributes"]
-----
-*DESCRIBE* sales_enriched;
-----
+### No data generated in the `sales_order` topic
 
-...you'll see that we have effectively denormalized the `sales_orders`, `sales_order_details`, `customers` and `products` streams/tables into a single event stream.
+The orders application will continuously create new sales orders to simulate product demand. The application will also raise purchase orders when told to do so, we'll cover this aspect later on in the workshop. If you don't see data flowing in, check if the simulator is working as expected.
 
-[source,subs="quotes,attributes"]
-----
-Name                 : SALES_ENRICHED
- Field            | Type
--------------------------------------------
- ROWKEY           | INTEGER          (key)
- ORDER_ID         | INTEGER
- ORDER_DETAILS_ID | INTEGER
- ORDER_DATE       | BIGINT
- PRODUCT_ID       | INTEGER
- PRODUCT_NAME     | VARCHAR(STRING)
- PRODUCT_DESC     | VARCHAR(STRING)
- PRODUCT_PRICE    | DECIMAL
- PRODUCT_QTY      | INTEGER
- CUSTOMER_ID      | INTEGER
- CUSTOMER_FNAME   | VARCHAR(STRING)
- CUSTOMER_LNAME   | VARCHAR(STRING)
- CUSTOMER_EMAIL   | VARCHAR(STRING)
- CUSTOMER_CITY    | VARCHAR(STRING)
- CUSTOMER_COUNTRY | VARCHAR(STRING)
--------------------------------------------
-----
+```
+docker logs -f db-trans-simulator
+```
+
+You should see an output like this:
+```
+Sales Order 1 Created
+Sales Order 2 Created
+Sales Order 3 Created
+Sales Order 4 Created
+Sales Order 5 Created
+Sales Order 6 Created
+...
+```
+
+Press `ctrl-c` to quit
+
+If you need to restart the generator you can use the following command:
+```
+docker exec -dit db-trans-simulator sh -c "python -u /simulate_dbtrans.py > /proc/1/fd/1 2>&1"
+```
+
+We now have `sales_order` and `sales_order_details` rows being created for us by the orders application.
 
 
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
-We now need to create an equivalent `purchases_enriched` stream that combines the `purchase_orders`, `purchase_order_details`, `suppliers` and `products` streams/tables. Since the purchases data model is very similar to that of the sales data model the query looks very similar.
-
-[IMPORTANT]
-====
-[source,subs="quotes,attributes"]
-----
-SET 'auto.offset.reset'='earliest';
-*CREATE STREAM* purchases_enriched *WITH* (PARTITIONS = 1, KAFKA_TOPIC = '{dc}_purchases_enriched') AS SELECT
-    o.id order_id,
-    od.id order_details_id,
-    o.order_date,
-    od.product_id product_id,
-    pt.name product_name,
-    pt.description product_desc,
-    od.cost product_cost,
-    od.quantity product_qty,
-    o.supplier_id supplier_id,
-    st.name supplier_name,
-    st.email supplier_email,
-    st.city supplier_city,
-    st.country supplier_country
-*FROM* purchase_orders o
-*INNER JOIN* purchase_order_details od WITHIN 1 SECONDS ON (o.id = od.purchase_order_id)
-*INNER JOIN* suppliers_tbl st ON (o.supplier_id = st.rowkey)
-*INNER JOIN* products_tbl pt ON (od.product_id = pt.rowkey);
-----
-====
-
-image::./images/ksql_007.png[align="center"]
-
-If we run a describe on this stream...
-
-[source,subs="quotes,attributes"]
-----
-*DESCRIBE* purchases_enriched;
-----
-
-[source,subs="quotes,attributes"]
-----
-Name                 : PURCHASES_ENRICHED
- Field            | Type
--------------------------------------------
- ROWKEY           | INTEGER          (key)
- ORDER_ID         | INTEGER
- ORDER_DETAILS_ID | INTEGER
- ORDER_DATE       | BIGINT
- PRODUCT_ID       | INTEGER
- PRODUCT_NAME     | VARCHAR(STRING)
- PRODUCT_DESC     | VARCHAR(STRING)
- PRODUCT_COST     | DECIMAL
- PRODUCT_QTY      | INTEGER
- SUPPLIER_ID      | INTEGER
- SUPPLIER_NAME    | VARCHAR(STRING)
- SUPPLIER_EMAIL   | VARCHAR(STRING)
- SUPPLIER_CITY    | VARCHAR(STRING)
- SUPPLIER_COUNTRY | VARCHAR(STRING)
--------------------------------------------
-
-----
-
-...you'll see that we have also denormalized the `purchase_orders`, `purchase_order_details`, `suppliers` and `products` streams/tables into a single event stream.
-
-Let's query the `purchases_enriched` stream from the very beginning
-
-[source,subs="quotes,attributes"]
-----
-*SET* 'auto.offset.reset'='earliest';
-*SELECT* product_id, 
-       product_name, 
-       product_qty 
-*FROM* purchases_enriched 
-*EMIT CHANGES*;
-----
-
-Notice that the query returns the first 30 purchase order lines and then stops; this is because no purchase orders are being created by our orders application. The orders application will raise purchase orders for us when we send it some out of stock events.
-
-[source,subs="quotes,attributes"]
-----
-+-------------------------+----------------------------------+------------------------+
-|PRODUCT_ID               |PRODUCT_NAME                      |PRODUCT_QTY             |
-+-------------------------+----------------------------------+------------------------+
-|1                        |Yogurt - Assorted Pack            |100                     |
-|2                        |Ostrich - Fan Fillet              |100                     |
-|3                        |Fish - Halibut, Cold Smoked       |100                     |
-|4                        |Tomatoes Tear Drop Yellow         |100                     |
-|5                        |Pasta - Fettuccine, Egg, Fresh    |100                     |
-|6                        |Plastic Wrap                      |100                     |
-|7                        |Pineapple - Regular               |100                     |
-|8                        |Quail - Eggs, Fresh               |100                     |
-|9                        |Pork - Ground                     |100                     |
-|10                       |Lamb Shoulder Boneless Nz         |100                     |
-|11                       |Sausage - Meat                    |100                     |
-|12                       |Herb Du Provence - Primerba       |100                     |
-|13                       |Bread - Kimel Stick Poly          |100                     |
-|14                       |Food Colouring - Red              |100                     |
-|15                       |Cheese - Grie Des Champ           |100                     |
-|16                       |Longos - Lasagna Veg              |100                     |
-|17                       |Beets - Golden                    |100                     |
-|18                       |Bread - Dark Rye                  |100                     |
-|19                       |Pepperoni Slices                  |100                     |
-|20                       |Glass - Wine, Plastic, Clear 5 Oz |100                     |
-|21                       |Soup - Campbells, Beef Barley     |100                     |
-|22                       |Bread - Kimel Stick Poly          |100                     |
-|23                       |Plate - Foam, Bread And Butter    |100                     |
-|24                       |Parsley - Fresh                   |100                     |
-|25                       |Cookie - Oreo 100x2               |100                     |
-|26                       |Bread - Crusty Italian Poly       |100                     |
-|27                       |Wine - Chateauneuf Du Pape        |100                     |
-|28                       |Country Roll                      |100                     |
-|29                       |Wine - Redchard Merritt           |100                     |
-|30                       |Doilies - 5, Paper                |100                     |
-----
-
-.Further Reading
-[TIP]
-====
-* link:https://docs.ksqldb.io/en/latest/developer-guide/joins/join-streams-and-tables/[Stream-Table Joins]
-====
 
 == Lab 9: Streaming Current Stock Levels
 
