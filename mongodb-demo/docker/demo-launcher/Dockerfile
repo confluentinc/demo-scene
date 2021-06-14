@@ -8,6 +8,7 @@ RUN apt-get -y upgrade
 RUN apt-get install -y build-essential
 RUN apt-get install python3 -y
 RUN apt-get install python3-yaml -y
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 RUN apt-get install wget unzip -y
 RUN apt-get install curl -y
 RUN apt-get install jq -y
