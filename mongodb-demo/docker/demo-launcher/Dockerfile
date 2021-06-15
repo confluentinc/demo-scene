@@ -24,13 +24,3 @@ RUN curl -L --http1.1 https://cnfl.io/ccloud-cli | sh -s -- -b /opt
 
 RUN apt-get install nodejs npm -y
 RUN npm install -g mongodb-realm-cli
-
-ENV GIT_BRANCH gn-mongodb-demo
-ENV GIT_REPO gianlucanatali/demo-scene
-ENV WS_REPO_FOLDER $DIR_DEMO_HELPER/demo-scene
-
-RUN git clone https://github.com/${GIT_REPO}.git $WS_REPO_FOLDER
-
-RUN cd $WS_REPO_FOLDER && git fetch && git checkout ${GIT_BRANCH} && git pull
-
-

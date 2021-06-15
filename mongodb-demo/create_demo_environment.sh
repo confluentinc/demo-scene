@@ -159,6 +159,7 @@ function create_ccloud_resources {
         return
     fi
     cd $CCLOUD_STACK_PATH
+    export CLUSTER_CLOUD=$CLOUD_PROVIDER
     source ccloud_stack_create.sh
 }
 

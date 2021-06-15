@@ -4,7 +4,6 @@ services:
     container_name: mongodb-demo-launcher
     command: tail -f /dev/null
     volumes:
-      - ./../../mongodb-demo/config/demo.cfg:/demo-scene/mongodb-demo/config/demo.cfg
-      - ./../../mongodb-demo/tmp/gcp-license.json:/gcp-license.json
+      - ./../../mongodb-demo:/mongodb-demo
     build:
       context: ./demo-launcher    

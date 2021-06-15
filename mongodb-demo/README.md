@@ -39,12 +39,12 @@ In this demo we'll use:
 ## Spin Up the Demo (using Docker, Easier)
 This approach uses Docker tosandbox the environment needed to spin up the demo, if you prefer a direct approach see next chapter.
 
-1. Copy the gcp json license you downloaded earlier to the tmp folder, rename it to gcp-license.json then in the config file you should point to it like: `/gcp-license.json`
+1. Copy the gcp json license you downloaded earlier to the tmp folder, rename it to gcp-license.json then in the config file you should point to it like: `/mongodb-demo/tmp/gcp-license.json`
 1. In your terminal, navigate to the folder docker
 1. Run `docker-compose up -d`
 1. Enter in the bash terminal of the docker container using: 
    `docker exec -it mongodb-demo-launcher /bin/bash`
-1. Navigate to the right folder: `cd /demo-scene/mongodb-demo`
+1. Navigate to the right folder: `cd /mongodb-demo`
 1. Login to your Confluent Cloud account and save the credentials:
    `ccloud login --save`
 1. execute `./create_demo_environment.sh`
