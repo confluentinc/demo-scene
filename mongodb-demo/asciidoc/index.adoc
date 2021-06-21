@@ -1,0 +1,58 @@
+= Demo: Confluent + MongoDB - Bridge to Cloud (and back!) 
+:doctype: article
+:icon: font
+:cloudprovider: GCP
+:resourcepath: resources
+:externalip: localhost
+Gianluca Natali <gnatali@confluent.io>; Felix Reichenbach <felix.reichenbach@mongodb.com>
+v1.0, June 21, 2021
+
+image::./architecture.png[Diagram of what's being built with this Demo]
+
+== Introduction
+Hybrid Cloud is a reality in modern IT architectures.
+Some reasons include:
+
+* existing applications running in data-centers on premise
+* legacy technologies still widely used (Mainframes)
+* many companies require to have an Hybrid and Multi-Cloud architecture to avoid vendor lock-in.
+* some processing should happen on premise, while replicating the whole data or only the result of the process to the cloud for further analysis (think about Edge processing or IIoT use cases)
+
+Cloud Providers offers you an unlimited scalability and flexibility for your architecture. 
+But how can you make sure you handle all the challenges above without complicating your architecture with multiple different solutions and data integration processes?
+Confluent Platform can be the lingua franca that lets all these different infrastructures talk to each other, offering an the same APIs independently of the underlying architecture.
+
+[quote]
+____
+
+In this demo we'll guide you in a data journey, starting from Data generated on premise in a traditional database, collecting CDC events on premise and then bridge this data to Confluent Cloud on {cloudprovider}. We'll then use KSQL to manipulate and enrich the data.
+
+KSQL is the streaming SQL engine for Apache Kafka.
+Using just SQL, it is possible for developers to build powerful stream processing applications.
+This workshop will show practical examples of KSQL:
+
+* Filtering streams of data
+* Joining live events with reference data (e.g., from a database)
+* Stateful aggregations
+* Convert streams from JSON to AVRO
+
+At the end we'll leverage this data in {cloudprovider} services
+____
+
+
+== Demo Tutorial
+
+Open Control Center in your browser link:http://{externalip}:9021[here, window=_blank]
+Username : dc01
+Password: (as defined in the config file)
+
+Notice that you have 2 clusters available. 
+
+* CO: Confluent Platform running in a VM
+* CC: Confluent Cloud in GCP
+
+== MongoDB Atlas
+You should see a similar result in your MongoDB Atlas Cloud account
+
+image::./019.png[MongoDB Atlas table]
+

@@ -1,0 +1,9 @@
+version: "2.1"
+services:
+  mongodb-demo-launcher:
+    container_name: mongodb-demo-launcher
+    command: tail -f /dev/null
+    volumes:
+      - ./../../mongodb-demo:/mongodb-demo
+    build:
+      context: ./demo-launcher    

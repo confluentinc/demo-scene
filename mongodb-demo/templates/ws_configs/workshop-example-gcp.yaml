@@ -1,0 +1,61 @@
+workshop:
+
+  # A name for the workshop, used to uniquely identify individual resources
+  # IMPORTANT: can only contain of lowercase letters and numbers
+  name: ${DEMO_NAME} 
+ 
+  # The number of people attending the workshop ssh password
+  participant_count: 1
+  participant_password: ${VM_PASSWORD}
+
+  #
+  # workshop-core
+  #
+  core:
+
+    # The workshop cloud provider & VM configuration
+    cloud_provider: gcp
+    credentials_file_path: ${GCP_JSON_CREDENTIALS_PATH}
+    region: ${GCP_REGION}
+    region_zone: ${GCP_REGION_ZONE}
+    project: ${GCP_PROJECT}
+    vm_type: n1-standard-4
+    vm_disk_size: 100
+
+    # The workshop Confluent Cloud configuration
+    ccloud_bootstrap_servers: ${BOOTSTRAP_SERVERS}
+    ccloud_api_key: ${CLOUD_KEY}
+    ccloud_api_secret: ${CLOUD_SECRET}
+
+    # List of ccloud topics to pre-create
+    ccloud_topics: sales_orders,sales_order_details,purchase_orders,purchase_order_details,customers,suppliers,products,mdb.demo.estore
+    onprem_topics: 
+    
+    #Feedback Form url (Optional)
+    #feedback_form_url: "<Feedback Form Url>"
+
+  #
+  # workshop extensions
+  #
+  # Uncomment the required extensions
+  extensions:
+  
+    # google-cloud-storage:
+    #   gcs_project: <gcp project name>
+    #   gcs_region: europe-west2
+
+    # google-big-query:
+    #   gbq_project: <gcp project name>
+    #   gbq_location: EU
+      
+    mongodbatlas:
+      mongodbatlas_public_key: ${MONGODBATLAS_PUBLIC_KEY}
+      mongodbatlas_private_key: ${MONGODBATLAS_PRIVATE_KEY}
+      mongodbatlas_project_id: ${MONGODBATLAS_PROJECT_ID}
+      mongodbatlas_provider_name: ${MONGODBATLAS_PROVIDER_NAME}
+      mongodbatlas_provider_instance_size_name: ${MONGODBATLAS_PROVIDER_INSTANCE_SIZE_NAME}
+      mongodbatlas_provider_region_name: ${MONGODBATLAS_PROVIDER_REGION_NAME}
+      mongodbatlas_disk_size_gb: ${MONGODBATLAS_DISK_SIZE_GB}
+      mongodbatlas_mongo_db_major_version: ${MONGODBATLAS_MONGO_DB_MAJOR_VERSION}
+      mongodbatlas_dbuser_username: ${MONGODBATLAS_DBUSER_USERNAME}
+      mongodbatlas_dbuser_password: ${MONGODBATLAS_DBUSER_PASSWORD}
