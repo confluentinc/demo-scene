@@ -349,6 +349,7 @@ Now that the data is in Confluent Cloud, you could sync it back to On-Premise Ka
 ## Further Reading
 If you want to dig deeper here some useful links:
 
+* [Demo Deep Dive](deep-dive.md)
 * [Debezium MySQL Configuration Options](https://debezium.io/documentation/reference/1.1/connectors/mysql.html#mysql-connector-configuration-properties_debezium)
 * [Kafka Connect REST API](https://docs.confluent.io/current/connect/references/restapi.html)
 * [cURL manpage](https://curl.haxx.se/docs/manpage.html)
