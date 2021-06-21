@@ -11,7 +11,7 @@ In this demo we'll use:
 1. MongoDB Atlas
 
 
-![Diagram of what's being built with the Bridge to Cloud Demo](docs/resources/images/architecture.png)
+![Diagram of what's being built with the Bridge to Cloud Demo](asciidoc/images/architecture.png)
 
 
 
@@ -22,7 +22,7 @@ In this demo we'll use:
 1. Login to http://console.cloud.google.com
 2. Navigate to "IAM & Admin" -> "Service Accounts"
 3. Create a Service Account
-   ![GCP Service Account](docs/resources/images/gcp_serviceaccount.png)
+   ![GCP Service Account](asciidoc/images/gcp_serviceaccount.png)
 4. Download the credentials json file to the local file system
 
 ## Configure MongoDB Atlas
@@ -138,27 +138,27 @@ Username: dc01
 Password: your workshop password
 ```
 
-![Control Center sign in pop-up](docs/resources/images/c3_05.png)
+![Control Center sign in pop-up](asciidoc/images/c3_05.png)
 
 On the landing page we can see that Confluent Control Center is monitoring two Kafka Clusters, our on-premise cluster and a Confluent Cloud Cluster
 
-![Control Center home page](docs/resources/images/c3_10.png)
+![Control Center home page](asciidoc/images/c3_10.png)
 
 Click on the "controlcenter.cluster" tile, this is your on-premise cluster.
 
-![Control Center cluster overview](docs/resources/images/c3_20.png)
+![Control Center cluster overview](asciidoc/images/c3_20.png)
 
 Select the Topics Menu on the left
 
-![Control Center topics list](docs/resources/images/c3_30.png)
+![Control Center topics list](asciidoc/images/c3_30.png)
 
 Select the `dc01_sales_order_details` topic
 
-![Control Center dc01_sales_order_details topic](docs/resources/images/c3_40.png)
+![Control Center dc01_sales_order_details topic](asciidoc/images/c3_40.png)
 
 Finally select the Messages tab and observe that messages are being streamed into Kafka from MySQL in real time.
 
-![Control Center dc01_sales_order_details topic](docs/resources/images/c3_50.png)
+![Control Center dc01_sales_order_details topic](asciidoc/images/c3_50.png)
 
 ### Confluent Replicator
 
@@ -168,7 +168,7 @@ Confluent Replicator uses Kafka Connect under the covers and can be considered a
 
 We can view the status of Replicator in Confluent Control Center by selecting `Replicators` on the left-hand navigation pane. Here we can see throughput and latency statistics.
 
-![Control Center Replicators](docs/resources/images/c3_72.png)
+![Control Center Replicators](asciidoc/images/c3_72.png)
 
 ### Confirm that Messages are Arriving in Confluent Cloud
 
@@ -177,20 +177,173 @@ Select the "ccloud" cluster and then select "Topics".
 
 You can filter the list of topics by using the search box, type your data center name, dc01, into the search box at the top to filter.
 
-![Control Center Ccloud topics](docs/resources/images/c3_60.png)
+![Control Center Ccloud topics](asciidoc/images/c3_60.png)
 
 Select the `dc01_sales_order_details` topic and finally the "Messages" tab under the topic heading. You should see messages streaming in from your on-premise Kafka cluster.
 
-![Control Center Ccloud dc01_sales_order_details topic](docs/resources/images/c3_70.png)
+![Control Center Ccloud dc01_sales_order_details topic](asciidoc/images/c3_70.png)
 
 ### ksqlDB Application
 
 We now have all the data we need being streamed, in realtime, to Confluent Cloud. You have a ksqlDB Server. You can find it in Control Center, ccloud cluster, click on ksqlDB on the left menu.
 Now click on the Flow Tab, you will see the topology of the ksqlDB application. Spend some time in understanding how the data is transformed, and see the data flowing in and being enriched in real time.
 
-![Demo ksqlDB Flow](docs/resources/images/ksql_flow.png)
+![Demo ksqlDB Flow](asciidoc/images/ksql_flow.png)
+
+If you want more details on each step see the Deep Dive section.
 
 
+### Stream Sales & Purchases to MongoDB Atlas
+
+We can use the MongoDB Sink Connector to stream changes from Confluent Cloud to MongoDB Atlas, from here the data can be leveraged in the wider MongoDB ecosystem.
+
+To do this we used ksqlDB to create the connector.
+
+The command we used (below) will create a connector that will sink the `dc01_sales_enriched` and the `dc01_purchases_enriched` topics to MongoDB.
+
+```
+CREATE SINK CONNECTOR dc01_mongodb_sink WITH (
+  'connector.class'='com.mongodb.kafka.connect.MongoSinkConnector',
+  'tasks.max'='1',
+  'topics'='dc01_sales_enriched,dc01_purchases_enriched',
+  'connection.uri'='${file:/secrets.properties:MONGODBATLAS_SRV_ADDRESS}',
+  'database'='demo',
+  'collection'='dc01',
+  'topic.override.dc01_sales_enriched.collection'='dc01_sales',
+  'topic.override.dc01_purchases_enriched.collection'='dc01_purchases',
+  'key.converter'='org.apache.kafka.connect.storage.StringConverter',
+  'transforms'='WrapKey',
+  'transforms.WrapKey.type'='org.apache.kafka.connect.transforms.HoistField$Key',
+  'transforms.WrapKey.field'='ROWKEY',
+  'document.id.strategy'='com.mongodb.kafka.connect.sink.processor.id.strategy.UuidStrategy',
+  'post.processor.chain'='com.mongodb.kafka.connect.sink.processor.DocumentIdAdder',
+  'max.batch.size'='20'
+);
+```
+
+We can list our current connectors using the following command in ksqlDB
+
+```
+show connectors;
+```
+
+```
+ Connector Name            | Type   | Class
+------------------------------------------------------------------------------------------------
+ dc01_MONGODB_SINK         | SINK   | com.mongodb.kafka.connect.MongoSinkConnector
+ replicator-dc01-to-ccloud | SOURCE | io.confluent.connect.replicator.ReplicatorSourceConnector
+```
+
+We can also describe a connector and view its status using the `describe connector` statement.
+
+```
+describe connector dc01_MONGODB_SINK;
+```
+
+```
+Name                 : dc01_MONGODB_SINK
+Class                : com.mongodb.kafka.connect.MongoSinkConnector
+Type                 : sink
+State                : RUNNING
+WorkerId             : kafka-connect:18084
+
+ Task ID | State   | Error Trace
+---------------------------------
+ 0       | RUNNING |
+---------------------------------
+```
+
+Depending on who's hosting the demo, you may or may not have access to the MongoDB Atlas account where the database is held.
+
+![mongodb-orders-collection](asciidoc/images/mongodb-orders-collection.png)
+
+### Realm triggers
+Now that we got our data in MongoDB Atlas, there are multiple things we can do with it.
+
+MongoDB Realm triggers enable you to execute application and database logic automatically, either in response to events or based on a pre-defined schedule. Realm supports three types of triggers:
+
+* **Database triggers**, which can automatically respond when documents are added, updated, or removed in a linked MongoDB collection.
+* **Authentication triggers**, which execute additional server-side logic when a user is created, authenticated, or deleted.
+* **Scheduled triggers**, which execute functions at regular intervals according to a pre-defined schedule.
+
+Triggers listen for application events of a configured type and are each linked with a specific Realm function. Whenever a trigger observes an event that matches your configuration, it “fires” and passes the event object that caused it to fire as the argument to its linked function. You can configure the events that cause a trigger to fire based on their operation type as well as other values specific to each type of trigger.
+
+In this workshop we configured a Trigger that reads data from the `dc01_sales` collection in MongoDB and writes it to a new collection using a different JSON structure. Below you can see the code of this function.
+
+```
+exports = function(changeEvent) {
+
+    const order = changeEvent.fullDocument;
+
+    let purchaseOrder = {
+      'ORDER_ID': order.ORDER_ID,
+      'CUSTOMER': {
+        'ID': order.CUSTOMER_ID,
+        'FNAME': order.CUSTOMER_FNAME,
+        'LNAME': order.CUSTOMER_LNAME,
+        'EMAIL': order.CUSTOMER_EMAIL,
+        'COUNTRY': order.CUSTOMER_COUNTRY,
+        'CITY': order.CITY},
+      'PRODUCT':{
+        'CODE': order.PRODUCT_ID,
+        'QUANTITY': order.PRODUCT_QTY},
+      'DATE':{
+        'ORDERED': order.ORDER_DATE}
+    };
+
+    var collection = context.services.get("mongodb-atlas").db("demo").collection("po");
+    collection.insertOne(purchaseOrder);
+
+};
+```
+
+### Realm application
+MongoDB Atlas is a great platform to build modern and scalable applications. These applications can now leverage all the data retrieved in real time from your legacy systems as it is now in MongoDB Atlas ready to be used. 
+These applications will also produce new data, what if you need to communicate these information back to your on premise environment? Let's have a look!
+
+The application is already deployed in MongoDB Atlas and lets you put Orders online, with a simple web application. 
+
+You can place your first order by using the Link returned by the demo creation script
+
+![mongodb-realm-app](asciidoc/images/mongodb-realm-app.png)
+
+The application itself is hosted in MongoDB Atlas, and the data inserted from the UI will flow in the collection `demo.po`
+
+### MongoDB Source Connector
+Now  your customers can place orders from this brand new web applications! That's great but... how do you tie this with your backend processes? Let's get this new data back to on-premise!
+
+In this case we configured the connector to load data from MongoDB Atlas to Confluent Cloud.
+
+Every Time you will place an order using the demo web store , these orders are persisted in MongoDB. We'll read the collection that contains these orders, and produce these events to the `dc01_mdb.demo.estore` topic
+
+```
+curl -i -X POST -H "Accept:application/json" \
+  -H  "Content-Type:application/json" http://localhost:18084/connectors/ \
+  -d '{
+      "name": "dc01_mongodb_source",
+      "config": {
+        "connector.class":"com.mongodb.kafka.connect.MongoSourceConnector",
+        "tasks.max":1,
+        "key.converter":"org.apache.kafka.connect.storage.StringConverter",
+        "value.converter":"org.apache.kafka.connect.storage.StringConverter",
+        "connection.uri":"${file:/secrets.properties:MONGODBATLAS_SRV_ADDRESS}",
+        "database":"demo",
+        "collection":"estore",
+        "topic.prefix": "dc01_mdb"
+      }
+  }'
+```
+
+Use Confluent Control Center to see the events coming in, as they are synced from MongoDB Atlas.
+Select "ccloud" cluster from the Home page.
+
+Select the `dc01_mdb.demo.estore` topic, then click on the Messages tab and observe that messages are being streamed into Kafka from MongoDB ATlas in real time.
+
+![mongodb-c3-topic-dcNN_mdb.demo.estore](asciidoc/images/mongodb-c3-topic-dcNN_mdb.demo.estore.png)
+
+
+### Replicate MongoDB orders to On-Premise Kafka
+Now that the data is in Confluent Cloud, you could sync it back to On-Premise Kafka, and then to MySQL using Confluent Replicator. Have fun!
 
 
 ## Deep Dive
@@ -231,7 +384,7 @@ The MySQL database contains a simple schema that includes _Customer_, _Supplier_
 
 The idea behind this schema is simple, customers order products from a company and sales orders get created, the company then sends purchase orders to their suppliers so that product demand can be met by maintaining sensible stock levels.
 
-![MySQL schema](docs/resources/images/mysql_schema.png)
+![MySQL schema](asciidoc/images/mysql_schema.png)
 
 We can inspect this schema further by logging into the MySQL CLI...
 
@@ -322,7 +475,7 @@ Type `exit` to leave the MySQL CLI
 
 ### Debezium MySQL Source connector
 
-In order to stream the changes happening in your MySQL database into your on-premise Kafka cluster we are using the link:https://debezium.io/documentation/reference/1.0/connectors/mysql.html[Debezium MySQL Source connector , window=_blank]
+In order to stream the changes happening in your MySQL database into your on-premise Kafka cluster we are using the [Debezium MySQL Source connector](https://debezium.io/documentation/reference/1.0/connectors/mysql.html)
 
 We have a Kafka Connect worker up and running in a docker container called `kafka-connect-onprem`. This Kafka Connect worker is configured to connect to your on-premise Kafka cluster and has a internal REST server listening on port `18083`. We created a connector from the command line using the cURL command. You can of course create and manage connectors using any tool or language capable of issuing HTTP requests.
 If you are curious on what the command we ran, the cURL command below allows us to send an HTTP POST request to the REST server, the '-H' option specifies the header of the request and includes the target host and port information, the `-d` option specifies the data we will send, in this case its the configuration options for the connector. 
@@ -340,9 +493,9 @@ curl -i -X POST -H "Accept:application/json" \
           "database.user": "mysqluser",
           "database.password": "mysqlpw",
           "database.server.id": "12345",
-          "database.server.name": "{dc}",
+          "database.server.name": "dc01",
           "database.whitelist": "orders",
-          "table.blacklist": "orders.{dc}_out_of_stock_events",
+          "table.blacklist": "orders.dc01_out_of_stock_events",
           "database.history.kafka.bootstrap.servers": "broker:29092",
           "database.history.kafka.topic": "debezium_dbhistory" ,
           "include.schema.changes": "false",
@@ -351,7 +504,7 @@ curl -i -X POST -H "Accept:application/json" \
           "transforms.unwrap.type": "io.debezium.transforms.UnwrapFromEnvelope",
           "transforms.sourcedc.type":"org.apache.kafka.connect.transforms.InsertField$Value",
           "transforms.sourcedc.static.field":"sourcedc",
-          "transforms.sourcedc.static.value":"{dc}",
+          "transforms.sourcedc.static.value":"dc01",
           "transforms.TopicRename.type": "org.apache.kafka.connect.transforms.RegexRouter",
           "transforms.TopicRename.regex": "(.*)\\.(.*)\\.(.*)",
           "transforms.TopicRename.replacement": "$1_$3",
@@ -402,21 +555,21 @@ In the demo creation script we executed the following command to create the Repl
 curl -i -X POST -H "Accept:application/json" \
     -H  "Content-Type:application/json" http://localhost:18084/connectors/ \
     -d '{
-        "name": "replicator-{dc}-to-ccloud",
+        "name": "replicator-dc01-to-ccloud",
         "config": {
           "connector.class": "io.confluent.connect.replicator.ReplicatorSourceConnector",
           "key.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
           "value.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
           "topic.config.sync": false,
           "topic.regex": "dc[0-9][0-9][_].*",
-          "topic.blacklist": "{dc}_out_of_stock_events",
+          "topic.blacklist": "dc01_out_of_stock_events",
           "dest.kafka.bootstrap.servers": "${file:/secrets.properties:CCLOUD_CLUSTER_ENDPOINT}",
           "dest.kafka.security.protocol": "SASL_SSL",
           "dest.kafka.sasl.mechanism": "PLAIN",
           "dest.kafka.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${file:/secrets.properties:CCLOUD_API_KEY}\" password=\"${file:/secrets.properties:CCLOUD_API_SECRET}\";",
           "dest.kafka.replication.factor": 3,
           "src.kafka.bootstrap.servers": "broker:29092",
-          "src.consumer.group.id": "replicator-{dc}-to-ccloud",
+          "src.consumer.group.id": "replicator-dc01-to-ccloud",
           "src.consumer.interceptor.classes": "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor",
           "src.consumer.confluent.monitoring.interceptor.bootstrap.servers": "broker:29092",
           "src.kafka.timestamps.producer.interceptor.classes": "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor",
@@ -430,13 +583,13 @@ Confirm that Replicator is in a `RUNNING` state
 
 
 ```bash
-curl -s localhost:18084/connectors/replicator-{dc}-to-ccloud/status | jq
+curl -s localhost:18084/connectors/replicator-dc01-to-ccloud/status | jq
 ```
 You should see a similar result
 
 ```
 {
-  "name": "replicator-{dc}-to-ccloud",
+  "name": "replicator-dc01-to-ccloud",
   "connector": {
     "state": "RUNNING",
     "worker_id": "kafka-connect-ccloud:18084"
@@ -456,7 +609,7 @@ You should see a similar result
 
 Below is an illustration of the completed Supply & Demand ksqlDB Application that is built in this demo.
 
-![Demo ksqlDB Topology](docs/resources/images/ksqlDB_topology.png)
+![Demo ksqlDB Topology](asciidoc/images/ksqlDB_topology.png)
 
 ### Start the ksqlDB CLI
 
@@ -496,7 +649,7 @@ To view a list of all topics in Confluent Cloud run the following command:-
 
 `show topics;`
 
-You should see your own topics, `{dc}_*`, along with topics from other workshop users.
+You should see your own topics, `dc01_*`, along with topics from other workshop users.
 
 ```
 ksql> show topics;
@@ -522,18 +675,18 @@ ksql> show topics;
 
 To inspect the contents of a topic run the following:-
 
-`PRINT {dc}_sales_orders;`
+`PRINT dc01_sales_orders;`
 
 You should see something similar:-
 
 ```
-ksql> PRINT {dc}_sales_orders;
+ksql> PRINT dc01_sales_orders;
 Key format: AVRO
 Value format: AVRO
-rowtime: 2020/05/20 10:10:29.264 Z, key: {"id": 1}, value: {"id": 1, "order_date": 1589969387000, "customer_id": 14, "sourcedc": "{dc}"}
-rowtime: 2020/05/20 10:10:29.265 Z, key: {"id": 2}, value: {"id": 2, "order_date": 1589969392000, "customer_id": 14, "sourcedc": "{dc}"}
-rowtime: 2020/05/20 10:10:29.265 Z, key: {"id": 3}, value: {"id": 3, "order_date": 1589969397000, "customer_id": 14, "sourcedc": "{dc}"}
-rowtime: 2020/05/20 10:10:29.265 Z, key: {"id": 4}, value: {"id": 4, "order_date": 1589969402000, "customer_id": 7, "sourcedc": "{dc}"}
+rowtime: 2020/05/20 10:10:29.264 Z, key: {"id": 1}, value: {"id": 1, "order_date": 1589969387000, "customer_id": 14, "sourcedc": "dc01"}
+rowtime: 2020/05/20 10:10:29.265 Z, key: {"id": 2}, value: {"id": 2, "order_date": 1589969392000, "customer_id": 14, "sourcedc": "dc01"}
+rowtime: 2020/05/20 10:10:29.265 Z, key: {"id": 3}, value: {"id": 3, "order_date": 1589969397000, "customer_id": 14, "sourcedc": "dc01"}
+rowtime: 2020/05/20 10:10:29.265 Z, key: {"id": 4}, value: {"id": 4, "order_date": 1589969402000, "customer_id": 7, "sourcedc": "dc01"}
 ```
 
 Press `ctrl-c` to stop
@@ -553,13 +706,13 @@ Notice that each stream is mapped to an underlying Kafka topic and that the form
 ```
  Stream Name            | Kafka Topic                 | Format
 ---------------------------------------------------------------
- CUSTOMERS              | {dc}_customers              | AVRO
- PRODUCTS               | {dc}_products               | AVRO
- PURCHASE_ORDERS        | {dc}_purchase_orders        | AVRO
- PURCHASE_ORDER_DETAILS | {dc}_purchase_order_details | AVRO
- SALES_ORDERS           | {dc}_sales_orders           | AVRO
- SALES_ORDER_DETAILS    | {dc}_sales_order_details    | AVRO
- SUPPLIERS              | {dc}_suppliers              | AVRO
+ CUSTOMERS              | dc01_customers              | AVRO
+ PRODUCTS               | dc01_products               | AVRO
+ PURCHASE_ORDERS        | dc01_purchase_orders        | AVRO
+ PURCHASE_ORDER_DETAILS | dc01_purchase_order_details | AVRO
+ SALES_ORDERS           | dc01_sales_orders           | AVRO
+ SALES_ORDER_DETAILS    | dc01_sales_order_details    | AVRO
+ SUPPLIERS              | dc01_suppliers              | AVRO
 ```
 
 To view the details of an individual topic you can you can use the `describe` command:-
@@ -733,6 +886,443 @@ In the example below you can see that we are joining the `sales_orders` stream t
 
 We are also joining to the `customers_tbl` and `products_tbl` tables
 
+### Lab 9: Streaming Current Stock Levels
+
+Before we can create an out of stock event stream, we need to work out the current stock levels for each product. We can do this by combining the `sales_enriched` stream with the `purchases_enriched` stream and summing the `sales_enriched.quantity` column (stock decrements) and the `purchases_enriched.quantity` column (stock increments).
+
+Let's have a go at this now by creating a new stream called `product_supply_and_demand`. This stream is consuming messages from the `sales_enriched` stream and included the `product_id` and `quantity` column converted to a negative value, we do this because sales events are our _demand_ and hence decrement stock.
+
+```
+SET 'auto.offset.reset'='earliest';
+CREATE STREAM product_supply_and_demand *WITH* (PARTITIONS=1, KAFKA_TOPIC='dc01_product_supply_and_demand') *AS SELECT* 
+  product_id, 
+  product_qty * -1 "QUANTITY" 
+FROM sales_enriched;
+```
+
+
+Let's have a quick look at the first few rows of this stream
+
+```
+SET 'auto.offset.reset'='earliest';
+SELECT  product_id, 
+        quantity 
+FROM    product_supply_and_demand 
+EMIT CHANGES
+LIMIT 10;
+```
+
+This query shows a history of all sales and their effect on stock levels. 
+
+```
++------------------------------------------+------------------------------------------+
+|PRODUCT_ID                                |QUANTITY                                  |
++------------------------------------------+------------------------------------------+
+|1                                         |-6                                        |
+|15                                        |-3                                        |
+|14                                        |-7                                        |
+|23                                        |-3                                        |
+|13                                        |-10                                       |
+|4                                         |-9                                        |
+|10                                        |-9                                        |
+|15                                        |-8                                        |
+|10                                        |-2                                        |
+|27                                        |-7                                        |
+Limit Reached
+Query terminated
+```
+
+What we need to do now is also include all product purchases in the same stream. We can do this using an `INSERT INTO` statement. The `INSERT INTO` statement streams the result of a SELECT query into an existing stream and its underlying topic.
+
+```
+INSERT INTO product_supply_and_demand 
+  SELECT  product_id, 
+          product_qty "QUANTITY" 
+  FROM    purchases_enriched;
+```
+
+![ksqlDB 013](asciidoc/images/ksql_013.png)
+
+Our `product_supply_and_demand` now includes all product sales as stock decrements and all product purchases as stock increments.
+
+We can see the demand for a single product by filtering on the `product_id` and including only events where the `quantity` is less than zero, i.e. stock decrements.
+
+```
+SET 'auto.offset.reset'='earliest';
+SELECT  product_id, 
+        quantity 
+FROM    product_supply_and_demand 
+WHERE product_id = 15
+AND   quantity < 0
+EMIT CHANGES;
+```
+
+```
++------------------------------------------+------------------------------------------+
+|PRODUCT_ID                                |QUANTITY                                  |
++------------------------------------------+------------------------------------------+
+|1                                         |-6                                        |
+|1                                         |-9                                        |
+|1                                         |-7                                        |
+|1                                         |-5                                        |
+|1                                         |-1                                        |
+|1                                         |-7                                        |
+|1                                         |-7                                        |
+|1                                         |-10                                       |
+|1                                         |-8                                        |
+|1                                         |-4                                        |
+|1                                         |-2                                        |
+...
+...
+...
+```
+
+We can also see the supply for a single product by filtering on the `product_id` and including only events where the `quantity` is greater than zero, i.e. stock increments.
+
+```
+SET 'auto.offset.reset'='earliest';
+SELECT  product_id, 
+        quantity 
+FROM    product_supply_and_demand 
+WHERE product_id = 15
+AND   quantity > 0
+EMIT CHANGES;
+```
+
+This query will only return a single event and reflects the initial purchase order line that was raised for this product.
+
+```
++------------------------------------------+------------------------------------------+
+|PRODUCT_ID                                |QUANTITY                                  |
++------------------------------------------+------------------------------------------+
+|1                                         |100                                       |
+```
+
+We're now is a position where we can calculate the current stock level for each product. We can do this by creating a table that groups by the `product_id` and sums up the `quantity` column which contains both stock decrements and stock increments.
+
+```
+SET 'auto.offset.reset'='earliest';
+CREATE TABLE current_stock WITH (PARTITIONS = 1, KAFKA_TOPIC = 'dc01_current_stock') AS SELECT
+      product_id
+    , SUM(quantity) "STOCK_LEVEL" 
+FROM product_supply_and_demand
+GROUP BY product_id;
+```
+![ksqlDB 014](asciidoc/images/ksql_014.png)
+
+When we query this table with a Push query... 
+
+```
+SET 'auto.offset.reset'='latest';
+SELECT  product_id,
+        stock_level
+FROM  current_stock
+EMIT CHANGES;
+```
+
+...each new event that is displayed on the console reflects the current stock level for the associated product, a new event will be emitted  each time a product's stock level changes. 
+Depending on how long it took you to get to this point in the workshop, you may see that all your stock levels are negative. This is because, apart from the initial purchase order for 100 of each product, we have not created any more purchase orders and our customers will have their orders on hold until we acquire more stock, not good, but we'll fix that soon.
+
+
+
+
+### Pull Queries
+
+We can now run our first Pull query. Pull queries are used against tables with aggregates and can only query a single key.
+
+To run a Pull query we just query the table as normal but drop the `EMIT CHANGES` clause. In this query we are asking "*what is the _current_ stock level for product id 1?*"
+
+```
+select product_id, stock_level from current_stock where rowkey=15;
+```
+
+![ksqlDB 015](asciidoc/images/ksql_015.png)
+
+The query will return the current stock level and immediatly terminate.
+
+```
++----------------------------------------------------+----------------------------------------------------+
+|PRODUCT_ID                                          |STOCK_LEVEL                                         |
++----------------------------------------------------+----------------------------------------------------+
+|1                                                   |-67                                                 |
+Query terminated
+```
+
+We can also use the ksqlDB Server's REST endpoint to make Pull queries.
+
+Exit from the ksqlDB CLI and run the following from the command line.
+
+```
+curl -s -X "POST" "http://localhost:8088/query" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" -d $'{ "ksql": "select product_id, stock_level from current_stock where rowkey=15;" }'| jq .
+```
+
+As you can see, the ksqlDB Server's REST endpoint will return a JSON message with the `product_id` and its current `stock_level`. This is useful for applications that want access to the current state of the world using a request/response type pattern.
+
+```
+[
+  {
+    "header": {
+      "queryId": "query_1582892390468",
+      "schema": "`PRODUCT_ID` INTEGER, `STOCK_LEVEL` INTEGER"
+    }
+  },
+  {
+    "row": {
+      "columns": [
+        1,
+        -76
+      ]
+    }
+  }
+]
+```
+
+### Streaming Recent Product Demand
+
+Now that we know the current stock level is for each product, we can use this information to send an event to the orders application and ask it to create purchase orders to replenish the stock, but how much should we stock should we order? we could just order enough to satisfy the current backlog but we'd quickly run out of stock again. 
+
+What we really want to do is order enough to satisfy the backlog _and_ enough to meet future demand, we can make an attempt at predicting what the future demand will be by looking at the past.
+
+In the following query we are creating a table that will calculate the demand for each product over the last 3 minutes using a `WINDOW HOPPING` clause.
+
+Hopping windows are based on time intervals. They model fixed-sized, possibly overlapping windows. A hopping window is defined by two properties: the window’s duration and its advance, or “hop”, interval. The advance interval specifies how far a window moves forward in time relative to the previous window. In our query we we have a window with a duration of three minutes and an advance interval of one minute. Because hopping windows can overlap, a record can belong to more than one such window.
+
+
+Create the windowed query
+
+```
+SET 'auto.offset.reset'='earliest';
+CREATE TABLE product_demand_last_3mins_tbl WITH (PARTITIONS = 1, KAFKA_TOPIC = 'dc01_product_demand_last_3mins') 
+AS SELECT
+      timestamptostring(windowStart,'HH:mm:ss') "WINDOW_START_TIME"
+    , timestamptostring(windowEnd,'HH:mm:ss') "WINDOW_END_TIME"
+    , product_id
+    , SUM(product_qty) "DEMAND_LAST_3MINS"
+FROM sales_enriched
+WINDOW HOPPING (SIZE 3 MINUTES, ADVANCE BY 1 MINUTE)
+GROUP BY product_id EMIT CHANGES;
+```
+
+![ksqlDB 016](asciidoc/images/ksql_016.png)
+
+If we query this table for a single product...
+
+```
+SET 'auto.offset.reset'='latest';
+SELECT  window_start_time,
+        window_end_time,
+        product_id,
+        demand_last_3mins
+FROM  product_demand_last_3mins_tbl
+WHERE product_id = 15
+EMIT CHANGES;
+```
+
+...you'll see the start and end times for each three minute window, along with the product demand for those 3 minutes. Notice how the window start times are staggered by one minute, this is the advance interval in action. As new sales events occur a new message will be displayed with an update to the window(s) total.
+
+```
++-----------------+-----------------+-----------------+-----------------+
+|WINDOW_START_TIME|WINDOW_END_TIME  |PRODUCT_ID       |DEMAND_LAST_3MINS|
++-----------------+-----------------+-----------------+-----------------+
+|13:33:00         |13:36:00         |1                |10               |
+|13:34:00         |13:37:00         |1                |10               |
+|13:35:00         |13:38:00         |1                |1                |
+|13:33:00         |13:36:00         |1                |11               |
+|13:34:00         |13:37:00         |1                |11               |
+|13:35:00         |13:38:00         |1                |2                |
+|13:34:00         |13:37:00         |1                |21               |
+|13:35:00         |13:38:00         |1                |12               |
+|13:36:00         |13:39:00         |1                |10               |
+|13:34:00         |13:37:00         |1                |26               |
+|13:35:00         |13:38:00         |1                |17               |
+|13:36:00         |13:39:00         |1                |15               |
+|13:35:00         |13:38:00         |1                |22               |
+|13:36:00         |13:39:00         |1                |20               |
+|13:37:00         |13:40:00         |1                |5                |
+|13:36:00         |13:39:00         |1                |28               |
+|13:37:00         |13:40:00         |1                |13               |
+|13:38:00         |13:41:00         |1                |8                |
+
+```
+
+We will now create a stream from this table and then join it to the `current_stock` table
+
+Create a stream from the table's underlying topic...
+
+```
+*CREATE STREAM* product_demand_last_3mins *WITH* (KAFKA_TOPIC='dc01_product_demand_last_3mins', VALUE_FORMAT='AVRO');
+```
+
+![ksqlDB 017](asciidoc/images/ksql_017.png)
+
+
+
+### Streaming _"Out of Stock"_ Events
+
+Now that we have the `current_stock` table and `product_demand_last_3mins` stream, we can create a `out_of_stock_events` stream by joining the two together and calculating the required purchase order quantity. We calculate the `purchase_qty` from adding the inverse of the current stock level to the last 3 minutes of demand. The stream is filtered to only include products that have negative stock and therefore need purchase orders raising for them.
+
+```
+SET 'auto.offset.reset' = 'latest';
+CREATE STREAM out_of_stock_events WITH (PARTITIONS = 1, KAFKA_TOPIC = 'dc01_out_of_stock_events') 
+AS SELECT
+  cs.product_id "PRODUCT_ID",
+  pd.window_start_time,
+  pd.window_end_time,
+  cs.stock_level,
+  pd.demand_last_3mins,
+  (cs.stock_level * -1) + pd.DEMAND_LAST_3MINS "QUANTITY_TO_PURCHASE"
+FROM product_demand_last_3mins pd
+INNER JOIN current_stock cs *ON* pd.product_id = cs.product_id 
+WHERE stock_level <= 0;
+```
+
+![ksqlDB 018](asciidoc/images/ksql_018.png)
+
+When we query the `out_of_stock_events` stream...
+
+```
+SET 'auto.offset.reset' = 'latest';
+SELECT product_id,
+       window_start_time,
+       window_end_time,
+       stock_level,
+       demand_last_3mins,
+       quantity_to_purchase 
+FROM out_of_stock_events
+EMIT CHANGES;
+```
+
+...you'll see a constant stream of _out of stock products_ and the predicted purchase quantity that should be ordered to satisfy any current backlog and also meet the next 3 minutes demand.   
+
+```
++----------------+------------------+----------------+-------------+-----------------+-------------------+
+|PRODUCT_ID      |WINDOW_START_TIME |WINDOW_END_TIME |STOCK_LEVEL  |DEMAND_LAST_3MINS|QUANTITY_TO_PURCASE|
++----------------+------------------+----------------+-------------+-----------------+-------------------+
+|28              |13:53:00          |13:56:00        |-85          |12               |97                 |
+|28              |13:54:00          |13:57:00        |-85          |1                |86                 |
+|28              |13:55:00          |13:58:00        |-85          |1                |86                 |
+|4               |13:53:00          |13:56:00        |-128         |26               |154                |
+|4               |13:54:00          |13:57:00        |-128         |11               |139                |
+|4               |13:55:00          |13:58:00        |-128         |11               |139                |
+|5               |13:53:00          |13:56:00        |-73          |15               |88                 |
+|5               |13:54:00          |13:57:00        |-73          |15               |88                 |
+|5               |13:55:00          |13:58:00        |-73          |15               |88                 |
+|28              |13:53:00          |13:56:00        |-85          |18               |103                |
+|28              |13:54:00          |13:57:00        |-91          |7                |98                 |
+|28              |13:55:00          |13:58:00        |-91          |7                |98                 |
+|14              |13:53:00          |13:56:00        |-156         |31               |187                |
+|14              |13:54:00          |13:57:00        |-156         |15               |171                |
+|14              |13:55:00          |13:58:00        |-156         |6                |162                |
+|5               |13:53:00          |13:56:00        |-73          |25               |98                 |
+|5               |13:54:00          |13:57:00        |-83          |25               |108                |
+|5               |13:55:00          |13:58:00        |-83          |25               |108                |
+|12              |13:53:00          |13:56:00        |-197         |25               |222                |
+|12              |13:54:00          |13:57:00        |-197         |21               |218                |
+|12              |13:55:00          |13:58:00        |-200         |3                |203                |
+...
+...
+```
+
+### Replicate Events to On-Premise Kafka
+
+The next step is to replicate the `out_of_stock_events` topic to our on-premise cluster.
+
+![5_replicate_to_onprem](asciidoc/images/5_replicate_to_onprem.png)
+
+Before we do that, we created the target topic in our on-premise Kafka cluster using Confluent Control Center
+Select your on-premise cluster from the home, select _"topics"_ and then click on _"Add a Topic"_. 	
+
+We created the connector using the cURL command.
+
+```
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:18083/connectors/ \
+    -d '{
+        "name": "replicator-ccloud-to-dc01",
+        "config": {
+          "connector.class": "io.confluent.connect.replicator.ReplicatorSourceConnector",
+          "key.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
+          "value.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
+          "topic.config.sync": "false",
+          "topic.whitelist": "dc01_out_of_stock_events",
+          "dest.kafka.bootstrap.servers": "broker:29092",
+          "dest.kafka.replication.factor": 1,
+          "src.kafka.bootstrap.servers": "${file:/secrets.properties:CCLOUD_CLUSTER_ENDPOINT}",
+          "src.kafka.security.protocol": "SASL_SSL",
+          "src.kafka.sasl.mechanism": "PLAIN",
+          "src.kafka.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${file:/secrets.properties:CCLOUD_API_KEY}\" password=\"${file:/secrets.properties:CCLOUD_API_SECRET}\";",
+          "src.consumer.group.id": "replicator-ccloud-to-dc01",
+          "src.consumer.interceptor.classes": "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor",
+          "src.consumer.confluent.monitoring.interceptor.bootstrap.servers": "${file:/secrets.properties:CCLOUD_CLUSTER_ENDPOINT}",
+          "src.kafka.timestamps.producer.interceptor.classes": "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor",
+          "src.kafka.timestamps.producer.confluent.monitoring.interceptor.bootstrap.servers": "${file:/secrets.properties:CCLOUD_CLUSTER_ENDPOINT}",
+          "tasks.max": "1"
+        }
+    }'
+```
+
+Notice that we've specified only to replicate the `dc01_out_of_stock_events` topic by configuring `"topic.whitelist": "dc01_out_of_stock_events"`
+
+We can confirm that the `dc01_out_of_stock_events` is being replicated from Confluent Cloud to our on-premise cluster by checking for messages in Confluent Control Center
+
+![c3_100](asciidoc/images/c3_100.png)
+
+### Sink Events into MySQL
+
+Finally we need to sink the `dc01_out_of_stock_events` topic into a MySQL database table, the on-premise application will then process these events and create purchase order for us.
+
+![6_jdbc_sink](asciidoc/images/6_jdbc_sink.png)
+
+Open 2 ksqlDB sessions.
+
+Execute the following query in the 1st session...
+
+```
+SET 'auto.offset.reset'='latest';
+SELECT  product_id,
+        stock_level
+FROM  current_stock
+EMIT CHANGES;
+```
+
+...and this query in the 2nd session
+
+```
+SET 'auto.offset.reset'='latest';
+SELECT  product_id,
+        product_qty
+FROM  purchases_enriched
+EMIT CHANGES;
+```
+
+You now have a real time view of the current product stock levels in the first ksqlDB session and the purchases being made to replenish the stock in second. Not that the second query isn't returning anything yet.
+
+Let's now sink the _out of stock events_ to the MySQL database using the JDBC Connector. Once the events start arriving in the database, the orders application will process them and start generating the required purchase orders.
+
+In a third terminal session, create the JDBC Sink Connector by running the following from the command line.
+
+```
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:18083/connectors/ \
+    -d '{
+        "name": "jdbc-mysql-sink",
+        "config": {
+          "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+          "topics": "dc01_out_of_stock_events",
+          "connection.url": "jdbc:mysql://mysql:3306/orders",
+          "connection.user": "mysqluser",
+          "connection.password": "mysqlpw",
+          "insert.mode": "INSERT",
+          "batch.size": "3000",
+          "auto.create": "true",
+          "key.converter": "org.apache.kafka.connect.storage.StringConverter"
+       }
+    }'
+```
+
+Observe the current stock query in the first ksqlDB session, when a product has zero or less stock you should see a purchase event appear in the second ksqlDB session and then the new stock level reflected in the first session. In theory, given a constant demand, each product should run out of stock and get replenished roughly every 3 minutes.
+
+
 ## Further Reading
 If you want to dig deeper here some useful links:
 
@@ -774,570 +1364,6 @@ docker exec -dit db-trans-simulator sh -c "python -u /simulate_dbtrans.py > /pro
 ```
 
 We now have `sales_order` and `sales_order_details` rows being created for us by the orders application.
-
-
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
-
-== Lab 9: Streaming Current Stock Levels
-
-Before we can create an out of stock event stream, we need to work out the current stock levels for each product. We can do this by combining the `sales_enriched` stream with the `purchases_enriched` stream and summing the `sales_enriched.quantity` column (stock decrements) and the `purchases_enriched.quantity` column (stock increments).
-
-Let's have a go at this now by creating a new stream called `product_supply_and_demand`. This stream is consuming messages from the `sales_enriched` stream and included the `product_id` and `quantity` column converted to a negative value, we do this because sales events are our _demand_ and hence decrement stock.
-
-[IMPORTANT]
-====
-[source,subs="quotes,attributes"]
-----
-*SET* 'auto.offset.reset'='earliest';
-*CREATE STREAM* product_supply_and_demand *WITH* (PARTITIONS=1, KAFKA_TOPIC='{dc}_product_supply_and_demand') *AS SELECT* 
-  product_id, 
-  product_qty * -1 "QUANTITY" 
-*FROM* sales_enriched;
-----
-====
-
-image::./images/ksql_012.png[align="center"]
-
-Let's have a quick look at the first few rows of this stream
-
-[source,subs="quotes,attributes"]
-----
-*SET* 'auto.offset.reset'='earliest';
-*SELECT*  product_id, 
-        quantity 
-*FROM*    product_supply_and_demand 
-*EMIT CHANGES* 
-*LIMIT* 10;
-----
-
-This query shows a history of all sales and their affect on stock levels. 
-
-[source,subs="quotes,attributes"]
-----
-+------------------------------------------+------------------------------------------+
-|PRODUCT_ID                                |QUANTITY                                  |
-+------------------------------------------+------------------------------------------+
-|1                                         |-6                                        |
-|15                                        |-3                                        |
-|14                                        |-7                                        |
-|23                                        |-3                                        |
-|13                                        |-10                                       |
-|4                                         |-9                                        |
-|10                                        |-9                                        |
-|15                                        |-8                                        |
-|10                                        |-2                                        |
-|27                                        |-7                                        |
-Limit Reached
-Query terminated
-----
-
-What we need to do now is also include all product purchases in the same stream. We can do this using an `INSERT INTO` statement. The `INSERT INTO` statement streams the result of a SELECT query into an existing stream and its underlying topic.
-
-[IMPORTANT]
-====
-[source,subs="quotes,attributes"]
-----
-*INSERT INTO* product_supply_and_demand 
-  *SELECT*  product_id, 
-          product_qty "QUANTITY" 
-  *FROM*    purchases_enriched;
-----
-====
-
-image::./images/ksql_013.png[align="center"]
-
-Our `product_supply_and_demand` now includes all product sales as stock decrements and all product purchases as stock increments.
-
-We can see the demand for a single product by filtering on the `product_id` and including only events where the `quantity` is less than zero, i.e. stock decrements.
-
-[source,subs="quotes,attributes"]
-----
-*SET* 'auto.offset.reset'='earliest';
-*SELECT*  product_id, 
-        quantity 
-*FROM*    product_supply_and_demand 
-*WHERE* product_id = 15
-*AND*   quantity < 0
-*EMIT CHANGES*;
-----
-
-[source,subs="quotes,attributes"]
-----
-+------------------------------------------+------------------------------------------+
-|PRODUCT_ID                                |QUANTITY                                  |
-+------------------------------------------+------------------------------------------+
-|1                                         |-6                                        |
-|1                                         |-9                                        |
-|1                                         |-7                                        |
-|1                                         |-5                                        |
-|1                                         |-1                                        |
-|1                                         |-7                                        |
-|1                                         |-7                                        |
-|1                                         |-10                                       |
-|1                                         |-8                                        |
-|1                                         |-4                                        |
-|1                                         |-2                                        |
-...
-...
-...
-----
-
-We can also see the supply for a single product by filtering on the `product_id` and including only events where the `quantity` is greater than zero, i.e. stock increments.
-
-[source,subs="quotes,attributes"]
-----
-*SET* 'auto.offset.reset'='earliest';
-*SELECT*  product_id, 
-        quantity 
-*FROM*    product_supply_and_demand 
-*WHERE* product_id = 15
-*AND*   quantity > 0
-*EMIT CHANGES*;
-----
-
-This query will only return a single event and reflects the initial purchase order line that was raised for this product.
-
-[source,subs="quotes,attributes"]
-----
-+------------------------------------------+------------------------------------------+
-|PRODUCT_ID                                |QUANTITY                                  |
-+------------------------------------------+------------------------------------------+
-|1                                         |100                                       |
-----
-
-We're now is a position where we can calculate the current stock level for each product. We can do this by creating a table that groups by the `product_id` and sums up the `quantity` column which contains both stock decrements and stock increments.
-
-[IMPORTANT]
-====
-[source,subs="quotes,attributes"]
-----
-*SET* 'auto.offset.reset'='earliest';
-*CREATE TABLE* current_stock *WITH* (PARTITIONS = 1, KAFKA_TOPIC = '{dc}_current_stock') *AS SELECT* 
-      product_id
-    , SUM(quantity) "STOCK_LEVEL" 
-*FROM* product_supply_and_demand
-*GROUP BY* product_id;
-----
-====
-
-image::./images/ksql_014.png[align="center"]
-
-When we query this table with a Push query... 
-
-[source,subs="quotes,attributes"]
-----
-*SET* 'auto.offset.reset'='latest';
-*SELECT*  product_id,
-        stock_level
-*FROM*  current_stock
-*EMIT CHANGES*;
-----
-
-...each new event that is displayed on the console reflects the current stock level for the associated product, a new event will be emitted  each time a product's stock level changes. 
-Depending on how long it took you to get to this point in the workshop, you may see that all your stock levels are negative. This is because, apart from the initial purchase order for 100 of each product, we have not created any more purchase orders and our customers will have their orders on hold until we acquire more stock, not good, but we'll fix that soon.
-
-.Further Reading
-[TIP]
-====
-* link:https://docs.ksqldb.io/en/latest/developer-guide/ksqldb-reference/insert-into/[INSERT INTO Syntax]
-* link:https://docs.ksqldb.io/en/latest/developer-guide/ksqldb-reference/create-table-as-select/[CREATE TABLE AS SELECT Syntax]
-* link:https://docs.ksqldb.io/en/latest/developer-guide/ksqldb-reference/create-table-as-select/[ksqlDB Aggregate Functions]
-====
-
-
-== Lab 10: Pull Queries
-
-We can now run our first Pull query. Pull queries are used against tables with aggregates and can only query a single key.
-
-To run a Pull query we just query the table as normal but drop the `EMIT CHANGES` clause. In this query we are asking "*what is the _current_ stock level for product id 1?*"
-
-[source,subs="quotes,attributes"]
-----
-select product_id, stock_level from current_stock where rowkey=15;
-----
-
-image::./images/ksql_015.png[align="center"]
-
-The query will return the current stock level and immediatly terminate.
-
-[source,subs="quotes,attributes"]
-----
-+----------------------------------------------------+----------------------------------------------------+
-|PRODUCT_ID                                          |STOCK_LEVEL                                         |
-+----------------------------------------------------+----------------------------------------------------+
-|1                                                   |-67                                                 |
-Query terminated
-----
-
-We can also use the ksqlDB Server's REST endpoint to make Pull queries.
-
-Exit from the ksqlDB CLI and run the following from the command line.
-
-[source,subs="quotes,attributes"]
-----
-curl -s -X "POST" "http://localhost:8088/query" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" -d $'{ "ksql": "select product_id, stock_level from current_stock where rowkey=15;" }'| jq .
-----
-
-As you can see, the ksqlDB Server's REST endpoint will return a JSON message with the `product_id` and its current `stock_level`. This is useful for applications that want access to the current state of the world using a request/response type pattern.
-
-[source,subs="quotes,attributes"]
-----
-[
-  {
-    "header": {
-      "queryId": "query_1582892390468",
-      "schema": "`PRODUCT_ID` INTEGER, `STOCK_LEVEL` INTEGER"
-    }
-  },
-  {
-    "row": {
-      "columns": [
-        1,
-        -76
-      ]
-    }
-  }
-]
-----
-
-.Further Reading
-[TIP]
-====
-* link:https://docs.ksqldb.io/en/latest/developer-guide/ksqldb-reference/select-pull-query/[Pull Queries]
-* link:https://docs.ksqldb.io/en/latest/developer-guide/api/[ksqlDB REST API]
-====
-
-== Lab 11: Streaming Recent Product Demand
-
-Now that we know the current stock level is for each product, we can use this information to send an event to the orders application and ask it to create purchase orders to replenish the stock, but how much should we stock should we order? we could just order enough to satisfy the current backlog but we'd quickly run out of stock again. 
-
-What we really want to do is order enough to satisfy the backlog _and_ enough to meet future demand, we can make an attempt at predicting what the future demand will be by looking at the past.
-
-In the following query we are creating a table that will calculate the demand for each product over the last 3 minutes using a `WINDOW HOPPING` clause.
-
-Hopping windows are based on time intervals. They model fixed-sized, possibly overlapping windows. A hopping window is defined by two properties: the window’s duration and its advance, or “hop”, interval. The advance interval specifies how far a window moves forward in time relative to the previous window. In our query we we have a window with a duration of three minutes and an advance interval of one minute. Because hopping windows can overlap, a record can belong to more than one such window.
-
-Start the ksqlDB CLI if you haven't already
-[source,subs=attributes+]
-----
-docker exec -it ksqldb-cli ksql http://ksqldb-server-ccloud:8088
-----
-
-Create the windowed query
-
-[IMPORTANT]
-====
-[source,subs="quotes,attributes"]
-----
-*SET* 'auto.offset.reset'='earliest';
-*CREATE TABLE* product_demand_last_3mins_tbl *WITH* (PARTITIONS = 1, KAFKA_TOPIC = '{dc}_product_demand_last_3mins') 
-*AS SELECT*
-      timestamptostring(windowStart,'HH:mm:ss') "WINDOW_START_TIME"
-    , timestamptostring(windowEnd,'HH:mm:ss') "WINDOW_END_TIME"
-    , product_id
-    , *SUM*(product_qty) "DEMAND_LAST_3MINS"
-*FROM* sales_enriched
-*WINDOW HOPPING* (SIZE 3 MINUTES, ADVANCE BY 1 MINUTE)
-*GROUP BY* product_id *EMIT CHANGES*;
-----
-====
-
-image::./images/ksql_016.png[align="center"]
-
-If we query this table for a single product...
-
-[source,subs="quotes,attributes"]
-----
-*SET* 'auto.offset.reset'='latest';
-*SELECT*  window_start_time,
-        window_end_time,
-        product_id,
-        demand_last_3mins
-*FROM*  product_demand_last_3mins_tbl
-*WHERE* product_id = 15
-*EMIT CHANGES*;
-----
-
-...you'll see the start and end times for each three minute window, along with the product demand for those 3 minutes. Notice how the window start times are staggered by one minute, this is the advance interval in action. As new sales events occur a new message will be displayed with an update to the window(s) total.
-
-[source,subs="quotes,attributes"]
-----
-+-----------------+-----------------+-----------------+-----------------+
-|WINDOW_START_TIME|WINDOW_END_TIME  |PRODUCT_ID       |DEMAND_LAST_3MINS|
-+-----------------+-----------------+-----------------+-----------------+
-|13:33:00         |13:36:00         |1                |10               |
-|13:34:00         |13:37:00         |1                |10               |
-|13:35:00         |13:38:00         |1                |1                |
-|13:33:00         |13:36:00         |1                |11               |
-|13:34:00         |13:37:00         |1                |11               |
-|13:35:00         |13:38:00         |1                |2                |
-|13:34:00         |13:37:00         |1                |21               |
-|13:35:00         |13:38:00         |1                |12               |
-|13:36:00         |13:39:00         |1                |10               |
-|13:34:00         |13:37:00         |1                |26               |
-|13:35:00         |13:38:00         |1                |17               |
-|13:36:00         |13:39:00         |1                |15               |
-|13:35:00         |13:38:00         |1                |22               |
-|13:36:00         |13:39:00         |1                |20               |
-|13:37:00         |13:40:00         |1                |5                |
-|13:36:00         |13:39:00         |1                |28               |
-|13:37:00         |13:40:00         |1                |13               |
-|13:38:00         |13:41:00         |1                |8                |
-
-----
-
-We will now create a stream from this table and then join it to the `current_stock` table
-
-Create a stream from the table's underlying topic...
-
-[IMPORTANT]
-====
-[source,subs="quotes,attributes"]
-----
-*CREATE STREAM* product_demand_last_3mins *WITH* (KAFKA_TOPIC='{dc}_product_demand_last_3mins', VALUE_FORMAT='AVRO');
-----
-====
-
-image::./images/ksql_017.png[align="center"]
-
-.Further Reading
-[TIP]
-====
-* link:https://docs.ksqldb.io/en/latest/concepts/time-and-windows-in-ksqldb-queries/#windows-in-sql-queries[Windows in ksqlDB Queries]
-====
-
-== Lab 12: Streaming _"Out of Stock"_ Events
-
-Now that we have the `current_stock` table and `product_demand_last_3mins` stream, we can create a `out_of_stock_events` stream by joining the two together and calculating the required purchase order quantity. We calculate the `purchase_qty` from adding the inverse of the current stock level to the last 3 minutes of demand. The stream is filtered to only include products that have negative stock and therefore need purchase orders raising for them.
-
-[IMPORTANT]
-====
-[source,subs="quotes,attributes"]
-----
-*SET* 'auto.offset.reset' = 'latest';
-*CREATE STREAM* out_of_stock_events *WITH* (PARTITIONS = 1, KAFKA_TOPIC = '{dc}_out_of_stock_events') 
-*AS SELECT* 
-  cs.product_id "PRODUCT_ID",
-  pd.window_start_time,
-  pd.window_end_time,
-  cs.stock_level,
-  pd.demand_last_3mins,
-  (cs.stock_level * -1) + pd.DEMAND_LAST_3MINS "QUANTITY_TO_PURCHASE"
-*FROM* product_demand_last_3mins pd
-*INNER JOIN* current_stock cs *ON* pd.product_id = cs.product_id 
-*WHERE* stock_level <= 0;
-----
-====
-
-image::./images/ksql_018.png[align="center"]
-
-When we query the `out_of_stock_events` stream...
-
-[source,subs="quotes,attributes"]
-----
-*SET* 'auto.offset.reset' = 'latest';
-*SELECT* product_id,
-       window_start_time,
-       window_end_time,
-       stock_level,
-       demand_last_3mins,
-       quantity_to_purchase 
-*FROM* out_of_stock_events
-*EMIT CHANGES*;
-----
-
-...you'll see a constant stream of _out of stock products_ and the predicted purchase quantity that should be ordered to satisfy any current backlog and also meet the next 3 minutes demand.   
-
-[source,subs="quotes,attributes"]
-----
-+----------------+------------------+----------------+-------------+-----------------+-------------------+
-|PRODUCT_ID      |WINDOW_START_TIME |WINDOW_END_TIME |STOCK_LEVEL  |DEMAND_LAST_3MINS|QUANTITY_TO_PURCASE|
-+----------------+------------------+----------------+-------------+-----------------+-------------------+
-|28              |13:53:00          |13:56:00        |-85          |12               |97                 |
-|28              |13:54:00          |13:57:00        |-85          |1                |86                 |
-|28              |13:55:00          |13:58:00        |-85          |1                |86                 |
-|4               |13:53:00          |13:56:00        |-128         |26               |154                |
-|4               |13:54:00          |13:57:00        |-128         |11               |139                |
-|4               |13:55:00          |13:58:00        |-128         |11               |139                |
-|5               |13:53:00          |13:56:00        |-73          |15               |88                 |
-|5               |13:54:00          |13:57:00        |-73          |15               |88                 |
-|5               |13:55:00          |13:58:00        |-73          |15               |88                 |
-|28              |13:53:00          |13:56:00        |-85          |18               |103                |
-|28              |13:54:00          |13:57:00        |-91          |7                |98                 |
-|28              |13:55:00          |13:58:00        |-91          |7                |98                 |
-|14              |13:53:00          |13:56:00        |-156         |31               |187                |
-|14              |13:54:00          |13:57:00        |-156         |15               |171                |
-|14              |13:55:00          |13:58:00        |-156         |6                |162                |
-|5               |13:53:00          |13:56:00        |-73          |25               |98                 |
-|5               |13:54:00          |13:57:00        |-83          |25               |108                |
-|5               |13:55:00          |13:58:00        |-83          |25               |108                |
-|12              |13:53:00          |13:56:00        |-197         |25               |222                |
-|12              |13:54:00          |13:57:00        |-197         |21               |218                |
-|12              |13:55:00          |13:58:00        |-200         |3                |203                |
-...
-...
-----
-
-== Lab 13: Replicate Events to On-Premise Kafka
-
-The next step is to replicate the `out_of_stock_events` topic to our on-premise cluster.
-
-image::./images/5_replicate_to_onprem.png[]	
-
-Before we do that, let's create the target topic in our on-premise Kafka cluster using link:http://{externalip}:9021[Confluent Control Center, window=_blank]	
-Select your on-premise cluster from the home, select _"topics"_ and then click on _"Add a Topic"_. 	
-
-[IMPORTANT]
-====
-image::./images/c3_80.png[]	
-
-Name the topic `{dc}_out_of_stock_events` with one partition and click _"Create with defaults"_	
-
-image::./images/c3_90.png[]	
-
-We are now ready to replicate this topic from Confluent Cloud to your on-premise cluster.
-====
-
-=== Submit the Replicator Connector Config
-
-Execute the following to create the Replicator Connector.
-
-Exit the ksqlDB cli 
-
-[IMPORTANT]
-====
-exit
-====
-
-Create the connector using the cURL command.
-
-[IMPORTANT]
-====
-[source,subs="attributes"]
-----
-curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://localhost:18083/connectors/ \
-    -d '{
-        "name": "replicator-ccloud-to-{dc}",
-        "config": {
-          "connector.class": "io.confluent.connect.replicator.ReplicatorSourceConnector",
-          "key.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
-          "value.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
-          "topic.config.sync": "false",
-          "topic.whitelist": "{dc}_out_of_stock_events",
-          "dest.kafka.bootstrap.servers": "broker:29092",
-          "dest.kafka.replication.factor": 1,
-          "src.kafka.bootstrap.servers": "${file:/secrets.properties:CCLOUD_CLUSTER_ENDPOINT}",
-          "src.kafka.security.protocol": "SASL_SSL",
-          "src.kafka.sasl.mechanism": "PLAIN",
-          "src.kafka.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${file:/secrets.properties:CCLOUD_API_KEY}\" password=\"${file:/secrets.properties:CCLOUD_API_SECRET}\";",
-          "src.consumer.group.id": "replicator-ccloud-to-{dc}",
-          "src.consumer.interceptor.classes": "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor",
-          "src.consumer.confluent.monitoring.interceptor.bootstrap.servers": "${file:/secrets.properties:CCLOUD_CLUSTER_ENDPOINT}",
-          "src.kafka.timestamps.producer.interceptor.classes": "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor",
-          "src.kafka.timestamps.producer.confluent.monitoring.interceptor.bootstrap.servers": "${file:/secrets.properties:CCLOUD_CLUSTER_ENDPOINT}",
-          "tasks.max": "1"
-        }
-    }'
-----
-====
-
-Notice that we've specified only to replicate the `{dc}_out_of_stock_events` topic by configuring `"topic.whitelist": "{dc}_out_of_stock_events"`
-
-We can confirm that the `{dc}_out_of_stock_events` is being replicated from Confluent Cloud to our on-premise cluster by checking for messages in link:http://{externalip}:9021[Confluent Control Center, window=_blank]
-
-image::./images/c3_100.png[]
-
-.Further Reading
-[TIP]
-====
-* link:https://docs.confluent.io/current/connect/kafka-connect-replicator/index.html[Confluent Replicator]
-* link:https://docs.confluent.io/current/connect/kafka-connect-replicator/configuration_options.html[Confluent Replicator Configuration Properties]
-====
-
-== Lab 14: Sink Events into MySQL
-
-Finally we need to sink the `{dc}_out_of_stock_events` topic into a MySQL database table, the on-premise application will then process these events and create purchase order for us.
-
-image::./images/6_jdbc_sink.png[]
-
-But before we do that, let's open a couple more terminal sessions and start the ksqlDB CLI in each.
-
-[source,subs=attributes+]
-----
-ssh {dc}@{externalip}
-----
-
-[source,subs=attributes+]
-----
-docker exec -it ksqldb-cli ksql http://ksqldb-server-ccloud:8088
-----
-
-Execute the following query in the 1st session...
-
-[source,subs="quotes,attributes"]
-----
-SET 'auto.offset.reset'='latest';
-SELECT  product_id,
-        stock_level
-FROM  current_stock
-EMIT CHANGES;
-----
-
-...and this query in the 2nd session
-
-[source,subs="quotes,attributes"]
-----
-SET 'auto.offset.reset'='latest';
-SELECT  product_id,
-        product_qty
-FROM  purchases_enriched
-EMIT CHANGES;
-----
-
-You now have a real time view of the current product stock levels in the first ksqlDB session and the purchases being made to replenish the stock in second. Not that the second query isn't returning anything yet.
-
-Let's now sink the _out of stock events_ to the MySQL database using the JDBC Connector. Once the events start arriving in the database, the orders application will process them and start generating the required purchase orders.
-
-In a third terminal session, create the JDBC Sink Connector by running the following from the command line.
-
-[IMPORTANT]
-====
-[source,subs="quotes,attributes"]
-----
-curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://localhost:18083/connectors/ \
-    -d '{
-        "name": "jdbc-mysql-sink",
-        "config": {
-          "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
-          "topics": "{dc}_out_of_stock_events",
-          "connection.url": "jdbc:mysql://mysql:3306/orders",
-          "connection.user": "mysqluser",
-          "connection.password": "mysqlpw",
-          "insert.mode": "INSERT",
-          "batch.size": "3000",
-          "auto.create": "true",
-          "key.converter": "org.apache.kafka.connect.storage.StringConverter"
-       }
-    }'
-----
-====
-
-Observe the current stock query in the first ksqlDB session, when a product has zero or less stock you should see a purchase event appear in the second ksqlDB session and then the new stock level reflected in the first session. In theory, given a constant demand, each product should run out of stock and get replenished roughly every 3 minutes.
-
-.Further Reading
-[TIP]
-====
-* link:https://docs.confluent.io/current/connect/kafka-connect-jdbc/sink-connector/index.html#jdbc-sink-connector-for-cp[JDBC Sink Connector]
-* link:https://docs.confluent.io/current/connect/kafka-connect-jdbc/sink-connector/sink_config_options.html[JDBC Sink Connector Configuration Properties]
-====
-
 
 
 ## Destroy the environment
