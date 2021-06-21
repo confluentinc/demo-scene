@@ -5,9 +5,9 @@
 :resourcepath: resources
 :externalip: localhost
 Gianluca Natali <gnatali@confluent.io>; Felix Reichenbach <felix.reichenbach@mongodb.com>
-v0.1, February 27, 2019
+v1.0, June 21, 2021
 
-image::{resourcepath}/images/architecture.png[Diagram of what's being built with this Demo]
+image::./architecture.png[Diagram of what's being built with this Demo]
 
 == Introduction
 Hybrid Cloud is a reality in modern IT architectures.
@@ -43,14 +43,16 @@ ____
 == Demo Tutorial
 
 Open Control Center in your browser link:http://{externalip}:9021[here, window=_blank]
+Username : dc01
+Password: (as defined in the config file)
 
-Notice that you have 3 clusters available. 
+Notice that you have 2 clusters available. 
 
 * CO: Confluent Platform running in a VM
-* GC: Confluent Cloud in GCP
+* CC: Confluent Cloud in GCP
 
 == MongoDB Atlas
 You should see a similar result in your MongoDB Atlas Cloud account
 
-image::{resourcepath}/images/019.png[MongoDB Atlas table]
+image::./019.png[MongoDB Atlas table]
 

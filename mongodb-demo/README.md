@@ -48,6 +48,9 @@ This approach uses Docker tosandbox the environment needed to spin up the demo, 
 1. Login to your Confluent Cloud account and save the credentials:
    `ccloud login --save`
 1. execute `./create_demo_environment.sh`
+1. The script will prompt you to confirm twice.
+    - The first time it will ask you if you are ok to create resources in Confluent Cloud, you must answer YES
+    - The first time it will ask you if you want to create a ksqlDB instance. This is not required for this demo as it will be provisioned in the VM. You can answer NO .
 1. At the end of the script you will receive an output with the IP of your demo. Copy that ip in your browser to continue
 
 ## Spin Up the Demo (directly)
