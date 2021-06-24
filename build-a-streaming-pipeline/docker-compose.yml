@@ -2,14 +2,14 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:6.0.0
+    image: confluentinc/cp-zookeeper:6.2.0
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-kafka:6.0.0
+    image: confluentinc/cp-kafka:6.2.0
     container_name: kafka
     depends_on:
       - zookeeper
@@ -57,7 +57,7 @@ services:
         sleep infinity  
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:6.0.0
+    image: confluentinc/cp-schema-registry:6.2.0
     container_name: schema-registry
     depends_on:
       - zookeeper
@@ -72,7 +72,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   kafka-connect-01:
-    image: confluentinc/cp-kafka-connect-base:6.0.0
+    image: confluentinc/cp-kafka-connect-base:6.2.0
     container_name: kafka-connect-01
     depends_on:
       - kafka
@@ -96,22 +96,20 @@ services:
       CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
       CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
       CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
-      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/,/connectors/'
-    # If you want to use the Confluent Hub installer to d/l component, but make them available
-    # when running this offline, spin up the stack once and then run : 
-    #   docker cp kafka-connect-01:/usr/share/confluent-hub-components ./connectors
-    #   mv ./connectors/confluent-hub-components/* ./connectors
-    #   rm -rf ./connectors/confluent-hub-components
-    volumes:
-      - $PWD/connectors:/connectors
+      # If you want to use the Confluent Hub installer to d/l component, but make them available
+      # when running this offline, spin up the stack once and then run : 
+        #   docker cp kafka-connect-01:/usr/share/confluent-hub-components ./connectors
+        #   mv ./connectors/confluent-hub-components/* ./connectors
+        #   rm -rf ./connectors/confluent-hub-components
+        #CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/,/connectors/'
+    #volumes:
+    #  - $PWD/connectors:/connectors
     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
     command: 
       - bash 
@@ -121,9 +119,9 @@ services:
         echo '127.0.0.1 kafka-connect-01' >> /etc/hosts
         #
         echo "Installing connector plugins"
-        confluent-hub install --no-prompt debezium/debezium-connector-mysql:1.2.2
-        confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.4.0
-        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:10.0.1
+        confluent-hub install --no-prompt debezium/debezium-connector-mysql:1.5.0
+        confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.5.0
+        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:11.0.6
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 
@@ -151,7 +149,7 @@ services:
         sleep infinity
 
   ksqldb:
-    image: confluentinc/ksqldb-server:0.13.0
+    image: confluentinc/ksqldb-server:0.18.0
     hostname: ksqldb
     container_name: ksqldb
     links:
@@ -246,7 +244,7 @@ services:
         sleep infinity
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.13.2
     container_name: elasticsearch
     ports:
       - 9200:9200
@@ -283,7 +281,7 @@ services:
         sleep infinity
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.5.0
+    image: docker.elastic.co/kibana/kibana:7.13.2
     container_name: kibana
     depends_on:
       - elasticsearch
@@ -318,8 +316,8 @@ services:
         curl 'http://localhost:5601/api/telemetry/v2/userHasSeenNotice' -X PUT -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Length: 0' 
 
         echo -e "\n--\n+> Register Kibana indices"
-        curl -s 'http://localhost:5601/api/saved_objects/index-pattern/ratings-enriched' -H 'kbn-version: 7.5.0' -H 'Content-Type: application/json' -H 'Sec-Fetch-Site: same-origin' -H 'Sec-Fetch-Mode: cors' --data-binary '{"attributes":{"title":"ratings-enriched","timeFieldName":"EXTRACT_TS","fields":"[]"}}' --compressed
-        curl -s 'http://localhost:5601/api/saved_objects/index-pattern/unhappy_platinum_customers' -H 'kbn-version: 7.5.0' -H 'Content-Type: application/json' -H 'Sec-Fetch-Site: same-origin' -H 'Sec-Fetch-Mode: cors' --data-binary '{"attributes":{"title":"unhappy_platinum_customers","timeFieldName":"EXTRACT_TS","fields":"[]"}}' --compressed
+        curl -s 'http://localhost:5601/api/saved_objects/index-pattern/ratings-enriched' -H 'kbn-version: 7.13.2' -H 'Content-Type: application/json' -H 'Sec-Fetch-Site: same-origin' -H 'Sec-Fetch-Mode: cors' --data-binary '{"attributes":{"title":"ratings-enriched","timeFieldName":"EXTRACT_TS","fields":"[]"}}' --compressed
+        curl -s 'http://localhost:5601/api/saved_objects/index-pattern/unhappy_platinum_customers' -H 'kbn-version: 7.13.2' -H 'Content-Type: application/json' -H 'Sec-Fetch-Site: same-origin' -H 'Sec-Fetch-Mode: cors' --data-binary '{"attributes":{"title":"unhappy_platinum_customers","timeFieldName":"EXTRACT_TS","fields":"[]"}}' --compressed
 
         echo -e "\n--\n+> Import Kibana objects"
         curl -s 'http://localhost:5601/api/saved_objects/search/2f3d2290-6ff0-11e8-8fa0-279444e59a8f?overwrite=true' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"Unhappy Platinum Customers","description":"","hits":0,"columns":["EMAIL","MESSAGE","STARS"],"sort":["EXTRACT_TS","desc"],"version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"unhappy_platinum_customers\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"}}}' --compressed 
