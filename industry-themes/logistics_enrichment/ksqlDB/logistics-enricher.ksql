@@ -1,0 +1,99 @@
+SET 'auto.offset.reset' = 'earliest';
+
+--{"part_id":3,"part_lat":37.7848,"part_long":-122.7278,"part_destination":"CA"}
+CREATE STREAM PART_LOCATION
+(
+    part_id INT,
+    part_lat STRING,
+    part_long STRING,
+    part_destination STRING
+)
+WITH (
+    KAFKA_TOPIC = 'part_location',
+    VALUE_FORMAT = 'JSON'
+);
+
+--{"part_id":1,"part_description":"engine","part_source":"TX"}
+CREATE STREAM PARTS 
+(
+    part_id INT,
+    part_description STRING,
+    part_source STRING
+)
+WITH (
+    KAFKA_TOPIC = 'parts',
+    VALUE_FORMAT = 'JSON'
+);
+
+CREATE STREAM PART_LOCATION_KEYED
+WITH (
+    KAFKA_TOPIC = 'part_location_keyed',
+    VALUE_FORMAT = 'AVRO'
+) AS
+SELECT
+part_id,
+part_lat,
+part_long,
+part_destination
+FROM PART_LOCATION
+PARTITION BY part_id;
+
+CREATE STREAM PARTS_KEYED
+WITH (
+    KAFKA_TOPIC = 'parts_keyed',
+    VALUE_FORMAT = 'AVRO'
+) AS
+SELECT
+part_id,
+part_description,
+part_source
+FROM PARTS
+PARTITION BY part_id;
+
+CREATE TABLE PARTS_TABLE
+(
+    part_id INT PRIMARY KEY,
+    part_description STRING,
+    part_source STRING
+)
+WITH (
+    KAFKA_TOPIC = 'parts_keyed',
+    VALUE_FORMAT = 'AVRO'
+);
+
+CREATE STREAM PART_LOCATION_ENRICHED
+WITH (
+    KAFKA_TOPIC = 'part_location_enriched',
+    VALUE_FORMAT = 'AVRO'
+) AS
+SELECT
+pl.part_id AS part_id,
+pl.part_lat AS part_lat,
+pl.part_long AS part_long,
+p.part_description AS part_description,
+p.part_source AS part_source,
+pl.part_destination AS part_destination
+FROM PART_LOCATION_KEYED pl
+LEFT OUTER JOIN PARTS_TABLE p 
+ON pl.part_id = p.part_id;
+
+CREATE TABLE PART_LOCATION_TABLE
+WITH (
+    KAFKA_TOPIC = 'part_location_table',
+    VALUE_FORMAT = 'AVRO'
+) AS
+SELECT
+part_id,
+LATEST_BY_OFFSET(part_lat) AS latest_part_lat,
+LATEST_BY_OFFSET(part_long) AS latest_part_long,
+LATEST_BY_OFFSET(part_description) AS latest_part_description,
+LATEST_BY_OFFSET(part_source) AS latest_part_source,
+LATEST_BY_OFFSET(part_destination) AS latest_part_destination,
+COUNT(*) AS change_count
+FROM PART_LOCATION_ENRICHED
+GROUP BY part_id;
+
+--select * from part_location_table where part_id = 5;
+--select * from part_location_enriched where part_id = 5 emit changes;
+--INSERT INTO PARTS VALUES(5, 'interior', 'OH');
+--INSERT INTO PART_LOCATION VALUES(5, '23.4352', '67.8129', 'PA');
