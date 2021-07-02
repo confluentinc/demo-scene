@@ -11,6 +11,7 @@ In some cases, a Docker compose file is provided for easy deployment but the pro
 - [Tracking field assets for utilities companies](field_management)
 - [Client services for Foreign Exchange market trading](fx_client_services)
 - [Looking up claim statics by patient with FHIR events](healthcare_claims_microservices)
+- [Auto part tracking with enriched GPS events](logistics_enrichment)
 - [Medical device alerts from noisy sensors](medical_devices)
 - Building next best offer engines with session information ([Banking](next_best_offer_banking) or [Insurance](next_best_offer_insurance))
 - [Pizza order status tracking with nested JSON](pizza_orders)
