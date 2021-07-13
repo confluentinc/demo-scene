@@ -1,10 +1,17 @@
 ![image](images/architecture.png)
 
-# IBM MQ demo
+# Confluent + IBM Demo
 
 This repository demonstrates how to use the IBM MQ connector. Two connectors will be started up: Datagen source, to mock clickstream data and IBM MQ Connetor source. Then we'll use KSQL to join the two sources together. No sink connector is configured.
 
+## Download the demo
+You can download the demo [here](https://bit.ly/3ex1tLx)
+
+Unzip the ibm-demo.zip and cd into the directory from your terminal.
+
 ## Make commands
+
+This step will spin up the Confluent Platform cluster and the IBM DB2 and IBM MQ servers.
 
 ```bash
 make build
@@ -13,6 +20,8 @@ make cluster
 ```
 
 ## Make the topics
+
+With these commands we create the topics we need
 
 ```bash
 make topic
@@ -40,7 +49,15 @@ You need to send a message to IBM MQ before the schema will appear in the topic 
 ![add image](images/addmessage.png)
 ![add image](images/addmessage2.png)
 
+Notice that the messages are not consumed yet...
+
+## Access Confluent Control Center
+Access [Confluent Control Center](https://localhost:9021) 
+Here you can see your local Confluent cluster, and the topics created before.
+
 ## Make the source connectors
+
+Now we configure the connector so we can read data from IBM MQ
 
 ```bash
 make connectsource
@@ -59,9 +76,16 @@ Run the ibmmq consumer to see messages coming in from `DEV.QUEUE.1` (or check in
 make consumer
 ```
 
+You can also see in IBM MQ that the messages are not there anymore.
+
+
 ## KSQL
 
 ### Create the stream from the CLICKSTREAM topic with ksqlDB
+
+In [Confluent Control Center](https://localhost:9021)  , Select the cluster tile, Click on ksqlDB on the left menu  , and select the ksqldb1 cluster.
+
+Using the editor run the queries below:
 
 ```sql
 CREATE STREAM CLICKSTREAM
@@ -71,17 +95,17 @@ CREATE STREAM CLICKSTREAM
 
 ## Add anothermessage to DEV.QUEUE.1
 
-You can use the user names `bobk_43` or `akatz1022` to capture clickstreams for those users with a KSQL join.
+Send another message to IBM MQ. You can use the user names `bobk_43` or `akatz1022` to capture clickstreams for those users with a KSQL join.
 
 ## Create the Stream for the IBMMQ topic
 
-This time we will use KSQL to create the stream. Paste the KSQL statement into the KSQL Editor.
 
 ```sql
 CREATE STREAM ibmmq
   WITH (KAFKA_TOPIC='ibmmq',
         VALUE_FORMAT='AVRO');
 ```
+Click on Add query properties and select auto.offset.reset = Earliest
 
 ```sql
 SELECT * FROM ibmmq
@@ -125,11 +149,21 @@ db2 connect to sample user db2inst1 using passw0rd
 db2 LIST TABLES
 ```
 
+You can now exit db2 
+
+```bash
+exit
+```
+
 Now you can create the connector to load the data from db2
 
 ```bash
 make connectdb2source
 ```
+
+You will see that the connector automatically creates data in Confluent. Check in [Confluent Control Center](https://localhost:9021) , under topics.
+
+You can also see the connectors created by clicking on the Connect link in the left menu.
 
 ## Sink data to IBM MQ 
 
@@ -144,4 +178,11 @@ You can see the data by [loggin in](https://localhost:9443/ibmmq/console/login.h
 ```conf
 UserName=admin
 Password=passw0rd
+```
+
+## Bring down the demo 
+When you are done with the demo execute the command:
+
+```conf
+make down
 ```
