@@ -1,1 +1,1 @@
-This folder will host jars, leave this files alone :)
+This folder will host jars, leave these files alone :)
