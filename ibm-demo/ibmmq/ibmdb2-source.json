@@ -1,0 +1,14 @@
+{
+	"connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+	"tasks.max":"1",
+	"mq.hostname": "ibmmq",
+	"connection.url":"jdbc:db2://ibmdb2:50000/sample",
+	"connection.user":"db2inst1",
+	"connection.password":"passw0rd",
+	"topic.prefix": "db2-",
+	"mode":"bulk",
+	"confluent.license": "",
+	"confluent.topic.bootstrap.servers": "broker:29092",
+	"confluent.topic.replication.factor": "1",
+	"name": "ibmdb2-source"
+}

@@ -55,6 +55,7 @@ You may well need to allocate Docker 8GB when running these. Avoid allocating al
 - [Multi-node ksqlDB and Kafka Connect clusters](multi-cluster-connect-and-ksql)
 - [Streaming ETL pipeline from MongoDB to Snowflake with Apache Kafka®](streaming-etl-mongodb-snowflake)
 - [Bridge to Cloud (and back!) with Confluent and MongoDB Atlas](mongodb-demo)
+- [Confluent + IBM Demo](ibm-demo) Read data from IBM MQ and IBM DB2, join with ksqlDB, sink to IBM MQ
 
 ###  Kafka Connect
 
@@ -78,7 +79,7 @@ You may well need to allocate Docker 8GB when running these. Avoid allocating al
     - [MQTT Connect Connector Demo](mqtt-connect-connector-demo)
     - [Example Kafka Connect syslog configuration and Docker Compose](syslog) (see blog series [1](https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-part-1-filtering/?utm_campaign=rmoff&utm_source=demo-scene)/[2](https://www.confluent.io/blog/real-time-syslog-processing-with-apache-kafka-and-ksql-part-2-event-driven-alerting-with-slack/?utm_campaign=rmoff&utm_source=demo-scene)/[3](https://www.confluent.io/blog/real-time-syslog-processing-apache-kafka-ksql-enriching-events-with-external-data/?utm_campaign=rmoff&utm_source=demo-scene) and standalone articles [here](https://rmoff.net/2019/12/20/analysing-network-behaviour-with-ksqldb-and-mongodb/?utm_campaign=rmoff&utm_source=demo-scene) and [here](https://rmoff.net/2019/12/18/detecting-and-analysing-ssh-attacks-with-ksqldb/?utm_campaign=rmoff&utm_source=demo-scene))
     - [Azure SQL Data Warehouse Connector Sink Demo](azure-sqldw-sink-connector)
-    - [IBM MQ Connect Connector Demo](cp-all-in-one-ibmmq)
+    - [Confluent + IBM Demo](ibm-demo) Read data from IBM MQ and IBM DB2, join with ksqlDB, sink to IBM MQ
     - [Solace Sink/Source Demo](solace)
 
 ###  Confluent Cloud
