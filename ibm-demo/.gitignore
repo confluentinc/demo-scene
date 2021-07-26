@@ -1,1 +1,3 @@
 mqlibs/*
+!connect-jars
+
