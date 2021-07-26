@@ -52,7 +52,7 @@ You need to send a message to IBM MQ before the schema will appear in the topic 
 Notice that the messages are not consumed yet...
 
 ## Access Confluent Control Center
-Access [Confluent Control Center](https://localhost:9021) 
+Access [Confluent Control Center](http://localhost:9021) 
 Here you can see your local Confluent cluster, and the topics created before.
 
 ## Make the source connectors
@@ -83,7 +83,7 @@ You can also see in IBM MQ that the messages are not there anymore.
 
 ### Create the stream from the CLICKSTREAM topic with ksqlDB
 
-In [Confluent Control Center](https://localhost:9021)  , Select the cluster tile, Click on ksqlDB on the left menu  , and select the ksqldb1 cluster.
+In [Confluent Control Center](http://localhost:9021)  , Select the cluster tile, Click on ksqlDB on the left menu  , and select the ksqldb1 cluster.
 
 Using the editor run the queries below:
 
@@ -161,7 +161,7 @@ Now you can create the connector to load the data from db2
 make connectdb2source
 ```
 
-You will see that the connector automatically creates data in Confluent. Check in [Confluent Control Center](https://localhost:9021) , under topics.
+You will see that the connector automatically creates data in Confluent. Check in [Confluent Control Center](http://localhost:9021) , under topics.
 
 You can also see the connectors created by clicking on the Connect link in the left menu.
 
