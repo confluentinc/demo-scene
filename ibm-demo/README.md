@@ -93,7 +93,7 @@ CREATE STREAM CLICKSTREAM
         VALUE_FORMAT='AVRO');
 ```
 
-## Add anothermessage to DEV.QUEUE.1
+## Add another message to DEV.QUEUE.1
 
 Send another message to IBM MQ. You can use the user names `bobk_43` or `akatz1022` to capture clickstreams for those users with a KSQL join.
 
@@ -134,6 +134,8 @@ on text = username emit changes;
 SELECT * FROM VIP_USERS 
 emit changes;
 ```
+
+This query will return you values only if you added messages in IBM MQ that will match usernames in the CLICKSTREAM stream/topic (as instructed above).
 
 ## Configure DB2
 
