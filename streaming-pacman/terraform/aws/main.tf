@@ -5,7 +5,8 @@
 provider "aws" {
   access_key = var.aws_access_key
   secret_key = var.aws_secret_key
-  region = local.region
+  region     = var.aws_region
+
 }
 
 data "aws_availability_zones" "available" {
@@ -76,6 +77,10 @@ variable "aws_secret_key" {
   type = string
 }
 
+variable "aws_region" {
+  type = string
+}
+
 ###########################################
 ############ CCloud Variables #############
 ###########################################
@@ -90,10 +95,6 @@ variable "cluster_api_key" {
 
 variable "cluster_api_secret" {
   type = string
-}
-
-locals {
-  region = split(".", var.bootstrap_server)[1]
 }
 
 variable "scoreboard_topic" {

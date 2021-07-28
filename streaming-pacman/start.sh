@@ -15,6 +15,9 @@ export TOPICS_TO_CREATE="USER_GAME USER_LOSSES"
 
 
 function create_tfvars_file {
+
+    AWS_REGION=$(echo "$BOOTSTRAP_SERVERS" | awk -F'.' '{print $2}')
+   
     TFVAR_S3_BUCKET=""
     if [ -z ${S3_BUCKET_NAME+x} ]; 
     then 
@@ -35,6 +38,7 @@ ksql_endpoint="$KSQLDB_ENDPOINT"
 ksql_basic_auth_user_info="$KSQLDB_BASIC_AUTH_USER_INFO"
 aws_access_key="$AWS_ACCESS_KEY"
 aws_secret_key="$AWS_SECRET_KEY"
+aws_region="$AWS_REGION"
 $TFVAR_S3_BUCKET
 
 EOF
