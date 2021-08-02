@@ -89,6 +89,12 @@
 
 					window.location.href='scoreboard.html';
 				});
+
+				$(".profile-button").click(function(e) { 
+					e.stopPropagation();
+
+					window.location.href='profile.html';
+				});
 				
 				$(".github,.putchu").click(function(e) { 
 					e.stopPropagation();
@@ -249,6 +255,7 @@
 			<canvas id="canvas-level-fruits"></canvas>
 			<div id="message"></div>
 			<div class="help-button">- help -</div>
+			<div class="profile-button">profile</div>
 			<div class="scoreboard-button">score board</div>
 			<a class="sound" href="javascript:void(0);" data-sound="on"><img src="game/img/sound-on.png" alt="" border="0"></a>
 		</div>

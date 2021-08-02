@@ -303,7 +303,7 @@ h3 {
 	padding: 10px 25px 30px 65px;
 }
 
-.help-button, .scoreboard-button { 
+.help-button, .scoreboard-button, .profile-button { 
 	position: absolute;
 	text-align: center;
 	bottom: 8px;
@@ -318,15 +318,13 @@ h3 {
 	transition: color 1.5s;
 }
 
-.scoreboard-button{
+.scoreboard-button, .profile-button{
 	text-transform: uppercase;
 }
 
-.help-button.yo, .scoreboard-button.yo { 
+.help-button.yo, .scoreboard-button.yo, .profile-button.yo { 
 	color: #333;
 }
-
-
 
 #panel .help-button { 
 	top: -510px;
@@ -335,6 +333,14 @@ h3 {
 
 #panel .scoreboard-button{
 	top: -635px;
+	height: 25px;
+	width:150px;
+	text-transform: uppercase;
+}
+
+#panel .profile-button{
+	top: -635px;
+	left: 100px;
 	height: 25px;
 	width:150px;
 	text-transform: uppercase;

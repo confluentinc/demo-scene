@@ -42,6 +42,14 @@ resource "aws_s3_bucket_object" "scoreboard" {
   etag   = filemd5("../../pacman/scoreboard.html")
 }
 
+resource "aws_s3_bucket_object" "profile" {
+  bucket = aws_s3_bucket.pacman.bucket
+  key = "profile.html"
+  content_type = "text/html"
+  source = "../../pacman/profile.html"
+  etag   = filemd5("../../pacman/profile.html")
+}
+
 ###########################################
 ################### CSS ###################
 ###########################################
