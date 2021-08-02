@@ -52,7 +52,7 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
   
 
     private String post(String url, String json, String accept) throws IOException {
-        RequestBody body = RequestBody.create(MEDIATYPE_KSQL, json);
+        RequestBody body = RequestBody.create(json, MEDIATYPE_KSQL); //replaced deprecated create function based on SO answer: https://stackoverflow.com/questions/57100451/okhttp3-requestbody-createcontenttype-content-deprecated
         okhttp3.Request.Builder requestBuilder = new Request.Builder()
             .url(url);
 
