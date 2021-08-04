@@ -9,6 +9,11 @@ var SCORE_BUBBLE = 10;
 var SCORE_SUPER_BUBBLE = 50;
 var SCORE_GHOST_COMBO = 200;
 
+//per life stats
+var LIFE_SCORE = 0;
+var LIFE_SUPER_BUBBLE = 0;
+var LIFE_FRUITS = 0;
+
 var LIFES = 2;
 var GAMEOVER = false;
 
@@ -36,6 +41,12 @@ function blinkHelp() {
 		$('.scoreboard-button').removeClass("yo");
 	} else { 
 		$('.scoreboard-button').addClass("yo");
+	}
+
+	if ( $('.profile-button').attr("class").indexOf("yo") > -1 ) { 
+		$('.profile-button').removeClass("yo");
+	} else { 
+		$('.profile-button').addClass("yo");
 	}
 }
 
@@ -369,6 +380,27 @@ function lifes(l) {
 
 }
 
+function lifeover() { 
+	
+	console.log("Entering lifeover()");
+	LIFE_SCORE = 0;
+	LIFE_SUPER_BUBBLE = 0;
+	LIFE_FRUITS = 0;
+
+	LIFES = 2;
+	LEVEL = 1;
+	SCORE = 0;
+
+	// Emit event 'USER_LOSSES' event
+	var record = {};
+	record.user = window.name;
+	record.game = {}
+	record.game.score = LIFE_SCORE
+	record.game.super_bubble = LIFE_SUPER_BUBBLE
+	record.game.fruits = LIFE_FRUITS
+	produceRecordUserDeath(record);
+}
+
 function gameover() { 
 	GAMEOVER = true;
 	message("game over");
@@ -415,6 +447,7 @@ function score(s, type) {
 	var scoreBefore = (SCORE / 10000) | 0;
 	
 	SCORE += s;
+	LIFE_SCORE += s;
 	if (SCORE === 0) { 
 		$('#score span').html("00");
 	} else { 
@@ -461,6 +494,16 @@ function score(s, type) {
 
 }
 
+function produceRecordUserDeath(record) {
+
+	console.log("Trying User_Death call");
+	var topic = "USER_DEATH"
+	var ksqlQuery =`INSERT INTO ${topic} (USER, GAME) VALUES ('${record.user}', STRUCT(SCORE:=${record.game.score},LIVES:=${record.game.super_bubble},LEVEL:=${record.game.fruits}));`
+
+	const request = new XMLHttpRequest();
+	sendksqlDBStmt(request, ksqlQuery);
+
+}
 
 function produceRecordUserGame(record) {
 

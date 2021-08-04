@@ -43,7 +43,7 @@ function resetPacman() {
 	PACMAN_DEAD = false;
 	PACMAN_SUPER = false;
 }
-function getPacmanCanevasContext() { 
+function getPacmanCanevasContext() { //TODO: is this a typo? I assume so
 	return PACMAN_CANVAS_CONTEXT;
 }
 
@@ -252,11 +252,14 @@ function killPacman() {
 
 	LOCK = true;
 	PACMAN_DEAD = true;
+	lifeover();
 	stopPacman();
 	stopGhosts();
 	pauseTimes();
 	stopBlinkSuperBubbles();
 	PACMAN_KILLING_TIMER = setInterval('killingPacman()', PACMAN_KILLING_SPEED);
+
+
 }
 function killingPacman() { 
 	if (PACMAN_MOUNTH_STATE > -12) { 
@@ -267,10 +270,15 @@ function killingPacman() {
 		clearInterval(PACMAN_KILLING_TIMER);
 		PACMAN_KILLING_TIMER = -1;
 		erasePacman();
-		if (LIFES > 0) { 
+		if (LIFES > 0) { //TODO: need to add lifes = -1 event to user_game to define end of game
 			lifes(-1);
 			setTimeout('retry()', (PACMAN_RETRY_SPEED));
-		} else { 
+		}
+		else if (LIFES === 0) {
+			//TODO: add monetization/"watch add to continue" feature. send clickstream to kafka if they watch or dont
+			gameover(); //temp to not disrupt flow
+		}
+		else { 
 			gameover();
 		}
 	}
