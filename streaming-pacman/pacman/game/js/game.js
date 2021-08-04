@@ -383,15 +383,9 @@ function lifes(l) {
 function lifeover() { 
 	
 	console.log("Entering lifeover()");
-	LIFE_SCORE = 0;
-	LIFE_SUPER_BUBBLE = 0;
-	LIFE_FRUITS = 0;
+	console.log(LIFE_SCORE);
 
-	LIFES = 2;
-	LEVEL = 1;
-	SCORE = 0;
-
-	// Emit event 'USER_LOSSES' event
+	// Emit event 'USER_DEATH' event
 	var record = {};
 	record.user = window.name;
 	record.game = {}
@@ -399,6 +393,10 @@ function lifeover() {
 	record.game.super_bubble = LIFE_SUPER_BUBBLE
 	record.game.fruits = LIFE_FRUITS
 	produceRecordUserDeath(record);
+
+	LIFE_SCORE = 0;
+	LIFE_SUPER_BUBBLE = 0;
+	LIFE_FRUITS = 0;
 }
 
 function gameover() { 
@@ -496,7 +494,7 @@ function score(s, type) {
 
 function produceRecordUserDeath(record) {
 
-	console.log("Trying User_Death call");
+	//console.log("Trying User_Death call");
 	var topic = "USER_DEATH"
 	var ksqlQuery =`INSERT INTO ${topic} (USER, GAME) VALUES ('${record.user}', STRUCT(SCORE:=${record.game.score},LIVES:=${record.game.super_bubble},LEVEL:=${record.game.fruits}));`
 
