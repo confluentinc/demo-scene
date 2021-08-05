@@ -384,6 +384,8 @@ function lifeover() {
 	
 	console.log("Entering lifeover()");
 	console.log(LIFE_SCORE);
+	console.log(LIFE_SUPER_BUBBLE);
+	console.log(LIFE_FRUITS);
 
 	// Emit event 'USER_DEATH' event
 	var record = {};
@@ -451,6 +453,9 @@ function score(s, type) {
 	} else { 
 		$('#score span').html(SCORE);
 	}
+	if (s == SCORE_SUPER_BUBBLE) {
+		LIFE_SUPER_BUBBLE += 1;
+	}
 	
 	var scoreAfter = (SCORE / 10000) | 0;
 	if (scoreAfter > scoreBefore) { 
@@ -475,6 +480,7 @@ function score(s, type) {
 		$("#board span.combo").css('left', eval('GHOST_' + type.toUpperCase() + '_POSITION_X - 10') + 'px');
 		SCORE_GHOST_COMBO = SCORE_GHOST_COMBO * 2;
 	} else if (type && type === "fruit") { 
+		LIFE_FRUITS += 1;
 		$("#board").append('<span class="fruits">' + s + '</span>');
 		$("#board span.fruits").css('top', (FRUITS_POSITION_Y - 14) + 'px');
 		$("#board span.fruits").css('left', (FRUITS_POSITION_X - 14) + 'px');
@@ -496,7 +502,7 @@ function produceRecordUserDeath(record) {
 
 	//console.log("Trying User_Death call");
 	var topic = "USER_DEATH"
-	var ksqlQuery =`INSERT INTO ${topic} (USER, GAME) VALUES ('${record.user}', STRUCT(SCORE:=${record.game.score},LIVES:=${record.game.super_bubble},LEVEL:=${record.game.fruits}));`
+	var ksqlQuery =`INSERT INTO ${topic} (USER, GAME) VALUES ('${record.user}', STRUCT(SCORE:=${record.game.score},SUPER_BUBBLES:=${record.game.super_bubble},FRUITS:=${record.game.fruits}));`
 
 	const request = new XMLHttpRequest();
 	sendksqlDBStmt(request, ksqlQuery);
