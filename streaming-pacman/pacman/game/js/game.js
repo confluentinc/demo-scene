@@ -382,10 +382,10 @@ function lifes(l) {
 
 function lifeover() { 
 	
-	console.log("Entering lifeover()");
-	console.log(LIFE_SCORE);
-	console.log(LIFE_SUPER_BUBBLE);
-	console.log(LIFE_FRUITS);
+	//console.log("Entering lifeover()");
+	//console.log(LIFE_SCORE);
+	//console.log(LIFE_SUPER_BUBBLE);
+	//console.log(LIFE_FRUITS);
 
 	// Emit event 'USER_DEATH' event
 	var record = {};
