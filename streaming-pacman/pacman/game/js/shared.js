@@ -46,26 +46,19 @@ function loadSummaryStats(callback) {
 
 }
 
-function loadProfileStats(callback) {
-
-	var highestScore;
-	var usersSet;
-	var user;
+function loadProfileStats(callback,user) {
 	
 	ksqlQuery = `SELECT * FROM STATS_PER_USER_LIFE WHERE USER='`+user+`';`;
+	console.log(ksqlQuery);
 
 	var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (this.readyState == 4) {
 			if (this.status == 200) {
 				var result = JSON.parse(this.responseText);
-				if (result[1] != undefined || result[1] != null) {
-					var row = result[1];
-					highestScore = row[0];
-					usersSet = row[1];
-				}
+				console.log(result);
+				callback(result[1]); //result[0] is just headers
             }
-            callback(highestScore, usersSet);
 		}
 	};
 	sendksqlDBQuery(request, ksqlQuery);

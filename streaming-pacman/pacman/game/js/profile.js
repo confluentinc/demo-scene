@@ -1,41 +1,26 @@
 function loadProfilePage() {
-	console.log("loadProfilePage()");
 	
-	loadProfileStats();
+	loadProfileStats(function(stats){
+		document.getElementById('profile').innerHTML = profilejson(stats);
+	},window.name);
 
 }
 
-function profilejson2table(json, classes, headers) {
-	console.log("profilejson2table()");
+function profilejson(stats) {
+	console.log(stats);
 
-	var headerRow = '';
-	var bodyRows = '';
-	classes = classes || '';
+	var name = stats[0]
+	var avgScore = stats[1]
+	var avgSupBub = stats[2]
+	var avgFruits = stats[3]
+	console.log(name);
 
-	function capitalizeFirstLetter(string) {
-	  return string.charAt(0).toUpperCase() + string.slice(1);
-	}
-
-	headers.map(function(col) {
-	  headerRow += '<th>' + capitalizeFirstLetter(col) + '</th>';
-	});
-
-	json.forEach((row, index) => {
-		bodyRows += '<tr>';
-		bodyRows += '<td>#' + (index+1) + '</td>';
-		bodyRows += '<td>' + row.user + '</td>';
-		bodyRows += '<td>' + row.score + '</td>';
-		bodyRows += '<td>' + row.level + '</td>';
-		bodyRows += '<td>' + row.losses + '</td>';
-		bodyRows += '</tr>';
-	});
-
-	return '<table class="' +
-		   classes +
-		   '"><thead><tr>' +
-		   headerRow +
+	return '<table><thead><tr style="float:center">' +
+		   name + '\'s avg stats per life' +
 		   '</tr></thead><tbody>' +
-		   bodyRows +
+		   '<tr><td>Score</td><td style="float:right;width:50%">'+ avgScore +'</td></tr>' +
+		   '<tr><td>Super Bubbles</td><td style="float:right;width:50%">'+ avgSupBub +'</td></tr>' +
+		   '<tr><td>Fruits</td><td style="float:right;width:50%">'+ avgFruits +'</td></tr>' +
 		   '</tbody></table>';
 
 }
