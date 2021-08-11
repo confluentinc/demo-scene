@@ -249,7 +249,6 @@ function erasePacman() {
 
 function killPacman() { 
 	playDieSound();
-
 	LOCK = true;
 	PACMAN_DEAD = true;
 	lifeover();
@@ -275,8 +274,22 @@ function killingPacman() {
 			setTimeout('retry()', (PACMAN_RETRY_SPEED));
 		}
 		else if (LIFES === 0) {
-			//TODO: add monetization/"watch add to continue" feature. send clickstream to kafka if they watch or dont
-			gameover(); //temp to not disrupt flow
+
+			var record = {};
+			record.user = window.name;
+			record.score = SCORE;
+
+			if (confirm('Watch ad to continue?')) {
+			  lifes(1);
+			  record.continue = 1;
+			  produceRecordUserAdContinue(record);
+			  setTimeout('retry()', (PACMAN_RETRY_SPEED));
+			} else {
+			  record.continue = 0;
+			  produceRecordUserAdContinue(record);
+			  gameover();
+			}
+			
 		}
 		else { 
 			gameover();
