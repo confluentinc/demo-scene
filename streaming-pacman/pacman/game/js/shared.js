@@ -49,7 +49,6 @@ function loadSummaryStats(callback) {
 function loadProfileStats(callback,user) {
 	
 	ksqlQuery = `SELECT * FROM STATS_PER_USER_LIFE WHERE USER='`+user+`';`;
-	console.log(ksqlQuery);
 
 	var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
