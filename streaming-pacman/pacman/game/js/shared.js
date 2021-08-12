@@ -46,6 +46,24 @@ function loadSummaryStats(callback) {
 
 }
 
+function loadProfileStats(callback,user) {
+	
+	ksqlQuery = `SELECT * FROM STATS_PER_USER_LIFE WHERE USER='`+user+`';`;
+	console.log(ksqlQuery);
+
+	var request = new XMLHttpRequest();
+    request.onreadystatechange = function() {
+        if (this.readyState == 4) {
+			if (this.status == 200) {
+				var result = JSON.parse(this.responseText);
+				console.log(result);
+				callback(result[1]); //result[0] is just headers
+            }
+		}
+	};
+	sendksqlDBQuery(request, ksqlQuery);
+}
+
 
 function sendksqlDBStmt(request, ksqlQuery){
 	var query = {};
