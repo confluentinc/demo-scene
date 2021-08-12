@@ -1,5 +1,5 @@
 function loadScoreboardPage() {
-	loadSummaryStats(function(highestScore, usersSet) {
+	loadSummaryStats(function(highestScore, usersSet) { //is highestScore used here at all? I don't think so -JWC
 		
 		getScoreboardJson(function(playersScores) {
 			var headers = ["Rank","Name", "Score", "Level", "Losses"];
