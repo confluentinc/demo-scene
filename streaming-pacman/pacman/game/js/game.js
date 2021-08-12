@@ -528,3 +528,13 @@ function produceRecordUserLosses(record) {
 	sendksqlDBStmt(request, ksqlQuery);
 
 }
+
+function produceRecordUserAdContinue(record) {
+
+	var topic = "USER_ADCONTINUE"
+	var ksqlQuery =`INSERT INTO ${topic} (USER,SCORE,CONTINUE) VALUES ('${record.user}',${record.score},${record.continue});`
+
+	const request = new XMLHttpRequest();
+	sendksqlDBStmt(request, ksqlQuery);
+
+}
