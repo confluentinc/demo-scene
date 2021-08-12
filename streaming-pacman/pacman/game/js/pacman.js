@@ -280,7 +280,7 @@ function killingPacman() {
 			record.score = SCORE;
 
 			if (confirm('Watch ad to continue?')) {
-			  lifes(1);
+			  lifes(0);
 			  record.continue = 1;
 			  produceRecordUserAdContinue(record);
 			  setTimeout('retry()', (PACMAN_RETRY_SPEED));
