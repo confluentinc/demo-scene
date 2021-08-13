@@ -15,12 +15,12 @@ function profilejson(stats) {
 	var avgFruits = stats[3]
 	console.log(name);
 
-	return '<table><thead><tr style="float:center">' +
+	return '<table><thead><tr><div style="text-align:center;width:100%;color:yellow">' +
 		   name + '\'s avg stats per life' +
-		   '</tr></thead><tbody>' +
-		   '<tr><td>Score</td><td style="float:right;width:50%">'+ avgScore +'</td></tr>' +
-		   '<tr><td>Super Bubbles</td><td style="float:right;width:50%">'+ avgSupBub +'</td></tr>' +
-		   '<tr><td>Fruits</td><td style="float:right;width:50%">'+ avgFruits +'</td></tr>' +
+		   '</div></tr></thead><tbody>' +
+		   '<tr><td style="width:40%">Score</td><td style="text-align:right;width:60%">'+ parseFloat(avgScore).toFixed(1) +'</td></tr>' +
+		   '<tr><td style="width:40%">Super Bubbles</td><td style="text-align:right;width:60%">'+ parseFloat(avgSupBub).toFixed(1) +'</td></tr>' +
+		   '<tr><td style="width:40%">Fruits</td><td style="text-align:right;width:60%">'+ parseFloat(avgFruits).toFixed(1) +'</td></tr>' +
 		   '</tbody></table>';
 
 }
