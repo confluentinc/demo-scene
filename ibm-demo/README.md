@@ -188,3 +188,14 @@ When you are done with the demo execute the command:
 ```conf
 make down
 ```
+
+## Troubleshooting tips
+
+```bash
+docker exec -ti ibmdb2 bash -c "su - db2inst1"
+db2 get dbm cfg | grep "SVCENAME"
+
+grep "db2c_db2inst1" /etc/services
+
+db2level
+```
