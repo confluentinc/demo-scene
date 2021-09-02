@@ -5,9 +5,19 @@
 This repository demonstrates how to integrate with IBM technologies (IBM MQ and DB2). Two connectors will be started up: Datagen source, to mock clickstream data and IBM MQ Connetor source. Then we'll use KSQL to join the two sources together. We'll also configure a IBM DB2 source connector to read data from DB2. The resut of the ksqlDB join will be sent to IBM MQ using a sink connector.
 
 ## Download the demo
-You can download the demo [here](https://bit.ly/3ex1tLx)
+Using your terminal, Download the zip containing this [confluentinc/demo-scene](https://github.com/confluentinc/demo-scene) GitHub repository..
 
-Unzip the ibm-demo.zip and cd into the directory from your terminal.
+```bash
+wget http://github.com/confluentinc/demo-scene/archive/master.zip
+```
+
+Then unzip the file and enter in the directory demo-scene-master/ibm-demo from your teminal.
+If you are using a Mac or similar commands should be:
+
+```bash
+unzip master.zip
+cd demo-scene-master/ibm-demo
+```
 
 ## Make commands
 
@@ -187,4 +197,15 @@ When you are done with the demo execute the command:
 
 ```conf
 make down
+```
+
+## Troubleshooting tips
+
+```bash
+docker exec -ti ibmdb2 bash -c "su - db2inst1"
+db2 get dbm cfg | grep "SVCENAME"
+
+grep "db2c_db2inst1" /etc/services
+
+db2level
 ```
