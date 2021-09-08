@@ -119,9 +119,9 @@ services:
         echo '127.0.0.1 kafka-connect-01' >> /etc/hosts
         #
         echo "Installing connector plugins"
-        confluent-hub install --no-prompt debezium/debezium-connector-mysql:1.5.0
+        confluent-hub install --no-prompt debezium/debezium-connector-mysql:1.6.0
         confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.5.0
-        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:11.0.6
+        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:11.1.1
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run & 
@@ -149,7 +149,7 @@ services:
         sleep infinity
 
   ksqldb:
-    image: confluentinc/ksqldb-server:0.18.0
+    image: confluentinc/ksqldb-server:0.20.0
     hostname: ksqldb
     container_name: ksqldb
     links:
@@ -244,7 +244,7 @@ services:
         sleep infinity
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.13.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
     container_name: elasticsearch
     ports:
       - 9200:9200
@@ -281,7 +281,7 @@ services:
         sleep infinity
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.13.2
+    image: docker.elastic.co/kibana/kibana:7.14.1
     container_name: kibana
     depends_on:
       - elasticsearch
@@ -316,8 +316,8 @@ services:
         curl 'http://localhost:5601/api/telemetry/v2/userHasSeenNotice' -X PUT -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Length: 0' 
 
         echo -e "\n--\n+> Register Kibana indices"
-        curl -s 'http://localhost:5601/api/saved_objects/index-pattern/ratings-enriched' -H 'kbn-version: 7.13.2' -H 'Content-Type: application/json' -H 'Sec-Fetch-Site: same-origin' -H 'Sec-Fetch-Mode: cors' --data-binary '{"attributes":{"title":"ratings-enriched","timeFieldName":"EXTRACT_TS","fields":"[]"}}' --compressed
-        curl -s 'http://localhost:5601/api/saved_objects/index-pattern/unhappy_platinum_customers' -H 'kbn-version: 7.13.2' -H 'Content-Type: application/json' -H 'Sec-Fetch-Site: same-origin' -H 'Sec-Fetch-Mode: cors' --data-binary '{"attributes":{"title":"unhappy_platinum_customers","timeFieldName":"EXTRACT_TS","fields":"[]"}}' --compressed
+        curl -s 'http://localhost:5601/api/saved_objects/index-pattern/ratings-enriched' -H 'kbn-version: 7.14.1' -H 'Content-Type: application/json' -H 'Sec-Fetch-Site: same-origin' -H 'Sec-Fetch-Mode: cors' --data-binary '{"attributes":{"title":"ratings-enriched","timeFieldName":"EXTRACT_TS","fields":"[]"}}' --compressed
+        curl -s 'http://localhost:5601/api/saved_objects/index-pattern/unhappy_platinum_customers' -H 'kbn-version: 7.14.1' -H 'Content-Type: application/json' -H 'Sec-Fetch-Site: same-origin' -H 'Sec-Fetch-Mode: cors' --data-binary '{"attributes":{"title":"unhappy_platinum_customers","timeFieldName":"EXTRACT_TS","fields":"[]"}}' --compressed
 
         echo -e "\n--\n+> Import Kibana objects"
         curl -s 'http://localhost:5601/api/saved_objects/search/2f3d2290-6ff0-11e8-8fa0-279444e59a8f?overwrite=true' -H 'kbn-xsrf: nevergonnagiveyouup' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' --data-binary '{"attributes":{"title":"Unhappy Platinum Customers","description":"","hits":0,"columns":["EMAIL","MESSAGE","STARS"],"sort":["EXTRACT_TS","desc"],"version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"unhappy_platinum_customers\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"}}}' --compressed 

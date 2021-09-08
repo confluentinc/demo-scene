@@ -108,7 +108,7 @@ CREATE SINK CONNECTOR SINK_ES_RATINGS WITH (
 );
 ----
 
-Show in Kibana (http://localhost:5601/app/kibana)
+* **Show in Kibana** (http://localhost:5601/app/management/kibana/indexPatterns)
 
 == Part 01 - ksqlDB for filtering streams
 
@@ -171,7 +171,7 @@ SELECT * FROM RATINGS_TEST EMIT CHANGES LIMIT 5;
 
 [source,sql]
 ----
-DESCRIBE EXTENDED RATINGS_LIVE;
+DESCRIBE RATINGS_LIVE EXTENDED;
 ----
 
 == Part 02 - ingesting state from a database as an event stream
@@ -292,10 +292,10 @@ PRINT 'asgard.demo.CUSTOMERS' FROM BEGINNING;
 
 [source,sql]
 ----
-Key format: KAFKA (STRING)
-Value format: AVRO                                                                                                                           rowtime: 3/3/20 1:35:52 PM UTC, key: 1, value: {"id": 1, "first_name": "Rica", "last_name": "Blaisdell", "email": "rblaisdell0@rambler.ru", "gender": "Female", "club_status": "bronze", "comments": "Universal optimal hierarchy", "create_ts": "2020-03-03T13:32:03Z", "update_ts": "202
-0-03-03T13:32:03Z"}                                                                                                                          rowtime: 3/3/20 1:35:52 PM UTC, key: 2, value: {"id": 2, "first_name": "Ruthie", "last_name": "Brockherst", "email": "rbrockherst1@ow.ly", "gender": "Female", "club_status": "platinum", "comments": "Reverse-engineered tangible interface", "create_ts": "2020-03-03T13:32:03Z", "updat
-e_ts": "2020-03-03T13:32:03Z"}
+Key format: JSON or KAFKA_STRING
+Value format: AVRO or KAFKA_STRING
+rowtime: 2021/09/08 08:28:47.103 Z, key: 1, value: {"id": 1, "first_name": "Rica", "last_name": "Blaisdell", "email": "rblaisdell0@rambler.ru", "gender": "Female", "club_status": "bronze","comments": "Universal optimal hierarchy", "create_ts": "2021-09-08T08:03:24Z", "update_ts": "2021-09-08T08:03:24Z"}, partition: 0
+rowtime: 2021/09/08 08:28:47.125 Z, key: 2, value: {"id": 2, "first_name": "Ruthie", "last_name": "Brockherst", "email": "rbrockherst1@ow.ly", "gender": "Female", "club_status": "platinum", "comments": "Reverse-engineered tangible interface", "create_ts": "2021-09-08T08:03:24Z", "update_ts": "2021-09-08T08:03:24Z"}, partition: 0
 …
 ----
 
@@ -312,7 +312,7 @@ Query the ksqlDB table:
 [source,sql]
 ----
 SET 'auto.offset.reset' = 'earliest';
-SELECT CUSTOMER_ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS EMIT CHANGES;
+SELECT CUSTOMER_ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS EMIT CHANGES LIMIT 5;
 ----
 
 
