@@ -1,0 +1,62 @@
+# Random Pizza Generator
+an event-driven system with Micronaut and Kafka
+
+## Description
+
+This demo consists of the following Micronaut projects:
+
+  - *pizza-generator* is a standard Micronaut app with the Kafka feature.
+  - *sauce-service* is Micronaut Messaging app with Kafka.
+  - *cheese-service* is Micronaut Messaging app with Kafka.
+  - *meat-service* is Micronaut Messaging app with Kafka.
+  - *veggie-service* is Micronaut Messaging app with Kafka.
+
+
+The demo was built using Confluent Cloud, the Cloud-native service for Apache Kafka. If you don't have an account on Confluent Cloud, you can set that up [here](https://www.confluent.io/confluent-cloud).
+
+## Building the demo
+
+Each of the five projects contain the Gradle Wrapper.  To build from the root directory of a project run `./gradlew build`.  To execute the application run `./gradlew run`.
+
+## Running the demo
+
+Before running this demo, you will need to update the `src/main/resources/application.yml` file in each project. Replace all the fields marked with `{{ }}` using values from your Confluent Cloud cluster and schema registry. Also, you will need to create 5 topics in Confluent Cloud. They can each have 1 partion (or more if you so desire): `pizza`, `pizza-with-sauce`, `pizza-with-cheese`, `pizza-with-meat`, and `pizza-with-veggies`. 
+
+Once all five services are up and running, you can issue the following `curl` command to send an order for 3 random pizzas.
+`curl -H "Content-Type: application/json" --request POST -d '{"count":5}' http://localhost:8080/order`  
+
+This will trigger a series of events which will result in a completed pizza order with the requested pizzas, and it will return a UUID of that pizza order.
+
+To see your pizzas in all their hot, delicious glory, run the following `curl` command using the UUID returned from the first call.
+
+curl http://localhost:8080/order/{{pizza-order-UUID}} | jq
+
+Note: `jq` is optional, but very helpful.  More info at https://stedolan.github.io/jq/
+
+
+*When you are done working with this demo project, you can delete these topics to avoid additional charges.*
+
+
+
+## Related Documentation that might be helpful
+
+### Confluent Cloud 
+
+[Quik-start Guide](https://docs.confluent.io/cloud/current/get-started/index.html)
+
+### Micronaut 2.4.0 Documentation
+
+- [User Guide](https://docs.micronaut.io/2.4.0/guide/index.html)
+- [API Reference](https://docs.micronaut.io/2.4.0/api/index.html)
+- [Configuration Reference](https://docs.micronaut.io/2.4.0/guide/configurationreference.html)
+- [Micronaut Guides](https://guides.micronaut.io/index.html)
+---
+
+### Feature http-client documentation
+
+- [Micronaut HTTP Client documentation](https://docs.micronaut.io/latest/guide/index.html#httpClient)
+
+### Feature kafka documentation
+
+- [Micronaut Kafka Messaging documentation](https://micronaut-projects.github.io/micronaut-kafka/latest/guide/index.html)
+

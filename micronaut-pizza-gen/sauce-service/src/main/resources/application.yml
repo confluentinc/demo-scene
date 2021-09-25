@@ -1,0 +1,27 @@
+micronaut:
+  application:
+    name: sauceService
+  server:
+    port: 8081
+kafka:
+  bootstrap.servers: {{Confluent Cloud endpoint}}
+  security.protocol: SASL_SSL
+  sasl.jaas.config: "org.apache.kafka.common.security.plain.PlainLoginModule required username='{{CCloud API Key}}' password='{{CCloud Secret}}';"
+  sasl.mechanism: PLAIN
+  client.dns.lookup: use_all_dns_ips
+  acks: all
+  producers:
+    default:
+      key.serializer: org.apache.kafka.common.serialization.StringSerializer
+      value.serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      schema.registry.url: {{CCloud Schema Registry URL}}
+      basic.auth.credentials.source: USER_INFO
+      basic.auth.user.info: {{CCloud SR API Key}}:{{CCloud SR Secret}}
+  consumers:
+    default:
+      specific.avro.reader: true
+      key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value.deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+      schema.registry.url: {{CCloud Schema Registry URL}}
+      basic.auth.credentials.source: USER_INFO
+      basic.auth.user.info: {{CCloud SR API Key}}:{{CCloud SR Secret}}
