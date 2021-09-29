@@ -1,6 +1,6 @@
 = No More Silos - CDC demo
 Robin Moffatt <robin@confluent.io>
-v1.10, 29 September 2020
+v1.11, 29 September 2021
 
 The slides that accompany this demo can be found here: https://talks.rmoff.net/
 
@@ -43,7 +43,20 @@ curl -s localhost:8083/connector-plugins|jq '.[].class'|egrep 'debezium.*mysql|J
 "io.confluent.connect.jdbc.JdbcSinkConnector"
 "io.debezium.connector.mysql.MySqlConnector"
 ----
-3. Launch MySQL CLI
+
+4. Make sure that the MySQL JDBC driver has been successfully downloaded
++
+[source,bash]
+----
+docker exec kafka-connect ls -l /usr/share/confluent-hub-components/confluentinc-kafka-connect-jdbc/ | grep mysql
+----
++
+[source,bash]
+----
+drwxr-xr-x 3 appuser appuser 4096 Dec  1  2020 mysql-connector-java-8.0.23
+----
+
+5. Launch MySQL CLI
 +
 [source,bash]
 ----
@@ -72,11 +85,11 @@ SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, UPDATE_TS FROM customers;
 +----+------------+-----------+----------------------------+---------------------+
 | ID | FIRST_NAME | LAST_NAME | EMAIL                      | UPDATE_TS           |
 +----+------------+-----------+----------------------------+---------------------+
-|  1 | Bibby      | Argabrite | bargabrite0@google.com.hk  | 2019-04-01 16:51:18 |
-|  2 | Auberon    | Sulland   | asulland1@slideshare.net   | 2019-04-01 16:51:18 |
-|  3 | Marv       | Dalrymple | mdalrymple2@macromedia.com | 2019-04-01 16:51:18 |
-|  4 | Nolana     | Yeeles    | nyeeles3@drupal.org        | 2019-04-01 16:51:18 |
-|  5 | Modestia   | Coltart   | mcoltart4@scribd.com       | 2019-04-01 16:51:18 |
+|  1 | Bibby      | Argabrite | bargabrite0@google.com.hk  | 2021-09-29 10:30:22 |
+|  2 | Auberon    | Sulland   | asulland1@slideshare.net   | 2021-09-29 10:30:22 |
+|  3 | Marv       | Dalrymple | mdalrymple2@macromedia.com | 2021-09-29 10:30:22 |
+|  4 | Nolana     | Yeeles    | nyeeles3@drupal.org        | 2021-09-29 10:30:22 |
+|  5 | Modestia   | Coltart   | mcoltart4@scribd.com       | 2021-09-29 10:30:22 |
 +----+------------+-----------+----------------------------+---------------------+
 5 rows in set (0.00 sec)
 ----
@@ -120,17 +133,17 @@ source  |  source-jdbc-mysql-00            |  RUNNING  |  RUNNING  |  io.conflue
 +
 [source,bash]
 ----
-docker exec kafkacat kafkacat                      \
-        -b broker:29092                            \
-        -r http://schema-registry:8081             \
-        -s avro                                    \
-        -t mysql-00-customers                      \
+docker exec kcat kcat                  \
+        -b broker:29092                \
+        -r http://schema-registry:8081 \
+        -s avro                        \
+        -t mysql-00-customers          \
         -C -o beginning -u -q | jq  '.'
 ----
 
 5. Split the screen to show Kafka topic output along with MySQL. 
 
-6. Make changes in MySQL and observe that the Kafka topic (as shown by kafkacat) updates automatically
+6. Make changes in MySQL and observe that the Kafka topic (as shown by kcat) updates automatically
 +
 ** Insert a new row in MySQL: 
 +
@@ -160,17 +173,17 @@ SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, UPDATE_TS FROM customers;
 +
 [source,sql]
 ----
-+----+------------+-----------+----------------------------+---------------------+
-| ID | FIRST_NAME | LAST_NAME | EMAIL                      | UPDATE_TS           |
-+----+------------+-----------+----------------------------+---------------------+
-|  1 | Bibby      | Argabrite | bargabrite0@google.com.hk  | 2019-04-01 16:51:18 |
-|  2 | Auberon    | Sulland   | asulland1@slideshare.net   | 2019-04-01 16:51:18 |
-|  3 | Marv       | Dalrymple | mdalrymple2@macromedia.com | 2019-04-01 16:51:18 |
-|  4 | Nolana     | Yeeles    | nyeeles3@drupal.org        | 2019-04-01 16:51:18 |
-|  5 | Modestia   | Coltart   | mcoltart4@scribd.com       | 2019-04-01 16:51:18 |
-| 42 | Rick       | Astley    | Never.gonna.give.you@up.com| 2019-04-01 17:59:43 |
-+----+------------+-----------+----------------------------+---------------------+
-5 rows in set (0.00 sec)
++----+------------+-----------+-----------------------------+---------------------+
+| ID | FIRST_NAME | LAST_NAME | EMAIL                       | UPDATE_TS           |
++----+------------+-----------+-----------------------------+---------------------+
+|  1 | Bibby      | Argabrite | bargabrite0@google.com.hk   | 2021-09-29 10:30:22 |
+|  2 | Auberon    | Sulland   | asulland1@slideshare.net    | 2021-09-29 10:30:22 |
+|  3 | Marv       | Dalrymple | mdalrymple2@macromedia.com  | 2021-09-29 10:30:22 |
+|  4 | Nolana     | Yeeles    | nyeeles3@drupal.org         | 2021-09-29 10:30:22 |
+|  5 | Modestia   | Coltart   | mcoltart4@scribd.com        | 2021-09-29 10:30:22 |
+| 42 | Rick       | Astley    | Never.gonna.give.you@up.com | 2021-09-29 10:35:40 |
++----+------------+-----------+-----------------------------+---------------------+
+6 rows in set (0.00 sec)
 ----
 
 2. Create the connector
@@ -211,88 +224,103 @@ source  |  source-debezium-mysql-00        |  RUNNING  |  RUNNING  |  io.debeziu
 source  |  source-jdbc-mysql-00            |  RUNNING  |  RUNNING  |  io.confluent.connect.jdbc.JdbcSourceConnector
 ----
 
-4. Examine the data with kafkacat
+4. Examine the data with kcat
 +
 [source,bash]
 ----
-docker exec kafkacat kafkacat                      \
-        -b broker:29092                            \
-        -r http://schema-registry:8081             \
-        -s avro                                    \
-        -t asgard.demo.customers                   \
-        -C -o beginning -u -q | jq '.'
+docker exec kcat kcat                  \
+        -b broker:29092                \
+        -r http://schema-registry:8081 \
+        -s avro                        \
+        -t asgard.demo.customers       \
+        -C -o beginning -u -q -J | jq '.'
 ----
 +
 [source,bash]
 ----
 {
-  "before": null,
-  "after": {
-    "Value": {
-      "id": 42,
-      "first_name": {
-        "string": "Rick"
-      },
-      "last_name": {
-        "string": "Astley"
-      },
-      "email": {
-        "string": "Never.gonna.give.you@up.com"
-      },
-      "gender": {
-        "string": "Male"
-      },
-      "comments": {
-        "string": ""
-      },
-      "UPDATE_TS": {
-        "string": "2019-10-23T16:29:53Z"
+  "topic": "asgard.demo.customers",
+  "partition": 0,
+  "offset": 5,
+  "tstype": "create",
+  "ts": 1632911781668,
+  "broker": 1,
+  "key": {
+    "id": 42
+  },
+  "key_schema_id": 5,
+  "payload": {
+    "before": null,
+    "after": {
+      "Value": {
+        "id": 42,
+        "first_name": {
+          "string": "Rick"
+        },
+        "last_name": {
+          "string": "Astley"
+        },
+        "email": {
+          "string": "Never.gonna.give.you@up.com"
+        },
+        "gender": {
+          "string": "Male"
+        },
+        "comments": {
+          "string": ""
+        },
+        "UPDATE_TS": {
+          "string": "2021-09-29T10:35:40Z"
+        }
       }
-    }
-  },
-  "source": {
-    "version": "0.10.0.Final",
-    "connector": "mysql",
-    "name": "asgard",
-    "ts_ms": 0,
-    "snapshot": {
-      "string": "last"
     },
-    "db": "demo",
-    "table": {
-      "string": "customers"
+    "source": {
+      "version": "1.6.0.Final",
+      "connector": "mysql",
+      "name": "asgard",
+      "ts_ms": 1632911781203,
+      "snapshot": {
+        "string": "last"
+      },
+      "db": "demo",
+      "sequence": null,
+      "table": {
+        "string": "customers"
+      },
+      "server_id": 0,
+      "gtid": null,
+      "file": "binlog.000002",
+      "pos": 874,
+      "row": 0,
+      "thread": null,
+      "query": null
     },
-    "server_id": 0,
-    "gtid": null,
-    "file": "binlog.000002",
-    "pos": 873,
-    "row": 0,
-    "thread": null,
-    "query": null
+    "op": "r",
+    "ts_ms": {
+      "long": 1632911781203
+    },
+    "transaction": null
   },
-  "op": "c",
-  "ts_ms": {
-    "long": 1571848220368
-  }
+  "value_schema_id": 6
 }
 ----
 
 5. Split the screen to show Kafka topic output along with MySQL. 
 
-4. Rerun kafkacat to show compact output
+4. Rerun kcat to show compact output
 +
 [source,bash]
 ----
-docker exec kafkacat kafkacat                      \
-        -b broker:29092                            \
-        -r http://schema-registry:8081             \
-        -s avro                                    \
-        -t asgard.demo.customers                   \
-        -C -o beginning -u -q | jq '.op, .before, .after'
+docker exec kcat kcat                  \
+        -b broker:29092                \
+        -r http://schema-registry:8081 \
+        -s avro                        \
+        -t asgard.demo.customers       \
+        -C -o beginning -u -q -J | jq '.payload | del(.source)'
 ----
 
 
-6. Make changes in MySQL and observe that the Kafka topic (as shown by kafkacat) updates automatically
+6. Make changes in MySQL and observe that the Kafka topic (as shown by kcat) updates automatically
 +
 ** Update a new row in MySQL: 
 +
@@ -314,6 +342,39 @@ DELETE FROM customers WHERE ID=2;
 ----
 
 == Optional - Stream/Table duality in ksqlDB
+
+[source,bash]
+----
+docker exec -it ksqldb bash -c 'echo -e "\n\n⏳ Waiting for ksqlDB to be available before launching CLI\n"; while : ; do curl_status=$(curl -s -o /dev/null -w %{http_code} http://ksqldb:8088/info) ; echo -e $(date) " ksqlDB server listener HTTP state: " $curl_status " (waiting for 200)" ; if [ $curl_status -eq 200 ] ; then  break ; fi ; sleep 5 ; done ; ksql http://ksqldb:8088'
+----
+
+[source,bash]
+----
+⏳ Waiting for ksqlDB to be available before launching CLI
+
+Wed Sep 29 10:44:33 UTC 2021  ksqlDB server listener HTTP state:  200  (waiting for 200)
+OpenJDK 64-Bit Server VM warning: Option UseConcMarkSweepGC was deprecated in version 9.0 and will likely be removed in a future release.
+
+                  ===========================================
+                  =       _              _ ____  ____       =
+                  =      | | _____  __ _| |  _ \| __ )      =
+                  =      | |/ / __|/ _` | | | | |  _ \      =
+                  =      |   <\__ \ (_| | | |_| | |_) |     =
+                  =      |_|\_\___/\__, |_|____/|____/      =
+                  =                   |_|                   =
+                  =        The Database purpose-built       =
+                  =        for stream processing apps       =
+                  ===========================================
+
+Copyright 2017-2021 Confluent Inc.
+
+CLI v0.21.0, Server v0.21.0 located at http://ksqldb:8088
+Server Status: RUNNING
+
+Having trouble? Type 'help' (case-insensitive) for a rundown of how things work!
+
+ksql>
+----
 
 [source,sql]
 ----
@@ -352,7 +413,7 @@ mysql> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM customers WHERE ID=42;
 +
 [source,sql]
 ----
-SELECT * FROM CUSTOMERS WHERE ID=42;
+SELECT ID, FIRST_NAME, LAST_NAME, EMAIL FROM customers WHERE ID=42;
 ----
 +
 [source,sql]

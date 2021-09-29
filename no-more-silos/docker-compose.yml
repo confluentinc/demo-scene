@@ -3,14 +3,14 @@ version: '2'
 services:
   zookeeper:
     container_name: zookeeper
-    image: confluentinc/cp-zookeeper:6.0.0
+    image: confluentinc/cp-zookeeper:6.2.0
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   broker:
     container_name: broker
-    image: confluentinc/cp-kafka:6.0.0
+    image: confluentinc/cp-kafka:6.2.0
     depends_on:
       - zookeeper
     ports:
@@ -31,7 +31,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:6.0.0
+    image: confluentinc/cp-schema-registry:6.2.0
     container_name: schema-registry
     ports:
       - 8081:8081
@@ -42,7 +42,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect-base:6.0.0
+    image: confluentinc/cp-kafka-connect-base:6.2.0
     container_name: kafka-connect
     depends_on:
       - broker
@@ -78,9 +78,9 @@ services:
       - -c 
       - |
         echo "Installing Connector"
-        confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.3.3
-        confluent-hub install --no-prompt debezium/debezium-connector-mysql:1.2.2
-        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:5.5.1
+        confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.5.0
+        confluent-hub install --no-prompt debezium/debezium-connector-mysql:1.6.0
+        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:10.2.3
 
         # # JDBC Drivers - download those required
         # # ------------
@@ -121,7 +121,7 @@ services:
     # To connect to ksqlDB CLI
     #   docker exec --interactive --tty ksqldb ksql http://localhost:8088
     # *-----------------------------*
-    image: confluentinc/ksqldb-server:0.11.0
+    image: confluentinc/ksqldb-server:0.21.0
     container_name: ksqldb
     depends_on:
       - broker
@@ -153,9 +153,10 @@ services:
     volumes:
      - ./data/mysql:/docker-entrypoint-initdb.d/
 
-  kafkacat:
-    image: edenhill/kafkacat:1.6.0
-    container_name: kafkacat
+  kcat:
+    # RIP kafkacat :'-(
+    image: edenhill/kcat:1.7.0
+    container_name: kcat
     entrypoint: 
       - /bin/sh 
       - -c 
