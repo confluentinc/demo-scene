@@ -2,7 +2,7 @@
 version: '3'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.4.0-beta1
+    image: confluentinc/cp-zookeeper:6.2.0
     container_name: zookeeper
     hostname: zookeeper
     environment:
@@ -10,7 +10,7 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-enterprise-kafka:5.4.0-beta1
+    image: confluentinc/cp-kafka:6.2.0
     container_name: kafka
     hostname: kafka
     depends_on:
@@ -25,10 +25,12 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,HOST://localhost:9092
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.4.0-beta1
+    image: confluentinc/cp-schema-registry:6.2.0
     container_name: schema-registry
     ports:
       - 8081:8081
@@ -41,7 +43,7 @@ services:
       SCHEMA_REGISTRY_CUB_KAFKA_TIMEOUT: 300
 
   ksqldb-server:
-    image: confluentinc/ksqldb-server:0.6.0
+    image: confluentinc/ksqldb-server:0.21.0
     hostname: ksqldb-server
     container_name: ksqldb-server
     depends_on:
@@ -58,7 +60,7 @@ services:
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
 
   ksqldb-cli:
-    image: confluentinc/ksqldb-cli:0.6.0
+    image: confluentinc/ksqldb-cli:0.21.0
     container_name: ksqldb-cli
     hostname: ksqldb-cli
     depends_on:
@@ -67,7 +69,7 @@ services:
     tty: true
       
   kafka-connect-01:
-    image: confluentinc/cp-kafka-connect:5.4.0-beta1
+    image: confluentinc/cp-kafka-connect:6.2.0
     container_name: kafka-connect-01
     hostname: kafka-connect-01
     ports:
@@ -104,7 +106,8 @@ services:
       - -c 
       - |
         echo "Installing connector plugins"
-        confluent-hub install --no-prompt confluentinc/kafka-connect-rabbitmq:1.1.1
+        confluent-hub install --no-prompt confluentinc/kafka-connect-rabbitmq:1.5.2
+        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:10.2.3
 
         #
         echo "Launching Kafka Connect worker"
@@ -113,7 +116,7 @@ services:
         sleep infinity
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3.9.5-management
     container_name: rabbitmq
     volumes:
       - "./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf"
@@ -122,7 +125,7 @@ services:
       - '5672:5672'
 
   kafkacat:
-    image: edenhill/kafkacat:1.5.0
+    image: edenhill/kafkacat:1.6.0
     container_name: kafkacat
     entrypoint: 
       - /bin/sh 
@@ -131,23 +134,23 @@ services:
         while [ 1 -eq 1 ];do sleep 60;done
 
 
-  mongodb:
-    # *-----------------------------*
-    # To connect to mongoDB
-    #   docker exec --interactive --tty syslog_mongodb mongo localhost:27017
-    # *-----------------------------*
-    image: mongo:4.2.2
-    container_name: syslog_mongodb
-    hostname: mongodb
-    ports: 
-    - "27017:27017"
+  # mongodb:
+  #   # *-----------------------------*
+  #   # To connect to mongoDB
+  #   #   docker exec --interactive --tty syslog_mongodb mongo localhost:27017
+  #   # *-----------------------------*
+  #   image: mongo:5.0.3
+  #   container_name: syslog_mongodb
+  #   hostname: mongodb
+  #   ports: 
+  #   - "27017:27017"
 
   postgres:
     # *-----------------------------*
     # To connect to the DB: 
-    #   docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+    #   docker exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
     # *-----------------------------*
-    image: postgres:11
+    image: postgres:13.4
     container_name: postgres
     environment:
      - POSTGRES_USER=postgres
