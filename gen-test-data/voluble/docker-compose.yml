@@ -1,0 +1,86 @@
+---
+version: '3'
+services:
+
+  connect:
+    image: confluentinc/cp-kafka-connect-base:6.1.0
+    container_name: connect
+    ports:
+      - 8083:8083
+    environment:
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
+      CONNECT_CUB_KAFKA_TIMEOUT: 300
+      CONNECT_BOOTSTRAP_SERVERS: "{{CCLOUD_ENDPOINT}}"
+      CONNECT_REST_ADVERTISED_HOST_NAME: 'kafka-connect-ccloud'
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: kafka-connect-datagen-v01
+      CONNECT_CONFIG_STORAGE_TOPIC: _kafka-connect-datagen-v01-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _kafka-connect-datagen-v01-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _kafka-connect-datagen-v01-status
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "{{SCHEMA_REGISTRY_URL}}"
+      CONNECT_VALUE_CONVERTER_BASIC_AUTH_CREDENTIALS_SOURCE: "USER_INFO"
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_BASIC_AUTH_USER_INFO: "{SR_KEY}:{{SR_SECRET}}"
+      CONNECT_LOG4J_ROOT_LOGLEVEL: 'INFO'
+      CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '3'
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '3'
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '3'
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/'
+      # Confluent Cloud config
+      CONNECT_REQUEST_TIMEOUT_MS: "20000"
+      CONNECT_RETRY_BACKOFF_MS: "500"
+      CONNECT_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "https"
+      CONNECT_SASL_MECHANISM: "PLAIN"
+      CONNECT_SECURITY_PROTOCOL: "SASL_SSL"
+      CONNECT_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"{{CCLOUD_KEY}}\" password=\"{{CCLOUD_SECRET}}";"
+      #
+      CONNECT_CONSUMER_SECURITY_PROTOCOL: "SASL_SSL"
+      CONNECT_CONSUMER_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "https"
+      CONNECT_CONSUMER_SASL_MECHANISM: "PLAIN"
+      CONNECT_CONSUMER_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"{{CCLOUD_KEY}}\" password=\"{{CCLOUD_SECRET}}";"
+      CONNECT_CONSUMER_REQUEST_TIMEOUT_MS: "20000"
+      CONNECT_CONSUMER_RETRY_BACKOFF_MS: "500"
+      #
+      CONNECT_PRODUCER_SECURITY_PROTOCOL: "SASL_SSL"
+      CONNECT_PRODUCER_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "https"
+      CONNECT_PRODUCER_SASL_MECHANISM: "PLAIN"
+      CONNECT_PRODUCER_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"{{CCLOUD_KEY}}\" password=\"{{CCLOUD_SECRET}}";"
+      CONNECT_PRODUCER_REQUEST_TIMEOUT_MS: "20000"
+      CONNECT_PRODUCER_RETRY_BACKOFF_MS: "500"
+    command:
+      # In the command section, $ are replaced with $$ to avoid the error "Invalid interpolation format for "command" option"
+      - bash
+      - -c
+      - |
+        echo "Installing connector plugins"
+        mkdir -p /usr/share/confluent-hub-components/
+        confluent-hub install --no-prompt --component-dir /usr/share/confluent-hub-components/ mdrogalis/voluble:0.3.1
+        #
+        echo "Launching Kafka Connect worker"
+        /etc/confluent/docker/run &
+        #
+        echo "Waiting for Kafka Connect to start listening on localhost:8083 ⏳"
+        while : ; do
+            curl_status=$$(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors)
+            echo -e $$(date) " Kafka Connect listener HTTP state: " $$curl_status " (waiting for 200)"
+            if [ $$curl_status -eq 200 ] ; then
+            break
+            fi
+            sleep 5
+        done
+        echo -e "\n--\n+> Creating Kafka Connect source connectors"
+        curl -X PUT http://localhost:8083/connectors/pets/config \
+            -i -H "Content-Type: application/json" -d '{
+            "connector.class"                            : "io.mdrogalis.voluble.VolubleSourceConnector",
+            "genkp.owners.with"                          : "#{Internet.uuid}",
+            "genv.owners.name->full.with"                : "#{Name.full_name}",
+            "genv.owners.creditCardNumber.with"          : "#{Finance.credit_card}",
+
+            "genkp.cats.with"                            : "#{Internet.uuid}",
+            "genv.cats.name.with"                        : "#{FunnyName.name}",
+            "genv.cats.owner.matching"                   : "owners.key"
+        }'
+        #
+        sleep infinity

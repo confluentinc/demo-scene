@@ -1,0 +1,32 @@
+# Generate Test Data with Kafka Connect
+docker-compose files from Producing Sample Kafka Data Meetup
+
+## Description
+
+This directory contains two sub-directories with docker-compose files for either the DataGen or Voluble source connectors.  The files are aimed at running the connect workers locally but producing data to Confluent Cloud.
+
+
+## Running the demo
+
+Before you can run these files with docker-compose, you will need to fill in the values for {{CCLOUD_ENDPOINT}}, {{CCLOUD_KEY}}, {CCLOUD_SECRET}, {{SCHEMA_REGISTRY_URL}}, {{SR_KEY}}, and {{SR_SECRET}}. 
+
+
+Note: If you are producing data to Kafka brokers other than Confluent Cloud, you can change these variables as needed.
+
+
+## Related Resources that might be helpful
+
+### Confluent Cloud 
+
+[Quik-start Guide](https://docs.confluent.io/cloud/current/get-started/index.html)
+
+### Connector Documentation
+
+- [DataGen](https://github.com/confluentinc/kafka-connect-datagen/blob/master/README.md)
+- [Voluble](https://github.com/MichaelDrogalis/voluble)
+
+### Other resources
+
+- [Blog post on local connect to Conflunt Cloud](https://rmoff.net/2021/01/11/running-a-self-managed-kafka-connect-worker-for-confluent-cloud/)
+- [Java Faker (used by Voluble)](https://github.com/DiUS/java-faker)
+
