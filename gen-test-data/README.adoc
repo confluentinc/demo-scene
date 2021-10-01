@@ -18,7 +18,7 @@ Note: If you are producing data to Kafka brokers other than Confluent Cloud, you
 
 ### Confluent Cloud 
 
-[Quik-start Guide](https://docs.confluent.io/cloud/current/get-started/index.html)
+- [Quik-start Guide](https://docs.confluent.io/cloud/current/get-started/index.html)
 
 ### Connector Documentation
 
