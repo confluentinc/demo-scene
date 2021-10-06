@@ -2,14 +2,14 @@
 version: '2'
 services:
   zookeeper:
-    image: "confluentinc/cp-zookeeper:6.0.1"
+    image: "confluentinc/cp-zookeeper:6.2.0"
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   broker:
-    image: "confluentinc/cp-kafka:6.0.1"
+    image: "confluentinc/cp-kafka:6.2.0"
     container_name: broker
     ports:
       - '9092:9092'
@@ -28,7 +28,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
 
   schema-registry:
-    image: "confluentinc/cp-schema-registry:6.0.1"
+    image: "confluentinc/cp-schema-registry:6.2.0"
     container_name: schema-registry
     depends_on:
       - zookeeper
@@ -40,7 +40,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: broker:29092
 
   ksqldb:
-    image: confluentinc/ksqldb-server:0.14.0
+    image: confluentinc/ksqldb-server:0.21.0
     container_name: ksqldb
     ports:
       - "8088:8088"
@@ -56,7 +56,7 @@ services:
       KSQL_KSQL_HIDDEN_TOPICS: '^_.*,default_ksql_processing_log'
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect-base:6.0.1
+    image: confluentinc/cp-kafka-connect-base:6.2.0
     container_name: kafka-connect
     ports:
       - "8083:8083"
@@ -90,7 +90,7 @@ services:
       - -c
       - |
         echo "Installing Connector"
-        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:10.0.1
+        confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:11.1.2
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run &
@@ -98,7 +98,7 @@ services:
         sleep infinity
 
   control-center:
-    image: confluentinc/cp-enterprise-control-center:6.0.1
+    image: confluentinc/cp-enterprise-control-center:6.2.0
     container_name: control-center
     depends_on:
       - broker
