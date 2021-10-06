@@ -211,6 +211,23 @@ SELECT LATEST_TS,
 |2020-10-22 14:59:00   |81                    |80.25             |
 ----
 
+=== ksqlDB table scan
+
+[source,sql]
+----
+SET 'ksql.query.pull.table.scan.enabled' = 'true';
+----
+
+[source,sql]
+----
+SELECT NAME, 
+       LATEST_TS,
+       CURRENT_EMPTY_PLACES,
+       AVG_EMPTY_PLACES
+  FROM CARPARK
+  WHERE CURRENT_EMPTY_PLACES > 80;
+----
+
 === Use the REST API
 
 [source,bash]
@@ -252,8 +269,8 @@ SELECT NAME AS CARPARK,
       CAPACITY,
       EMPTY_PLACES
  FROM CARPARK_EVENTS 
- WHERE NAME = 'Kirkgate Centre' 
-   AND EMPTY_PLACES > 0 
+ WHERE NAME = 'Westgate' 
+   AND EMPTY_PLACES > 80 
  EMIT CHANGES;
 ----
 
@@ -264,7 +281,7 @@ SELECT NAME AS CARPARK,
 curl --http2 --location --request POST 'http://localhost:8088//query-stream' \
 --header 'Content-Type: application/vnd.ksql.v1+json; charset=utf-8' \
 --data-raw '{"properties":{"ksql.streams.auto.offset.reset": "latest"},
-    "sql": "SELECT NAME AS CARPARK,      TIMESTAMPTOSTRING(TS,'\''yyyy-MM-dd HH:mm:ss'\'','\''Europe/London'\'') AS DATA_TS,      CAPACITY     ,      EMPTY_PLACES FROM CARPARK_EVENTS  WHERE NAME = '\''Kirkgate Centre'\''    AND EMPTY_PLACES > 0  EMIT CHANGES;"
+    "sql": "SELECT NAME AS CARPARK,      TIMESTAMPTOSTRING(TS,'\''yyyy-MM-dd HH:mm:ss'\'','\''Europe/London'\'') AS DATA_TS,      CAPACITY     ,      EMPTY_PLACES FROM CARPARK_EVENTS  WHERE NAME = '\''Westgate'\''    AND EMPTY_PLACES > 0  EMIT CHANGES;"
 }'
 ----
 
@@ -305,7 +322,7 @@ Check the status of the connector in ksqlDB
 
 [source,sql]
 ----
-SHOW CONNECTORS
+SHOW CONNECTORS;
 ----
 
 [source,sql]
@@ -406,6 +423,115 @@ SELECT SOURCE,
 GROUP BY SOURCE 
 EMIT CHANGES 
 LIMIT 2;
+----
+
+=== Load same logical data with different physical schema
+
+[source,bash]
+----
+http -a $LEEDS_USER:$LEEDS_PW get http://www.leedstravel.info/datex2/carparks/content.xml | \
+        xq '."d2lm:d2LogicalModel"."d2lm:payloadPublication"."d2lm:situation"[]."d2lm:situationRecord"'
+----
+
+[source,javascript]
+----
+{
+  "@id": "LEEDSCP0001_1",
+  "@xsi:type": "d2lm:CarParks",
+  "d2lm:situationRecordCreationTime": "2021-10-05T19:54:47",
+  "d2lm:situationRecordVersion": "1",
+  "d2lm:situationRecordVersionTime": "2021-10-05T19:54:47",
+  "d2lm:situationRecordFirstSupplierVersionTime": "2021-10-05T19:54:47",
+  "d2lm:probabilityOfOccurrence": "certain",
+  "d2lm:validity": {
+    "d2lm:validityStatus": "active",
+    "d2lm:validityTimeSpecification": {
+      "d2lm:overallStartTime": "2021-10-05T19:54:47"
+    }
+  },
+  "d2lm:groupOfLocations": {
+    "d2lm:locationContainedInGroup": {
+      "@xsi:type": "d2lm:Point",
+      "d2lm:pointByCoordinates": {
+        "d2lm:pointCoordinates": {
+          "d2lm:latitude": "53.79798394752138",
+          "d2lm:longitude": "-1.546011529543302"
+        }
+      }
+    }
+  },
+  "d2lm:carParkIdentity": "Albion Street:LEEDSCP0001",
+  "d2lm:carParkOccupancy": "12",
+  "d2lm:carParkStatus": "enoughSpacesAvailable",
+  "d2lm:occupiedSpaces": "47",
+  "d2lm:totalCapacity": "389"
+}
+----
+
+[source,bash]
+----
+source .env
+
+http -a $LEEDS_USER:$LEEDS_PW get http://www.leedstravel.info/datex2/carparks/content.xml | \
+        xq -c '."d2lm:d2LogicalModel"."d2lm:payloadPublication"."d2lm:situation"[]."d2lm:situationRecord"' | \
+        docker exec -i kafkacat kafkacat -b broker:29092 -t carparks_leeds -P
+----
+
+[source,sql]
+----
+CREATE STREAM CARPARK_LEEDS_SRC01 (
+"d2lm:situationRecordCreationTime" VARCHAR,
+    "d2lm:groupOfLocations" STRUCT <
+        "d2lm:locationContainedInGroup" STRUCT <
+            "d2lm:pointByCoordinates" STRUCT <
+                "d2lm:pointCoordinates" STRUCT <
+                    "d2lm:latitude" DOUBLE,
+                    "d2lm:longitude" DOUBLE > > > >,
+    "d2lm:carParkIdentity" VARCHAR,
+    "d2lm:carParkOccupancy" DOUBLE,
+    "d2lm:carParkStatus" VARCHAR,
+    "d2lm:occupiedSpaces" INT,
+    "d2lm:totalCapacity"  INT
+    )
+WITH (KAFKA_TOPIC='carparks_leeds',
+      VALUE_FORMAT='JSON');
+----
+
+[source,sql]
+----
+INSERT INTO CARPARK_EVENTS
+    SELECT  STRINGTOTIMESTAMP("d2lm:situationRecordCreationTime",
+                            'yyyy-MM-dd''T''HH:mm:ss',
+                            'Europe/London') 
+                                    AS TS,
+            TIMESTAMPTOSTRING(STRINGTOTIMESTAMP("d2lm:situationRecordCreationTime",
+                            'yyyy-MM-dd''T''HH:mm:ss',
+                            'Europe/London'),
+                            'yyyy-MM-dd')
+                                    AS DATE,
+            TIMESTAMPTOSTRING(STRINGTOTIMESTAMP("d2lm:situationRecordCreationTime",
+                                    'yyyy-MM-dd''T''HH:mm:ss',
+                                    'Europe/London'),
+                                    'HH:mm')
+                                    AS TIME,
+            "d2lm:carParkIdentity"  AS NAME,
+            "d2lm:totalCapacity"    AS CAPACITY,
+            "d2lm:totalCapacity" - "d2lm:occupiedSpaces"
+                                    AS EMPTY_PLACES,
+            "d2lm:carParkStatus"    AS STATUS,
+            "d2lm:groupOfLocations" -> "d2lm:locationContainedInGroup" -> "d2lm:pointByCoordinates" -> "d2lm:pointCoordinates" -> "d2lm:latitude"
+                                    AS LATITUDE,
+            "d2lm:groupOfLocations" -> "d2lm:locationContainedInGroup" -> "d2lm:pointByCoordinates" -> "d2lm:pointCoordinates" -> "d2lm:longitude"
+                                    AS LONGITUDE,
+            ''                      AS DIRECTIONSURL,
+            "d2lm:carParkOccupancy" AS PCT_FULL ,
+            STRUCT("lat" := "d2lm:groupOfLocations" -> "d2lm:locationContainedInGroup" -> "d2lm:pointByCoordinates" -> "d2lm:pointCoordinates" -> "d2lm:latitude",
+                   "lon" := "d2lm:groupOfLocations" -> "d2lm:locationContainedInGroup" -> "d2lm:pointByCoordinates" -> "d2lm:pointCoordinates" -> "d2lm:longitude")
+                                    AS "location",
+            'https://datamillnorth.org/dataset/live-car-park-spaces-api'
+                                    AS SOURCE
+            FROM  CARPARK_LEEDS_SRC01
+        EMIT CHANGES;
 ----
 
 
