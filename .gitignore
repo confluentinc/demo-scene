@@ -4,6 +4,7 @@
 .idea
 .project
 .vscode
+.gradle/
 *.docx
 *.iml
 *.ipj
