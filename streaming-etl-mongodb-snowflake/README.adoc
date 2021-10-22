@@ -2,6 +2,8 @@
 Robin Moffatt <robin@confluent.io>
 v0.01, 7 April 2021
 
+🎥 Watch https://www.confluent.co.uk/resources/online-talk/develop-a-streaming-etl-pipeline-from-mongodb-to-snowflake-with-apache-kafka/[the recording of this talk]
+
 == Pre-reqs
 
 === Accounts
