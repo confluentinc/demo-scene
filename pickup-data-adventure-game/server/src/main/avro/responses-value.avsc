@@ -1,0 +1,29 @@
+{
+  "type": "record",
+  "name": "ResponseValue",
+  "namespace": "io.confluent.developer.adventure",
+  "fields": [
+    {
+      "name": "SOURCE",
+      "type": [
+        "null",
+        {
+          "type": "string",
+          "avro.java.string": "String"
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "RESPONSE",
+      "type": [
+        "null",
+        {
+          "type": "string",
+          "avro.java.string": "String"
+        }
+      ],
+      "default": null
+    }
+  ]
+}

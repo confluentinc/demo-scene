@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -x
+
+ksql-migrations -c /ksql/ksql-migrations.properties initialize-metadata
+sleep 5
+ksql-migrations -c /ksql/ksql-migrations.properties apply -a
+ksql http://ksqldb-server:8088 -e 'show streams'

@@ -1,0 +1,16 @@
+{
+  "type": "record",
+  "name": "StatusCommandValue",
+  "namespace": "io.confluent.developer.adventure",
+  "fields": [
+    {
+      "name": "COMMAND",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    }
+  ],
+  "connect.name": "io.confluent.developer.adventure.StatusCommandValue"
+}

@@ -1,0 +1,29 @@
+{
+  "type": "record",
+  "name": "LocationDataValue",
+  "namespace": "io.confluent.developer.adventure",
+  "fields": [
+    {
+      "name": "DESCRIPTION",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    },
+    {
+      "name": "OBJECTS",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": [
+            "null",
+            "string"
+          ]
+        }
+      ],
+      "default": null
+    }
+  ]
+}

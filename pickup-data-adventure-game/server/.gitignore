@@ -1,0 +1,10 @@
+/bin/
+/data/
+/.gradle/
+gradle.properties
+/build/
+/server.log
+/.classpath
+/.jqwik-database
+/.project
+/.settings/

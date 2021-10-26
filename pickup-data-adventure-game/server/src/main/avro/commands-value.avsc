@@ -1,0 +1,19 @@
+{
+  "type": "record",
+  "name": "CommandValue",
+  "namespace": "io.confluent.developer.adventure",
+  "fields": [
+    {
+      "name": "COMMAND",
+      "type": [
+        "null",
+        {
+          "type": "string",
+          "avro.java.string": "String"
+        }
+      ],
+      "default": null
+    }
+  ],
+  "connect.name": "io.confluent.developer.adventure.CommandValue"
+}

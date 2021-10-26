@@ -1,0 +1,24 @@
+{
+  "type": "record",
+  "name": "InventoryCommandValue",
+  "namespace": "io.confluent.developer.adventure",
+  "fields": [
+    {
+      "name": "ACTION",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    },
+    {
+      "name": "ITEM",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    }
+  ],
+  "connect.name": "io.confluent.developer.adventure.InventoryCommandValue"
+}

@@ -1,0 +1,19 @@
+{
+  "type": "record",
+  "name": "MovementCommandValue",
+  "namespace": "io.confluent.developer.adventure",
+  "fields": [
+    {
+      "name": "DIRECTION",
+      "type": [
+        "null",
+        {
+          "type": "string",
+          "avro.java.string": "String"
+        }
+      ],
+      "default": null
+    }
+  ],
+  "connect.name": "io.confluent.developer.adventure.MovementCommandValue"
+}

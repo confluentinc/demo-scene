@@ -1,0 +1,24 @@
+{
+  "type": "record",
+  "name": "InventoryValue",
+  "namespace": "io.confluent.developer.adventure",
+  "fields": [
+    {
+      "name": "ITEM",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    },
+    {
+      "name": "HELD",
+      "type": [
+        "null",
+        "boolean"
+      ],
+      "default": null
+    }
+  ],
+  "connect.name": "io.confluent.developer.adventure.InventoryValue"
+}

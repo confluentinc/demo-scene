@@ -1,0 +1,39 @@
+{
+  "type": "record",
+  "name": "ItemRulesValue",
+  "namespace": "io.confluent.developer.adventure",
+  "fields": [
+    {
+      "name": "X",
+      "type": [
+        "null",
+        "int"
+      ],
+      "default": null
+    },
+    {
+      "name": "Y",
+      "type": [
+        "null",
+        "int"
+      ],
+      "default": null
+    },
+    {
+      "name": "GENERATES_ITEM",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    },
+    {
+      "name": "DESCRIPTION",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    }
+  ]
+}

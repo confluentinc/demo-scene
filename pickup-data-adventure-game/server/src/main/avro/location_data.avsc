@@ -1,0 +1,51 @@
+{
+  "type": "record",
+  "name": "LocationData",
+  "namespace": "io.confluent.developer.adventure",
+  "fields": [
+    {
+      "name": "X",
+      "type": [
+        "null",
+        "int"
+      ],
+      "default": null
+    },
+    {
+      "name": "Y",
+      "type": [
+        "null",
+        "int"
+      ],
+      "default": null
+    },
+    {
+      "name": "DESCRIPTION",
+      "type": [
+        "null",
+        {
+          "type": "string",
+          "avro.java.string": "String"
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "OBJECTS",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": [
+            "null",
+            {
+              "type": "string",
+              "avro.java.string": "String"
+            }
+          ]
+        }
+      ],
+      "default": null
+    }
+  ]
+}
