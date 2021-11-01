@@ -3,6 +3,7 @@ package io.confluent.developer.adventure;
 import static io.confluent.developer.adventure.Constants.INVENTORY_COMMAND_STREAM;
 import static io.confluent.developer.adventure.Constants.MOVEMENT_COMMAND_STREAM;
 import static io.confluent.developer.adventure.Constants.RESPONSES_STREAM;
+import static io.confluent.developer.adventure.Constants.COMMANDS_STREAM;
 import static io.confluent.developer.adventure.Constants.STATUS_COMMAND_STREAM;
 
 import java.util.Map;
@@ -19,8 +20,6 @@ import org.apache.kafka.streams.kstream.Produced;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
 public class InitialCommandProcessor {
-  private static String COMMANDS_STREAM = "commands";
-
   public static void buildStreams(Map<String, String> schemaRegistryProps, StreamsBuilder builder) {
     SpecificAvroSerde<CommandValue> commandValueSerde = new SpecificAvroSerde<>();
     commandValueSerde.configure(schemaRegistryProps, false);
@@ -63,6 +62,7 @@ public class InitialCommandProcessor {
     }, Branched.withConsumer(stream -> stream.mapValues(v -> {
       StringBuilder responseString = new StringBuilder();
       responseString.append("Available commands are:\n");
+      responseString.append("\tLOOK\n");
       responseString.append("\tGO NORTH\n");
       responseString.append("\tGO SOUTH\n");
       responseString.append("\tGO WEST\n");

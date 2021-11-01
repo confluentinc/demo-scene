@@ -12,6 +12,6 @@ public class MovementCommand {
   };
 
   enum Direction {
-    START, NORTH, SOUTH, EAST, WEST
+    LOOK, NORTH, SOUTH, EAST, WEST
   }
 }

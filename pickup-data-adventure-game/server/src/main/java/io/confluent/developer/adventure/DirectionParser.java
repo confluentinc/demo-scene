@@ -3,8 +3,8 @@ package io.confluent.developer.adventure;
 public class DirectionParser {
   static MovementCommandValue parse(String command) {
     switch (command) {
-    case "START":
-      return new MovementCommandValue("START");
+    case "LOOK":
+      return new MovementCommandValue("LOOK");
     case "GO NORTH":
       return new MovementCommandValue("NORTH");
     case "GO SOUTH":

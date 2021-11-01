@@ -16,6 +16,12 @@ import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import static io.confluent.developer.adventure.Constants.COMMANDS_STREAM;
+
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -26,14 +32,8 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 @ServerEndpoint("/socket/{user-id}")
 public class AdventureWeb {
-  private final String COMMAND_TOPIC = "commands";
-
   private static Logger logger = LoggerFactory.getLogger(AdventureWeb.class);
   private Producer<String, CommandValue> producer;
   private final Properties props;
@@ -57,18 +57,6 @@ public class AdventureWeb {
     logger.info("CONNECTED");
     Event<String, String> onOpenEventevent = new Event<>("WebSocket", userId, "HELLO");
     sendEvent(session, onOpenEventevent);
-
-    CommandValue initialCommand = new CommandValue("START");
-    ProducerRecord<String, CommandValue> initialCommandRecord =
-        new ProducerRecord<>(COMMAND_TOPIC, userId, initialCommand);
-    logger.info("Sending: {}", initialCommandRecord);
-
-    producer.send(initialCommandRecord, (receipt, e) -> {
-      if (e != null)
-        logger.error("Error while producing event: {}", e);
-      else
-        logger.info("Produced event to topic {}: key = {} value = {}", COMMAND_TOPIC, receipt);
-    });
 
     consumerThread = new Thread(() -> {
       final Properties consumerProps = (Properties) props.clone();
@@ -112,14 +100,14 @@ public class AdventureWeb {
         });
     logger.info("Got event: {}", event);
 
-    ProducerRecord<String, CommandValue> record = new ProducerRecord<>(COMMAND_TOPIC, userId, event.getValue());
+    ProducerRecord<String, CommandValue> record = new ProducerRecord<>(COMMANDS_STREAM, userId, event.getValue());
     logger.info("Sending: {}", record);
 
     producer.send(record, (receipt, e) -> {
       if (e != null)
         logger.error("Error while producing event: {}", e);
       else
-        logger.info("Produced event to topic {}: key = {} value = {}", COMMAND_TOPIC, receipt);
+        logger.info("Produced event to topic {}: key = {} value = {}", COMMANDS_STREAM, receipt);
     });
   }
 

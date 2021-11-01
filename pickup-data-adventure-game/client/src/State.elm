@@ -8,10 +8,12 @@ module State exposing
 
 import Array
 import Browser exposing (..)
-import Browser.Events exposing (onKeyPress)
+import Browser.Events exposing (onKeyUp)
 import Browser.Navigation as Nav
+import Char
 import Json.Decode as Decode
 import Json.Encode as Encode
+import Keyboard exposing (parseKey,Key(..))
 import Set
 import Set.Extras as Set
 import String
@@ -60,10 +62,11 @@ subscriptions _ =
                 )
                     |> WebsocketMessage
             )
+        , WebsocketSupport.onOpen (always (WebsocketMessage WebsocketOpened))
         , WebsocketSupport.onClose (always (WebsocketMessage WebsocketClosed))
-        , onKeyPress
+        , onKeyUp
             (Decode.field "key" Decode.string
-                |> Decode.map (Debug.log "KEY")
+                |> Decode.map (Debug.log "KEY is")
                 |> Decode.map KeyboardMessage
             )
         ]
@@ -82,25 +85,31 @@ update msg model =
             , Cmd.none
             )
 
-        KeyboardMessage "Enter" ->
-            ( { model
-                | buffer = ""
-                , history = Array.push (ClientMessage model.buffer) model.history
-              }
-            , WebsocketSupport.sendToServer
-                (Encode.encode 0
-                    (WebsocketSupport.encodeClientMessage
-                        { key = model.userId
-                        , value = model.buffer
+        KeyboardMessage key ->
+            case parseKey key of
+                Enter ->
+                    ( { model
+                        | buffer = ""
+                        , history = Array.push (ClientMessage model.buffer) model.history
+                      }
+                    , WebsocketSupport.sendMessageToServer
+                        { userId = model.userId
+                        , msg = model.buffer
                         }
                     )
-                )
-            )
 
-        KeyboardMessage key ->
-            ( { model | buffer = model.buffer ++ String.toUpper key }
-            , Cmd.none
-            )
+                Delete ->
+                    ( { model | buffer = String.dropRight 1 model.buffer }
+                    , Cmd.none
+                    )
+
+                Character other ->
+                    ( { model | buffer = model.buffer ++ String.toUpper other }
+                    , Cmd.none
+                    )
+
+                Unknown _ ->
+                    ( model, Cmd.none )
 
         ToggleHiddenSource sourceId ->
             ( { model

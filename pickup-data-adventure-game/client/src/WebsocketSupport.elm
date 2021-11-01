@@ -2,10 +2,11 @@ port module WebsocketSupport exposing
     ( ClientMessage
     , ResponseEvent
     , decodeResponseEvent
-    , encodeClientMessage
     , onClose
+    , onError
     , onMessage
-    , sendToServer
+    , onOpen
+    , sendMessageToServer
     )
 
 import Json.Decode as Json exposing (Decoder, succeed)
@@ -17,6 +18,12 @@ port sendToServer : String -> Cmd msg
 
 
 port onMessage : (String -> msg) -> Sub msg
+
+
+port onError : (String -> msg) -> Sub msg
+
+
+port onOpen : (() -> msg) -> Sub msg
 
 
 port onClose : (() -> msg) -> Sub msg
@@ -49,3 +56,15 @@ encodeClientMessage { key, value } =
         [ ( "key", Encode.string key )
         , ( "value", Encode.string value )
         ]
+
+
+sendMessageToServer : { userId : String, msg : String } -> Cmd msg
+sendMessageToServer { userId, msg } =
+    sendToServer
+        (Encode.encode 0
+            (encodeClientMessage
+                { key = userId
+                , value = msg
+                }
+            )
+        )

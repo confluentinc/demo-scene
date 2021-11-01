@@ -33,4 +33,5 @@ type HistoryMessage
 type ServerMessage
     = Response ResponseEvent
     | DecodingError Json.Error
+    | WebsocketOpened
     | WebsocketClosed

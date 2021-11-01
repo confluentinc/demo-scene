@@ -10,6 +10,13 @@ exports.registerPorts = function(app, socket) {
     });
   };
 
+  socket.onopen = function(event) {
+    if (app.ports.onOpen) {
+      console.log("Got open", event.data, typeof(event.data));
+      app.ports.onOpen.send(null);
+    };
+  };
+
   if (app.ports.onMessage) {
     socket.onmessage = function(event) {
       console.log("Got message", event.data, typeof(event.data));
@@ -17,9 +24,16 @@ exports.registerPorts = function(app, socket) {
     };
   };
 
+  if (app.ports.onError) {
+    socket.onerror = function(event) {
+      console.log("Got error", event.data, typeof(event.data));
+      app.ports.onError.send(event.data);
+    };
+  };
+
   socket.onclose = function(event) {
     if (app.ports.onClose) {
-      console.log("Got close", event.data, typeof(event.data));
+      console.log("Got close");
       app.ports.onClose.send(null);
     };
   };

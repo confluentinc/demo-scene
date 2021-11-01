@@ -11,8 +11,6 @@ import { v4 as uuidv4 } from 'uuid';
 import * as WebsocketSupport from './src/WebsocketSupport';
 
 const userId = uuidv4();
-const protocol = window.location.protocol == "https:" ? "wss:" : "ws:";
-const socket = new WebSocket(protocol + "//" + window.location.host + "/socket/" + userId, []);
 
 var app = Elm.Main.init({
   node: document.getElementById("app"),
@@ -21,4 +19,6 @@ var app = Elm.Main.init({
   }
 });
 
+const protocol = window.location.protocol == "https:" ? "wss:" : "ws:";
+const socket = new WebSocket(protocol + "//" + window.location.host + "/socket/" + userId, []);
 WebsocketSupport.registerPorts(app, socket);

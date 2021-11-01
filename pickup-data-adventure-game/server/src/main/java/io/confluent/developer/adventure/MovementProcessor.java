@@ -53,7 +53,7 @@ public class MovementProcessor {
           .stream(MOVEMENT_COMMAND_STREAM, Consumed.with(Serdes.UUID(), movementCommandValueSerde))
           .mapValues(v -> {
             switch (v.getDIRECTION()) {
-            case "START":
+            case "LOOK":
               return new Position(0, 0);
             case "NORTH":
               return new Position(0, 1);
@@ -87,14 +87,14 @@ public class MovementProcessor {
           .toStream()
           .leftJoin(locationDataTable, (uuid, position) -> position,
               (position, locationData) -> new LocationData(position.getX(), position.getY(),
-                  locationData == null ? "" : locationData.getDESCRIPTION(),
-                  locationData == null ? emptyList() : locationData.getOBJECTS()));
+                  locationData == null ? null : locationData.getDESCRIPTION(),
+                  locationData == null ? null : locationData.getOBJECTS()));
 
     userLocationChanges.mapValues(locationData -> {
       ResponseValue response = new ResponseValue();
       response.setSOURCE("Location Description");
 
-      if (locationData == null) {
+      if (locationData.getDESCRIPTION() == null) {
         response.setRESPONSE("You have fallen off the edge of the map. Best head back the way you came!");
       } else {
         StringBuilder responseString = new StringBuilder();

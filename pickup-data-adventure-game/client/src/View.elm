@@ -76,6 +76,10 @@ historyMessageView historyMsg =
                         , div [] [ text message.value ]
                         ]
 
+        ServerMessage WebsocketOpened ->
+            div []
+                [ text "-*- CONNECTED -*-" ]
+
         ServerMessage WebsocketClosed ->
             div []
                 [ text "-*- DISCONNECTED -*-" ]
