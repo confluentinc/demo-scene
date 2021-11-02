@@ -1,6 +1,6 @@
-= Building a Streaming Data Pipeline with Rail Data
+= 🚂 On Track with Apache Kafka – Building a Streaming ETL Solution with Rail Data
 Robin Moffatt <robin@confluent.io>
-v1.40, 23 March 2021
+v1.41, 2 November 2021
 
 == What is it?
 
@@ -10,20 +10,20 @@ This can run locally or link:ccloud/README.adoc[using Confluent Cloud]
 
 image::images/overview.png[]
 
+== 📔 Slides? 🎥 Recording?
+
+Yes! 
+
+👉️ https://rmoff.dev/realtime-etl-with-trains
+
+image::images/slides.png[]
+
 == What can it do? 
 
 image::images/es_dashboard_02.png[]
 image::images/telegram01.png[]
 image::images/graph01.jpg[]
 image::images/pgadmin.jpg[]
-
-== Slides? 
-
-Yes!
-
-http://rmoff.dev/kafka-trains-slides
-
-image::images/slides.png[]
 
 == Setup
 
