@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.Branched;
@@ -35,27 +34,27 @@ public class InventoryProcessor {
 
   public static void buildStreams(Map<String, String> schemaRegistryProps, StreamsBuilder builder,
       KTable<UUID, LocationData> latestUserLocation) {
-    Serde<InventoryCommandValue> inventoryCommandValueSerde = new SpecificAvroSerde<>();
+    var inventoryCommandValueSerde = new SpecificAvroSerde<InventoryCommandValue>();
     inventoryCommandValueSerde.configure(schemaRegistryProps, false);
     Runtime.getRuntime().addShutdownHook(new Thread(inventoryCommandValueSerde::close));
 
-    Serde<InventoryValue> inventoryValueSerde = new SpecificAvroSerde<>();
+    var inventoryValueSerde = new SpecificAvroSerde<InventoryValue>();
     inventoryValueSerde.configure(schemaRegistryProps, false);
     Runtime.getRuntime().addShutdownHook(new Thread(inventoryValueSerde::close));
 
-    SpecificAvroSerde<ResponseValue> responseValueSerde = new SpecificAvroSerde<>();
+    var responseValueSerde = new SpecificAvroSerde<ResponseValue>();
     responseValueSerde.configure(schemaRegistryProps, false);
     Runtime.getRuntime().addShutdownHook(new Thread(responseValueSerde::close));
 
-    Serde<Knapsack> knapsackSerde = new SpecificAvroSerde<>();
+    var knapsackSerde = new SpecificAvroSerde<Knapsack>();
     knapsackSerde.configure(schemaRegistryProps, false);
     Runtime.getRuntime().addShutdownHook(new Thread(knapsackSerde::close));
 
-    Serde<ItemRulesValue> itemRulesValueSerde = new SpecificAvroSerde<>();
+    var itemRulesValueSerde = new SpecificAvroSerde<ItemRulesValue>();
     itemRulesValueSerde.configure(schemaRegistryProps, false);
     Runtime.getRuntime().addShutdownHook(new Thread(itemRulesValueSerde::close));
 
-    Serde<StatusCommandValue> statusCommandValueSerde = new SpecificAvroSerde<>();
+    var statusCommandValueSerde = new SpecificAvroSerde<StatusCommandValue>();
     statusCommandValueSerde.configure(schemaRegistryProps, false);
     Runtime.getRuntime().addShutdownHook(new Thread(statusCommandValueSerde::close));
 
@@ -78,13 +77,13 @@ public class InventoryProcessor {
     newInventoryStream
       .split()
       .branch((k, pair) -> pair.getValue1(), Branched.withConsumer(stream -> stream.mapValues(pair -> {
-        InventoryValue v = new InventoryValue();
+        var v = new InventoryValue();
         v.setITEM(pair.getValue0());
         v.setHELD(true);
         return v;
       }).to(INVENTORY_STREAM, Produced.with(Serdes.UUID(), inventoryValueSerde))))
       .defaultBranch(Branched.withConsumer(stream -> stream.mapValues(pair -> {
-        ResponseValue response = new ResponseValue();
+        var response = new ResponseValue();
         response.setSOURCE("Inventory");
         response.setRESPONSE(String.format("You cannot pick up: %s", pair.getValue0()));
         return response;
@@ -94,7 +93,7 @@ public class InventoryProcessor {
       .stream(INVENTORY_STREAM, Consumed.with(Serdes.UUID(), inventoryValueSerde))
       .filter((k, inventoryValue) -> inventoryValue.getHELD())
       .mapValues((k, inventoryValue) -> {
-        ResponseValue response = new ResponseValue();
+        var response = new ResponseValue();
         response.setSOURCE("Inventory");
         response.setRESPONSE(String.format("You pick up: %s.", inventoryValue.getITEM()));
         return response;
@@ -106,7 +105,7 @@ public class InventoryProcessor {
           .stream(INVENTORY_STREAM, Consumed.with(Serdes.UUID(), inventoryValueSerde))
           .groupByKey(Grouped.with(Serdes.UUID(), inventoryValueSerde))
           .aggregate(() -> {
-            Knapsack knapsack = new Knapsack();
+            var knapsack = new Knapsack();
             knapsack.setOBJECTS(new ArrayList<String>());
             return knapsack;
           }, (k, item, knapsack) -> {
@@ -115,7 +114,7 @@ public class InventoryProcessor {
               logger.info("Adding {} to {}", item, knapsack);
               currentObjects.add(item.getITEM());
             } else {
-              ArrayList<String> filteredObjects = new ArrayList<>(knapsack.getOBJECTS());
+              var filteredObjects = new ArrayList<String>(knapsack.getOBJECTS());
               logger.info("Removing {} from {}", item, knapsack);
               filteredObjects.removeIf(item.getITEM()::equals);
               knapsack.setOBJECTS(filteredObjects);
@@ -139,7 +138,7 @@ public class InventoryProcessor {
       boolean isAvailable = useItemJoin.knapsack().getOBJECTS().contains(useItemJoin.inventoryCommand().getITEM());
       return !isAvailable;
     }, Branched.withConsumer(stream -> stream.mapValues(useItemJoin -> {
-      ResponseValue response = new ResponseValue();
+      var response = new ResponseValue();
       response.setSOURCE("Inventory Use");
       response.setRESPONSE("You do not have that item to use.");
       return response;
@@ -155,7 +154,7 @@ public class InventoryProcessor {
       boolean isWrongLocation = !(matchingX && matchingY);
       return isWrongLocation;
     }, Branched.withConsumer(stream -> stream.mapValues(v -> {
-      ResponseValue response = new ResponseValue();
+      var response = new ResponseValue();
       response.setSOURCE("Inventory Use");
       response.setRESPONSE("You cannot use that item here.");
       return response;
@@ -174,7 +173,7 @@ public class InventoryProcessor {
 
       // Send the description to the user.
       stream.mapValues(v -> {
-        ResponseValue response = new ResponseValue();
+        var response = new ResponseValue();
         response.setSOURCE("Inventory Use");
         response.setRESPONSE(v.itemRule().getDESCRIPTION());
         return response;
@@ -187,7 +186,7 @@ public class InventoryProcessor {
     statusCommandBranches.branch((k, v) -> {
       return "INVENTORY".equals(v.getCOMMAND());
     }, Branched.withConsumer(stream -> stream.leftJoin(inventoryTable, (command, items) -> items).mapValues(items -> {
-      ResponseValue response = new ResponseValue();
+      var response = new ResponseValue();
       response.setSOURCE("Inventory Check");
 
       if (items == null || items.getOBJECTS().isEmpty()) {

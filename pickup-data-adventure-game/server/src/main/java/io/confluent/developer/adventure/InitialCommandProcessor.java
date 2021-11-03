@@ -1,15 +1,14 @@
 package io.confluent.developer.adventure;
 
+import static io.confluent.developer.adventure.Constants.COMMANDS_STREAM;
 import static io.confluent.developer.adventure.Constants.INVENTORY_COMMAND_STREAM;
 import static io.confluent.developer.adventure.Constants.MOVEMENT_COMMAND_STREAM;
 import static io.confluent.developer.adventure.Constants.RESPONSES_STREAM;
-import static io.confluent.developer.adventure.Constants.COMMANDS_STREAM;
 import static io.confluent.developer.adventure.Constants.STATUS_COMMAND_STREAM;
 
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.Branched;
@@ -21,17 +20,17 @@ import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
 public class InitialCommandProcessor {
   public static void buildStreams(Map<String, String> schemaRegistryProps, StreamsBuilder builder) {
-    SpecificAvroSerde<CommandValue> commandValueSerde = new SpecificAvroSerde<>();
+    var commandValueSerde = new SpecificAvroSerde<CommandValue>();
     commandValueSerde.configure(schemaRegistryProps, false);
-    Serde<MovementCommandValue> movementCommandValueSerde = new SpecificAvroSerde<>();
+    var movementCommandValueSerde = new SpecificAvroSerde<MovementCommandValue>();
     movementCommandValueSerde.configure(schemaRegistryProps, false);
-    Serde<StatusCommandValue> statusCommandValueSerde = new SpecificAvroSerde<>();
+    var statusCommandValueSerde = new SpecificAvroSerde<StatusCommandValue>();
     statusCommandValueSerde.configure(schemaRegistryProps, false);
-    Serde<InventoryCommandValue> inventoryCommandValueSerde = new SpecificAvroSerde<>();
+    var inventoryCommandValueSerde = new SpecificAvroSerde<InventoryCommandValue>();
     inventoryCommandValueSerde.configure(schemaRegistryProps, false);
-    SpecificAvroSerde<ResponseValue> responseValueSerde = new SpecificAvroSerde<>();
+    var responseValueSerde = new SpecificAvroSerde<ResponseValue>();
     responseValueSerde.configure(schemaRegistryProps, false);
-    Produced<UUID, ResponseValue> producedResponse = Produced.with(Serdes.UUID(), responseValueSerde);
+    var producedResponse = Produced.with(Serdes.UUID(), responseValueSerde);
 
     BranchedKStream<UUID, CommandValue> commandBranches =
         builder.stream(COMMANDS_STREAM, Consumed.with(Serdes.UUID(), commandValueSerde)).split();
@@ -60,7 +59,7 @@ public class InitialCommandProcessor {
     commandBranches.branch((k, v) -> {
       return "HELP".equals(v.getCOMMAND());
     }, Branched.withConsumer(stream -> stream.mapValues(v -> {
-      StringBuilder responseString = new StringBuilder();
+      var responseString = new StringBuilder();
       responseString.append("Available commands are:\n");
       responseString.append("\tLOOK\n");
       responseString.append("\tGO NORTH\n");
@@ -72,7 +71,7 @@ public class InitialCommandProcessor {
       responseString.append("\tINVENTORY\n");
       responseString.append("\tHELP\n");
 
-      ResponseValue response = new ResponseValue();
+      var response = new ResponseValue();
       response.setSOURCE("Help");
       response.setRESPONSE(responseString.toString());
       return response;
@@ -80,7 +79,7 @@ public class InitialCommandProcessor {
 
     // Fallback.
     commandBranches.defaultBranch(Branched.withConsumer(stream -> stream.mapValues(msg -> {
-      ResponseValue response = new ResponseValue();
+      var response = new ResponseValue();
       response.setSOURCE("Unknown Command");
       response.setRESPONSE(String.format("Unknown command: %s\n\nTry asking for HELP", msg.getCOMMAND()));
       return response;

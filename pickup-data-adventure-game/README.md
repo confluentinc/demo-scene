@@ -1,5 +1,7 @@
 # PICKUP DATA - A Kafka Adventure Game
 
+![Screenshot](Screenshot.png)
+
 ## Server Setup
 
 First start the server processes running:
@@ -41,18 +43,18 @@ _Note: To recreate the database from scratch, use this `docker-compose` command 
 docker compose up --renew-anon-volumes --force-recreate
 ```
 
-## Running The Streams Microservices
+## Running The Streams Services
 
 ```sh
 cd server 
-gradle run
+./gradlew run
 ```
 
 ## Running The Webserver
 
 ```sh
 cd server 
-gradle appStart
+./gradlew appStart
 ```
 
 ## Running The Client

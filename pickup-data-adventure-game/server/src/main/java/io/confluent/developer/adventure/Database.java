@@ -16,7 +16,6 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Consumed;
-import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Produced;
 import org.slf4j.Logger;
@@ -43,7 +42,7 @@ public class Database {
       throw new RuntimeException(e);
     }
 
-    final StreamsBuilder builder = new StreamsBuilder();
+    final var builder = new StreamsBuilder();
 
     props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
@@ -52,19 +51,18 @@ public class Database {
         Collections.singletonMap(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
 
     // Serdes galore.
-    SpecificAvroSerde<CommandValue> commandValueSerde = new SpecificAvroSerde<>();
+    var commandValueSerde = new SpecificAvroSerde<CommandValue>();
     commandValueSerde.configure(schemaRegistryProps, false);
 
-    SpecificAvroSerde<ResponseValue> responseValueSerde = new SpecificAvroSerde<>();
+    var responseValueSerde = new SpecificAvroSerde<ResponseValue>();
     responseValueSerde.configure(schemaRegistryProps, false);
 
     // Let's start some streams.
-    KStream<UUID, CommandValue> commandStream =
-        builder.stream(COMMANDS_STREAM, Consumed.with(Serdes.UUID(), commandValueSerde));
+    var commandStream = builder.stream(COMMANDS_STREAM, Consumed.with(Serdes.UUID(), commandValueSerde));
 
     // Echo.
     commandStream.mapValues(command -> {
-      ResponseValue response = new ResponseValue();
+      var response = new ResponseValue();
       response.setSOURCE("Echo");
       response.setRESPONSE(String.format("ECHO: %s", command.getCOMMAND()));
       return response;
@@ -79,14 +77,11 @@ public class Database {
     // Inventory stuff.
     InventoryProcessor.buildStreams(schemaRegistryProps, builder, latestUserLocation);
 
-    // TODO Refactor with Records. https://www.baeldung.com/java-record-keyword
-    // `public record Person (Field field) {}`
-
     // Done. Build & ship.
     final Topology topology = builder.build();
     logger.info("Topology: {}", topology.describe());
 
-    final KafkaStreams streams = new KafkaStreams(topology, streamsConfiguration);
+    var streams = new KafkaStreams(topology, streamsConfiguration);
     streams.start();
 
     logger.info("Installing shutdown hook.");
@@ -94,11 +89,10 @@ public class Database {
   }
 
   public static Properties loadProperties(String fileName) throws IOException {
-    final Properties props = new Properties();
-    final FileInputStream input = new FileInputStream(fileName);
-    props.load(input);
-    input.close();
-
-    return props;
+    try (FileInputStream input = new FileInputStream(fileName)) {
+      var props = new Properties();
+      props.load(input);
+      return props;
+    }
   }
 }

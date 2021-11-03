@@ -1,5 +1,5 @@
 plugins {
-    id "org.gretty" version "3.0.6"
+    id "org.gretty" version "3.0.7"
     id "com.github.davidmc24.gradle.plugin.avro" version "1.0.0"
     id "com.diffplug.spotless" version "5.14.2"
 }

@@ -1,5 +1,7 @@
 package io.confluent.developer.adventure;
 
+import static io.confluent.developer.adventure.Constants.COMMANDS_STREAM;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.time.Duration;
@@ -16,12 +18,6 @@ import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import static io.confluent.developer.adventure.Constants.COMMANDS_STREAM;
-
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -31,6 +27,10 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @ServerEndpoint("/socket/{user-id}")
 public class AdventureWeb {
@@ -55,16 +55,15 @@ public class AdventureWeb {
   @OnOpen
   public void onOpen(Session session, @PathParam("user-id") String userId) throws IOException {
     logger.info("CONNECTED");
-    Event<String, String> onOpenEventevent = new Event<>("WebSocket", userId, "HELLO");
+    var onOpenEventevent = new Event<String, String>("WebSocket", userId, "HELLO");
     sendEvent(session, onOpenEventevent);
 
     consumerThread = new Thread(() -> {
       final Properties consumerProps = (Properties) props.clone();
       consumerProps.setProperty("group.id", UUID.randomUUID().toString());
-      Consumer<String, ResponseValue> consumer = new KafkaConsumer<>(consumerProps);
-      consumer.subscribe(Collections.singletonList("responses"));
 
-      try {
+      try (Consumer<String, ResponseValue> consumer = new KafkaConsumer<>(consumerProps)) {
+        consumer.subscribe(Collections.singletonList("responses"));
         while (connected) {
           try {
             ConsumerRecords<String, ResponseValue> records = consumer.poll(Duration.ofMillis(100));
@@ -83,8 +82,6 @@ public class AdventureWeb {
             logger.error("Error while sending websocket message: {}", e);
           }
         }
-      } finally {
-        consumer.close();
       }
     });
     consumerThread.start();
@@ -100,7 +97,7 @@ public class AdventureWeb {
         });
     logger.info("Got event: {}", event);
 
-    ProducerRecord<String, CommandValue> record = new ProducerRecord<>(COMMANDS_STREAM, userId, event.getValue());
+    var record = new ProducerRecord<String, CommandValue>(COMMANDS_STREAM, userId, event.getValue());
     logger.info("Sending: {}", record);
 
     producer.send(record, (receipt, e) -> {
@@ -124,7 +121,6 @@ public class AdventureWeb {
 
   @OnClose
   public void onClose(Session session, CloseReason reason) {
-    // TODO Not being called?
     this.connected = false;
     this.consumerThread = null;
     producer.close();
@@ -132,12 +128,11 @@ public class AdventureWeb {
   }
 
   public static Properties loadProperties(String fileName) throws IOException {
-    final Properties props = new Properties();
-    final FileInputStream input = new FileInputStream(fileName);
-    props.load(input);
-    input.close();
-
-    return props;
+    try (FileInputStream input = new FileInputStream(fileName)) {
+      final Properties props = new Properties();
+      props.load(input);
+      return props;
+    }
   }
 
   private void sendEvent(Session session, Event<?, ?> event) throws JsonProcessingException, IOException {
