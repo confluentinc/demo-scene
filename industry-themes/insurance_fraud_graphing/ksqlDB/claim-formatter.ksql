@@ -1,0 +1,26 @@
+CREATE STREAM auto_insurance_claims
+(
+    CLAIM_ID INT,
+    CLAIM_TYPE STRING,
+    CLAIM_AMOUNT_USD DECIMAL(10,2),
+    ADJUSTER STRING,
+    INSURED STRING,
+    PAYEE STRING
+)
+WITH (
+    KAFKA_TOPIC = 'auto_insurance_claims',
+    VALUE_FORMAT = 'JSON'
+);
+
+CREATE STREAM auto_insurance_claims_avro
+WITH (
+    KAFKA_TOPIC = 'auto-insurance-claims-avro',
+    VALUE_FORMAT = 'AVRO'
+) AS 
+SELECT
+CLAIM_ID,
+CLAIM_TYPE,
+ADJUSTER,
+INSURED,
+PAYEE
+FROM auto_insurance_claims;

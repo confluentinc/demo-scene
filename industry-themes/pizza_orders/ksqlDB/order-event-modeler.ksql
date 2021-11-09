@@ -122,40 +122,34 @@ ARRAY_LENGTH(orderLines) AS orderLineCount,
 0 AS orderDeliveryTimeSecs
 FROM PIZZA_ORDERS_KEYED;
 
---This is a different way to hande the join instead of doing
---insert into statements and allows for ksqlDB to manage the
---the state store better. It does require correct ordering of
---the event types in the coalesce function.
---CREATE STREAM PIZZA_ORDERS_COMMON_ALT
---WITH (
---    KAFKA_TOPIC = 'pizza_orders_common_alt',
---    VALUE_FORMAT = 'AVRO'
---)
---AS
---SELECT
---ROWKEY AS order_key,
---COALESCE(podk.storeNumber, popk.storeNumber, pok.storeNumber) as storeNumber,
---COALESCE(podk.storeOrderId, popk.storeOrderId, pok.storeOrderId) as storeOrderId,
---COALESCE(podk.businessDate, popk.businessDate, pok.businessDate) as businessDate,
---COALESCE(popk.status, podk.status, pok.status) AS status,
---CASE
---    WHEN ARRAY_LENGTH(coupons) > 0 THEN 'true'
---    ELSE 'false'
---END AS usedCoupon,
---ARRAY_LENGTH(orderLines) AS orderLineCount,
---COALESCE(popk.rackTimeSecs, 0) AS rackTimeSecs,
---COALESCE(popk.orderDeliveryTimeSecs, 0) AS orderDeliveryTimeSecs
---FROM PIZZA_ORDERS_KEYED pok
---FULL OUTER JOIN PIZZA_ORDERS_COMPLETED_KEYED popk
---WITHIN 2 HOURS
---ON pok.order_key = popk.order_key
---FULL OUTER JOIN PIZZA_ORDERS_CANCELLED_KEYED podk 
---WITHIN 2 HOURS
---ON pok.order_key = podk.order_key;
+INSERT INTO PIZZA_ORDERS_COMMON
+SELECT
+order_key AS order_key,
+storeNumber AS storeNumber,
+storeOrderId AS storeOrderId,
+businessDate AS businessDate,
+status AS status,
+CAST(NULL AS STRING) AS usedCoupon,
+CAST(NULL AS INT) AS orderLineCount,
+CAST(NULL AS INT) AS rackTimeSecs,
+CAST(NULL AS INT) AS orderDeliveryTimeSecs
+FROM PIZZA_ORDERS_CANCELLED_KEYED;
 
 
---this is the materialized table for storing current state of each order based
---on the common model.
+INSERT INTO PIZZA_ORDERS_COMMON
+SELECT
+order_key AS order_key,
+storeNumber AS storeNumber,
+storeOrderId AS storeOrderId,
+businessDate AS businessDate,
+status AS status,
+CAST(NULL AS STRING) AS usedCoupon,
+CAST(NULL AS INT) AS orderLineCount,
+rackTimeSecs AS rackTimeSecs,
+orderDeliveryTimeSecs AS orderDeliveryTimeSecs
+FROM PIZZA_ORDERS_COMPLETED_KEYED;
+
+
 CREATE TABLE PIZZA_ORDERS_TABLE
 WITH (
     KAFKA_TOPIC = 'pizza_orders_table',
@@ -173,41 +167,8 @@ LATEST_BY_OFFSET(orderLineCount) AS latest_orderLineCount,
 LATEST_BY_OFFSET(rackTimeSecs) AS latest_rackTimeSecs,
 LATEST_BY_OFFSET(orderDeliveryTimeSecs) AS latest_orderDeliveryTimeSecs
 FROM PIZZA_ORDERS_COMMON
-WINDOW TUMBLING(SIZE 2 HOURS, RETENTION 6 HOURS, GRACE PERIOD 30 MINUTES)
+WINDOW SESSION(30 MINUTES)
 GROUP BY order_key;
-
---now we insert back into the common model the other order types
---and join to the table to get the latest values for feeds we don't
---have in that type. This can easily be expanding for multiple order event types.
-INSERT INTO PIZZA_ORDERS_COMMON
-SELECT
-poc.order_key AS order_key,
-poc.storeNumber AS storeNumber,
-poc.storeOrderId AS storeOrderId,
-poc.businessDate AS businessDate,
-poc.status AS status,
-pot.latest_usedCoupon AS usedCoupon,
-pot.latest_orderLineCount AS orderLineCount,
-pot.latest_rackTimeSecs AS rackTimeSecs,
-pot.latest_orderDeliveryTimeSecs AS orderDeliveryTimeSecs
-FROM PIZZA_ORDERS_CANCELLED_KEYED poc
-LEFT OUTER JOIN PIZZA_ORDERS_TABLE pot
-ON poc.order_key = pot.order_key;
-
-INSERT INTO PIZZA_ORDERS_COMMON
-SELECT
-poc.order_key AS order_key,
-poc.storeNumber AS storeNumber,
-poc.storeOrderId AS storeOrderId,
-poc.businessDate AS businessDate,
-poc.status AS status,
-pot.latest_usedCoupon AS usedCoupon,
-pot.latest_orderLineCount AS orderLineCount,
-poc.rackTimeSecs AS rackTimeSecs,
-poc.orderDeliveryTimeSecs AS orderDeliveryTimeSecs
-FROM PIZZA_ORDERS_COMPLETED_KEYED poc
-LEFT OUTER JOIN PIZZA_ORDERS_TABLE pot
-ON poc.order_key = pot.order_key;
 
 --This section creates event from the order lines detail
 --and flattens the products out to a easy to consume model.
