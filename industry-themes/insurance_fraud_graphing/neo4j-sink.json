@@ -1,0 +1,17 @@
+{
+  "name": "Neo4jSinkConnector",
+  "config": {
+	"topics": "auto-insurance-claims-avro",
+	"connector.class": "streams.kafka.connect.sink.Neo4jSinkConnector",
+	"errors.retry.timeout": "-1",
+	"errors.retry.delay.max.ms": "1000",
+	"errors.tolerance": "all",
+	"errors.log.enable": true,
+	"errors.log.include.messages": true,
+	"neo4j.server.uri": "bolt://neo4j:7687",
+	"neo4j.authentication.basic.username": "neo4j",
+	"neo4j.authentication.basic.password": "admin",
+	"neo4j.encryption.enabled": false,
+	"neo4j.topic.cypher.auto-insurance-claims-avro": "MERGE (c:Claim{claim_id: event.CLAIM_ID, claim_type: event.CLAIM_TYPE}) MERGE (a:Adjuster{name: event.ADJUSTER}) MERGE (i:Insured{name: event.INSURED}) MERGE (p:Payee{name: event.PAYEE}) MERGE (a)-[:ADJUSTED]->(c) MERGE (i)-[:FILED]->(c) MERGE (p)-[:PAID_BY]->(c)"
+  }
+}

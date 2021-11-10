@@ -1,0 +1,1000 @@
+{"claim_id":1,"claim_type":"property damage liability","claim_amount_usd":8181.15,"adjuster":"Wanda","insured":"Lorne","payee":"Nick"}
+{"claim_id":2,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":13558.21,"adjuster":"Gamora","insured":"Vyky","payee":"Wong"}
+{"claim_id":3,"claim_type":"collision","claim_amount_usd":17536.84,"adjuster":"Tony","insured":"Melodie","payee":"Nick"}
+{"claim_id":4,"claim_type":"personal injury protection","claim_amount_usd":16440.14,"adjuster":"Nebula","insured":"Ellynn","payee":"Parker"}
+{"claim_id":5,"claim_type":"bodily injury liability","claim_amount_usd":4848.39,"adjuster":"TChalla","insured":"Dyan","payee":"Thanos"}
+{"claim_id":6,"claim_type":"collision","claim_amount_usd":13880.68,"adjuster":"Natasha","insured":"Jo ann","payee":"Stephen"}
+{"claim_id":7,"claim_type":"bodily injury liability","claim_amount_usd":10997.77,"adjuster":"Gamora","insured":"Willabella","payee":"Katy"}
+{"claim_id":8,"claim_type":"personal injury protection","claim_amount_usd":26146.74,"adjuster":"Nebula","insured":"Brigid","payee":"Shuri"}
+{"claim_id":9,"claim_type":"bodily injury liability","claim_amount_usd":16876.85,"adjuster":"Natasha","insured":"Carney","payee":"Okoye"}
+{"claim_id":10,"claim_type":"personal injury protection","claim_amount_usd":11432.64,"adjuster":"Wanda","insured":"Wake","payee":"Shuri"}
+{"claim_id":11,"claim_type":"collision","claim_amount_usd":22405.73,"adjuster":"Nebula","insured":"Betti","payee":"Thanos"}
+{"claim_id":12,"claim_type":"bodily injury liability","claim_amount_usd":25761.33,"adjuster":"Thor","insured":"Lorry","payee":"Wong"}
+{"claim_id":13,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":23716.05,"adjuster":"Tony","insured":"Jilleen","payee":"Groot"}
+{"claim_id":14,"claim_type":"personal injury protection","claim_amount_usd":12349.57,"adjuster":"Peggy","insured":"Melisenda","payee":"Okoye"}
+{"claim_id":15,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":24024.89,"adjuster":"Peter","insured":"Sigismond","payee":"Groot"}
+{"claim_id":16,"claim_type":"collision","claim_amount_usd":14144.18,"adjuster":"Tony","insured":"Hetty","payee":"Katy"}
+{"claim_id":17,"claim_type":"personal injury protection","claim_amount_usd":1930.27,"adjuster":"Nebula","insured":"Sal","payee":"Thanos"}
+{"claim_id":18,"claim_type":"bodily injury liability","claim_amount_usd":19804.66,"adjuster":"Gamora","insured":"Alic","payee":"Groot"}
+{"claim_id":19,"claim_type":"comprehensive","claim_amount_usd":28801.96,"adjuster":"Natasha","insured":"Emilie","payee":"Thanos"}
+{"claim_id":20,"claim_type":"property damage liability","claim_amount_usd":14656.32,"adjuster":"Gamora","insured":"Darcy","payee":"Groot"}
+{"claim_id":21,"claim_type":"property damage liability","claim_amount_usd":2088.24,"adjuster":"Gamora","insured":"Nikki","payee":"Stephen"}
+{"claim_id":22,"claim_type":"comprehensive","claim_amount_usd":10789.49,"adjuster":"Nebula","insured":"Noah","payee":"Okoye"}
+{"claim_id":23,"claim_type":"property damage liability","claim_amount_usd":1530.51,"adjuster":"Nebula","insured":"Tremaine","payee":"Parker"}
+{"claim_id":24,"claim_type":"property damage liability","claim_amount_usd":815.68,"adjuster":"Thor","insured":"Mahmoud","payee":"Okoye"}
+{"claim_id":25,"claim_type":"comprehensive","claim_amount_usd":310.42,"adjuster":"Nebula","insured":"Ashli","payee":"Thanos"}
+{"claim_id":26,"claim_type":"collision","claim_amount_usd":18295.68,"adjuster":"Peggy","insured":"Dalia","payee":"Thanos"}
+{"claim_id":27,"claim_type":"bodily injury liability","claim_amount_usd":6834.99,"adjuster":"Steve","insured":"Jojo","payee":"Thanos"}
+{"claim_id":28,"claim_type":"collision","claim_amount_usd":9569.66,"adjuster":"Nebula","insured":"Audrye","payee":"Nick"}
+{"claim_id":29,"claim_type":"personal injury protection","claim_amount_usd":15771.88,"adjuster":"TChalla","insured":"Cheslie","payee":"Parker"}
+{"claim_id":30,"claim_type":"personal injury protection","claim_amount_usd":5884.3,"adjuster":"Nebula","insured":"Merilee","payee":"Thanos"}
+{"claim_id":31,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":24807.97,"adjuster":"Peggy","insured":"Aleen","payee":"Katy"}
+{"claim_id":32,"claim_type":"property damage liability","claim_amount_usd":16973.33,"adjuster":"Nebula","insured":"Emlynn","payee":"Okoye"}
+{"claim_id":33,"claim_type":"comprehensive","claim_amount_usd":28628.91,"adjuster":"Nebula","insured":"Rabi","payee":"Groot"}
+{"claim_id":34,"claim_type":"bodily injury liability","claim_amount_usd":16590.3,"adjuster":"Wanda","insured":"Orin","payee":"Katy"}
+{"claim_id":35,"claim_type":"personal injury protection","claim_amount_usd":7551.15,"adjuster":"Tony","insured":"Allyn","payee":"Rocket"}
+{"claim_id":36,"claim_type":"property damage liability","claim_amount_usd":11473.67,"adjuster":"Gamora","insured":"Barton","payee":"Thanos"}
+{"claim_id":37,"claim_type":"property damage liability","claim_amount_usd":17078.79,"adjuster":"Natasha","insured":"Edy","payee":"Thanos"}
+{"claim_id":38,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":18744.0,"adjuster":"Thor","insured":"Darsie","payee":"Shuri"}
+{"claim_id":39,"claim_type":"property damage liability","claim_amount_usd":3078.03,"adjuster":"TChalla","insured":"Brandise","payee":"Groot"}
+{"claim_id":40,"claim_type":"collision","claim_amount_usd":23855.89,"adjuster":"Nebula","insured":"Albertina","payee":"Thanos"}
+{"claim_id":41,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":14244.4,"adjuster":"TChalla","insured":"Chantalle","payee":"Thanos"}
+{"claim_id":42,"claim_type":"comprehensive","claim_amount_usd":1648.32,"adjuster":"Wanda","insured":"Allan","payee":"Thanos"}
+{"claim_id":43,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":5313.34,"adjuster":"Steve","insured":"Franciskus","payee":"Shuri"}
+{"claim_id":44,"claim_type":"collision","claim_amount_usd":10666.7,"adjuster":"Peggy","insured":"Giorgio","payee":"Rocket"}
+{"claim_id":45,"claim_type":"property damage liability","claim_amount_usd":14962.83,"adjuster":"Wanda","insured":"Aurie","payee":"Wong"}
+{"claim_id":46,"claim_type":"comprehensive","claim_amount_usd":13383.38,"adjuster":"TChalla","insured":"Stefan","payee":"Groot"}
+{"claim_id":47,"claim_type":"comprehensive","claim_amount_usd":6329.81,"adjuster":"Nebula","insured":"Godard","payee":"Parker"}
+{"claim_id":48,"claim_type":"personal injury protection","claim_amount_usd":16648.29,"adjuster":"Tony","insured":"Karole","payee":"Shuri"}
+{"claim_id":49,"claim_type":"personal injury protection","claim_amount_usd":27200.54,"adjuster":"Wanda","insured":"Hamid","payee":"Stephen"}
+{"claim_id":50,"claim_type":"personal injury protection","claim_amount_usd":3071.5,"adjuster":"Nebula","insured":"Torre","payee":"Thanos"}
+{"claim_id":51,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":6797.98,"adjuster":"Nebula","insured":"Clemente","payee":"Thanos"}
+{"claim_id":52,"claim_type":"bodily injury liability","claim_amount_usd":25289.26,"adjuster":"Wanda","insured":"Barny","payee":"Thanos"}
+{"claim_id":53,"claim_type":"personal injury protection","claim_amount_usd":22214.45,"adjuster":"Thor","insured":"Zola","payee":"Rocket"}
+{"claim_id":54,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":25192.91,"adjuster":"Nebula","insured":"Zachariah","payee":"Wong"}
+{"claim_id":55,"claim_type":"property damage liability","claim_amount_usd":1433.35,"adjuster":"Peggy","insured":"Joelle","payee":"Katy"}
+{"claim_id":56,"claim_type":"property damage liability","claim_amount_usd":7042.89,"adjuster":"Peter","insured":"Andromache","payee":"Parker"}
+{"claim_id":57,"claim_type":"property damage liability","claim_amount_usd":28647.31,"adjuster":"Nebula","insured":"Ariella","payee":"Thanos"}
+{"claim_id":58,"claim_type":"collision","claim_amount_usd":19002.04,"adjuster":"Steve","insured":"Thurstan","payee":"Thanos"}
+{"claim_id":59,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":13897.87,"adjuster":"Wanda","insured":"Breanne","payee":"Thanos"}
+{"claim_id":60,"claim_type":"property damage liability","claim_amount_usd":25234.15,"adjuster":"Peter","insured":"Dierdre","payee":"Parker"}
+{"claim_id":61,"claim_type":"personal injury protection","claim_amount_usd":11570.12,"adjuster":"Wanda","insured":"Faye","payee":"Groot"}
+{"claim_id":62,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":17171.66,"adjuster":"Natasha","insured":"Alix","payee":"Thanos"}
+{"claim_id":63,"claim_type":"comprehensive","claim_amount_usd":25899.65,"adjuster":"Nebula","insured":"Deane","payee":"Nick"}
+{"claim_id":64,"claim_type":"property damage liability","claim_amount_usd":11483.85,"adjuster":"Peter","insured":"Arnoldo","payee":"Okoye"}
+{"claim_id":65,"claim_type":"bodily injury liability","claim_amount_usd":29242.11,"adjuster":"Nebula","insured":"Babbette","payee":"Thanos"}
+{"claim_id":66,"claim_type":"bodily injury liability","claim_amount_usd":5074.28,"adjuster":"Nebula","insured":"Mile","payee":"Thanos"}
+{"claim_id":67,"claim_type":"property damage liability","claim_amount_usd":29876.47,"adjuster":"Nebula","insured":"Ericka","payee":"Parker"}
+{"claim_id":68,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":25651.07,"adjuster":"Nebula","insured":"Bellina","payee":"Groot"}
+{"claim_id":69,"claim_type":"comprehensive","claim_amount_usd":9234.99,"adjuster":"Nebula","insured":"Gareth","payee":"Nick"}
+{"claim_id":70,"claim_type":"bodily injury liability","claim_amount_usd":14298.0,"adjuster":"TChalla","insured":"Anita","payee":"Shuri"}
+{"claim_id":71,"claim_type":"personal injury protection","claim_amount_usd":4649.99,"adjuster":"Natasha","insured":"Mae","payee":"Thanos"}
+{"claim_id":72,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":11889.75,"adjuster":"Tony","insured":"Carolus","payee":"Thanos"}
+{"claim_id":73,"claim_type":"personal injury protection","claim_amount_usd":14119.78,"adjuster":"Steve","insured":"Avivah","payee":"Shuri"}
+{"claim_id":74,"claim_type":"collision","claim_amount_usd":10422.82,"adjuster":"Peggy","insured":"Arni","payee":"Thanos"}
+{"claim_id":75,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":4076.83,"adjuster":"Nebula","insured":"Keslie","payee":"Parker"}
+{"claim_id":76,"claim_type":"personal injury protection","claim_amount_usd":22115.93,"adjuster":"Thor","insured":"Becca","payee":"Thanos"}
+{"claim_id":77,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":10287.83,"adjuster":"Steve","insured":"Timothy","payee":"Stephen"}
+{"claim_id":78,"claim_type":"personal injury protection","claim_amount_usd":4803.3,"adjuster":"Wanda","insured":"Nessa","payee":"Thanos"}
+{"claim_id":79,"claim_type":"comprehensive","claim_amount_usd":12077.81,"adjuster":"Wanda","insured":"Joshuah","payee":"Thanos"}
+{"claim_id":80,"claim_type":"property damage liability","claim_amount_usd":1166.08,"adjuster":"Nebula","insured":"Celie","payee":"Shuri"}
+{"claim_id":81,"claim_type":"personal injury protection","claim_amount_usd":3593.3,"adjuster":"Peter","insured":"Bernelle","payee":"Katy"}
+{"claim_id":82,"claim_type":"property damage liability","claim_amount_usd":12402.47,"adjuster":"Nebula","insured":"Zora","payee":"Thanos"}
+{"claim_id":83,"claim_type":"collision","claim_amount_usd":13206.07,"adjuster":"Peggy","insured":"Nikolos","payee":"Stephen"}
+{"claim_id":84,"claim_type":"bodily injury liability","claim_amount_usd":9801.23,"adjuster":"Gamora","insured":"Miguelita","payee":"Groot"}
+{"claim_id":85,"claim_type":"bodily injury liability","claim_amount_usd":18261.44,"adjuster":"Thor","insured":"Gene","payee":"Katy"}
+{"claim_id":86,"claim_type":"collision","claim_amount_usd":7248.56,"adjuster":"Gamora","insured":"Elli","payee":"Stephen"}
+{"claim_id":87,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":22695.05,"adjuster":"Natasha","insured":"Una","payee":"Thanos"}
+{"claim_id":88,"claim_type":"collision","claim_amount_usd":12945.4,"adjuster":"TChalla","insured":"Agna","payee":"Thanos"}
+{"claim_id":89,"claim_type":"collision","claim_amount_usd":28778.22,"adjuster":"Wanda","insured":"Dolli","payee":"Thanos"}
+{"claim_id":90,"claim_type":"property damage liability","claim_amount_usd":24729.25,"adjuster":"Peter","insured":"Sandy","payee":"Thanos"}
+{"claim_id":91,"claim_type":"collision","claim_amount_usd":29451.07,"adjuster":"Thor","insured":"Cheryl","payee":"Thanos"}
+{"claim_id":92,"claim_type":"comprehensive","claim_amount_usd":22955.37,"adjuster":"TChalla","insured":"Erinna","payee":"Shuri"}
+{"claim_id":93,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":27508.53,"adjuster":"Nebula","insured":"Lelah","payee":"Groot"}
+{"claim_id":94,"claim_type":"bodily injury liability","claim_amount_usd":15588.82,"adjuster":"Nebula","insured":"Kipp","payee":"Thanos"}
+{"claim_id":95,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":8510.16,"adjuster":"Natasha","insured":"Alena","payee":"Thanos"}
+{"claim_id":96,"claim_type":"comprehensive","claim_amount_usd":28590.63,"adjuster":"Nebula","insured":"Beret","payee":"Thanos"}
+{"claim_id":97,"claim_type":"collision","claim_amount_usd":11835.45,"adjuster":"Tony","insured":"Pru","payee":"Katy"}
+{"claim_id":98,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":13002.31,"adjuster":"Nebula","insured":"My","payee":"Shuri"}
+{"claim_id":99,"claim_type":"bodily injury liability","claim_amount_usd":5978.7,"adjuster":"Natasha","insured":"Donnell","payee":"Thanos"}
+{"claim_id":100,"claim_type":"personal injury protection","claim_amount_usd":2496.96,"adjuster":"Nebula","insured":"Melisandra","payee":"Katy"}
+{"claim_id":101,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":11710.05,"adjuster":"Nebula","insured":"Benjie","payee":"Okoye"}
+{"claim_id":102,"claim_type":"bodily injury liability","claim_amount_usd":9514.99,"adjuster":"Nebula","insured":"Clarine","payee":"Wong"}
+{"claim_id":103,"claim_type":"personal injury protection","claim_amount_usd":18613.91,"adjuster":"Tony","insured":"Derick","payee":"Thanos"}
+{"claim_id":104,"claim_type":"property damage liability","claim_amount_usd":16535.53,"adjuster":"Nebula","insured":"Desmund","payee":"Thanos"}
+{"claim_id":105,"claim_type":"collision","claim_amount_usd":10575.8,"adjuster":"Peggy","insured":"Bertram","payee":"Thanos"}
+{"claim_id":106,"claim_type":"collision","claim_amount_usd":6967.52,"adjuster":"Thor","insured":"Tobin","payee":"Okoye"}
+{"claim_id":107,"claim_type":"property damage liability","claim_amount_usd":6234.4,"adjuster":"Nebula","insured":"Mela","payee":"Rocket"}
+{"claim_id":108,"claim_type":"property damage liability","claim_amount_usd":29410.77,"adjuster":"Steve","insured":"Kata","payee":"Wong"}
+{"claim_id":109,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":8956.09,"adjuster":"Wanda","insured":"Kale","payee":"Stephen"}
+{"claim_id":110,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":26636.8,"adjuster":"Peter","insured":"Theodora","payee":"Groot"}
+{"claim_id":111,"claim_type":"comprehensive","claim_amount_usd":18941.04,"adjuster":"Nebula","insured":"Minnnie","payee":"Wong"}
+{"claim_id":112,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":22709.09,"adjuster":"Tony","insured":"Bryn","payee":"Groot"}
+{"claim_id":113,"claim_type":"personal injury protection","claim_amount_usd":931.15,"adjuster":"Nebula","insured":"Care","payee":"Rocket"}
+{"claim_id":114,"claim_type":"property damage liability","claim_amount_usd":14025.38,"adjuster":"Thor","insured":"Torre","payee":"Nick"}
+{"claim_id":115,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":8215.45,"adjuster":"Thor","insured":"Michele","payee":"Groot"}
+{"claim_id":116,"claim_type":"personal injury protection","claim_amount_usd":3158.26,"adjuster":"Gamora","insured":"Guthry","payee":"Rocket"}
+{"claim_id":117,"claim_type":"property damage liability","claim_amount_usd":29800.45,"adjuster":"Nebula","insured":"Yanaton","payee":"Thanos"}
+{"claim_id":118,"claim_type":"personal injury protection","claim_amount_usd":22484.22,"adjuster":"Tony","insured":"Barron","payee":"Thanos"}
+{"claim_id":119,"claim_type":"collision","claim_amount_usd":14551.91,"adjuster":"Nebula","insured":"Page","payee":"Wong"}
+{"claim_id":120,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":10852.57,"adjuster":"Thor","insured":"Corie","payee":"Thanos"}
+{"claim_id":121,"claim_type":"bodily injury liability","claim_amount_usd":16014.59,"adjuster":"Gamora","insured":"Randell","payee":"Thanos"}
+{"claim_id":122,"claim_type":"property damage liability","claim_amount_usd":13171.86,"adjuster":"Tony","insured":"Haily","payee":"Thanos"}
+{"claim_id":123,"claim_type":"personal injury protection","claim_amount_usd":25263.26,"adjuster":"Thor","insured":"Ervin","payee":"Wong"}
+{"claim_id":124,"claim_type":"property damage liability","claim_amount_usd":12818.24,"adjuster":"Natasha","insured":"Michele","payee":"Thanos"}
+{"claim_id":125,"claim_type":"personal injury protection","claim_amount_usd":12243.74,"adjuster":"Nebula","insured":"Johan","payee":"Stephen"}
+{"claim_id":126,"claim_type":"comprehensive","claim_amount_usd":19687.81,"adjuster":"Thor","insured":"Cosmo","payee":"Wong"}
+{"claim_id":127,"claim_type":"personal injury protection","claim_amount_usd":8210.1,"adjuster":"Nebula","insured":"Francesco","payee":"Groot"}
+{"claim_id":128,"claim_type":"personal injury protection","claim_amount_usd":1852.5,"adjuster":"Nebula","insured":"Teador","payee":"Thanos"}
+{"claim_id":129,"claim_type":"bodily injury liability","claim_amount_usd":2689.25,"adjuster":"TChalla","insured":"Carrie","payee":"Thanos"}
+{"claim_id":130,"claim_type":"personal injury protection","claim_amount_usd":5650.73,"adjuster":"Peggy","insured":"Brittni","payee":"Thanos"}
+{"claim_id":131,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":28951.27,"adjuster":"Natasha","insured":"Tanney","payee":"Okoye"}
+{"claim_id":132,"claim_type":"collision","claim_amount_usd":11052.0,"adjuster":"Gamora","insured":"Traver","payee":"Groot"}
+{"claim_id":133,"claim_type":"property damage liability","claim_amount_usd":20664.46,"adjuster":"Thor","insured":"Morton","payee":"Stephen"}
+{"claim_id":134,"claim_type":"comprehensive","claim_amount_usd":10199.12,"adjuster":"TChalla","insured":"Fergus","payee":"Nick"}
+{"claim_id":135,"claim_type":"collision","claim_amount_usd":18389.43,"adjuster":"TChalla","insured":"Paulette","payee":"Wong"}
+{"claim_id":136,"claim_type":"bodily injury liability","claim_amount_usd":10784.01,"adjuster":"Wanda","insured":"Celene","payee":"Wong"}
+{"claim_id":137,"claim_type":"personal injury protection","claim_amount_usd":19869.01,"adjuster":"Nebula","insured":"Delcine","payee":"Thanos"}
+{"claim_id":138,"claim_type":"bodily injury liability","claim_amount_usd":18620.11,"adjuster":"Nebula","insured":"Cullin","payee":"Nick"}
+{"claim_id":139,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":22578.58,"adjuster":"Steve","insured":"Fenelia","payee":"Thanos"}
+{"claim_id":140,"claim_type":"personal injury protection","claim_amount_usd":13604.58,"adjuster":"Natasha","insured":"Charlena","payee":"Thanos"}
+{"claim_id":141,"claim_type":"comprehensive","claim_amount_usd":25093.14,"adjuster":"Gamora","insured":"Alexio","payee":"Thanos"}
+{"claim_id":142,"claim_type":"bodily injury liability","claim_amount_usd":16190.51,"adjuster":"Nebula","insured":"Morry","payee":"Nick"}
+{"claim_id":143,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":5787.39,"adjuster":"Nebula","insured":"Idell","payee":"Rocket"}
+{"claim_id":144,"claim_type":"personal injury protection","claim_amount_usd":25040.34,"adjuster":"Peggy","insured":"Laurel","payee":"Thanos"}
+{"claim_id":145,"claim_type":"property damage liability","claim_amount_usd":28193.93,"adjuster":"Steve","insured":"Lyell","payee":"Thanos"}
+{"claim_id":146,"claim_type":"property damage liability","claim_amount_usd":29118.18,"adjuster":"Nebula","insured":"Herman","payee":"Thanos"}
+{"claim_id":147,"claim_type":"personal injury protection","claim_amount_usd":436.96,"adjuster":"Tony","insured":"Mireielle","payee":"Nick"}
+{"claim_id":148,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":25005.04,"adjuster":"Natasha","insured":"Susi","payee":"Groot"}
+{"claim_id":149,"claim_type":"personal injury protection","claim_amount_usd":9569.4,"adjuster":"TChalla","insured":"Arch","payee":"Thanos"}
+{"claim_id":150,"claim_type":"comprehensive","claim_amount_usd":15109.77,"adjuster":"Nebula","insured":"Rosalia","payee":"Nick"}
+{"claim_id":151,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":6524.65,"adjuster":"Peggy","insured":"Hatti","payee":"Thanos"}
+{"claim_id":152,"claim_type":"collision","claim_amount_usd":24882.77,"adjuster":"Peggy","insured":"Elihu","payee":"Thanos"}
+{"claim_id":153,"claim_type":"collision","claim_amount_usd":5974.15,"adjuster":"Thor","insured":"Claudianus","payee":"Stephen"}
+{"claim_id":154,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":6435.48,"adjuster":"Steve","insured":"Malvina","payee":"Thanos"}
+{"claim_id":155,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":15990.47,"adjuster":"Natasha","insured":"Neddy","payee":"Katy"}
+{"claim_id":156,"claim_type":"personal injury protection","claim_amount_usd":14860.87,"adjuster":"Wanda","insured":"Christalle","payee":"Groot"}
+{"claim_id":157,"claim_type":"comprehensive","claim_amount_usd":28688.76,"adjuster":"Steve","insured":"Sharla","payee":"Rocket"}
+{"claim_id":158,"claim_type":"personal injury protection","claim_amount_usd":20289.23,"adjuster":"Nebula","insured":"Liane","payee":"Stephen"}
+{"claim_id":159,"claim_type":"property damage liability","claim_amount_usd":6224.49,"adjuster":"Peggy","insured":"Carny","payee":"Wong"}
+{"claim_id":160,"claim_type":"collision","claim_amount_usd":16999.49,"adjuster":"Nebula","insured":"Nestor","payee":"Katy"}
+{"claim_id":161,"claim_type":"collision","claim_amount_usd":11634.1,"adjuster":"Nebula","insured":"Deane","payee":"Parker"}
+{"claim_id":162,"claim_type":"personal injury protection","claim_amount_usd":15801.32,"adjuster":"Nebula","insured":"Quinn","payee":"Okoye"}
+{"claim_id":163,"claim_type":"bodily injury liability","claim_amount_usd":13148.61,"adjuster":"Nebula","insured":"Martina","payee":"Okoye"}
+{"claim_id":164,"claim_type":"property damage liability","claim_amount_usd":13678.81,"adjuster":"Nebula","insured":"Charis","payee":"Wong"}
+{"claim_id":165,"claim_type":"comprehensive","claim_amount_usd":2281.88,"adjuster":"Thor","insured":"Chicky","payee":"Thanos"}
+{"claim_id":166,"claim_type":"bodily injury liability","claim_amount_usd":116.01,"adjuster":"Peggy","insured":"Codi","payee":"Groot"}
+{"claim_id":167,"claim_type":"property damage liability","claim_amount_usd":28589.99,"adjuster":"Nebula","insured":"Edan","payee":"Groot"}
+{"claim_id":168,"claim_type":"property damage liability","claim_amount_usd":3045.03,"adjuster":"Peggy","insured":"Mervin","payee":"Rocket"}
+{"claim_id":169,"claim_type":"comprehensive","claim_amount_usd":1960.08,"adjuster":"Tony","insured":"Johann","payee":"Rocket"}
+{"claim_id":170,"claim_type":"property damage liability","claim_amount_usd":9894.0,"adjuster":"Peggy","insured":"Buddie","payee":"Shuri"}
+{"claim_id":171,"claim_type":"personal injury protection","claim_amount_usd":15067.36,"adjuster":"Nebula","insured":"Renell","payee":"Shuri"}
+{"claim_id":172,"claim_type":"comprehensive","claim_amount_usd":24352.74,"adjuster":"Nebula","insured":"Lillis","payee":"Wong"}
+{"claim_id":173,"claim_type":"bodily injury liability","claim_amount_usd":6905.32,"adjuster":"Nebula","insured":"Pietro","payee":"Shuri"}
+{"claim_id":174,"claim_type":"bodily injury liability","claim_amount_usd":28474.18,"adjuster":"Nebula","insured":"Antonietta","payee":"Parker"}
+{"claim_id":175,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":548.0,"adjuster":"Peggy","insured":"Blaine","payee":"Wong"}
+{"claim_id":176,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":24649.56,"adjuster":"Nebula","insured":"Liv","payee":"Rocket"}
+{"claim_id":177,"claim_type":"personal injury protection","claim_amount_usd":8342.51,"adjuster":"Tony","insured":"Aylmer","payee":"Thanos"}
+{"claim_id":178,"claim_type":"property damage liability","claim_amount_usd":2681.37,"adjuster":"TChalla","insured":"Ursula","payee":"Groot"}
+{"claim_id":179,"claim_type":"personal injury protection","claim_amount_usd":25788.26,"adjuster":"Gamora","insured":"Rawley","payee":"Shuri"}
+{"claim_id":180,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":135.34,"adjuster":"Nebula","insured":"Linnea","payee":"Katy"}
+{"claim_id":181,"claim_type":"comprehensive","claim_amount_usd":15971.4,"adjuster":"Gamora","insured":"Jerrold","payee":"Thanos"}
+{"claim_id":182,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":11723.42,"adjuster":"Wanda","insured":"Ariel","payee":"Thanos"}
+{"claim_id":183,"claim_type":"personal injury protection","claim_amount_usd":11698.19,"adjuster":"Natasha","insured":"Isa","payee":"Rocket"}
+{"claim_id":184,"claim_type":"property damage liability","claim_amount_usd":13843.06,"adjuster":"TChalla","insured":"Kaycee","payee":"Shuri"}
+{"claim_id":185,"claim_type":"comprehensive","claim_amount_usd":11433.74,"adjuster":"Nebula","insured":"Darnall","payee":"Groot"}
+{"claim_id":186,"claim_type":"property damage liability","claim_amount_usd":18633.84,"adjuster":"Wanda","insured":"Casey","payee":"Wong"}
+{"claim_id":187,"claim_type":"bodily injury liability","claim_amount_usd":9974.28,"adjuster":"Gamora","insured":"Elden","payee":"Thanos"}
+{"claim_id":188,"claim_type":"personal injury protection","claim_amount_usd":8620.48,"adjuster":"Natasha","insured":"Whitaker","payee":"Thanos"}
+{"claim_id":189,"claim_type":"bodily injury liability","claim_amount_usd":21606.22,"adjuster":"Natasha","insured":"Dur","payee":"Thanos"}
+{"claim_id":190,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":23255.17,"adjuster":"Thor","insured":"Ardene","payee":"Thanos"}
+{"claim_id":191,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":10089.12,"adjuster":"Gamora","insured":"Lilia","payee":"Shuri"}
+{"claim_id":192,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":9040.13,"adjuster":"Nebula","insured":"Nikolai","payee":"Stephen"}
+{"claim_id":193,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":14098.36,"adjuster":"Peggy","insured":"Yance","payee":"Katy"}
+{"claim_id":194,"claim_type":"property damage liability","claim_amount_usd":8998.96,"adjuster":"Tony","insured":"Truda","payee":"Rocket"}
+{"claim_id":195,"claim_type":"collision","claim_amount_usd":27147.29,"adjuster":"Peggy","insured":"Roselin","payee":"Thanos"}
+{"claim_id":196,"claim_type":"property damage liability","claim_amount_usd":10532.98,"adjuster":"Nebula","insured":"Mario","payee":"Thanos"}
+{"claim_id":197,"claim_type":"collision","claim_amount_usd":14341.48,"adjuster":"Natasha","insured":"Lindy","payee":"Okoye"}
+{"claim_id":198,"claim_type":"collision","claim_amount_usd":17632.7,"adjuster":"Nebula","insured":"Regan","payee":"Okoye"}
+{"claim_id":199,"claim_type":"property damage liability","claim_amount_usd":2709.8,"adjuster":"Steve","insured":"Carlie","payee":"Nick"}
+{"claim_id":200,"claim_type":"property damage liability","claim_amount_usd":1652.41,"adjuster":"Natasha","insured":"Barnabas","payee":"Katy"}
+{"claim_id":201,"claim_type":"bodily injury liability","claim_amount_usd":4869.0,"adjuster":"Nebula","insured":"Teodora","payee":"Thanos"}
+{"claim_id":202,"claim_type":"personal injury protection","claim_amount_usd":23123.75,"adjuster":"Nebula","insured":"Lorant","payee":"Thanos"}
+{"claim_id":203,"claim_type":"personal injury protection","claim_amount_usd":27235.55,"adjuster":"Nebula","insured":"Hertha","payee":"Okoye"}
+{"claim_id":204,"claim_type":"bodily injury liability","claim_amount_usd":7086.01,"adjuster":"Nebula","insured":"Crawford","payee":"Rocket"}
+{"claim_id":205,"claim_type":"comprehensive","claim_amount_usd":10176.93,"adjuster":"Nebula","insured":"Elfie","payee":"Thanos"}
+{"claim_id":206,"claim_type":"personal injury protection","claim_amount_usd":26035.13,"adjuster":"Steve","insured":"Robin","payee":"Nick"}
+{"claim_id":207,"claim_type":"property damage liability","claim_amount_usd":7607.47,"adjuster":"Nebula","insured":"Kristina","payee":"Thanos"}
+{"claim_id":208,"claim_type":"comprehensive","claim_amount_usd":10887.67,"adjuster":"Wanda","insured":"Homer","payee":"Wong"}
+{"claim_id":209,"claim_type":"collision","claim_amount_usd":15216.76,"adjuster":"Nebula","insured":"Jen","payee":"Thanos"}
+{"claim_id":210,"claim_type":"bodily injury liability","claim_amount_usd":29786.28,"adjuster":"Nebula","insured":"Maggi","payee":"Nick"}
+{"claim_id":211,"claim_type":"personal injury protection","claim_amount_usd":780.48,"adjuster":"Gamora","insured":"Vallie","payee":"Rocket"}
+{"claim_id":212,"claim_type":"property damage liability","claim_amount_usd":19286.33,"adjuster":"Peter","insured":"Kathy","payee":"Wong"}
+{"claim_id":213,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":20900.8,"adjuster":"Thor","insured":"Merill","payee":"Wong"}
+{"claim_id":214,"claim_type":"personal injury protection","claim_amount_usd":21424.21,"adjuster":"TChalla","insured":"Jacenta","payee":"Thanos"}
+{"claim_id":215,"claim_type":"property damage liability","claim_amount_usd":11794.1,"adjuster":"Steve","insured":"Vivyan","payee":"Wong"}
+{"claim_id":216,"claim_type":"property damage liability","claim_amount_usd":3518.28,"adjuster":"Tony","insured":"Devi","payee":"Thanos"}
+{"claim_id":217,"claim_type":"property damage liability","claim_amount_usd":13539.81,"adjuster":"Nebula","insured":"Margaret","payee":"Rocket"}
+{"claim_id":218,"claim_type":"bodily injury liability","claim_amount_usd":14247.91,"adjuster":"TChalla","insured":"Alasdair","payee":"Rocket"}
+{"claim_id":219,"claim_type":"personal injury protection","claim_amount_usd":20550.69,"adjuster":"Wanda","insured":"Magnum","payee":"Katy"}
+{"claim_id":220,"claim_type":"property damage liability","claim_amount_usd":22703.67,"adjuster":"TChalla","insured":"Joelynn","payee":"Katy"}
+{"claim_id":221,"claim_type":"collision","claim_amount_usd":11166.94,"adjuster":"Wanda","insured":"Cello","payee":"Nick"}
+{"claim_id":222,"claim_type":"bodily injury liability","claim_amount_usd":13828.56,"adjuster":"Steve","insured":"Woody","payee":"Parker"}
+{"claim_id":223,"claim_type":"comprehensive","claim_amount_usd":24921.74,"adjuster":"Peggy","insured":"Johannes","payee":"Wong"}
+{"claim_id":224,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":15013.89,"adjuster":"Nebula","insured":"Burl","payee":"Okoye"}
+{"claim_id":225,"claim_type":"comprehensive","claim_amount_usd":21272.53,"adjuster":"Natasha","insured":"George","payee":"Thanos"}
+{"claim_id":226,"claim_type":"personal injury protection","claim_amount_usd":20210.01,"adjuster":"Tony","insured":"Dimitri","payee":"Okoye"}
+{"claim_id":227,"claim_type":"property damage liability","claim_amount_usd":11353.46,"adjuster":"Natasha","insured":"Blondy","payee":"Thanos"}
+{"claim_id":228,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":14268.48,"adjuster":"Nebula","insured":"Daisey","payee":"Wong"}
+{"claim_id":229,"claim_type":"property damage liability","claim_amount_usd":29964.65,"adjuster":"Tony","insured":"Parker","payee":"Thanos"}
+{"claim_id":230,"claim_type":"personal injury protection","claim_amount_usd":1826.84,"adjuster":"Tony","insured":"Kimberly","payee":"Nick"}
+{"claim_id":231,"claim_type":"collision","claim_amount_usd":23966.85,"adjuster":"Steve","insured":"Othella","payee":"Thanos"}
+{"claim_id":232,"claim_type":"comprehensive","claim_amount_usd":20585.44,"adjuster":"Gamora","insured":"Robin","payee":"Wong"}
+{"claim_id":233,"claim_type":"comprehensive","claim_amount_usd":27026.61,"adjuster":"Nebula","insured":"Byram","payee":"Rocket"}
+{"claim_id":234,"claim_type":"personal injury protection","claim_amount_usd":11005.78,"adjuster":"Gamora","insured":"Hestia","payee":"Katy"}
+{"claim_id":235,"claim_type":"collision","claim_amount_usd":1028.5,"adjuster":"Thor","insured":"Debora","payee":"Thanos"}
+{"claim_id":236,"claim_type":"personal injury protection","claim_amount_usd":22847.62,"adjuster":"Nebula","insured":"Josefina","payee":"Stephen"}
+{"claim_id":237,"claim_type":"comprehensive","claim_amount_usd":9126.1,"adjuster":"Nebula","insured":"Virgil","payee":"Groot"}
+{"claim_id":238,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":9914.11,"adjuster":"Steve","insured":"Lettie","payee":"Thanos"}
+{"claim_id":239,"claim_type":"property damage liability","claim_amount_usd":13710.63,"adjuster":"Wanda","insured":"Brendis","payee":"Thanos"}
+{"claim_id":240,"claim_type":"personal injury protection","claim_amount_usd":18449.22,"adjuster":"Peggy","insured":"Rebeka","payee":"Parker"}
+{"claim_id":241,"claim_type":"comprehensive","claim_amount_usd":29125.59,"adjuster":"Peggy","insured":"Krystal","payee":"Thanos"}
+{"claim_id":242,"claim_type":"collision","claim_amount_usd":18142.39,"adjuster":"Nebula","insured":"Katee","payee":"Okoye"}
+{"claim_id":243,"claim_type":"personal injury protection","claim_amount_usd":12210.47,"adjuster":"Thor","insured":"Lorelei","payee":"Thanos"}
+{"claim_id":244,"claim_type":"bodily injury liability","claim_amount_usd":7829.94,"adjuster":"Nebula","insured":"Michaella","payee":"Nick"}
+{"claim_id":245,"claim_type":"comprehensive","claim_amount_usd":17715.8,"adjuster":"Wanda","insured":"Florella","payee":"Stephen"}
+{"claim_id":246,"claim_type":"bodily injury liability","claim_amount_usd":23582.38,"adjuster":"Wanda","insured":"Tonya","payee":"Shuri"}
+{"claim_id":247,"claim_type":"collision","claim_amount_usd":8560.43,"adjuster":"Nebula","insured":"Gail","payee":"Wong"}
+{"claim_id":248,"claim_type":"comprehensive","claim_amount_usd":16911.89,"adjuster":"Nebula","insured":"Adamo","payee":"Rocket"}
+{"claim_id":249,"claim_type":"collision","claim_amount_usd":22497.47,"adjuster":"Nebula","insured":"Sonny","payee":"Okoye"}
+{"claim_id":250,"claim_type":"property damage liability","claim_amount_usd":16607.69,"adjuster":"Wanda","insured":"Blondie","payee":"Thanos"}
+{"claim_id":251,"claim_type":"personal injury protection","claim_amount_usd":10605.8,"adjuster":"Tony","insured":"Amberly","payee":"Thanos"}
+{"claim_id":252,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":19102.03,"adjuster":"Thor","insured":"Giacomo","payee":"Nick"}
+{"claim_id":253,"claim_type":"property damage liability","claim_amount_usd":9451.62,"adjuster":"Peggy","insured":"Cristie","payee":"Thanos"}
+{"claim_id":254,"claim_type":"property damage liability","claim_amount_usd":20776.02,"adjuster":"Nebula","insured":"Darsie","payee":"Okoye"}
+{"claim_id":255,"claim_type":"personal injury protection","claim_amount_usd":9950.48,"adjuster":"Gamora","insured":"Beryle","payee":"Stephen"}
+{"claim_id":256,"claim_type":"personal injury protection","claim_amount_usd":5774.27,"adjuster":"Nebula","insured":"Broddy","payee":"Rocket"}
+{"claim_id":257,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":26564.05,"adjuster":"Nebula","insured":"Ethelind","payee":"Rocket"}
+{"claim_id":258,"claim_type":"collision","claim_amount_usd":846.62,"adjuster":"Tony","insured":"Nerti","payee":"Groot"}
+{"claim_id":259,"claim_type":"bodily injury liability","claim_amount_usd":23429.53,"adjuster":"Tony","insured":"Sylvester","payee":"Parker"}
+{"claim_id":260,"claim_type":"comprehensive","claim_amount_usd":19627.8,"adjuster":"Steve","insured":"Bonni","payee":"Stephen"}
+{"claim_id":261,"claim_type":"comprehensive","claim_amount_usd":24418.27,"adjuster":"Gamora","insured":"Fairlie","payee":"Shuri"}
+{"claim_id":262,"claim_type":"comprehensive","claim_amount_usd":19102.09,"adjuster":"Peggy","insured":"Randal","payee":"Thanos"}
+{"claim_id":263,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":26676.29,"adjuster":"Wanda","insured":"Dante","payee":"Katy"}
+{"claim_id":264,"claim_type":"collision","claim_amount_usd":7597.9,"adjuster":"Natasha","insured":"Gardie","payee":"Thanos"}
+{"claim_id":265,"claim_type":"bodily injury liability","claim_amount_usd":665.47,"adjuster":"Nebula","insured":"Wilmette","payee":"Thanos"}
+{"claim_id":266,"claim_type":"bodily injury liability","claim_amount_usd":18059.34,"adjuster":"Nebula","insured":"Evered","payee":"Rocket"}
+{"claim_id":267,"claim_type":"property damage liability","claim_amount_usd":21992.38,"adjuster":"Tony","insured":"Waldemar","payee":"Parker"}
+{"claim_id":268,"claim_type":"property damage liability","claim_amount_usd":2397.12,"adjuster":"Peter","insured":"Wynny","payee":"Thanos"}
+{"claim_id":269,"claim_type":"property damage liability","claim_amount_usd":9963.53,"adjuster":"Peter","insured":"Pren","payee":"Thanos"}
+{"claim_id":270,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":14451.99,"adjuster":"Nebula","insured":"Drusie","payee":"Thanos"}
+{"claim_id":271,"claim_type":"personal injury protection","claim_amount_usd":8583.88,"adjuster":"Nebula","insured":"Lilias","payee":"Thanos"}
+{"claim_id":272,"claim_type":"comprehensive","claim_amount_usd":26778.6,"adjuster":"TChalla","insured":"Jefferey","payee":"Wong"}
+{"claim_id":273,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":11046.68,"adjuster":"Tony","insured":"Ingelbert","payee":"Parker"}
+{"claim_id":274,"claim_type":"collision","claim_amount_usd":20322.05,"adjuster":"Nebula","insured":"Gloria","payee":"Thanos"}
+{"claim_id":275,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":5467.9,"adjuster":"Natasha","insured":"Sigismundo","payee":"Thanos"}
+{"claim_id":276,"claim_type":"bodily injury liability","claim_amount_usd":11952.85,"adjuster":"Nebula","insured":"Dalis","payee":"Shuri"}
+{"claim_id":277,"claim_type":"bodily injury liability","claim_amount_usd":17305.58,"adjuster":"Peggy","insured":"Almira","payee":"Okoye"}
+{"claim_id":278,"claim_type":"property damage liability","claim_amount_usd":1420.79,"adjuster":"Nebula","insured":"Alleyn","payee":"Thanos"}
+{"claim_id":279,"claim_type":"comprehensive","claim_amount_usd":13086.87,"adjuster":"Nebula","insured":"Kirstyn","payee":"Thanos"}
+{"claim_id":280,"claim_type":"personal injury protection","claim_amount_usd":8483.88,"adjuster":"Nebula","insured":"Else","payee":"Shuri"}
+{"claim_id":281,"claim_type":"property damage liability","claim_amount_usd":13335.89,"adjuster":"Gamora","insured":"Teddy","payee":"Thanos"}
+{"claim_id":282,"claim_type":"bodily injury liability","claim_amount_usd":24283.2,"adjuster":"Nebula","insured":"Bridgette","payee":"Thanos"}
+{"claim_id":283,"claim_type":"collision","claim_amount_usd":6454.36,"adjuster":"Nebula","insured":"Calida","payee":"Groot"}
+{"claim_id":284,"claim_type":"bodily injury liability","claim_amount_usd":27859.92,"adjuster":"Nebula","insured":"Meade","payee":"Parker"}
+{"claim_id":285,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":14613.96,"adjuster":"Nebula","insured":"Garek","payee":"Rocket"}
+{"claim_id":286,"claim_type":"property damage liability","claim_amount_usd":2757.79,"adjuster":"Nebula","insured":"Esther","payee":"Thanos"}
+{"claim_id":287,"claim_type":"property damage liability","claim_amount_usd":24717.94,"adjuster":"Nebula","insured":"Gan","payee":"Thanos"}
+{"claim_id":288,"claim_type":"comprehensive","claim_amount_usd":18471.18,"adjuster":"Nebula","insured":"Skipton","payee":"Thanos"}
+{"claim_id":289,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":10295.95,"adjuster":"Nebula","insured":"Pamella","payee":"Okoye"}
+{"claim_id":290,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":8159.66,"adjuster":"Natasha","insured":"Geraldine","payee":"Stephen"}
+{"claim_id":291,"claim_type":"collision","claim_amount_usd":5647.06,"adjuster":"Tony","insured":"Rhodie","payee":"Groot"}
+{"claim_id":292,"claim_type":"collision","claim_amount_usd":23687.27,"adjuster":"Natasha","insured":"Adara","payee":"Shuri"}
+{"claim_id":293,"claim_type":"property damage liability","claim_amount_usd":2461.63,"adjuster":"Wanda","insured":"Hope","payee":"Thanos"}
+{"claim_id":294,"claim_type":"collision","claim_amount_usd":18088.74,"adjuster":"Nebula","insured":"Hardy","payee":"Wong"}
+{"claim_id":295,"claim_type":"personal injury protection","claim_amount_usd":18840.36,"adjuster":"Peter","insured":"Turner","payee":"Nick"}
+{"claim_id":296,"claim_type":"property damage liability","claim_amount_usd":14315.93,"adjuster":"Nebula","insured":"Nani","payee":"Wong"}
+{"claim_id":297,"claim_type":"personal injury protection","claim_amount_usd":17453.38,"adjuster":"Nebula","insured":"Marlo","payee":"Rocket"}
+{"claim_id":298,"claim_type":"personal injury protection","claim_amount_usd":28396.8,"adjuster":"Gamora","insured":"Kizzie","payee":"Thanos"}
+{"claim_id":299,"claim_type":"property damage liability","claim_amount_usd":12344.46,"adjuster":"Peggy","insured":"Marris","payee":"Shuri"}
+{"claim_id":300,"claim_type":"comprehensive","claim_amount_usd":21579.93,"adjuster":"Natasha","insured":"Jennilee","payee":"Okoye"}
+{"claim_id":301,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":22288.08,"adjuster":"Nebula","insured":"Rea","payee":"Shuri"}
+{"claim_id":302,"claim_type":"property damage liability","claim_amount_usd":27367.57,"adjuster":"Nebula","insured":"Ruperta","payee":"Thanos"}
+{"claim_id":303,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":15043.8,"adjuster":"TChalla","insured":"Engelbert","payee":"Thanos"}
+{"claim_id":304,"claim_type":"comprehensive","claim_amount_usd":24597.02,"adjuster":"Gamora","insured":"Bethena","payee":"Wong"}
+{"claim_id":305,"claim_type":"bodily injury liability","claim_amount_usd":2096.26,"adjuster":"Nebula","insured":"Ruby","payee":"Katy"}
+{"claim_id":306,"claim_type":"property damage liability","claim_amount_usd":15279.82,"adjuster":"Nebula","insured":"Hailee","payee":"Thanos"}
+{"claim_id":307,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":6344.87,"adjuster":"TChalla","insured":"Jacklyn","payee":"Shuri"}
+{"claim_id":308,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":12814.03,"adjuster":"Gamora","insured":"Bobbe","payee":"Rocket"}
+{"claim_id":309,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":3381.84,"adjuster":"Natasha","insured":"Lacie","payee":"Thanos"}
+{"claim_id":310,"claim_type":"bodily injury liability","claim_amount_usd":3168.96,"adjuster":"Nebula","insured":"Danny","payee":"Rocket"}
+{"claim_id":311,"claim_type":"property damage liability","claim_amount_usd":14172.38,"adjuster":"Nebula","insured":"Carlye","payee":"Groot"}
+{"claim_id":312,"claim_type":"personal injury protection","claim_amount_usd":1063.41,"adjuster":"Peggy","insured":"Welch","payee":"Stephen"}
+{"claim_id":313,"claim_type":"property damage liability","claim_amount_usd":24140.18,"adjuster":"Nebula","insured":"Alvera","payee":"Shuri"}
+{"claim_id":314,"claim_type":"comprehensive","claim_amount_usd":15005.24,"adjuster":"Nebula","insured":"Elise","payee":"Thanos"}
+{"claim_id":315,"claim_type":"property damage liability","claim_amount_usd":26634.34,"adjuster":"Gamora","insured":"Archibald","payee":"Rocket"}
+{"claim_id":316,"claim_type":"personal injury protection","claim_amount_usd":25596.72,"adjuster":"Nebula","insured":"Lela","payee":"Thanos"}
+{"claim_id":317,"claim_type":"collision","claim_amount_usd":10059.84,"adjuster":"Natasha","insured":"Glynn","payee":"Okoye"}
+{"claim_id":318,"claim_type":"personal injury protection","claim_amount_usd":29819.69,"adjuster":"Peter","insured":"Errol","payee":"Thanos"}
+{"claim_id":319,"claim_type":"comprehensive","claim_amount_usd":3771.13,"adjuster":"Nebula","insured":"Bryant","payee":"Thanos"}
+{"claim_id":320,"claim_type":"collision","claim_amount_usd":22231.78,"adjuster":"Tony","insured":"Romain","payee":"Parker"}
+{"claim_id":321,"claim_type":"comprehensive","claim_amount_usd":22798.54,"adjuster":"Wanda","insured":"Hesther","payee":"Katy"}
+{"claim_id":322,"claim_type":"comprehensive","claim_amount_usd":6701.51,"adjuster":"Steve","insured":"Basilio","payee":"Rocket"}
+{"claim_id":323,"claim_type":"bodily injury liability","claim_amount_usd":10084.68,"adjuster":"Nebula","insured":"Bernelle","payee":"Thanos"}
+{"claim_id":324,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":28427.76,"adjuster":"Peter","insured":"Freddy","payee":"Rocket"}
+{"claim_id":325,"claim_type":"comprehensive","claim_amount_usd":6224.8,"adjuster":"Wanda","insured":"Correy","payee":"Wong"}
+{"claim_id":326,"claim_type":"personal injury protection","claim_amount_usd":9638.38,"adjuster":"Nebula","insured":"Helaina","payee":"Thanos"}
+{"claim_id":327,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":17089.16,"adjuster":"Steve","insured":"Erhart","payee":"Wong"}
+{"claim_id":328,"claim_type":"collision","claim_amount_usd":3033.57,"adjuster":"Nebula","insured":"Sylas","payee":"Thanos"}
+{"claim_id":329,"claim_type":"personal injury protection","claim_amount_usd":18477.39,"adjuster":"Peter","insured":"Bartholomeus","payee":"Katy"}
+{"claim_id":330,"claim_type":"bodily injury liability","claim_amount_usd":2824.24,"adjuster":"Wanda","insured":"Olive","payee":"Thanos"}
+{"claim_id":331,"claim_type":"property damage liability","claim_amount_usd":26042.34,"adjuster":"Natasha","insured":"Odell","payee":"Okoye"}
+{"claim_id":332,"claim_type":"bodily injury liability","claim_amount_usd":28385.88,"adjuster":"Steve","insured":"Edy","payee":"Katy"}
+{"claim_id":333,"claim_type":"collision","claim_amount_usd":519.58,"adjuster":"Gamora","insured":"Devlin","payee":"Okoye"}
+{"claim_id":334,"claim_type":"comprehensive","claim_amount_usd":326.75,"adjuster":"Tony","insured":"Geralda","payee":"Parker"}
+{"claim_id":335,"claim_type":"collision","claim_amount_usd":24671.79,"adjuster":"TChalla","insured":"Kingsley","payee":"Nick"}
+{"claim_id":336,"claim_type":"personal injury protection","claim_amount_usd":8905.03,"adjuster":"Wanda","insured":"Constantin","payee":"Nick"}
+{"claim_id":337,"claim_type":"property damage liability","claim_amount_usd":8135.48,"adjuster":"Nebula","insured":"Georgine","payee":"Groot"}
+{"claim_id":338,"claim_type":"collision","claim_amount_usd":1070.24,"adjuster":"Gamora","insured":"Margalo","payee":"Nick"}
+{"claim_id":339,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":15001.72,"adjuster":"Thor","insured":"Lesley","payee":"Okoye"}
+{"claim_id":340,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":26903.59,"adjuster":"Wanda","insured":"Taddeusz","payee":"Stephen"}
+{"claim_id":341,"claim_type":"property damage liability","claim_amount_usd":5630.06,"adjuster":"Nebula","insured":"Valenka","payee":"Thanos"}
+{"claim_id":342,"claim_type":"property damage liability","claim_amount_usd":12765.28,"adjuster":"Nebula","insured":"Brendan","payee":"Katy"}
+{"claim_id":343,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":1600.73,"adjuster":"Peter","insured":"Eddie","payee":"Nick"}
+{"claim_id":344,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":20367.27,"adjuster":"TChalla","insured":"Cristin","payee":"Thanos"}
+{"claim_id":345,"claim_type":"property damage liability","claim_amount_usd":19318.54,"adjuster":"TChalla","insured":"Luce","payee":"Parker"}
+{"claim_id":346,"claim_type":"bodily injury liability","claim_amount_usd":21750.9,"adjuster":"Peggy","insured":"Cristen","payee":"Rocket"}
+{"claim_id":347,"claim_type":"collision","claim_amount_usd":11618.34,"adjuster":"Gamora","insured":"Tatiania","payee":"Nick"}
+{"claim_id":348,"claim_type":"bodily injury liability","claim_amount_usd":1327.3,"adjuster":"Peter","insured":"Leslie","payee":"Parker"}
+{"claim_id":349,"claim_type":"bodily injury liability","claim_amount_usd":2075.18,"adjuster":"Gamora","insured":"Melany","payee":"Katy"}
+{"claim_id":350,"claim_type":"comprehensive","claim_amount_usd":7362.02,"adjuster":"Nebula","insured":"Mallory","payee":"Groot"}
+{"claim_id":351,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":7042.14,"adjuster":"Nebula","insured":"Jacques","payee":"Thanos"}
+{"claim_id":352,"claim_type":"property damage liability","claim_amount_usd":10613.79,"adjuster":"Thor","insured":"Lucila","payee":"Thanos"}
+{"claim_id":353,"claim_type":"bodily injury liability","claim_amount_usd":23363.66,"adjuster":"Nebula","insured":"Wendy","payee":"Okoye"}
+{"claim_id":354,"claim_type":"personal injury protection","claim_amount_usd":11354.42,"adjuster":"Gamora","insured":"Lek","payee":"Thanos"}
+{"claim_id":355,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":25512.47,"adjuster":"Nebula","insured":"Sammy","payee":"Thanos"}
+{"claim_id":356,"claim_type":"comprehensive","claim_amount_usd":8464.78,"adjuster":"Nebula","insured":"Jaquith","payee":"Nick"}
+{"claim_id":357,"claim_type":"bodily injury liability","claim_amount_usd":18580.31,"adjuster":"TChalla","insured":"Hilary","payee":"Thanos"}
+{"claim_id":358,"claim_type":"bodily injury liability","claim_amount_usd":11724.07,"adjuster":"Nebula","insured":"Abigale","payee":"Nick"}
+{"claim_id":359,"claim_type":"property damage liability","claim_amount_usd":28636.3,"adjuster":"Nebula","insured":"Gray","payee":"Katy"}
+{"claim_id":360,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":25076.13,"adjuster":"Nebula","insured":"Gail","payee":"Thanos"}
+{"claim_id":361,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":16858.65,"adjuster":"Wanda","insured":"Karalee","payee":"Rocket"}
+{"claim_id":362,"claim_type":"comprehensive","claim_amount_usd":4860.05,"adjuster":"Peter","insured":"Tobie","payee":"Rocket"}
+{"claim_id":363,"claim_type":"bodily injury liability","claim_amount_usd":7789.02,"adjuster":"Natasha","insured":"Marcel","payee":"Thanos"}
+{"claim_id":364,"claim_type":"collision","claim_amount_usd":6079.94,"adjuster":"Peggy","insured":"Virgilio","payee":"Thanos"}
+{"claim_id":365,"claim_type":"bodily injury liability","claim_amount_usd":13523.41,"adjuster":"Tony","insured":"Joyan","payee":"Thanos"}
+{"claim_id":366,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":14675.92,"adjuster":"Peggy","insured":"Edmon","payee":"Okoye"}
+{"claim_id":367,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":4410.29,"adjuster":"Gamora","insured":"Delano","payee":"Thanos"}
+{"claim_id":368,"claim_type":"comprehensive","claim_amount_usd":27646.81,"adjuster":"Peter","insured":"Sherwynd","payee":"Stephen"}
+{"claim_id":369,"claim_type":"collision","claim_amount_usd":28669.27,"adjuster":"Thor","insured":"Ashley","payee":"Katy"}
+{"claim_id":370,"claim_type":"comprehensive","claim_amount_usd":9326.0,"adjuster":"Peter","insured":"Harriette","payee":"Shuri"}
+{"claim_id":371,"claim_type":"property damage liability","claim_amount_usd":217.08,"adjuster":"Nebula","insured":"Demetrius","payee":"Thanos"}
+{"claim_id":372,"claim_type":"bodily injury liability","claim_amount_usd":8426.58,"adjuster":"Peter","insured":"Rudie","payee":"Thanos"}
+{"claim_id":373,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":28126.87,"adjuster":"Tony","insured":"Zeke","payee":"Wong"}
+{"claim_id":374,"claim_type":"bodily injury liability","claim_amount_usd":17506.0,"adjuster":"Tony","insured":"Hurlee","payee":"Thanos"}
+{"claim_id":375,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":11686.31,"adjuster":"Nebula","insured":"Valentine","payee":"Thanos"}
+{"claim_id":376,"claim_type":"bodily injury liability","claim_amount_usd":29976.57,"adjuster":"Nebula","insured":"Marlowe","payee":"Katy"}
+{"claim_id":377,"claim_type":"bodily injury liability","claim_amount_usd":28094.97,"adjuster":"Wanda","insured":"Weston","payee":"Groot"}
+{"claim_id":378,"claim_type":"bodily injury liability","claim_amount_usd":12245.58,"adjuster":"Wanda","insured":"Hestia","payee":"Thanos"}
+{"claim_id":379,"claim_type":"personal injury protection","claim_amount_usd":27714.64,"adjuster":"Tony","insured":"Elmer","payee":"Katy"}
+{"claim_id":380,"claim_type":"bodily injury liability","claim_amount_usd":13506.21,"adjuster":"Natasha","insured":"Swen","payee":"Stephen"}
+{"claim_id":381,"claim_type":"collision","claim_amount_usd":20957.34,"adjuster":"Thor","insured":"Robin","payee":"Parker"}
+{"claim_id":382,"claim_type":"bodily injury liability","claim_amount_usd":1731.39,"adjuster":"Tony","insured":"Townie","payee":"Shuri"}
+{"claim_id":383,"claim_type":"personal injury protection","claim_amount_usd":10204.76,"adjuster":"Thor","insured":"Margalit","payee":"Stephen"}
+{"claim_id":384,"claim_type":"property damage liability","claim_amount_usd":14412.4,"adjuster":"Thor","insured":"Sonia","payee":"Okoye"}
+{"claim_id":385,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":10506.88,"adjuster":"Nebula","insured":"Rainer","payee":"Thanos"}
+{"claim_id":386,"claim_type":"personal injury protection","claim_amount_usd":185.94,"adjuster":"Peter","insured":"Lyndel","payee":"Thanos"}
+{"claim_id":387,"claim_type":"personal injury protection","claim_amount_usd":14981.85,"adjuster":"Thor","insured":"Griz","payee":"Rocket"}
+{"claim_id":388,"claim_type":"bodily injury liability","claim_amount_usd":11953.19,"adjuster":"Nebula","insured":"Lyle","payee":"Parker"}
+{"claim_id":389,"claim_type":"collision","claim_amount_usd":15493.94,"adjuster":"Nebula","insured":"Hollie","payee":"Parker"}
+{"claim_id":390,"claim_type":"property damage liability","claim_amount_usd":8080.79,"adjuster":"Nebula","insured":"Gunther","payee":"Shuri"}
+{"claim_id":391,"claim_type":"bodily injury liability","claim_amount_usd":6350.42,"adjuster":"Peter","insured":"Yovonnda","payee":"Rocket"}
+{"claim_id":392,"claim_type":"comprehensive","claim_amount_usd":8938.6,"adjuster":"Nebula","insured":"Belinda","payee":"Thanos"}
+{"claim_id":393,"claim_type":"property damage liability","claim_amount_usd":28422.09,"adjuster":"Peter","insured":"Katerine","payee":"Nick"}
+{"claim_id":394,"claim_type":"collision","claim_amount_usd":16431.23,"adjuster":"Nebula","insured":"Cheryl","payee":"Rocket"}
+{"claim_id":395,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":27332.52,"adjuster":"Nebula","insured":"Sully","payee":"Rocket"}
+{"claim_id":396,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":6187.63,"adjuster":"Gamora","insured":"Susanetta","payee":"Rocket"}
+{"claim_id":397,"claim_type":"property damage liability","claim_amount_usd":6365.36,"adjuster":"Thor","insured":"Xymenes","payee":"Rocket"}
+{"claim_id":398,"claim_type":"property damage liability","claim_amount_usd":10083.38,"adjuster":"Tony","insured":"Shawnee","payee":"Thanos"}
+{"claim_id":399,"claim_type":"collision","claim_amount_usd":13974.91,"adjuster":"Steve","insured":"Francis","payee":"Parker"}
+{"claim_id":400,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":13128.15,"adjuster":"Natasha","insured":"Gabrila","payee":"Groot"}
+{"claim_id":401,"claim_type":"collision","claim_amount_usd":15847.59,"adjuster":"Wanda","insured":"Berget","payee":"Wong"}
+{"claim_id":402,"claim_type":"personal injury protection","claim_amount_usd":15386.63,"adjuster":"Steve","insured":"Brear","payee":"Okoye"}
+{"claim_id":403,"claim_type":"collision","claim_amount_usd":22686.21,"adjuster":"Nebula","insured":"Galvin","payee":"Thanos"}
+{"claim_id":404,"claim_type":"property damage liability","claim_amount_usd":24536.44,"adjuster":"Thor","insured":"Nessie","payee":"Parker"}
+{"claim_id":405,"claim_type":"personal injury protection","claim_amount_usd":27527.02,"adjuster":"Nebula","insured":"Elfrieda","payee":"Shuri"}
+{"claim_id":406,"claim_type":"bodily injury liability","claim_amount_usd":17423.05,"adjuster":"Thor","insured":"Nan","payee":"Thanos"}
+{"claim_id":407,"claim_type":"collision","claim_amount_usd":25504.13,"adjuster":"Thor","insured":"Wendie","payee":"Parker"}
+{"claim_id":408,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":24892.86,"adjuster":"TChalla","insured":"Saundra","payee":"Thanos"}
+{"claim_id":409,"claim_type":"property damage liability","claim_amount_usd":19785.19,"adjuster":"Thor","insured":"Sunny","payee":"Nick"}
+{"claim_id":410,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":26788.98,"adjuster":"Thor","insured":"Clem","payee":"Rocket"}
+{"claim_id":411,"claim_type":"collision","claim_amount_usd":21876.57,"adjuster":"Nebula","insured":"Daryl","payee":"Parker"}
+{"claim_id":412,"claim_type":"property damage liability","claim_amount_usd":2542.22,"adjuster":"Natasha","insured":"Irwin","payee":"Parker"}
+{"claim_id":413,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":28136.86,"adjuster":"Nebula","insured":"Maddi","payee":"Thanos"}
+{"claim_id":414,"claim_type":"collision","claim_amount_usd":26210.88,"adjuster":"Nebula","insured":"Mickie","payee":"Thanos"}
+{"claim_id":415,"claim_type":"property damage liability","claim_amount_usd":8663.42,"adjuster":"Nebula","insured":"Emmott","payee":"Shuri"}
+{"claim_id":416,"claim_type":"personal injury protection","claim_amount_usd":23522.86,"adjuster":"Thor","insured":"Diarmid","payee":"Parker"}
+{"claim_id":417,"claim_type":"property damage liability","claim_amount_usd":24677.82,"adjuster":"Tony","insured":"Concettina","payee":"Stephen"}
+{"claim_id":418,"claim_type":"property damage liability","claim_amount_usd":11028.74,"adjuster":"Wanda","insured":"Judy","payee":"Rocket"}
+{"claim_id":419,"claim_type":"bodily injury liability","claim_amount_usd":21648.55,"adjuster":"Tony","insured":"Hunt","payee":"Nick"}
+{"claim_id":420,"claim_type":"personal injury protection","claim_amount_usd":29727.01,"adjuster":"TChalla","insured":"Adelina","payee":"Thanos"}
+{"claim_id":421,"claim_type":"collision","claim_amount_usd":29977.94,"adjuster":"Peggy","insured":"Corrianne","payee":"Groot"}
+{"claim_id":422,"claim_type":"property damage liability","claim_amount_usd":22510.55,"adjuster":"Gamora","insured":"Quill","payee":"Stephen"}
+{"claim_id":423,"claim_type":"personal injury protection","claim_amount_usd":22120.26,"adjuster":"Nebula","insured":"Oliviero","payee":"Thanos"}
+{"claim_id":424,"claim_type":"property damage liability","claim_amount_usd":20531.4,"adjuster":"Thor","insured":"Ephraim","payee":"Okoye"}
+{"claim_id":425,"claim_type":"comprehensive","claim_amount_usd":3173.25,"adjuster":"Peter","insured":"Hagen","payee":"Thanos"}
+{"claim_id":426,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":17975.13,"adjuster":"Natasha","insured":"Hollis","payee":"Thanos"}
+{"claim_id":427,"claim_type":"bodily injury liability","claim_amount_usd":14721.4,"adjuster":"Nebula","insured":"Mae","payee":"Thanos"}
+{"claim_id":428,"claim_type":"bodily injury liability","claim_amount_usd":11250.7,"adjuster":"Peggy","insured":"Ladonna","payee":"Okoye"}
+{"claim_id":429,"claim_type":"personal injury protection","claim_amount_usd":8421.08,"adjuster":"TChalla","insured":"Sandye","payee":"Groot"}
+{"claim_id":430,"claim_type":"collision","claim_amount_usd":25468.36,"adjuster":"Peggy","insured":"Koren","payee":"Wong"}
+{"claim_id":431,"claim_type":"bodily injury liability","claim_amount_usd":11701.96,"adjuster":"TChalla","insured":"Sargent","payee":"Thanos"}
+{"claim_id":432,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":7277.68,"adjuster":"Steve","insured":"Patsy","payee":"Parker"}
+{"claim_id":433,"claim_type":"comprehensive","claim_amount_usd":3736.08,"adjuster":"Nebula","insured":"Thacher","payee":"Thanos"}
+{"claim_id":434,"claim_type":"collision","claim_amount_usd":3556.8,"adjuster":"Nebula","insured":"Tomasina","payee":"Thanos"}
+{"claim_id":435,"claim_type":"property damage liability","claim_amount_usd":3119.56,"adjuster":"Peter","insured":"Earlie","payee":"Shuri"}
+{"claim_id":436,"claim_type":"personal injury protection","claim_amount_usd":1639.7,"adjuster":"Natasha","insured":"Mattheus","payee":"Thanos"}
+{"claim_id":437,"claim_type":"bodily injury liability","claim_amount_usd":19733.58,"adjuster":"Nebula","insured":"Hatti","payee":"Thanos"}
+{"claim_id":438,"claim_type":"property damage liability","claim_amount_usd":16320.02,"adjuster":"TChalla","insured":"Nydia","payee":"Stephen"}
+{"claim_id":439,"claim_type":"collision","claim_amount_usd":21763.01,"adjuster":"Tony","insured":"Fanya","payee":"Parker"}
+{"claim_id":440,"claim_type":"collision","claim_amount_usd":4648.98,"adjuster":"Tony","insured":"Hinze","payee":"Okoye"}
+{"claim_id":441,"claim_type":"property damage liability","claim_amount_usd":3987.0,"adjuster":"Gamora","insured":"Gwen","payee":"Rocket"}
+{"claim_id":442,"claim_type":"collision","claim_amount_usd":9592.21,"adjuster":"Nebula","insured":"Frances","payee":"Parker"}
+{"claim_id":443,"claim_type":"property damage liability","claim_amount_usd":28217.47,"adjuster":"Nebula","insured":"Sherill","payee":"Groot"}
+{"claim_id":444,"claim_type":"personal injury protection","claim_amount_usd":10530.92,"adjuster":"Peter","insured":"Hynda","payee":"Wong"}
+{"claim_id":445,"claim_type":"bodily injury liability","claim_amount_usd":3935.01,"adjuster":"Nebula","insured":"Harper","payee":"Groot"}
+{"claim_id":446,"claim_type":"comprehensive","claim_amount_usd":309.58,"adjuster":"Gamora","insured":"Michale","payee":"Thanos"}
+{"claim_id":447,"claim_type":"collision","claim_amount_usd":5095.88,"adjuster":"Steve","insured":"Joe","payee":"Stephen"}
+{"claim_id":448,"claim_type":"collision","claim_amount_usd":1195.8,"adjuster":"TChalla","insured":"Charin","payee":"Shuri"}
+{"claim_id":449,"claim_type":"collision","claim_amount_usd":11130.55,"adjuster":"Nebula","insured":"Ingra","payee":"Thanos"}
+{"claim_id":450,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":29231.57,"adjuster":"Steve","insured":"Durand","payee":"Okoye"}
+{"claim_id":451,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":26712.8,"adjuster":"Wanda","insured":"Saree","payee":"Shuri"}
+{"claim_id":452,"claim_type":"bodily injury liability","claim_amount_usd":5338.12,"adjuster":"Nebula","insured":"Elsa","payee":"Thanos"}
+{"claim_id":453,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":10635.76,"adjuster":"Peter","insured":"Joscelin","payee":"Wong"}
+{"claim_id":454,"claim_type":"comprehensive","claim_amount_usd":9537.89,"adjuster":"Nebula","insured":"Idelle","payee":"Thanos"}
+{"claim_id":455,"claim_type":"comprehensive","claim_amount_usd":18450.06,"adjuster":"Wanda","insured":"Rudolf","payee":"Rocket"}
+{"claim_id":456,"claim_type":"bodily injury liability","claim_amount_usd":3877.06,"adjuster":"Nebula","insured":"Cassie","payee":"Shuri"}
+{"claim_id":457,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":4462.97,"adjuster":"Nebula","insured":"Tallie","payee":"Nick"}
+{"claim_id":458,"claim_type":"personal injury protection","claim_amount_usd":9647.73,"adjuster":"Steve","insured":"Carol","payee":"Thanos"}
+{"claim_id":459,"claim_type":"bodily injury liability","claim_amount_usd":13247.46,"adjuster":"Thor","insured":"Xenia","payee":"Katy"}
+{"claim_id":460,"claim_type":"comprehensive","claim_amount_usd":1462.66,"adjuster":"TChalla","insured":"Kelsy","payee":"Thanos"}
+{"claim_id":461,"claim_type":"personal injury protection","claim_amount_usd":2585.4,"adjuster":"Peggy","insured":"Gauthier","payee":"Thanos"}
+{"claim_id":462,"claim_type":"property damage liability","claim_amount_usd":24640.03,"adjuster":"Nebula","insured":"Jens","payee":"Wong"}
+{"claim_id":463,"claim_type":"property damage liability","claim_amount_usd":28531.03,"adjuster":"Nebula","insured":"Melisande","payee":"Thanos"}
+{"claim_id":464,"claim_type":"bodily injury liability","claim_amount_usd":6951.87,"adjuster":"Thor","insured":"Dinny","payee":"Groot"}
+{"claim_id":465,"claim_type":"property damage liability","claim_amount_usd":13062.39,"adjuster":"Nebula","insured":"Dougy","payee":"Parker"}
+{"claim_id":466,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":10010.84,"adjuster":"Tony","insured":"Annecorinne","payee":"Rocket"}
+{"claim_id":467,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":20446.4,"adjuster":"Nebula","insured":"Marco","payee":"Shuri"}
+{"claim_id":468,"claim_type":"property damage liability","claim_amount_usd":28258.72,"adjuster":"Nebula","insured":"Symon","payee":"Groot"}
+{"claim_id":469,"claim_type":"property damage liability","claim_amount_usd":18706.12,"adjuster":"Nebula","insured":"Oona","payee":"Rocket"}
+{"claim_id":470,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":21938.42,"adjuster":"Steve","insured":"Constancy","payee":"Thanos"}
+{"claim_id":471,"claim_type":"collision","claim_amount_usd":6174.47,"adjuster":"Steve","insured":"Weber","payee":"Shuri"}
+{"claim_id":472,"claim_type":"property damage liability","claim_amount_usd":18782.13,"adjuster":"Nebula","insured":"Lambert","payee":"Nick"}
+{"claim_id":473,"claim_type":"collision","claim_amount_usd":7744.06,"adjuster":"Steve","insured":"Joane","payee":"Stephen"}
+{"claim_id":474,"claim_type":"personal injury protection","claim_amount_usd":9445.56,"adjuster":"Nebula","insured":"Rawley","payee":"Thanos"}
+{"claim_id":475,"claim_type":"property damage liability","claim_amount_usd":22138.69,"adjuster":"Tony","insured":"Margery","payee":"Wong"}
+{"claim_id":476,"claim_type":"collision","claim_amount_usd":8635.21,"adjuster":"TChalla","insured":"Gregorio","payee":"Thanos"}
+{"claim_id":477,"claim_type":"collision","claim_amount_usd":2816.64,"adjuster":"Peggy","insured":"Marcille","payee":"Shuri"}
+{"claim_id":478,"claim_type":"collision","claim_amount_usd":26093.49,"adjuster":"Peter","insured":"Kippie","payee":"Groot"}
+{"claim_id":479,"claim_type":"property damage liability","claim_amount_usd":15076.66,"adjuster":"Wanda","insured":"Diahann","payee":"Thanos"}
+{"claim_id":480,"claim_type":"collision","claim_amount_usd":18128.86,"adjuster":"Peggy","insured":"Malena","payee":"Nick"}
+{"claim_id":481,"claim_type":"personal injury protection","claim_amount_usd":24310.2,"adjuster":"Nebula","insured":"Fina","payee":"Thanos"}
+{"claim_id":482,"claim_type":"property damage liability","claim_amount_usd":4234.33,"adjuster":"Steve","insured":"Shaughn","payee":"Shuri"}
+{"claim_id":483,"claim_type":"collision","claim_amount_usd":17343.87,"adjuster":"Nebula","insured":"Caryl","payee":"Shuri"}
+{"claim_id":484,"claim_type":"comprehensive","claim_amount_usd":13629.16,"adjuster":"Nebula","insured":"Natka","payee":"Parker"}
+{"claim_id":485,"claim_type":"personal injury protection","claim_amount_usd":24942.41,"adjuster":"Nebula","insured":"Lisette","payee":"Stephen"}
+{"claim_id":486,"claim_type":"property damage liability","claim_amount_usd":25039.67,"adjuster":"Natasha","insured":"Eileen","payee":"Nick"}
+{"claim_id":487,"claim_type":"collision","claim_amount_usd":20887.97,"adjuster":"Nebula","insured":"Artemus","payee":"Thanos"}
+{"claim_id":488,"claim_type":"property damage liability","claim_amount_usd":25736.32,"adjuster":"TChalla","insured":"Shelden","payee":"Thanos"}
+{"claim_id":489,"claim_type":"collision","claim_amount_usd":5678.38,"adjuster":"Natasha","insured":"Noble","payee":"Thanos"}
+{"claim_id":490,"claim_type":"comprehensive","claim_amount_usd":20244.0,"adjuster":"Steve","insured":"Errol","payee":"Thanos"}
+{"claim_id":491,"claim_type":"comprehensive","claim_amount_usd":29316.41,"adjuster":"Peter","insured":"Crin","payee":"Groot"}
+{"claim_id":492,"claim_type":"property damage liability","claim_amount_usd":11156.0,"adjuster":"Nebula","insured":"Jeralee","payee":"Rocket"}
+{"claim_id":493,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":24387.19,"adjuster":"Peggy","insured":"Lilian","payee":"Okoye"}
+{"claim_id":494,"claim_type":"comprehensive","claim_amount_usd":17448.25,"adjuster":"Natasha","insured":"Sharai","payee":"Stephen"}
+{"claim_id":495,"claim_type":"personal injury protection","claim_amount_usd":5665.16,"adjuster":"TChalla","insured":"Isac","payee":"Thanos"}
+{"claim_id":496,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":4078.52,"adjuster":"Thor","insured":"Rhea","payee":"Wong"}
+{"claim_id":497,"claim_type":"property damage liability","claim_amount_usd":25828.35,"adjuster":"Steve","insured":"Nanette","payee":"Nick"}
+{"claim_id":498,"claim_type":"property damage liability","claim_amount_usd":2660.46,"adjuster":"Steve","insured":"Berton","payee":"Shuri"}
+{"claim_id":499,"claim_type":"bodily injury liability","claim_amount_usd":21390.33,"adjuster":"Nebula","insured":"Cyndi","payee":"Thanos"}
+{"claim_id":500,"claim_type":"collision","claim_amount_usd":29386.4,"adjuster":"Wanda","insured":"Briggs","payee":"Rocket"}
+{"claim_id":501,"claim_type":"comprehensive","claim_amount_usd":21051.03,"adjuster":"TChalla","insured":"Levon","payee":"Thanos"}
+{"claim_id":502,"claim_type":"personal injury protection","claim_amount_usd":7736.22,"adjuster":"Thor","insured":"Felisha","payee":"Thanos"}
+{"claim_id":503,"claim_type":"personal injury protection","claim_amount_usd":20500.69,"adjuster":"Natasha","insured":"Hanni","payee":"Thanos"}
+{"claim_id":504,"claim_type":"comprehensive","claim_amount_usd":23362.61,"adjuster":"Nebula","insured":"Almeria","payee":"Thanos"}
+{"claim_id":505,"claim_type":"collision","claim_amount_usd":24938.78,"adjuster":"Natasha","insured":"Dode","payee":"Thanos"}
+{"claim_id":506,"claim_type":"comprehensive","claim_amount_usd":20450.34,"adjuster":"Peter","insured":"Augusto","payee":"Katy"}
+{"claim_id":507,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":10714.9,"adjuster":"Gamora","insured":"Riki","payee":"Okoye"}
+{"claim_id":508,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":5832.81,"adjuster":"Nebula","insured":"April","payee":"Thanos"}
+{"claim_id":509,"claim_type":"personal injury protection","claim_amount_usd":7090.78,"adjuster":"Natasha","insured":"Theda","payee":"Nick"}
+{"claim_id":510,"claim_type":"comprehensive","claim_amount_usd":19762.63,"adjuster":"Tony","insured":"Quintana","payee":"Thanos"}
+{"claim_id":511,"claim_type":"comprehensive","claim_amount_usd":15577.98,"adjuster":"Nebula","insured":"Bill","payee":"Thanos"}
+{"claim_id":512,"claim_type":"property damage liability","claim_amount_usd":19455.23,"adjuster":"Wanda","insured":"Edmon","payee":"Thanos"}
+{"claim_id":513,"claim_type":"bodily injury liability","claim_amount_usd":20557.94,"adjuster":"Nebula","insured":"Marcello","payee":"Okoye"}
+{"claim_id":514,"claim_type":"collision","claim_amount_usd":6963.8,"adjuster":"Steve","insured":"Moyra","payee":"Nick"}
+{"claim_id":515,"claim_type":"property damage liability","claim_amount_usd":7369.02,"adjuster":"Peter","insured":"Patsy","payee":"Thanos"}
+{"claim_id":516,"claim_type":"bodily injury liability","claim_amount_usd":14255.22,"adjuster":"Nebula","insured":"Goldi","payee":"Thanos"}
+{"claim_id":517,"claim_type":"personal injury protection","claim_amount_usd":25965.9,"adjuster":"Thor","insured":"Briny","payee":"Thanos"}
+{"claim_id":518,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":28545.39,"adjuster":"Gamora","insured":"Kamila","payee":"Nick"}
+{"claim_id":519,"claim_type":"personal injury protection","claim_amount_usd":5647.17,"adjuster":"Steve","insured":"Daile","payee":"Parker"}
+{"claim_id":520,"claim_type":"personal injury protection","claim_amount_usd":8635.8,"adjuster":"Gamora","insured":"Valerye","payee":"Okoye"}
+{"claim_id":521,"claim_type":"comprehensive","claim_amount_usd":19210.33,"adjuster":"Nebula","insured":"Drucill","payee":"Parker"}
+{"claim_id":522,"claim_type":"bodily injury liability","claim_amount_usd":23439.04,"adjuster":"TChalla","insured":"Ruddy","payee":"Okoye"}
+{"claim_id":523,"claim_type":"bodily injury liability","claim_amount_usd":28620.35,"adjuster":"Gamora","insured":"Wash","payee":"Rocket"}
+{"claim_id":524,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":14403.84,"adjuster":"Thor","insured":"Carole","payee":"Thanos"}
+{"claim_id":525,"claim_type":"property damage liability","claim_amount_usd":12475.94,"adjuster":"Steve","insured":"Jewell","payee":"Rocket"}
+{"claim_id":526,"claim_type":"comprehensive","claim_amount_usd":19547.72,"adjuster":"Thor","insured":"Beatrice","payee":"Okoye"}
+{"claim_id":527,"claim_type":"personal injury protection","claim_amount_usd":10809.14,"adjuster":"Thor","insured":"Olia","payee":"Groot"}
+{"claim_id":528,"claim_type":"personal injury protection","claim_amount_usd":16922.48,"adjuster":"Peggy","insured":"Wendie","payee":"Thanos"}
+{"claim_id":529,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":27284.15,"adjuster":"Nebula","insured":"Elwin","payee":"Parker"}
+{"claim_id":530,"claim_type":"property damage liability","claim_amount_usd":25060.58,"adjuster":"Wanda","insured":"Etta","payee":"Thanos"}
+{"claim_id":531,"claim_type":"bodily injury liability","claim_amount_usd":12241.62,"adjuster":"Peggy","insured":"Mira","payee":"Okoye"}
+{"claim_id":532,"claim_type":"collision","claim_amount_usd":21988.05,"adjuster":"Nebula","insured":"Gasparo","payee":"Thanos"}
+{"claim_id":533,"claim_type":"property damage liability","claim_amount_usd":23399.4,"adjuster":"Thor","insured":"Ophelie","payee":"Parker"}
+{"claim_id":534,"claim_type":"property damage liability","claim_amount_usd":7897.85,"adjuster":"Peggy","insured":"Rois","payee":"Thanos"}
+{"claim_id":535,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":1874.94,"adjuster":"Thor","insured":"Nico","payee":"Thanos"}
+{"claim_id":536,"claim_type":"comprehensive","claim_amount_usd":22181.1,"adjuster":"Wanda","insured":"Ambrosi","payee":"Thanos"}
+{"claim_id":537,"claim_type":"collision","claim_amount_usd":18654.96,"adjuster":"Peter","insured":"Phip","payee":"Thanos"}
+{"claim_id":538,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":2617.54,"adjuster":"Nebula","insured":"Lynn","payee":"Wong"}
+{"claim_id":539,"claim_type":"collision","claim_amount_usd":22816.99,"adjuster":"Peter","insured":"Suzann","payee":"Katy"}
+{"claim_id":540,"claim_type":"collision","claim_amount_usd":18785.33,"adjuster":"Nebula","insured":"Gaylene","payee":"Rocket"}
+{"claim_id":541,"claim_type":"comprehensive","claim_amount_usd":26816.91,"adjuster":"Nebula","insured":"Prissie","payee":"Thanos"}
+{"claim_id":542,"claim_type":"collision","claim_amount_usd":14988.56,"adjuster":"Thor","insured":"Trula","payee":"Thanos"}
+{"claim_id":543,"claim_type":"property damage liability","claim_amount_usd":16767.35,"adjuster":"Nebula","insured":"Dolorita","payee":"Wong"}
+{"claim_id":544,"claim_type":"comprehensive","claim_amount_usd":22578.85,"adjuster":"Nebula","insured":"Lewiss","payee":"Stephen"}
+{"claim_id":545,"claim_type":"property damage liability","claim_amount_usd":4051.33,"adjuster":"Nebula","insured":"Wyndham","payee":"Thanos"}
+{"claim_id":546,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":23974.02,"adjuster":"Thor","insured":"Lila","payee":"Groot"}
+{"claim_id":547,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":20269.76,"adjuster":"Nebula","insured":"Emmalynne","payee":"Thanos"}
+{"claim_id":548,"claim_type":"comprehensive","claim_amount_usd":6590.1,"adjuster":"Nebula","insured":"Lawton","payee":"Nick"}
+{"claim_id":549,"claim_type":"property damage liability","claim_amount_usd":5163.57,"adjuster":"Peter","insured":"Anne-corinne","payee":"Wong"}
+{"claim_id":550,"claim_type":"property damage liability","claim_amount_usd":17231.52,"adjuster":"Peggy","insured":"Wang","payee":"Thanos"}
+{"claim_id":551,"claim_type":"property damage liability","claim_amount_usd":29316.42,"adjuster":"Wanda","insured":"Marilyn","payee":"Wong"}
+{"claim_id":552,"claim_type":"comprehensive","claim_amount_usd":14926.82,"adjuster":"Peggy","insured":"Wiatt","payee":"Stephen"}
+{"claim_id":553,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":10950.39,"adjuster":"Nebula","insured":"Robbie","payee":"Parker"}
+{"claim_id":554,"claim_type":"property damage liability","claim_amount_usd":5153.77,"adjuster":"Thor","insured":"Nathaniel","payee":"Parker"}
+{"claim_id":555,"claim_type":"personal injury protection","claim_amount_usd":6710.23,"adjuster":"Nebula","insured":"Dolorita","payee":"Katy"}
+{"claim_id":556,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":6964.44,"adjuster":"Wanda","insured":"Sandy","payee":"Katy"}
+{"claim_id":557,"claim_type":"bodily injury liability","claim_amount_usd":22638.19,"adjuster":"Tony","insured":"Rubina","payee":"Okoye"}
+{"claim_id":558,"claim_type":"collision","claim_amount_usd":5920.95,"adjuster":"Nebula","insured":"Angelika","payee":"Thanos"}
+{"claim_id":559,"claim_type":"personal injury protection","claim_amount_usd":20616.87,"adjuster":"Nebula","insured":"Markus","payee":"Stephen"}
+{"claim_id":560,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":25604.8,"adjuster":"Wanda","insured":"Gwen","payee":"Katy"}
+{"claim_id":561,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":10290.5,"adjuster":"Thor","insured":"Robinia","payee":"Thanos"}
+{"claim_id":562,"claim_type":"collision","claim_amount_usd":24964.54,"adjuster":"Natasha","insured":"Evelina","payee":"Okoye"}
+{"claim_id":563,"claim_type":"personal injury protection","claim_amount_usd":9304.25,"adjuster":"Peggy","insured":"Cassie","payee":"Okoye"}
+{"claim_id":564,"claim_type":"personal injury protection","claim_amount_usd":3447.79,"adjuster":"TChalla","insured":"Hilly","payee":"Thanos"}
+{"claim_id":565,"claim_type":"property damage liability","claim_amount_usd":18043.17,"adjuster":"Steve","insured":"Vere","payee":"Stephen"}
+{"claim_id":566,"claim_type":"collision","claim_amount_usd":6946.14,"adjuster":"Gamora","insured":"Theresa","payee":"Thanos"}
+{"claim_id":567,"claim_type":"collision","claim_amount_usd":7392.97,"adjuster":"Nebula","insured":"Benny","payee":"Thanos"}
+{"claim_id":568,"claim_type":"personal injury protection","claim_amount_usd":18122.47,"adjuster":"Nebula","insured":"Brooke","payee":"Thanos"}
+{"claim_id":569,"claim_type":"bodily injury liability","claim_amount_usd":16620.3,"adjuster":"Gamora","insured":"Joeann","payee":"Okoye"}
+{"claim_id":570,"claim_type":"property damage liability","claim_amount_usd":18500.54,"adjuster":"Peggy","insured":"Brnaby","payee":"Stephen"}
+{"claim_id":571,"claim_type":"personal injury protection","claim_amount_usd":18703.78,"adjuster":"Nebula","insured":"Pepillo","payee":"Stephen"}
+{"claim_id":572,"claim_type":"bodily injury liability","claim_amount_usd":23907.38,"adjuster":"Nebula","insured":"Ekaterina","payee":"Thanos"}
+{"claim_id":573,"claim_type":"bodily injury liability","claim_amount_usd":10141.9,"adjuster":"Nebula","insured":"Othelia","payee":"Shuri"}
+{"claim_id":574,"claim_type":"collision","claim_amount_usd":24169.76,"adjuster":"Peggy","insured":"Basil","payee":"Wong"}
+{"claim_id":575,"claim_type":"property damage liability","claim_amount_usd":23460.79,"adjuster":"Nebula","insured":"Seline","payee":"Nick"}
+{"claim_id":576,"claim_type":"comprehensive","claim_amount_usd":17588.78,"adjuster":"Nebula","insured":"Kira","payee":"Thanos"}
+{"claim_id":577,"claim_type":"property damage liability","claim_amount_usd":8467.45,"adjuster":"Nebula","insured":"Ulick","payee":"Wong"}
+{"claim_id":578,"claim_type":"comprehensive","claim_amount_usd":6721.12,"adjuster":"Nebula","insured":"Rockie","payee":"Stephen"}
+{"claim_id":579,"claim_type":"personal injury protection","claim_amount_usd":28382.42,"adjuster":"Thor","insured":"Claretta","payee":"Groot"}
+{"claim_id":580,"claim_type":"personal injury protection","claim_amount_usd":5866.4,"adjuster":"Nebula","insured":"Alvin","payee":"Thanos"}
+{"claim_id":581,"claim_type":"property damage liability","claim_amount_usd":7424.78,"adjuster":"Steve","insured":"Alicia","payee":"Thanos"}
+{"claim_id":582,"claim_type":"comprehensive","claim_amount_usd":3498.69,"adjuster":"Steve","insured":"Renate","payee":"Thanos"}
+{"claim_id":583,"claim_type":"property damage liability","claim_amount_usd":1293.58,"adjuster":"Nebula","insured":"Trisha","payee":"Thanos"}
+{"claim_id":584,"claim_type":"comprehensive","claim_amount_usd":10860.36,"adjuster":"Nebula","insured":"Clarence","payee":"Thanos"}
+{"claim_id":585,"claim_type":"collision","claim_amount_usd":190.86,"adjuster":"Nebula","insured":"Shelden","payee":"Parker"}
+{"claim_id":586,"claim_type":"comprehensive","claim_amount_usd":21000.28,"adjuster":"Steve","insured":"Whitman","payee":"Wong"}
+{"claim_id":587,"claim_type":"bodily injury liability","claim_amount_usd":23430.57,"adjuster":"Nebula","insured":"Genny","payee":"Groot"}
+{"claim_id":588,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":618.18,"adjuster":"Nebula","insured":"Cordelie","payee":"Wong"}
+{"claim_id":589,"claim_type":"personal injury protection","claim_amount_usd":648.09,"adjuster":"Peter","insured":"Kizzee","payee":"Wong"}
+{"claim_id":590,"claim_type":"comprehensive","claim_amount_usd":11852.9,"adjuster":"Nebula","insured":"Hercule","payee":"Thanos"}
+{"claim_id":591,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":10632.7,"adjuster":"TChalla","insured":"Jeralee","payee":"Wong"}
+{"claim_id":592,"claim_type":"collision","claim_amount_usd":19007.0,"adjuster":"TChalla","insured":"Marla","payee":"Rocket"}
+{"claim_id":593,"claim_type":"comprehensive","claim_amount_usd":22098.19,"adjuster":"TChalla","insured":"Whit","payee":"Shuri"}
+{"claim_id":594,"claim_type":"comprehensive","claim_amount_usd":11307.52,"adjuster":"Nebula","insured":"Jody","payee":"Parker"}
+{"claim_id":595,"claim_type":"bodily injury liability","claim_amount_usd":19650.18,"adjuster":"Nebula","insured":"Wit","payee":"Thanos"}
+{"claim_id":596,"claim_type":"comprehensive","claim_amount_usd":8030.97,"adjuster":"Natasha","insured":"Charmian","payee":"Parker"}
+{"claim_id":597,"claim_type":"property damage liability","claim_amount_usd":21715.14,"adjuster":"Thor","insured":"Andie","payee":"Thanos"}
+{"claim_id":598,"claim_type":"comprehensive","claim_amount_usd":25608.33,"adjuster":"Nebula","insured":"Mirelle","payee":"Katy"}
+{"claim_id":599,"claim_type":"collision","claim_amount_usd":23091.06,"adjuster":"Nebula","insured":"Marleen","payee":"Nick"}
+{"claim_id":600,"claim_type":"property damage liability","claim_amount_usd":2837.05,"adjuster":"TChalla","insured":"Denis","payee":"Parker"}
+{"claim_id":601,"claim_type":"property damage liability","claim_amount_usd":23448.93,"adjuster":"TChalla","insured":"Royall","payee":"Stephen"}
+{"claim_id":602,"claim_type":"comprehensive","claim_amount_usd":17755.9,"adjuster":"Nebula","insured":"Aurlie","payee":"Nick"}
+{"claim_id":603,"claim_type":"property damage liability","claim_amount_usd":6219.49,"adjuster":"Nebula","insured":"Greer","payee":"Rocket"}
+{"claim_id":604,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":2409.44,"adjuster":"Thor","insured":"Brose","payee":"Thanos"}
+{"claim_id":605,"claim_type":"collision","claim_amount_usd":15748.26,"adjuster":"Wanda","insured":"Marietta","payee":"Nick"}
+{"claim_id":606,"claim_type":"property damage liability","claim_amount_usd":24540.15,"adjuster":"Tony","insured":"Timmie","payee":"Wong"}
+{"claim_id":607,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":26680.32,"adjuster":"Thor","insured":"Lowe","payee":"Katy"}
+{"claim_id":608,"claim_type":"property damage liability","claim_amount_usd":20612.95,"adjuster":"Gamora","insured":"Eziechiele","payee":"Thanos"}
+{"claim_id":609,"claim_type":"collision","claim_amount_usd":10904.82,"adjuster":"Nebula","insured":"Ramsay","payee":"Shuri"}
+{"claim_id":610,"claim_type":"bodily injury liability","claim_amount_usd":18197.26,"adjuster":"Nebula","insured":"Dilan","payee":"Thanos"}
+{"claim_id":611,"claim_type":"personal injury protection","claim_amount_usd":3463.03,"adjuster":"Nebula","insured":"Guenevere","payee":"Thanos"}
+{"claim_id":612,"claim_type":"property damage liability","claim_amount_usd":13659.18,"adjuster":"Peter","insured":"Terrence","payee":"Stephen"}
+{"claim_id":613,"claim_type":"property damage liability","claim_amount_usd":23515.79,"adjuster":"Tony","insured":"Arnie","payee":"Thanos"}
+{"claim_id":614,"claim_type":"bodily injury liability","claim_amount_usd":923.51,"adjuster":"Nebula","insured":"Violante","payee":"Nick"}
+{"claim_id":615,"claim_type":"property damage liability","claim_amount_usd":15620.41,"adjuster":"Tony","insured":"Lynette","payee":"Thanos"}
+{"claim_id":616,"claim_type":"collision","claim_amount_usd":19128.89,"adjuster":"Nebula","insured":"Sara","payee":"Parker"}
+{"claim_id":617,"claim_type":"bodily injury liability","claim_amount_usd":18292.55,"adjuster":"Thor","insured":"Finley","payee":"Thanos"}
+{"claim_id":618,"claim_type":"property damage liability","claim_amount_usd":25858.13,"adjuster":"Peggy","insured":"Eldridge","payee":"Wong"}
+{"claim_id":619,"claim_type":"property damage liability","claim_amount_usd":28212.2,"adjuster":"Gamora","insured":"Holli","payee":"Rocket"}
+{"claim_id":620,"claim_type":"comprehensive","claim_amount_usd":28762.92,"adjuster":"Nebula","insured":"Chad","payee":"Wong"}
+{"claim_id":621,"claim_type":"bodily injury liability","claim_amount_usd":22608.89,"adjuster":"Nebula","insured":"Danella","payee":"Thanos"}
+{"claim_id":622,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":23553.07,"adjuster":"Peter","insured":"Dee","payee":"Thanos"}
+{"claim_id":623,"claim_type":"property damage liability","claim_amount_usd":17977.04,"adjuster":"Nebula","insured":"Bradley","payee":"Nick"}
+{"claim_id":624,"claim_type":"collision","claim_amount_usd":3156.71,"adjuster":"Nebula","insured":"Gabey","payee":"Parker"}
+{"claim_id":625,"claim_type":"comprehensive","claim_amount_usd":16660.62,"adjuster":"Nebula","insured":"Agretha","payee":"Stephen"}
+{"claim_id":626,"claim_type":"comprehensive","claim_amount_usd":21858.74,"adjuster":"Wanda","insured":"Vale","payee":"Katy"}
+{"claim_id":627,"claim_type":"bodily injury liability","claim_amount_usd":1705.16,"adjuster":"Nebula","insured":"Persis","payee":"Thanos"}
+{"claim_id":628,"claim_type":"personal injury protection","claim_amount_usd":9152.71,"adjuster":"Nebula","insured":"Ulises","payee":"Thanos"}
+{"claim_id":629,"claim_type":"personal injury protection","claim_amount_usd":10147.03,"adjuster":"Steve","insured":"Darelle","payee":"Parker"}
+{"claim_id":630,"claim_type":"comprehensive","claim_amount_usd":3415.39,"adjuster":"Nebula","insured":"Mercy","payee":"Wong"}
+{"claim_id":631,"claim_type":"bodily injury liability","claim_amount_usd":4550.17,"adjuster":"Steve","insured":"Hildy","payee":"Nick"}
+{"claim_id":632,"claim_type":"comprehensive","claim_amount_usd":23896.16,"adjuster":"Nebula","insured":"Ofelia","payee":"Thanos"}
+{"claim_id":633,"claim_type":"collision","claim_amount_usd":17445.87,"adjuster":"Thor","insured":"Eba","payee":"Thanos"}
+{"claim_id":634,"claim_type":"bodily injury liability","claim_amount_usd":7117.5,"adjuster":"Gamora","insured":"Stanton","payee":"Stephen"}
+{"claim_id":635,"claim_type":"comprehensive","claim_amount_usd":9701.18,"adjuster":"Thor","insured":"Gareth","payee":"Thanos"}
+{"claim_id":636,"claim_type":"personal injury protection","claim_amount_usd":4219.88,"adjuster":"Nebula","insured":"Stillman","payee":"Thanos"}
+{"claim_id":637,"claim_type":"property damage liability","claim_amount_usd":19743.15,"adjuster":"Wanda","insured":"Ephraim","payee":"Thanos"}
+{"claim_id":638,"claim_type":"comprehensive","claim_amount_usd":28628.7,"adjuster":"Nebula","insured":"Ozzy","payee":"Katy"}
+{"claim_id":639,"claim_type":"bodily injury liability","claim_amount_usd":28132.22,"adjuster":"Peggy","insured":"Muffin","payee":"Groot"}
+{"claim_id":640,"claim_type":"comprehensive","claim_amount_usd":6038.03,"adjuster":"Thor","insured":"Gordon","payee":"Shuri"}
+{"claim_id":641,"claim_type":"personal injury protection","claim_amount_usd":7200.66,"adjuster":"Wanda","insured":"Ralf","payee":"Stephen"}
+{"claim_id":642,"claim_type":"comprehensive","claim_amount_usd":6987.41,"adjuster":"Nebula","insured":"Alfredo","payee":"Thanos"}
+{"claim_id":643,"claim_type":"comprehensive","claim_amount_usd":18830.48,"adjuster":"Nebula","insured":"Kip","payee":"Groot"}
+{"claim_id":644,"claim_type":"bodily injury liability","claim_amount_usd":27208.33,"adjuster":"Nebula","insured":"Engracia","payee":"Thanos"}
+{"claim_id":645,"claim_type":"comprehensive","claim_amount_usd":18238.46,"adjuster":"TChalla","insured":"Lionel","payee":"Katy"}
+{"claim_id":646,"claim_type":"personal injury protection","claim_amount_usd":25883.74,"adjuster":"Nebula","insured":"Lila","payee":"Thanos"}
+{"claim_id":647,"claim_type":"personal injury protection","claim_amount_usd":28521.69,"adjuster":"Nebula","insured":"Dru","payee":"Okoye"}
+{"claim_id":648,"claim_type":"collision","claim_amount_usd":3939.7,"adjuster":"Nebula","insured":"Karola","payee":"Thanos"}
+{"claim_id":649,"claim_type":"personal injury protection","claim_amount_usd":12206.04,"adjuster":"Peter","insured":"Waring","payee":"Nick"}
+{"claim_id":650,"claim_type":"collision","claim_amount_usd":26945.94,"adjuster":"Thor","insured":"Trista","payee":"Wong"}
+{"claim_id":651,"claim_type":"comprehensive","claim_amount_usd":29840.19,"adjuster":"Nebula","insured":"Tamar","payee":"Shuri"}
+{"claim_id":652,"claim_type":"personal injury protection","claim_amount_usd":4872.72,"adjuster":"Natasha","insured":"Anthe","payee":"Stephen"}
+{"claim_id":653,"claim_type":"bodily injury liability","claim_amount_usd":23622.2,"adjuster":"Wanda","insured":"Gerri","payee":"Wong"}
+{"claim_id":654,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":17676.49,"adjuster":"Nebula","insured":"Merv","payee":"Rocket"}
+{"claim_id":655,"claim_type":"personal injury protection","claim_amount_usd":24773.01,"adjuster":"Natasha","insured":"Charline","payee":"Stephen"}
+{"claim_id":656,"claim_type":"property damage liability","claim_amount_usd":28965.83,"adjuster":"Gamora","insured":"Janeva","payee":"Nick"}
+{"claim_id":657,"claim_type":"comprehensive","claim_amount_usd":15219.73,"adjuster":"Natasha","insured":"Brinna","payee":"Rocket"}
+{"claim_id":658,"claim_type":"comprehensive","claim_amount_usd":29092.93,"adjuster":"Nebula","insured":"Dara","payee":"Wong"}
+{"claim_id":659,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":27379.2,"adjuster":"Nebula","insured":"Costa","payee":"Thanos"}
+{"claim_id":660,"claim_type":"comprehensive","claim_amount_usd":6341.87,"adjuster":"Nebula","insured":"Wendi","payee":"Nick"}
+{"claim_id":661,"claim_type":"property damage liability","claim_amount_usd":28996.34,"adjuster":"Steve","insured":"Kitty","payee":"Shuri"}
+{"claim_id":662,"claim_type":"personal injury protection","claim_amount_usd":10207.81,"adjuster":"Nebula","insured":"Tabatha","payee":"Shuri"}
+{"claim_id":663,"claim_type":"collision","claim_amount_usd":5317.8,"adjuster":"Nebula","insured":"Barbabra","payee":"Thanos"}
+{"claim_id":664,"claim_type":"bodily injury liability","claim_amount_usd":14816.53,"adjuster":"Nebula","insured":"Heloise","payee":"Groot"}
+{"claim_id":665,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":9136.99,"adjuster":"Natasha","insured":"Jennifer","payee":"Shuri"}
+{"claim_id":666,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":12474.1,"adjuster":"Natasha","insured":"Mohandas","payee":"Thanos"}
+{"claim_id":667,"claim_type":"bodily injury liability","claim_amount_usd":15606.43,"adjuster":"Steve","insured":"Willie","payee":"Wong"}
+{"claim_id":668,"claim_type":"comprehensive","claim_amount_usd":26667.95,"adjuster":"Wanda","insured":"Eziechiele","payee":"Thanos"}
+{"claim_id":669,"claim_type":"comprehensive","claim_amount_usd":22931.81,"adjuster":"Thor","insured":"Ofella","payee":"Thanos"}
+{"claim_id":670,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":10877.32,"adjuster":"TChalla","insured":"Winifred","payee":"Groot"}
+{"claim_id":671,"claim_type":"property damage liability","claim_amount_usd":1427.99,"adjuster":"Nebula","insured":"Stephine","payee":"Thanos"}
+{"claim_id":672,"claim_type":"collision","claim_amount_usd":19159.18,"adjuster":"Wanda","insured":"Darsie","payee":"Katy"}
+{"claim_id":673,"claim_type":"comprehensive","claim_amount_usd":29330.38,"adjuster":"Thor","insured":"Tobi","payee":"Shuri"}
+{"claim_id":674,"claim_type":"property damage liability","claim_amount_usd":11902.99,"adjuster":"Natasha","insured":"Vivian","payee":"Rocket"}
+{"claim_id":675,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":13328.37,"adjuster":"Nebula","insured":"Sherman","payee":"Stephen"}
+{"claim_id":676,"claim_type":"personal injury protection","claim_amount_usd":1808.89,"adjuster":"Nebula","insured":"Rubie","payee":"Groot"}
+{"claim_id":677,"claim_type":"personal injury protection","claim_amount_usd":29200.57,"adjuster":"Steve","insured":"Frederigo","payee":"Wong"}
+{"claim_id":678,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":12168.69,"adjuster":"Wanda","insured":"Lauralee","payee":"Okoye"}
+{"claim_id":679,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":17589.97,"adjuster":"Natasha","insured":"Randi","payee":"Thanos"}
+{"claim_id":680,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":7579.07,"adjuster":"Nebula","insured":"Carolann","payee":"Thanos"}
+{"claim_id":681,"claim_type":"property damage liability","claim_amount_usd":24096.13,"adjuster":"Nebula","insured":"Xaviera","payee":"Wong"}
+{"claim_id":682,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":11126.07,"adjuster":"Natasha","insured":"Dorri","payee":"Katy"}
+{"claim_id":683,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":7557.77,"adjuster":"Nebula","insured":"Skippie","payee":"Thanos"}
+{"claim_id":684,"claim_type":"collision","claim_amount_usd":17476.69,"adjuster":"Thor","insured":"Lissy","payee":"Thanos"}
+{"claim_id":685,"claim_type":"personal injury protection","claim_amount_usd":28022.47,"adjuster":"Nebula","insured":"Weston","payee":"Wong"}
+{"claim_id":686,"claim_type":"collision","claim_amount_usd":29845.89,"adjuster":"Thor","insured":"Edmon","payee":"Parker"}
+{"claim_id":687,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":2264.37,"adjuster":"Tony","insured":"Shane","payee":"Nick"}
+{"claim_id":688,"claim_type":"comprehensive","claim_amount_usd":18881.69,"adjuster":"Nebula","insured":"Redd","payee":"Thanos"}
+{"claim_id":689,"claim_type":"bodily injury liability","claim_amount_usd":17976.95,"adjuster":"Nebula","insured":"Rudolfo","payee":"Thanos"}
+{"claim_id":690,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":26247.97,"adjuster":"Tony","insured":"Dillie","payee":"Rocket"}
+{"claim_id":691,"claim_type":"comprehensive","claim_amount_usd":11929.59,"adjuster":"Peggy","insured":"Gordon","payee":"Thanos"}
+{"claim_id":692,"claim_type":"collision","claim_amount_usd":22851.93,"adjuster":"Nebula","insured":"Shela","payee":"Katy"}
+{"claim_id":693,"claim_type":"collision","claim_amount_usd":24570.72,"adjuster":"Peter","insured":"Niels","payee":"Rocket"}
+{"claim_id":694,"claim_type":"comprehensive","claim_amount_usd":20935.78,"adjuster":"Nebula","insured":"Berty","payee":"Katy"}
+{"claim_id":695,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":15321.56,"adjuster":"Nebula","insured":"Charla","payee":"Thanos"}
+{"claim_id":696,"claim_type":"comprehensive","claim_amount_usd":12521.27,"adjuster":"Wanda","insured":"Fanchon","payee":"Nick"}
+{"claim_id":697,"claim_type":"comprehensive","claim_amount_usd":15530.03,"adjuster":"Wanda","insured":"Waiter","payee":"Rocket"}
+{"claim_id":698,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":7196.72,"adjuster":"Nebula","insured":"Kerby","payee":"Thanos"}
+{"claim_id":699,"claim_type":"property damage liability","claim_amount_usd":28928.8,"adjuster":"Tony","insured":"Sayers","payee":"Okoye"}
+{"claim_id":700,"claim_type":"personal injury protection","claim_amount_usd":5721.55,"adjuster":"Natasha","insured":"Anissa","payee":"Rocket"}
+{"claim_id":701,"claim_type":"personal injury protection","claim_amount_usd":3683.73,"adjuster":"Steve","insured":"Dael","payee":"Nick"}
+{"claim_id":702,"claim_type":"personal injury protection","claim_amount_usd":25947.19,"adjuster":"Steve","insured":"Marty","payee":"Wong"}
+{"claim_id":703,"claim_type":"collision","claim_amount_usd":5171.44,"adjuster":"Nebula","insured":"Forrest","payee":"Nick"}
+{"claim_id":704,"claim_type":"collision","claim_amount_usd":2891.12,"adjuster":"Nebula","insured":"Craig","payee":"Katy"}
+{"claim_id":705,"claim_type":"personal injury protection","claim_amount_usd":3976.53,"adjuster":"Nebula","insured":"Dee","payee":"Thanos"}
+{"claim_id":706,"claim_type":"collision","claim_amount_usd":11411.92,"adjuster":"Nebula","insured":"Keven","payee":"Parker"}
+{"claim_id":707,"claim_type":"personal injury protection","claim_amount_usd":24215.78,"adjuster":"Wanda","insured":"Sheppard","payee":"Thanos"}
+{"claim_id":708,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":23691.09,"adjuster":"Nebula","insured":"Pip","payee":"Katy"}
+{"claim_id":709,"claim_type":"collision","claim_amount_usd":1113.08,"adjuster":"Nebula","insured":"Caty","payee":"Groot"}
+{"claim_id":710,"claim_type":"collision","claim_amount_usd":11578.49,"adjuster":"Nebula","insured":"Terry","payee":"Wong"}
+{"claim_id":711,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":17290.11,"adjuster":"Nebula","insured":"Benedicta","payee":"Nick"}
+{"claim_id":712,"claim_type":"property damage liability","claim_amount_usd":24472.8,"adjuster":"Nebula","insured":"Cozmo","payee":"Parker"}
+{"claim_id":713,"claim_type":"bodily injury liability","claim_amount_usd":3222.23,"adjuster":"Nebula","insured":"Batsheva","payee":"Parker"}
+{"claim_id":714,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":23365.23,"adjuster":"Tony","insured":"Benedicto","payee":"Shuri"}
+{"claim_id":715,"claim_type":"collision","claim_amount_usd":7068.81,"adjuster":"Nebula","insured":"Worthington","payee":"Thanos"}
+{"claim_id":716,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":12298.58,"adjuster":"Nebula","insured":"Mareah","payee":"Katy"}
+{"claim_id":717,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":15044.32,"adjuster":"Gamora","insured":"Mendie","payee":"Nick"}
+{"claim_id":718,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":16776.34,"adjuster":"Nebula","insured":"Freddi","payee":"Thanos"}
+{"claim_id":719,"claim_type":"comprehensive","claim_amount_usd":1078.12,"adjuster":"Peter","insured":"Corinne","payee":"Groot"}
+{"claim_id":720,"claim_type":"property damage liability","claim_amount_usd":24735.09,"adjuster":"Nebula","insured":"Gennifer","payee":"Katy"}
+{"claim_id":721,"claim_type":"property damage liability","claim_amount_usd":27555.8,"adjuster":"Steve","insured":"Locke","payee":"Stephen"}
+{"claim_id":722,"claim_type":"personal injury protection","claim_amount_usd":25961.74,"adjuster":"Nebula","insured":"Julia","payee":"Shuri"}
+{"claim_id":723,"claim_type":"bodily injury liability","claim_amount_usd":11135.01,"adjuster":"Natasha","insured":"Ardisj","payee":"Stephen"}
+{"claim_id":724,"claim_type":"personal injury protection","claim_amount_usd":3770.75,"adjuster":"Gamora","insured":"Shelba","payee":"Groot"}
+{"claim_id":725,"claim_type":"personal injury protection","claim_amount_usd":387.54,"adjuster":"Nebula","insured":"Debbie","payee":"Parker"}
+{"claim_id":726,"claim_type":"collision","claim_amount_usd":23486.83,"adjuster":"Natasha","insured":"Nikoletta","payee":"Stephen"}
+{"claim_id":727,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":16720.26,"adjuster":"TChalla","insured":"Ty","payee":"Shuri"}
+{"claim_id":728,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":16496.28,"adjuster":"Wanda","insured":"Lisetta","payee":"Thanos"}
+{"claim_id":729,"claim_type":"comprehensive","claim_amount_usd":385.72,"adjuster":"Tony","insured":"Christina","payee":"Parker"}
+{"claim_id":730,"claim_type":"property damage liability","claim_amount_usd":13874.49,"adjuster":"Gamora","insured":"Garnette","payee":"Katy"}
+{"claim_id":731,"claim_type":"collision","claim_amount_usd":13948.94,"adjuster":"Gamora","insured":"Mead","payee":"Wong"}
+{"claim_id":732,"claim_type":"personal injury protection","claim_amount_usd":24790.37,"adjuster":"Nebula","insured":"Barny","payee":"Thanos"}
+{"claim_id":733,"claim_type":"collision","claim_amount_usd":17379.2,"adjuster":"Thor","insured":"Arden","payee":"Stephen"}
+{"claim_id":734,"claim_type":"collision","claim_amount_usd":9537.35,"adjuster":"Nebula","insured":"Gabbie","payee":"Thanos"}
+{"claim_id":735,"claim_type":"bodily injury liability","claim_amount_usd":13108.48,"adjuster":"Peggy","insured":"Sonny","payee":"Groot"}
+{"claim_id":736,"claim_type":"personal injury protection","claim_amount_usd":628.61,"adjuster":"Nebula","insured":"Nils","payee":"Rocket"}
+{"claim_id":737,"claim_type":"bodily injury liability","claim_amount_usd":17193.61,"adjuster":"Wanda","insured":"Nefen","payee":"Thanos"}
+{"claim_id":738,"claim_type":"bodily injury liability","claim_amount_usd":6453.93,"adjuster":"Gamora","insured":"Minnaminnie","payee":"Stephen"}
+{"claim_id":739,"claim_type":"comprehensive","claim_amount_usd":15455.15,"adjuster":"TChalla","insured":"Nelson","payee":"Thanos"}
+{"claim_id":740,"claim_type":"property damage liability","claim_amount_usd":24350.3,"adjuster":"Nebula","insured":"Tybalt","payee":"Thanos"}
+{"claim_id":741,"claim_type":"collision","claim_amount_usd":6611.0,"adjuster":"Nebula","insured":"Heindrick","payee":"Groot"}
+{"claim_id":742,"claim_type":"bodily injury liability","claim_amount_usd":22452.43,"adjuster":"Thor","insured":"Verna","payee":"Thanos"}
+{"claim_id":743,"claim_type":"personal injury protection","claim_amount_usd":24160.9,"adjuster":"Nebula","insured":"Nathaniel","payee":"Parker"}
+{"claim_id":744,"claim_type":"property damage liability","claim_amount_usd":17824.24,"adjuster":"Natasha","insured":"Gallagher","payee":"Thanos"}
+{"claim_id":745,"claim_type":"bodily injury liability","claim_amount_usd":29113.58,"adjuster":"TChalla","insured":"Duky","payee":"Stephen"}
+{"claim_id":746,"claim_type":"personal injury protection","claim_amount_usd":9519.22,"adjuster":"Natasha","insured":"Nathaniel","payee":"Shuri"}
+{"claim_id":747,"claim_type":"collision","claim_amount_usd":28303.0,"adjuster":"Peggy","insured":"Ruprecht","payee":"Rocket"}
+{"claim_id":748,"claim_type":"personal injury protection","claim_amount_usd":3943.77,"adjuster":"Nebula","insured":"Dorise","payee":"Okoye"}
+{"claim_id":749,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":1656.41,"adjuster":"Nebula","insured":"Sandra","payee":"Thanos"}
+{"claim_id":750,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":25927.17,"adjuster":"Gamora","insured":"Hildagard","payee":"Nick"}
+{"claim_id":751,"claim_type":"property damage liability","claim_amount_usd":6710.95,"adjuster":"TChalla","insured":"Caryl","payee":"Katy"}
+{"claim_id":752,"claim_type":"personal injury protection","claim_amount_usd":24976.98,"adjuster":"Thor","insured":"Averill","payee":"Thanos"}
+{"claim_id":753,"claim_type":"collision","claim_amount_usd":24250.81,"adjuster":"Thor","insured":"Auroora","payee":"Nick"}
+{"claim_id":754,"claim_type":"bodily injury liability","claim_amount_usd":4959.57,"adjuster":"Peggy","insured":"Annabel","payee":"Parker"}
+{"claim_id":755,"claim_type":"property damage liability","claim_amount_usd":7287.14,"adjuster":"TChalla","insured":"Dreddy","payee":"Parker"}
+{"claim_id":756,"claim_type":"comprehensive","claim_amount_usd":28560.57,"adjuster":"Nebula","insured":"Mariya","payee":"Parker"}
+{"claim_id":757,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":25183.19,"adjuster":"Nebula","insured":"Ive","payee":"Thanos"}
+{"claim_id":758,"claim_type":"collision","claim_amount_usd":6706.37,"adjuster":"Nebula","insured":"Wendi","payee":"Thanos"}
+{"claim_id":759,"claim_type":"property damage liability","claim_amount_usd":2896.99,"adjuster":"Thor","insured":"Gerrie","payee":"Okoye"}
+{"claim_id":760,"claim_type":"comprehensive","claim_amount_usd":22336.58,"adjuster":"Nebula","insured":"Nadeen","payee":"Thanos"}
+{"claim_id":761,"claim_type":"collision","claim_amount_usd":10154.44,"adjuster":"Gamora","insured":"Brendis","payee":"Katy"}
+{"claim_id":762,"claim_type":"personal injury protection","claim_amount_usd":20457.36,"adjuster":"Wanda","insured":"Darice","payee":"Thanos"}
+{"claim_id":763,"claim_type":"bodily injury liability","claim_amount_usd":10259.92,"adjuster":"Nebula","insured":"Karel","payee":"Groot"}
+{"claim_id":764,"claim_type":"bodily injury liability","claim_amount_usd":166.72,"adjuster":"Natasha","insured":"Rubia","payee":"Stephen"}
+{"claim_id":765,"claim_type":"bodily injury liability","claim_amount_usd":16114.85,"adjuster":"Nebula","insured":"Nannette","payee":"Shuri"}
+{"claim_id":766,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":1764.65,"adjuster":"Peter","insured":"Ardyth","payee":"Thanos"}
+{"claim_id":767,"claim_type":"comprehensive","claim_amount_usd":14001.15,"adjuster":"Peggy","insured":"Zuzana","payee":"Rocket"}
+{"claim_id":768,"claim_type":"property damage liability","claim_amount_usd":6855.75,"adjuster":"Nebula","insured":"Domenic","payee":"Thanos"}
+{"claim_id":769,"claim_type":"comprehensive","claim_amount_usd":6365.02,"adjuster":"TChalla","insured":"Kevan","payee":"Nick"}
+{"claim_id":770,"claim_type":"personal injury protection","claim_amount_usd":9668.6,"adjuster":"Wanda","insured":"Killy","payee":"Thanos"}
+{"claim_id":771,"claim_type":"comprehensive","claim_amount_usd":24437.38,"adjuster":"Nebula","insured":"Brina","payee":"Thanos"}
+{"claim_id":772,"claim_type":"comprehensive","claim_amount_usd":9422.16,"adjuster":"Nebula","insured":"Barbara","payee":"Thanos"}
+{"claim_id":773,"claim_type":"bodily injury liability","claim_amount_usd":20490.76,"adjuster":"Tony","insured":"Melli","payee":"Thanos"}
+{"claim_id":774,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":11750.06,"adjuster":"Peggy","insured":"Alvira","payee":"Thanos"}
+{"claim_id":775,"claim_type":"collision","claim_amount_usd":17963.74,"adjuster":"Peter","insured":"Timmie","payee":"Thanos"}
+{"claim_id":776,"claim_type":"bodily injury liability","claim_amount_usd":6125.48,"adjuster":"Tony","insured":"Annabal","payee":"Shuri"}
+{"claim_id":777,"claim_type":"personal injury protection","claim_amount_usd":11063.85,"adjuster":"Steve","insured":"Godart","payee":"Thanos"}
+{"claim_id":778,"claim_type":"collision","claim_amount_usd":10801.41,"adjuster":"TChalla","insured":"Chris","payee":"Katy"}
+{"claim_id":779,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":7423.89,"adjuster":"Tony","insured":"Jim","payee":"Wong"}
+{"claim_id":780,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":22614.23,"adjuster":"Nebula","insured":"Baudoin","payee":"Thanos"}
+{"claim_id":781,"claim_type":"personal injury protection","claim_amount_usd":2252.38,"adjuster":"Nebula","insured":"Tedmund","payee":"Okoye"}
+{"claim_id":782,"claim_type":"bodily injury liability","claim_amount_usd":23077.15,"adjuster":"Peter","insured":"Pattie","payee":"Rocket"}
+{"claim_id":783,"claim_type":"property damage liability","claim_amount_usd":11086.1,"adjuster":"Nebula","insured":"Beilul","payee":"Thanos"}
+{"claim_id":784,"claim_type":"collision","claim_amount_usd":20810.07,"adjuster":"Peggy","insured":"Hestia","payee":"Thanos"}
+{"claim_id":785,"claim_type":"property damage liability","claim_amount_usd":3659.3,"adjuster":"TChalla","insured":"Laney","payee":"Thanos"}
+{"claim_id":786,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":22238.23,"adjuster":"Nebula","insured":"Jenine","payee":"Rocket"}
+{"claim_id":787,"claim_type":"collision","claim_amount_usd":14435.78,"adjuster":"Nebula","insured":"Sibyl","payee":"Thanos"}
+{"claim_id":788,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":9485.68,"adjuster":"Nebula","insured":"Gardy","payee":"Groot"}
+{"claim_id":789,"claim_type":"property damage liability","claim_amount_usd":532.8,"adjuster":"Wanda","insured":"Aimee","payee":"Katy"}
+{"claim_id":790,"claim_type":"property damage liability","claim_amount_usd":20720.5,"adjuster":"Wanda","insured":"Daphne","payee":"Rocket"}
+{"claim_id":791,"claim_type":"bodily injury liability","claim_amount_usd":4569.47,"adjuster":"Nebula","insured":"Monte","payee":"Thanos"}
+{"claim_id":792,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":12538.25,"adjuster":"Gamora","insured":"Clarinda","payee":"Thanos"}
+{"claim_id":793,"claim_type":"comprehensive","claim_amount_usd":23875.24,"adjuster":"Peggy","insured":"Minni","payee":"Wong"}
+{"claim_id":794,"claim_type":"collision","claim_amount_usd":13252.2,"adjuster":"Wanda","insured":"Cally","payee":"Okoye"}
+{"claim_id":795,"claim_type":"comprehensive","claim_amount_usd":24773.19,"adjuster":"Natasha","insured":"Goddard","payee":"Thanos"}
+{"claim_id":796,"claim_type":"property damage liability","claim_amount_usd":19668.7,"adjuster":"TChalla","insured":"Nevil","payee":"Thanos"}
+{"claim_id":797,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":11858.29,"adjuster":"Natasha","insured":"Brittani","payee":"Okoye"}
+{"claim_id":798,"claim_type":"collision","claim_amount_usd":25602.07,"adjuster":"Thor","insured":"Kris","payee":"Rocket"}
+{"claim_id":799,"claim_type":"comprehensive","claim_amount_usd":9977.06,"adjuster":"Thor","insured":"Sonia","payee":"Parker"}
+{"claim_id":800,"claim_type":"collision","claim_amount_usd":25608.08,"adjuster":"Nebula","insured":"Florenza","payee":"Rocket"}
+{"claim_id":801,"claim_type":"property damage liability","claim_amount_usd":982.53,"adjuster":"Peggy","insured":"Nehemiah","payee":"Groot"}
+{"claim_id":802,"claim_type":"personal injury protection","claim_amount_usd":5469.47,"adjuster":"Wanda","insured":"Bunny","payee":"Okoye"}
+{"claim_id":803,"claim_type":"bodily injury liability","claim_amount_usd":23612.66,"adjuster":"Wanda","insured":"Moreen","payee":"Thanos"}
+{"claim_id":804,"claim_type":"bodily injury liability","claim_amount_usd":4566.46,"adjuster":"Tony","insured":"Osborne","payee":"Nick"}
+{"claim_id":805,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":20839.3,"adjuster":"Peter","insured":"Susana","payee":"Groot"}
+{"claim_id":806,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":20531.82,"adjuster":"Thor","insured":"Templeton","payee":"Thanos"}
+{"claim_id":807,"claim_type":"personal injury protection","claim_amount_usd":20987.76,"adjuster":"Nebula","insured":"Dolorita","payee":"Katy"}
+{"claim_id":808,"claim_type":"personal injury protection","claim_amount_usd":15535.85,"adjuster":"Peter","insured":"Sherlocke","payee":"Thanos"}
+{"claim_id":809,"claim_type":"collision","claim_amount_usd":17385.96,"adjuster":"Peter","insured":"Bernie","payee":"Shuri"}
+{"claim_id":810,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":23519.55,"adjuster":"Peter","insured":"Yancey","payee":"Stephen"}
+{"claim_id":811,"claim_type":"comprehensive","claim_amount_usd":22183.88,"adjuster":"Natasha","insured":"Putnam","payee":"Shuri"}
+{"claim_id":812,"claim_type":"bodily injury liability","claim_amount_usd":6743.73,"adjuster":"TChalla","insured":"Saunders","payee":"Nick"}
+{"claim_id":813,"claim_type":"collision","claim_amount_usd":13829.21,"adjuster":"TChalla","insured":"Kipp","payee":"Rocket"}
+{"claim_id":814,"claim_type":"comprehensive","claim_amount_usd":28225.91,"adjuster":"Nebula","insured":"Ramsay","payee":"Katy"}
+{"claim_id":815,"claim_type":"personal injury protection","claim_amount_usd":24375.99,"adjuster":"Nebula","insured":"Wilbert","payee":"Thanos"}
+{"claim_id":816,"claim_type":"property damage liability","claim_amount_usd":10018.36,"adjuster":"Tony","insured":"Killy","payee":"Thanos"}
+{"claim_id":817,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":15187.72,"adjuster":"Nebula","insured":"Stanislas","payee":"Nick"}
+{"claim_id":818,"claim_type":"personal injury protection","claim_amount_usd":592.13,"adjuster":"Nebula","insured":"Udell","payee":"Thanos"}
+{"claim_id":819,"claim_type":"bodily injury liability","claim_amount_usd":5401.44,"adjuster":"Gamora","insured":"Thatcher","payee":"Thanos"}
+{"claim_id":820,"claim_type":"comprehensive","claim_amount_usd":27336.28,"adjuster":"Wanda","insured":"Patton","payee":"Nick"}
+{"claim_id":821,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":26236.1,"adjuster":"Tony","insured":"Crin","payee":"Okoye"}
+{"claim_id":822,"claim_type":"personal injury protection","claim_amount_usd":10580.38,"adjuster":"Steve","insured":"Teddie","payee":"Thanos"}
+{"claim_id":823,"claim_type":"comprehensive","claim_amount_usd":2087.93,"adjuster":"Gamora","insured":"Dasha","payee":"Thanos"}
+{"claim_id":824,"claim_type":"collision","claim_amount_usd":22542.54,"adjuster":"Peter","insured":"Lia","payee":"Shuri"}
+{"claim_id":825,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":28811.01,"adjuster":"Natasha","insured":"Merrel","payee":"Groot"}
+{"claim_id":826,"claim_type":"comprehensive","claim_amount_usd":18638.02,"adjuster":"Thor","insured":"Elaina","payee":"Wong"}
+{"claim_id":827,"claim_type":"property damage liability","claim_amount_usd":19763.26,"adjuster":"Nebula","insured":"Franny","payee":"Stephen"}
+{"claim_id":828,"claim_type":"collision","claim_amount_usd":13915.59,"adjuster":"Nebula","insured":"Ninette","payee":"Stephen"}
+{"claim_id":829,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":8468.25,"adjuster":"Nebula","insured":"Cortie","payee":"Stephen"}
+{"claim_id":830,"claim_type":"comprehensive","claim_amount_usd":7109.3,"adjuster":"Nebula","insured":"Darby","payee":"Groot"}
+{"claim_id":831,"claim_type":"collision","claim_amount_usd":931.58,"adjuster":"Thor","insured":"Jackqueline","payee":"Thanos"}
+{"claim_id":832,"claim_type":"comprehensive","claim_amount_usd":10557.65,"adjuster":"Steve","insured":"Der","payee":"Rocket"}
+{"claim_id":833,"claim_type":"collision","claim_amount_usd":5316.17,"adjuster":"Tony","insured":"Elwyn","payee":"Groot"}
+{"claim_id":834,"claim_type":"collision","claim_amount_usd":22230.35,"adjuster":"Nebula","insured":"Bess","payee":"Shuri"}
+{"claim_id":835,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":16252.47,"adjuster":"Natasha","insured":"Riordan","payee":"Rocket"}
+{"claim_id":836,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":15758.05,"adjuster":"Nebula","insured":"Veriee","payee":"Thanos"}
+{"claim_id":837,"claim_type":"personal injury protection","claim_amount_usd":20764.0,"adjuster":"TChalla","insured":"Anthiathia","payee":"Nick"}
+{"claim_id":838,"claim_type":"bodily injury liability","claim_amount_usd":24196.09,"adjuster":"Gamora","insured":"Lenci","payee":"Thanos"}
+{"claim_id":839,"claim_type":"comprehensive","claim_amount_usd":21617.24,"adjuster":"Nebula","insured":"Luther","payee":"Thanos"}
+{"claim_id":840,"claim_type":"property damage liability","claim_amount_usd":23445.39,"adjuster":"Peter","insured":"Diane-marie","payee":"Thanos"}
+{"claim_id":841,"claim_type":"collision","claim_amount_usd":9995.39,"adjuster":"Nebula","insured":"Wylie","payee":"Thanos"}
+{"claim_id":842,"claim_type":"comprehensive","claim_amount_usd":16850.7,"adjuster":"Gamora","insured":"Ansel","payee":"Stephen"}
+{"claim_id":843,"claim_type":"comprehensive","claim_amount_usd":14926.89,"adjuster":"Thor","insured":"Sybila","payee":"Okoye"}
+{"claim_id":844,"claim_type":"property damage liability","claim_amount_usd":13673.49,"adjuster":"Peter","insured":"Bronnie","payee":"Thanos"}
+{"claim_id":845,"claim_type":"collision","claim_amount_usd":6865.07,"adjuster":"Thor","insured":"Austin","payee":"Katy"}
+{"claim_id":846,"claim_type":"comprehensive","claim_amount_usd":12466.14,"adjuster":"Natasha","insured":"Anissa","payee":"Wong"}
+{"claim_id":847,"claim_type":"personal injury protection","claim_amount_usd":10782.67,"adjuster":"Peggy","insured":"Charisse","payee":"Rocket"}
+{"claim_id":848,"claim_type":"comprehensive","claim_amount_usd":22884.85,"adjuster":"Nebula","insured":"Kaycee","payee":"Nick"}
+{"claim_id":849,"claim_type":"comprehensive","claim_amount_usd":2892.95,"adjuster":"Natasha","insured":"Millisent","payee":"Nick"}
+{"claim_id":850,"claim_type":"comprehensive","claim_amount_usd":10598.79,"adjuster":"Wanda","insured":"Stanislaus","payee":"Wong"}
+{"claim_id":851,"claim_type":"collision","claim_amount_usd":28141.44,"adjuster":"TChalla","insured":"Ted","payee":"Wong"}
+{"claim_id":852,"claim_type":"collision","claim_amount_usd":29920.54,"adjuster":"Thor","insured":"Gill","payee":"Rocket"}
+{"claim_id":853,"claim_type":"collision","claim_amount_usd":6206.55,"adjuster":"Thor","insured":"Jeannette","payee":"Thanos"}
+{"claim_id":854,"claim_type":"property damage liability","claim_amount_usd":15676.15,"adjuster":"Nebula","insured":"Georgeanne","payee":"Nick"}
+{"claim_id":855,"claim_type":"collision","claim_amount_usd":1903.44,"adjuster":"Nebula","insured":"Flin","payee":"Thanos"}
+{"claim_id":856,"claim_type":"personal injury protection","claim_amount_usd":2267.4,"adjuster":"Nebula","insured":"Robinson","payee":"Wong"}
+{"claim_id":857,"claim_type":"personal injury protection","claim_amount_usd":16728.15,"adjuster":"Nebula","insured":"Ange","payee":"Nick"}
+{"claim_id":858,"claim_type":"property damage liability","claim_amount_usd":20079.94,"adjuster":"Nebula","insured":"Sebastien","payee":"Thanos"}
+{"claim_id":859,"claim_type":"collision","claim_amount_usd":23580.47,"adjuster":"Peggy","insured":"Christophorus","payee":"Thanos"}
+{"claim_id":860,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":25611.08,"adjuster":"Peter","insured":"Gwenore","payee":"Katy"}
+{"claim_id":861,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":21811.58,"adjuster":"Gamora","insured":"Lorraine","payee":"Thanos"}
+{"claim_id":862,"claim_type":"bodily injury liability","claim_amount_usd":4305.09,"adjuster":"Peter","insured":"Sheela","payee":"Groot"}
+{"claim_id":863,"claim_type":"collision","claim_amount_usd":9493.73,"adjuster":"Natasha","insured":"Nicolette","payee":"Rocket"}
+{"claim_id":864,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":19750.79,"adjuster":"Nebula","insured":"Paulie","payee":"Groot"}
+{"claim_id":865,"claim_type":"collision","claim_amount_usd":11893.85,"adjuster":"Nebula","insured":"Andie","payee":"Thanos"}
+{"claim_id":866,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":11115.17,"adjuster":"Wanda","insured":"Bud","payee":"Okoye"}
+{"claim_id":867,"claim_type":"bodily injury liability","claim_amount_usd":17614.09,"adjuster":"Tony","insured":"Benedetta","payee":"Thanos"}
+{"claim_id":868,"claim_type":"comprehensive","claim_amount_usd":18831.4,"adjuster":"TChalla","insured":"Glynda","payee":"Parker"}
+{"claim_id":869,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":2450.83,"adjuster":"Nebula","insured":"Julianne","payee":"Okoye"}
+{"claim_id":870,"claim_type":"personal injury protection","claim_amount_usd":20923.85,"adjuster":"Peter","insured":"Xylia","payee":"Nick"}
+{"claim_id":871,"claim_type":"personal injury protection","claim_amount_usd":15413.86,"adjuster":"Tony","insured":"Jeanelle","payee":"Thanos"}
+{"claim_id":872,"claim_type":"bodily injury liability","claim_amount_usd":16591.43,"adjuster":"Natasha","insured":"Pall","payee":"Thanos"}
+{"claim_id":873,"claim_type":"property damage liability","claim_amount_usd":26573.99,"adjuster":"Natasha","insured":"Ulric","payee":"Nick"}
+{"claim_id":874,"claim_type":"bodily injury liability","claim_amount_usd":15728.02,"adjuster":"Thor","insured":"Rem","payee":"Thanos"}
+{"claim_id":875,"claim_type":"comprehensive","claim_amount_usd":4427.21,"adjuster":"Thor","insured":"Mela","payee":"Stephen"}
+{"claim_id":876,"claim_type":"collision","claim_amount_usd":15658.56,"adjuster":"Nebula","insured":"Lise","payee":"Rocket"}
+{"claim_id":877,"claim_type":"property damage liability","claim_amount_usd":26616.65,"adjuster":"Nebula","insured":"Marilee","payee":"Okoye"}
+{"claim_id":878,"claim_type":"bodily injury liability","claim_amount_usd":25543.7,"adjuster":"Tony","insured":"Noak","payee":"Thanos"}
+{"claim_id":879,"claim_type":"collision","claim_amount_usd":27759.78,"adjuster":"Gamora","insured":"Kathlin","payee":"Thanos"}
+{"claim_id":880,"claim_type":"collision","claim_amount_usd":3637.46,"adjuster":"Thor","insured":"Sabina","payee":"Katy"}
+{"claim_id":881,"claim_type":"comprehensive","claim_amount_usd":984.88,"adjuster":"Nebula","insured":"Rennie","payee":"Thanos"}
+{"claim_id":882,"claim_type":"personal injury protection","claim_amount_usd":26715.03,"adjuster":"Nebula","insured":"Toni","payee":"Thanos"}
+{"claim_id":883,"claim_type":"comprehensive","claim_amount_usd":2188.6,"adjuster":"Nebula","insured":"Hoebart","payee":"Thanos"}
+{"claim_id":884,"claim_type":"collision","claim_amount_usd":22666.27,"adjuster":"Nebula","insured":"Irina","payee":"Rocket"}
+{"claim_id":885,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":17279.08,"adjuster":"Nebula","insured":"Lonna","payee":"Thanos"}
+{"claim_id":886,"claim_type":"personal injury protection","claim_amount_usd":27394.27,"adjuster":"Nebula","insured":"Ulrica","payee":"Thanos"}
+{"claim_id":887,"claim_type":"property damage liability","claim_amount_usd":22035.13,"adjuster":"Nebula","insured":"Ranee","payee":"Thanos"}
+{"claim_id":888,"claim_type":"bodily injury liability","claim_amount_usd":7045.8,"adjuster":"Natasha","insured":"Broderick","payee":"Thanos"}
+{"claim_id":889,"claim_type":"collision","claim_amount_usd":11321.26,"adjuster":"Steve","insured":"Ephrayim","payee":"Thanos"}
+{"claim_id":890,"claim_type":"comprehensive","claim_amount_usd":14910.05,"adjuster":"Nebula","insured":"Stephine","payee":"Stephen"}
+{"claim_id":891,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":17938.69,"adjuster":"Natasha","insured":"Raychel","payee":"Groot"}
+{"claim_id":892,"claim_type":"property damage liability","claim_amount_usd":26291.4,"adjuster":"Thor","insured":"Barney","payee":"Rocket"}
+{"claim_id":893,"claim_type":"bodily injury liability","claim_amount_usd":19263.41,"adjuster":"Wanda","insured":"Ravi","payee":"Wong"}
+{"claim_id":894,"claim_type":"collision","claim_amount_usd":18523.78,"adjuster":"Tony","insured":"Darnall","payee":"Parker"}
+{"claim_id":895,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":7752.53,"adjuster":"Peggy","insured":"Holt","payee":"Stephen"}
+{"claim_id":896,"claim_type":"bodily injury liability","claim_amount_usd":27977.98,"adjuster":"Natasha","insured":"Felita","payee":"Thanos"}
+{"claim_id":897,"claim_type":"bodily injury liability","claim_amount_usd":23682.98,"adjuster":"Nebula","insured":"Gav","payee":"Groot"}
+{"claim_id":898,"claim_type":"property damage liability","claim_amount_usd":14396.11,"adjuster":"Nebula","insured":"Devland","payee":"Thanos"}
+{"claim_id":899,"claim_type":"personal injury protection","claim_amount_usd":2553.42,"adjuster":"Nebula","insured":"Kendra","payee":"Okoye"}
+{"claim_id":900,"claim_type":"personal injury protection","claim_amount_usd":12712.98,"adjuster":"Peggy","insured":"Grete","payee":"Okoye"}
+{"claim_id":901,"claim_type":"personal injury protection","claim_amount_usd":21569.5,"adjuster":"TChalla","insured":"Patsy","payee":"Shuri"}
+{"claim_id":902,"claim_type":"collision","claim_amount_usd":27054.23,"adjuster":"TChalla","insured":"Rodolfo","payee":"Parker"}
+{"claim_id":903,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":9446.42,"adjuster":"Nebula","insured":"Christoph","payee":"Groot"}
+{"claim_id":904,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":25275.36,"adjuster":"Gamora","insured":"Odille","payee":"Thanos"}
+{"claim_id":905,"claim_type":"comprehensive","claim_amount_usd":3082.03,"adjuster":"Thor","insured":"Lorette","payee":"Thanos"}
+{"claim_id":906,"claim_type":"comprehensive","claim_amount_usd":22304.43,"adjuster":"Nebula","insured":"Kerk","payee":"Parker"}
+{"claim_id":907,"claim_type":"personal injury protection","claim_amount_usd":28038.76,"adjuster":"Gamora","insured":"Annadiana","payee":"Okoye"}
+{"claim_id":908,"claim_type":"comprehensive","claim_amount_usd":3648.48,"adjuster":"Peggy","insured":"Giffer","payee":"Parker"}
+{"claim_id":909,"claim_type":"property damage liability","claim_amount_usd":28028.88,"adjuster":"Gamora","insured":"Jae","payee":"Thanos"}
+{"claim_id":910,"claim_type":"comprehensive","claim_amount_usd":21533.51,"adjuster":"Nebula","insured":"Alvera","payee":"Stephen"}
+{"claim_id":911,"claim_type":"property damage liability","claim_amount_usd":22487.76,"adjuster":"Nebula","insured":"Kate","payee":"Thanos"}
+{"claim_id":912,"claim_type":"collision","claim_amount_usd":8558.21,"adjuster":"TChalla","insured":"Carol","payee":"Stephen"}
+{"claim_id":913,"claim_type":"personal injury protection","claim_amount_usd":25615.42,"adjuster":"Nebula","insured":"Ramona","payee":"Thanos"}
+{"claim_id":914,"claim_type":"collision","claim_amount_usd":15906.18,"adjuster":"Nebula","insured":"Helena","payee":"Okoye"}
+{"claim_id":915,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":29829.95,"adjuster":"Nebula","insured":"Maritsa","payee":"Wong"}
+{"claim_id":916,"claim_type":"bodily injury liability","claim_amount_usd":26946.46,"adjuster":"Nebula","insured":"Jessa","payee":"Thanos"}
+{"claim_id":917,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":15926.75,"adjuster":"Steve","insured":"Pamela","payee":"Stephen"}
+{"claim_id":918,"claim_type":"personal injury protection","claim_amount_usd":21391.41,"adjuster":"Nebula","insured":"Arabela","payee":"Groot"}
+{"claim_id":919,"claim_type":"bodily injury liability","claim_amount_usd":15172.67,"adjuster":"Nebula","insured":"Leoline","payee":"Groot"}
+{"claim_id":920,"claim_type":"property damage liability","claim_amount_usd":24999.96,"adjuster":"Peggy","insured":"Vittoria","payee":"Wong"}
+{"claim_id":921,"claim_type":"bodily injury liability","claim_amount_usd":7885.63,"adjuster":"Peter","insured":"Horst","payee":"Thanos"}
+{"claim_id":922,"claim_type":"collision","claim_amount_usd":20523.51,"adjuster":"Nebula","insured":"Gweneth","payee":"Thanos"}
+{"claim_id":923,"claim_type":"bodily injury liability","claim_amount_usd":14790.6,"adjuster":"TChalla","insured":"Corbett","payee":"Shuri"}
+{"claim_id":924,"claim_type":"collision","claim_amount_usd":21514.47,"adjuster":"Natasha","insured":"Gabie","payee":"Shuri"}
+{"claim_id":925,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":4945.76,"adjuster":"Nebula","insured":"Maximilianus","payee":"Nick"}
+{"claim_id":926,"claim_type":"bodily injury liability","claim_amount_usd":18462.33,"adjuster":"Steve","insured":"Elora","payee":"Thanos"}
+{"claim_id":927,"claim_type":"collision","claim_amount_usd":20396.58,"adjuster":"Nebula","insured":"Caritta","payee":"Thanos"}
+{"claim_id":928,"claim_type":"collision","claim_amount_usd":21991.92,"adjuster":"Nebula","insured":"Odetta","payee":"Thanos"}
+{"claim_id":929,"claim_type":"collision","claim_amount_usd":5596.49,"adjuster":"Steve","insured":"Tracey","payee":"Parker"}
+{"claim_id":930,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":26173.51,"adjuster":"Gamora","insured":"Clevey","payee":"Thanos"}
+{"claim_id":931,"claim_type":"property damage liability","claim_amount_usd":1563.02,"adjuster":"Nebula","insured":"Laverna","payee":"Thanos"}
+{"claim_id":932,"claim_type":"personal injury protection","claim_amount_usd":20834.94,"adjuster":"Thor","insured":"Efrem","payee":"Parker"}
+{"claim_id":933,"claim_type":"comprehensive","claim_amount_usd":4044.35,"adjuster":"Tony","insured":"Christabel","payee":"Thanos"}
+{"claim_id":934,"claim_type":"property damage liability","claim_amount_usd":9875.47,"adjuster":"Nebula","insured":"Clevey","payee":"Stephen"}
+{"claim_id":935,"claim_type":"property damage liability","claim_amount_usd":29043.11,"adjuster":"TChalla","insured":"Joana","payee":"Parker"}
+{"claim_id":936,"claim_type":"bodily injury liability","claim_amount_usd":6819.4,"adjuster":"Gamora","insured":"Lemuel","payee":"Katy"}
+{"claim_id":937,"claim_type":"personal injury protection","claim_amount_usd":6044.1,"adjuster":"Peggy","insured":"Rois","payee":"Rocket"}
+{"claim_id":938,"claim_type":"collision","claim_amount_usd":20950.16,"adjuster":"Nebula","insured":"Mavra","payee":"Thanos"}
+{"claim_id":939,"claim_type":"comprehensive","claim_amount_usd":27881.25,"adjuster":"Wanda","insured":"Mike","payee":"Thanos"}
+{"claim_id":940,"claim_type":"bodily injury liability","claim_amount_usd":23713.48,"adjuster":"Nebula","insured":"Micah","payee":"Groot"}
+{"claim_id":941,"claim_type":"property damage liability","claim_amount_usd":2030.99,"adjuster":"Nebula","insured":"Atlante","payee":"Thanos"}
+{"claim_id":942,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":5588.86,"adjuster":"Peter","insured":"Britni","payee":"Nick"}
+{"claim_id":943,"claim_type":"property damage liability","claim_amount_usd":18002.78,"adjuster":"Gamora","insured":"Erek","payee":"Parker"}
+{"claim_id":944,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":4623.98,"adjuster":"Nebula","insured":"Rip","payee":"Stephen"}
+{"claim_id":945,"claim_type":"bodily injury liability","claim_amount_usd":4653.22,"adjuster":"TChalla","insured":"Nellie","payee":"Wong"}
+{"claim_id":946,"claim_type":"bodily injury liability","claim_amount_usd":4685.02,"adjuster":"Tony","insured":"Jo ann","payee":"Okoye"}
+{"claim_id":947,"claim_type":"personal injury protection","claim_amount_usd":27215.58,"adjuster":"Natasha","insured":"Marice","payee":"Parker"}
+{"claim_id":948,"claim_type":"bodily injury liability","claim_amount_usd":9302.47,"adjuster":"Nebula","insured":"Devy","payee":"Stephen"}
+{"claim_id":949,"claim_type":"collision","claim_amount_usd":6333.15,"adjuster":"Tony","insured":"Eli","payee":"Thanos"}
+{"claim_id":950,"claim_type":"collision","claim_amount_usd":8183.69,"adjuster":"Wanda","insured":"Erskine","payee":"Groot"}
+{"claim_id":951,"claim_type":"comprehensive","claim_amount_usd":1830.21,"adjuster":"Peggy","insured":"Linette","payee":"Okoye"}
+{"claim_id":952,"claim_type":"comprehensive","claim_amount_usd":5357.82,"adjuster":"Nebula","insured":"Town","payee":"Thanos"}
+{"claim_id":953,"claim_type":"collision","claim_amount_usd":27817.96,"adjuster":"Tony","insured":"Jillayne","payee":"Groot"}
+{"claim_id":954,"claim_type":"personal injury protection","claim_amount_usd":21418.68,"adjuster":"Steve","insured":"Cindy","payee":"Thanos"}
+{"claim_id":955,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":850.49,"adjuster":"Nebula","insured":"Imojean","payee":"Rocket"}
+{"claim_id":956,"claim_type":"property damage liability","claim_amount_usd":7950.15,"adjuster":"Peter","insured":"Colleen","payee":"Thanos"}
+{"claim_id":957,"claim_type":"bodily injury liability","claim_amount_usd":15490.4,"adjuster":"Peggy","insured":"Lenna","payee":"Nick"}
+{"claim_id":958,"claim_type":"personal injury protection","claim_amount_usd":27100.66,"adjuster":"Nebula","insured":"Nealson","payee":"Thanos"}
+{"claim_id":959,"claim_type":"property damage liability","claim_amount_usd":15333.63,"adjuster":"Wanda","insured":"Garek","payee":"Stephen"}
+{"claim_id":960,"claim_type":"bodily injury liability","claim_amount_usd":11121.0,"adjuster":"Nebula","insured":"Marillin","payee":"Katy"}
+{"claim_id":961,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":23809.88,"adjuster":"TChalla","insured":"Dorri","payee":"Thanos"}
+{"claim_id":962,"claim_type":"personal injury protection","claim_amount_usd":27856.27,"adjuster":"Steve","insured":"Lionel","payee":"Groot"}
+{"claim_id":963,"claim_type":"bodily injury liability","claim_amount_usd":6666.18,"adjuster":"Nebula","insured":"Dido","payee":"Wong"}
+{"claim_id":964,"claim_type":"comprehensive","claim_amount_usd":4919.62,"adjuster":"Steve","insured":"Velvet","payee":"Shuri"}
+{"claim_id":965,"claim_type":"personal injury protection","claim_amount_usd":28996.6,"adjuster":"Tony","insured":"Justine","payee":"Thanos"}
+{"claim_id":966,"claim_type":"collision","claim_amount_usd":12065.99,"adjuster":"Peter","insured":"Karena","payee":"Thanos"}
+{"claim_id":967,"claim_type":"comprehensive","claim_amount_usd":11773.58,"adjuster":"Nebula","insured":"Clywd","payee":"Thanos"}
+{"claim_id":968,"claim_type":"comprehensive","claim_amount_usd":16514.19,"adjuster":"Nebula","insured":"Brandy","payee":"Thanos"}
+{"claim_id":969,"claim_type":"bodily injury liability","claim_amount_usd":20748.05,"adjuster":"Nebula","insured":"Oates","payee":"Groot"}
+{"claim_id":970,"claim_type":"collision","claim_amount_usd":3599.96,"adjuster":"Nebula","insured":"Leonid","payee":"Groot"}
+{"claim_id":971,"claim_type":"property damage liability","claim_amount_usd":9371.44,"adjuster":"Thor","insured":"Tim","payee":"Groot"}
+{"claim_id":972,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":19706.34,"adjuster":"Tony","insured":"Cristie","payee":"Nick"}
+{"claim_id":973,"claim_type":"bodily injury liability","claim_amount_usd":8830.64,"adjuster":"Wanda","insured":"Quill","payee":"Okoye"}
+{"claim_id":974,"claim_type":"comprehensive","claim_amount_usd":3666.23,"adjuster":"Tony","insured":"Allina","payee":"Thanos"}
+{"claim_id":975,"claim_type":"property damage liability","claim_amount_usd":26579.03,"adjuster":"Natasha","insured":"Justina","payee":"Katy"}
+{"claim_id":976,"claim_type":"property damage liability","claim_amount_usd":20421.96,"adjuster":"Nebula","insured":"Fanchon","payee":"Parker"}
+{"claim_id":977,"claim_type":"comprehensive","claim_amount_usd":10293.59,"adjuster":"Peter","insured":"Francisca","payee":"Wong"}
+{"claim_id":978,"claim_type":"uninsured and  underinsured motorist coverage","claim_amount_usd":13857.29,"adjuster":"Peter","insured":"Lyon","payee":"Wong"}
+{"claim_id":979,"claim_type":"personal injury protection","claim_amount_usd":22893.18,"adjuster":"Tony","insured":"Virgina","payee":"Thanos"}
+{"claim_id":980,"claim_type":"collision","claim_amount_usd":28316.85,"adjuster":"Steve","insured":"Jacky","payee":"Okoye"}
+{"claim_id":981,"claim_type":"collision","claim_amount_usd":9218.92,"adjuster":"Thor","insured":"Mitchel","payee":"Okoye"}
+{"claim_id":982,"claim_type":"property damage liability","claim_amount_usd":12612.1,"adjuster":"Peter","insured":"Judith","payee":"Thanos"}
+{"claim_id":983,"claim_type":"property damage liability","claim_amount_usd":4022.17,"adjuster":"Nebula","insured":"Flori","payee":"Thanos"}
+{"claim_id":984,"claim_type":"personal injury protection","claim_amount_usd":13815.36,"adjuster":"Thor","insured":"Koralle","payee":"Rocket"}
+{"claim_id":985,"claim_type":"property damage liability","claim_amount_usd":4435.83,"adjuster":"Peggy","insured":"Corty","payee":"Rocket"}
+{"claim_id":986,"claim_type":"collision","claim_amount_usd":12018.61,"adjuster":"Thor","insured":"Alaric","payee":"Stephen"}
+{"claim_id":987,"claim_type":"bodily injury liability","claim_amount_usd":16880.73,"adjuster":"Nebula","insured":"Otes","payee":"Rocket"}
+{"claim_id":988,"claim_type":"collision","claim_amount_usd":28360.25,"adjuster":"Natasha","insured":"Carver","payee":"Thanos"}
+{"claim_id":989,"claim_type":"personal injury protection","claim_amount_usd":28531.38,"adjuster":"Peter","insured":"Lisha","payee":"Groot"}
+{"claim_id":990,"claim_type":"property damage liability","claim_amount_usd":21173.69,"adjuster":"Natasha","insured":"Kort","payee":"Katy"}
+{"claim_id":991,"claim_type":"property damage liability","claim_amount_usd":28541.43,"adjuster":"Nebula","insured":"Idalia","payee":"Katy"}
+{"claim_id":992,"claim_type":"personal injury protection","claim_amount_usd":6171.49,"adjuster":"Nebula","insured":"Vanni","payee":"Thanos"}
+{"claim_id":993,"claim_type":"bodily injury liability","claim_amount_usd":18101.54,"adjuster":"Peter","insured":"Teodoor","payee":"Okoye"}
+{"claim_id":994,"claim_type":"personal injury protection","claim_amount_usd":19765.04,"adjuster":"Nebula","insured":"Rorke","payee":"Thanos"}
+{"claim_id":995,"claim_type":"comprehensive","claim_amount_usd":6492.83,"adjuster":"Nebula","insured":"Godard","payee":"Thanos"}
+{"claim_id":996,"claim_type":"bodily injury liability","claim_amount_usd":24229.25,"adjuster":"Nebula","insured":"Katalin","payee":"Thanos"}
+{"claim_id":997,"claim_type":"property damage liability","claim_amount_usd":169.87,"adjuster":"Peter","insured":"Zoe","payee":"Wong"}
+{"claim_id":998,"claim_type":"property damage liability","claim_amount_usd":23449.24,"adjuster":"Nebula","insured":"Dyann","payee":"Thanos"}
+{"claim_id":999,"claim_type":"property damage liability","claim_amount_usd":5259.19,"adjuster":"Nebula","insured":"Alexandros","payee":"Shuri"}
+{"claim_id":1000,"claim_type":"property damage liability","claim_amount_usd":26665.47,"adjuster":"Nebula","insured":"Arda","payee":"Groot"}
