@@ -16,6 +16,7 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Consumed;
+import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Produced;
 import org.slf4j.Logger;
@@ -42,7 +43,7 @@ public class Database {
       throw new RuntimeException(e);
     }
 
-    final var builder = new StreamsBuilder();
+    final StreamsBuilder builder = new StreamsBuilder();
 
     props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
@@ -51,18 +52,19 @@ public class Database {
         Collections.singletonMap(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
 
     // Serdes galore.
-    var commandValueSerde = new SpecificAvroSerde<CommandValue>();
+    SpecificAvroSerde<CommandValue> commandValueSerde = new SpecificAvroSerde<>();
     commandValueSerde.configure(schemaRegistryProps, false);
 
-    var responseValueSerde = new SpecificAvroSerde<ResponseValue>();
+    SpecificAvroSerde<ResponseValue> responseValueSerde = new SpecificAvroSerde<>();
     responseValueSerde.configure(schemaRegistryProps, false);
 
     // Let's start some streams.
-    var commandStream = builder.stream(COMMANDS_STREAM, Consumed.with(Serdes.UUID(), commandValueSerde));
+    KStream<UUID, CommandValue> commandStream =
+        builder.stream(COMMANDS_STREAM, Consumed.with(Serdes.UUID(), commandValueSerde));
 
     // Echo.
     commandStream.mapValues(command -> {
-      var response = new ResponseValue();
+      ResponseValue response = new ResponseValue();
       response.setSOURCE("Echo");
       response.setRESPONSE(String.format("ECHO: %s", command.getCOMMAND()));
       return response;
@@ -81,7 +83,7 @@ public class Database {
     final Topology topology = builder.build();
     logger.info("Topology: {}", topology.describe());
 
-    var streams = new KafkaStreams(topology, streamsConfiguration);
+    final KafkaStreams streams = new KafkaStreams(topology, streamsConfiguration);
     streams.start();
 
     logger.info("Installing shutdown hook.");
@@ -90,7 +92,7 @@ public class Database {
 
   public static Properties loadProperties(String fileName) throws IOException {
     try (FileInputStream input = new FileInputStream(fileName)) {
-      var props = new Properties();
+      final Properties props = new Properties();
       props.load(input);
       return props;
     }

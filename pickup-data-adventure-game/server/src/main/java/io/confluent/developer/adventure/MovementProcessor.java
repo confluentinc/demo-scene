@@ -3,12 +3,14 @@ package io.confluent.developer.adventure;
 import static io.confluent.developer.adventure.Constants.*;
 import static io.confluent.developer.adventure.Constants.MOVEMENT_COMMAND_STREAM;
 import static io.confluent.developer.adventure.Constants.RESPONSES_STREAM;
+import static java.util.Collections.emptyList;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.Consumed;
@@ -28,20 +30,20 @@ public class MovementProcessor {
 
   public static KTable<UUID, LocationData> buildStreams(Map<String, String> schemaRegistryProps,
       StreamsBuilder builder) {
-    var locationDataValueSerde = new SpecificAvroSerde<LocationDataValue>();
+    Serde<LocationDataValue> locationDataValueSerde = new SpecificAvroSerde<>();
     locationDataValueSerde.configure(schemaRegistryProps, false);
     Runtime.getRuntime().addShutdownHook(new Thread(locationDataValueSerde::close));
 
     GlobalKTable<Position, LocationDataValue> locationDataTable =
         builder.globalTable(LOCATION_DATA_STREAM, Materialized.with(PositionSerde.Serde, locationDataValueSerde));
 
-    var movementCommandValueSerde = new SpecificAvroSerde<MovementCommandValue>();
+    Serde<MovementCommandValue> movementCommandValueSerde = new SpecificAvroSerde<>();
     movementCommandValueSerde.configure(schemaRegistryProps, false);
 
-    var locationDataSerde = new SpecificAvroSerde<LocationData>();
+    Serde<LocationData> locationDataSerde = new SpecificAvroSerde<>();
     locationDataSerde.configure(schemaRegistryProps, false);
 
-    var responseValueSerde = new SpecificAvroSerde<ResponseValue>();
+    SpecificAvroSerde<ResponseValue> responseValueSerde = new SpecificAvroSerde<>();
     responseValueSerde.configure(schemaRegistryProps, false);
     Produced<UUID, ResponseValue> producedResponse = Produced.with(Serdes.UUID(), responseValueSerde);
 
@@ -72,7 +74,7 @@ public class MovementProcessor {
     // Location description stream.
     logger.info("Defining the user location change response.");
     userPositionTable.toStream().mapValues(position -> {
-      var response = new ResponseValue();
+      ResponseValue response = new ResponseValue();
       response.setSOURCE("Position");
       response.setRESPONSE(String.format("You moved to %s", position));
       return response;
@@ -89,13 +91,13 @@ public class MovementProcessor {
                   locationData == null ? null : locationData.getOBJECTS()));
 
     userLocationChanges.mapValues(locationData -> {
-      var response = new ResponseValue();
+      ResponseValue response = new ResponseValue();
       response.setSOURCE("Location Description");
 
       if (locationData.getDESCRIPTION() == null) {
         response.setRESPONSE("You have fallen off the edge of the map. Best head back the way you came!");
       } else {
-        var responseString = new StringBuilder();
+        StringBuilder responseString = new StringBuilder();
         responseString.append(locationData.getDESCRIPTION());
 
         List<String> items = locationData.getOBJECTS();

@@ -9,6 +9,7 @@ import static io.confluent.developer.adventure.Constants.STATUS_COMMAND_STREAM;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.Branched;
@@ -20,17 +21,17 @@ import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
 public class InitialCommandProcessor {
   public static void buildStreams(Map<String, String> schemaRegistryProps, StreamsBuilder builder) {
-    var commandValueSerde = new SpecificAvroSerde<CommandValue>();
+    SpecificAvroSerde<CommandValue> commandValueSerde = new SpecificAvroSerde<>();
     commandValueSerde.configure(schemaRegistryProps, false);
-    var movementCommandValueSerde = new SpecificAvroSerde<MovementCommandValue>();
+    Serde<MovementCommandValue> movementCommandValueSerde = new SpecificAvroSerde<>();
     movementCommandValueSerde.configure(schemaRegistryProps, false);
-    var statusCommandValueSerde = new SpecificAvroSerde<StatusCommandValue>();
+    Serde<StatusCommandValue> statusCommandValueSerde = new SpecificAvroSerde<>();
     statusCommandValueSerde.configure(schemaRegistryProps, false);
-    var inventoryCommandValueSerde = new SpecificAvroSerde<InventoryCommandValue>();
+    Serde<InventoryCommandValue> inventoryCommandValueSerde = new SpecificAvroSerde<>();
     inventoryCommandValueSerde.configure(schemaRegistryProps, false);
-    var responseValueSerde = new SpecificAvroSerde<ResponseValue>();
+    SpecificAvroSerde<ResponseValue> responseValueSerde = new SpecificAvroSerde<>();
     responseValueSerde.configure(schemaRegistryProps, false);
-    var producedResponse = Produced.with(Serdes.UUID(), responseValueSerde);
+    Produced<UUID, ResponseValue> producedResponse = Produced.with(Serdes.UUID(), responseValueSerde);
 
     BranchedKStream<UUID, CommandValue> commandBranches =
         builder.stream(COMMANDS_STREAM, Consumed.with(Serdes.UUID(), commandValueSerde)).split();
@@ -59,7 +60,7 @@ public class InitialCommandProcessor {
     commandBranches.branch((k, v) -> {
       return "HELP".equals(v.getCOMMAND());
     }, Branched.withConsumer(stream -> stream.mapValues(v -> {
-      var responseString = new StringBuilder();
+      StringBuilder responseString = new StringBuilder();
       responseString.append("Available commands are:\n");
       responseString.append("\tLOOK\n");
       responseString.append("\tGO NORTH\n");
@@ -71,7 +72,7 @@ public class InitialCommandProcessor {
       responseString.append("\tINVENTORY\n");
       responseString.append("\tHELP\n");
 
-      var response = new ResponseValue();
+      ResponseValue response = new ResponseValue();
       response.setSOURCE("Help");
       response.setRESPONSE(responseString.toString());
       return response;
@@ -79,7 +80,7 @@ public class InitialCommandProcessor {
 
     // Fallback.
     commandBranches.defaultBranch(Branched.withConsumer(stream -> stream.mapValues(msg -> {
-      var response = new ResponseValue();
+      ResponseValue response = new ResponseValue();
       response.setSOURCE("Unknown Command");
       response.setRESPONSE(String.format("Unknown command: %s\n\nTry asking for HELP", msg.getCOMMAND()));
       return response;

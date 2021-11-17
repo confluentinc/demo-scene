@@ -55,7 +55,7 @@ public class AdventureWeb {
   @OnOpen
   public void onOpen(Session session, @PathParam("user-id") String userId) throws IOException {
     logger.info("CONNECTED");
-    var onOpenEventevent = new Event<String, String>("WebSocket", userId, "HELLO");
+    Event<String, String> onOpenEventevent = new Event<String, String>("WebSocket", userId, "HELLO");
     sendEvent(session, onOpenEventevent);
 
     consumerThread = new Thread(() -> {
@@ -97,7 +97,8 @@ public class AdventureWeb {
         });
     logger.info("Got event: {}", event);
 
-    var record = new ProducerRecord<String, CommandValue>(COMMANDS_STREAM, userId, event.getValue());
+    ProducerRecord<String, CommandValue> record =
+        new ProducerRecord<String, CommandValue>(COMMANDS_STREAM, userId, event.getValue());
     logger.info("Sending: {}", record);
 
     producer.send(record, (receipt, e) -> {
