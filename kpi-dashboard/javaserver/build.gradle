@@ -1,0 +1,77 @@
+plugins {
+    id "org.gretty" version "3.0.6"
+    id "com.github.davidmc24.gradle.plugin.avro" version "1.0.0"
+    id "com.diffplug.spotless" version "5.14.2"
+}
+
+gretty {
+    contextPath = '/'
+}
+
+apply plugin: "java"
+sourceCompatibility = 11
+targetCompatibility = 11
+
+apply plugin: "war"
+apply plugin: "application"
+
+spotless {
+    java {
+        target 'src/*/java/**/*.java'
+        importOrder 'java', 'javax', 'org', 'com', 'io.confluent', ''
+
+        trimTrailingWhitespace()
+        eclipse().configFile("src/main/resources/CodeFormatter.xml")
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs("src/main/java")
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+    gradlePluginPortal()
+    maven {
+        url "https://packages.confluent.io/maven/"
+    }
+    maven {
+        url "https://repository.mulesoft.org/nexus/content/repositories/public/"
+    }
+}
+
+jar {
+    archiveBaseName = "dashboard"
+    archiveVersion = "0.0.1-SNAPSHOT"
+}
+
+dependencies {
+    implementation 'io.confluent:kafka-schema-registry-client:6.2.0'
+    implementation "org.apache.avro:avro:1.10.1"
+    implementation 'io.confluent:confluent-metrics:6.2.0-ce'
+    implementation 'io.confluent:kafka-streams-avro-serde:6.2.0'
+    implementation 'javax.websocket:javax.websocket-api:1.1'
+    implementation 'log4j:log4j:1.2.17'
+    implementation 'org.apache.commons:commons-lang3:3.0'
+    implementation 'org.apache.kafka:kafka-clients:6.2.0-ce'
+    implementation 'org.apache.kafka:kafka-streams:6.2.0-ce'
+    implementation 'org.slf4j:slf4j-log4j12:1.7.30'
+    testImplementation "org.junit.jupiter:junit-jupiter-api:5.7.1"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.7.1"
+    testImplementation 'net.jqwik:jqwik:1.5.3'
+}
+
+
+task(runGenerator, dependsOn: 'classes', type: JavaExec) {
+   main = 'io.confluent.developer.dashboard.PurchaseGenerator'
+   classpath = sourceSets.main.runtimeClasspath
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs << '-Xlint:unchecked'
+    options.deprecation = true
+}

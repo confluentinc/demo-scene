@@ -1,0 +1,43 @@
+{
+  "type": "record",
+  "name": "Purchase",
+  "namespace": "io.confluent.developer.dashboard",
+  "fields": [
+    {
+      "name": "NAME",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    },
+    {
+      "name": "DESCRIPTION",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    },
+    {
+      "name": "PRICE",
+      "type": [
+        "null",
+        {
+          "type": "bytes",
+          "scale": 2,
+          "precision": 10,
+          "connect.version": 1,
+          "connect.parameters": {
+            "scale": "2",
+            "connect.decimal.precision": "10"
+          },
+          "connect.name": "org.apache.kafka.connect.data.Decimal",
+          "logicalType": "decimal"
+        }
+      ],
+      "default": null
+    }
+  ],
+  "connect.name": "io.confluent.developer.dashboard.Purchase"
+}

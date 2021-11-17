@@ -24,6 +24,7 @@ You may well need to allocate Docker 8GB when running these. Avoid allocating al
 - [Kafka Summit 2020 - I don’t always test my streams, but when I do, I do it in production!](testing-streams)
 - [Apache Kafka® Event Streaming Platform For Kotlin Developers](wordcount-spring-cloud-stream-kotlin) ([🎥 recording](https://youtu.be/Y-sqGKsnSHI))
 - [PICKUP DATA - A Kafka Adventure Game](pickup-data-adventure-game)
+- [Dashing off a Dashboard](kpi-dashboard)
   
 ###  Data pipelines (Database + KSQL + Elasticsearch)
 
