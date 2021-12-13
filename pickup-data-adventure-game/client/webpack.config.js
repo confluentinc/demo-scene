@@ -23,6 +23,7 @@ module.exports = {
   devServer: {
     compress: true,
     port: 9000,
+    allowedHosts: ['localhost', '.gitpod.io'],
     proxy: [
       {
         context: ['/socket'],
