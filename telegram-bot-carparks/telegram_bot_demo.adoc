@@ -45,6 +45,8 @@ docker exec -it ksqldb bash -c 'echo -e "\n\n⏳ Waiting for ksqlDB to be availa
 
 image::images/overview.png[]
 
+image::images/stream-lineage.jpg[]
+
 
 == Building a Telegram bot in Go
 
@@ -212,11 +214,6 @@ SELECT LATEST_TS,
 ----
 
 === ksqlDB table scan
-
-[source,sql]
-----
-SET 'ksql.query.pull.table.scan.enabled' = 'true';
-----
 
 [source,sql]
 ----
