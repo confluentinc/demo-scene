@@ -2,7 +2,7 @@ version: "3"
 
 services:
   zookeeper-west:
-    image: confluentinc/cp-zookeeper:6.0.0
+    image: confluentinc/cp-zookeeper:7.0.0
     hostname: zookeeper-west
     container_name: zookeeper-west
     networks:
@@ -15,7 +15,7 @@ services:
       ZOOKEEPER_SERVERS: zookeeper-west:2888:3888
 
   broker-west:
-    image: confluentinc/cp-server:6.0.0
+    image: confluentinc/cp-server:7.0.0
     hostname: broker-west
     container_name: broker-west
     networks:
@@ -43,7 +43,7 @@ services:
       - zookeeper-west
 
   zookeeper-east:
-    image: confluentinc/cp-zookeeper:6.0.0
+    image: confluentinc/cp-zookeeper:7.0.0
     hostname: zookeeper-east
     container_name: zookeeper-east
     networks:
@@ -56,7 +56,7 @@ services:
       ZOOKEEPER_SERVERS: zookeeper-east:2888:3888
 
   broker-east:
-    image: confluentinc/cp-server:6.0.0
+    image: confluentinc/cp-server:7.0.0
     hostname: broker-east
     container_name: broker-east
     networks:
