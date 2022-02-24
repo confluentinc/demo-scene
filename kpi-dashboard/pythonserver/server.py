@@ -62,7 +62,7 @@ async def main():
     get_event_loop().run_in_executor(None, run_consumer, shutdown_flag,
                                      clients, lock)
 
-    print("Starting Websocket Server.")
+    print("Starting WebSocket Server.")
     try:
         async with websockets.serve(partial(handle_connection, clients, lock),
                                     "localhost", 8080):

@@ -1,0 +1,20 @@
+{
+  "type": "record",
+  "name": "DashboardValue",
+  "namespace": "io.confluent.developer.dashboard",
+  "fields": [
+    {
+      "name": "TOTAL",
+      "type": [
+        "null",
+        {
+          "type": "bytes",
+          "scale": 2,
+          "precision": 10,
+          "logicalType": "decimal"
+        }
+      ],
+      "default": null
+    }
+  ]
+}

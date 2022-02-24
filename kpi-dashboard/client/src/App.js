@@ -1,31 +1,35 @@
 import logo from './logo.svg';
 import './App.css';
+import { useState, useEffect } from 'react';
 
-import {useState, useEffect} from 'react';
-
-const WS_URL = "ws://localhost:8080/ws";
-const ws = new WebSocket(WS_URL);
+const WS_URL = "ws://localhost:8080/websocket";
 
 function App() {
-  const [webSocket, _] = useState(ws);
+  const [websocket, _] = useState(new WebSocket(WS_URL));
   const [total, setTotal] = useState(null);
 
   useEffect(() => {
-    webSocket.onmessage = (event) => {
+    websocket.onmessage = (event) => {
       const payload = JSON.parse(event.data);
-      const total = payload['TOTAL'];
-      const formatted = total.toLocaleString(undefined, {minimumFractionDigits: 2});
+
+      const formatted = payload["TOTAL"].toLocaleString(
+        undefined,
+        {
+          minimumFractionDigits: 2,
+          style: 'currency',
+          currency: 'USD'
+        }
+      );
+
       setTotal(formatted);
     };
-  }, [webSocket]);
+  }, [websocket]);
 
   return (
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          {total || "...waiting..."}
-        </p>
+        <h2>{total || "...waiting..."}</h2>
       </header>
     </div>
   );

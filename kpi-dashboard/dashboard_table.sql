@@ -1,6 +1,8 @@
-CREATE OR REPLACE TABLE dashboard AS
+CREATE OR REPLACE TABLE dashboard
+WITH (VALUE_AVRO_SCHEMA_FULL_NAME='io.confluent.developer.dashboard.DashboardValue')
+AS
   SELECT
-    sum(price) AS total,
-    'sales'
+    'sales' as metric,
+    sum(price) AS total
   FROM purchases
   GROUP BY 'sales';
