@@ -112,7 +112,7 @@ services:
         # MySQL
         cd /usr/share/confluent-hub-components/confluentinc-kafka-connect-jdbc/lib
         # See https://dev.mysql.com/downloads/connector/j/
-        curl https://cdn.mysql.com/Downloads/Connector-J/mysql-connector-java-8.0.23.tar.gz | tar xz 
+        curl https://downloads.mysql.com/archives/get/p/3/file/mysql-connector-java-8.0.23.tar.gz | tar xz 
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run &
