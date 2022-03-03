@@ -19,13 +19,13 @@ mvn clean package
 ### 3 - Running the producer
 
 ```bash
-java -cp target/getting-started-with-ccloud-1.0.jar io.confluent.cloud.demo.ProducerApp
+java -cp target/getting-started-with-ccloud-1.0-jar-with-dependencies.jar io.confluent.cloud.demo.ProducerApp
 ```
 
 ### 4 - Running the consumer
 
 ```bash
-java -cp target/getting-started-with-ccloud-1.0.jar io.confluent.cloud.demo.ConsumerApp
+java -cp target/getting-started-with-ccloud-1.0-jar-with-dependencies.jar io.confluent.cloud.demo.ConsumerApp
 ```
 
 # License
