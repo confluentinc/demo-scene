@@ -2,14 +2,14 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:6.0.0
+    image: confluentinc/cp-zookeeper:7.0.1
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   broker:
-    image: confluentinc/cp-kafka:6.0.0
+    image: confluentinc/cp-kafka:7.0.1
     container_name: kafka
     depends_on:
       - zookeeper
@@ -45,7 +45,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:6.0.0
+    image: confluentinc/cp-schema-registry:7.0.1
     container_name: schema-registry
     ports:
       - "8081:8081"
@@ -56,7 +56,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:29092'
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect-base:6.0.0
+    image: confluentinc/cp-kafka-connect-base:7.0.1
     container_name: kafka-connect
     depends_on:
       - broker
@@ -112,7 +112,9 @@ services:
         # MySQL
         cd /usr/share/confluent-hub-components/confluentinc-kafka-connect-jdbc/lib
         # See https://dev.mysql.com/downloads/connector/j/
-        curl https://cdn.mysql.com/Downloads/Connector-J/mysql-connector-java-8.0.23.tar.gz | tar xz 
+        curl https://cdn.mysql.com/archives/mysql-connector-java-8.0/mysql-connector-java-8.0.23.tar.gz | tar xz
+        echo "MySQL JDBC driver should now be present here:"
+        ls -l mysql*
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run &
