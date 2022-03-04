@@ -112,6 +112,10 @@
         <artifactId>maven-assembly-plugin</artifactId>
         <executions>
           <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
             <configuration>
               <descriptorRefs>
                 <descriptorRef>jar-with-dependencies</descriptorRef>
