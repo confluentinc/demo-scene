@@ -10,7 +10,7 @@ v1.10, 10 February 2021
 [source,bash]
 ----
 git clone https://github.com/confluentinc/demo-scene.git
-cd introduction-to-ksqldb
+cd ./demo-scene/introduction-to-ksqldb
 docker-compose up -d
 ----
 +
