@@ -95,6 +95,7 @@ You may well need to allocate Docker 8GB when running these. Avoid allocating al
 - [Micronaut & AWS Lambda on Confluent Cloud](micronaut-lambda)
 - [Bridge to Cloud (and back!) with Confluent and MongoDB Atlas](mongodb-demo)
 - [Random Pizza Generator with Micronaut on Confluent Cloud](micronaut-pizza-gen)
+- [Random Pizza Generator with Flask and Python on Confluent Cloud](python-microservices)
 
 ###  Confluent Platform
 
