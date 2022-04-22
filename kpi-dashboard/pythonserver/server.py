@@ -14,17 +14,23 @@ from confluent_kafka.schema_registry.avro import AvroDeserializer
 
 def run_consumer(shutdown_flag, clients, lock):
     print("Starting Kafka Consumer.")
-    schema_registry_client = SchemaRegistryClient(
-        {"url": "http://localhost:8081"})
+    schema_registry_client = SchemaRegistryClient({
+        "url": "<Schema Registry -> API Endpoint>",
+        "basic.auth.user.info": "<Schema Registry -> API Credentials Key>:<Schema Registry -> API Credentials Secret>"
+    })
     deserializer = AvroDeserializer(schema_registry_client)
     config = {
-        "bootstrap.servers": "localhost:9092",
+        "bootstrap.servers": "<Cluster Settings -> Bootstrap server>",
+        "security.protocol": "SASL_SSL",
+        "sasl.mechanism": "PLAIN",
+        "sasl.username": ""<Data Integration -> API Keys -> Key>",
+        "sasl.password": "<Data Integration -> API Keys -> Secret>",
         "group.id": "dashboard-demo",
         "value.deserializer": deserializer
     }
 
     consumer = DeserializingConsumer(config)
-    consumer.subscribe(["DASHBOARD"])
+    consumer.subscribe(["dashboard"])
 
     while not shutdown_flag.done():
         msg = consumer.poll(0.2)
