@@ -31,19 +31,19 @@ ccloud::validate_ksqldb_up "$KSQLDB_ENDPOINT" || exit 1
 for TOPIC in $TOPICS_TO_CREATE
 do
   echo -e "\n# Create new Kafka topic $TOPIC"
-  ccloud kafka topic create "$TOPIC"   
+  confluent kafka topic create "$TOPIC"
 done
 
-ccloud ksql app list
+confluent ksql cluster list
 
-ksqlDBAppId=$(ccloud ksql app list | grep "$KSQLDB_ENDPOINT" | awk '{print $1}')
+ksqlDBAppId=$(confluent ksql cluster list | grep "$KSQLDB_ENDPOINT" | awk '{print $1}')
 echo "ksqldb app id: ksqlDBAppId"
-ccloud ksql app configure-acls $ksqlDBAppId $TOPICS_TO_CREATE
+confluent ksql cluster configure-acls $ksqlDBAppId $TOPICS_TO_CREATE
 
-SERVICE_ACCOUNT_ID=$(ccloud kafka cluster list -o json | jq -r '.[0].name' | awk -F'-' '{print $4;}')
+SERVICE_ACCOUNT_ID=$(confluent kafka cluster describe -o json | jq -r '.name' | awk -F'-' '{print $4 "-" $5;}')
 for TOPIC in $TOPICS_TO_CREATE
 do
-  ccloud kafka acl create --allow --service-account $SERVICE_ACCOUNT_ID --operation WRITE --topic $TOPIC      
+  confluent kafka acl create --allow --service-account $SERVICE_ACCOUNT_ID --operation WRITE --topic $TOPIC
 done
 
 # Submit KSQL queries

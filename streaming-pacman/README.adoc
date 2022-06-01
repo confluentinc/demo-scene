@@ -27,7 +27,7 @@ The whole demo creation is scripted. The script will perform 2 main actions:
 +
 [source,bash]
 ----
-ccloud login --save
+confluent login --save
 ----
 
 The --save flag will save your Confluent Cloud login credentials to the ~/.netrc file.
