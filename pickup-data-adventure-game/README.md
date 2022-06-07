@@ -2,6 +2,8 @@
 
 ![Screenshot](Screenshot.png)
 
+[![Pickup Data talk at JFokus](talk_screenshot.png)](https://www.youtube.com/watch?v=uFtJH-kINgg)
+
 ## Server Setup
 
 First start the server processes running:
