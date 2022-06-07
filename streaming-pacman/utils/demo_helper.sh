@@ -25,9 +25,9 @@ function ccloud::create_acls_fm_connectors_wildcard() {
     SERVICE_ACCOUNT_ID=$1
     CLUSTER=$2
 
-    ccloud kafka acl create --allow --service-account $SERVICE_ACCOUNT_ID --operation idempotent-write --cluster-scope --cluster $CLUSTER
-    ccloud kafka acl create --allow --service-account $SERVICE_ACCOUNT_ID --operation describe --cluster-scope --cluster $CLUSTER
-    ccloud kafka acl create --allow --service-account $SERVICE_ACCOUNT_ID --operation create --cluster-scope --cluster $CLUSTER
+    confluent kafka acl create --allow --service-account $SERVICE_ACCOUNT_ID --operation idempotent-write --cluster-scope --cluster $CLUSTER
+    confluent kafka acl create --allow --service-account $SERVICE_ACCOUNT_ID --operation describe --cluster-scope --cluster $CLUSTER
+    confluent kafka acl create --allow --service-account $SERVICE_ACCOUNT_ID --operation create --cluster-scope --cluster $CLUSTER
 
     return 0
 }
@@ -40,8 +40,8 @@ function ccloud::create_topics(){
   for TOPIC in $TOPICS_TO_CREATE
   do
         echo -e "\n# Create new Kafka topic $TOPIC"
-        echo "ccloud kafka topic create \"$TOPIC\" --partitions $PARTITIONS"
-        ccloud kafka topic create "$TOPIC" --cluster $CLUSTER --partitions $PARTITIONS || true
+        echo "confluent kafka topic create \"$TOPIC\" --partitions $PARTITIONS"
+        confluent kafka topic create "$TOPIC" --cluster $CLUSTER --partitions $PARTITIONS || true
         # In some cases I received an error 500 but the topic is created successfully anyway...
   done
 }
@@ -49,7 +49,7 @@ function ccloud::create_topics(){
 ccloud::wait_for_data_in_topic() {
     local count=0
     while [[ "$count" -le 100 ]];do 
-        count=$(timeout 10 ccloud kafka topic consume -b $2 --cluster $1 | wc -l);
+        count=$(timeout 10 confluent kafka topic consume -b $2 --cluster $1 | wc -l);
         echo "At least $count messages in the topic"
         #timeout 3 ccloud kafka topic consume -b $2 --cluster $1
         sleep 0.1 

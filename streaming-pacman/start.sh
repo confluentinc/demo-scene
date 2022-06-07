@@ -69,12 +69,12 @@ function create_ccloud_resources {
         return
     fi
 
-    ccloud::validate_version_ccloud_cli 1.7.0 \
-        && print_pass "ccloud version ok" \
+    ccloud::validate_version_cli 1.7.0 \
+        && print_pass "confluent CLI version ok" \
         || exit 1
 
-    ccloud::validate_logged_in_ccloud_cli \
-        && print_pass "logged into ccloud CLI" \
+    ccloud::validate_logged_in_cli \
+        && print_pass "logged into confluent CLI" \
         || exit 1
 
     check_jq \
@@ -85,7 +85,7 @@ function create_ccloud_resources {
     echo ====== Create new Confluent Cloud stack
     ccloud::prompt_continue_ccloud_demo || exit 1
     ccloud::create_ccloud_stack true
-    SERVICE_ACCOUNT_ID=$(ccloud kafka cluster list -o json | jq -r '.[0].name' | awk -F'-' '{print $4;}')
+    SERVICE_ACCOUNT_ID=$(confluent kafka cluster describe -o json | jq -r '.name' | awk -F'-' '{print $4 "-" $5;}')
     if [[ "$SERVICE_ACCOUNT_ID" == "" ]]; then
     echo "ERROR: Could not determine SERVICE_ACCOUNT_ID from 'ccloud kafka cluster list'. Please troubleshoot, destroy stack, and try again to create the stack."
     exit 1
