@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cheese Report</title>
+</head>
+<body>
+    <h3>Cheese Report</h3>
+    <table>
+    #foreach($cheese in $cheeses.entrySet())
+        <tr><td>$cheese.key</td><td>&nbsp &nbsp</td><td>$cheese.value</td></tr>
+    #end
+    </table>
+</body>
+</html>

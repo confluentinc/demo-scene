@@ -1,0 +1,6 @@
+applicationType: default
+defaultPackage: io.confluent.developer
+testFramework: spock
+sourceLanguage: java
+buildTool: gradle
+features: [annotation-api, app-name, gradle, http-client, java, java-application, kafka, logback, netty-server, readme, shade, spock, views-velocity, yaml]

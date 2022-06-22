@@ -33,6 +33,12 @@ curl http://localhost:8080/order/{{pizza-order-UUID}} | jq
 
 Note: `jq` is optional, but very helpful.  More info at https://stedolan.github.io/jq/
 
+## Adding an additional service
+
+There is now a sixth service in this repo that represents an additional feature added to our system after it is up and running.  The cheese-reporter service is an analytics app that will consume from the `pizza-with-cheese` topic and produce a report of the most populuar cheeses. The goal of this service is to show how new applications can be added to our system without affecting any of the existing applications.  This one also demonstrates complete runtime decoupling in that it can do its work regardless of the state of the other applications.
+
+This application will require the same configuration info as the others to get it running.
+
 
 *When you are done working with this demo project, you can delete these topics to avoid additional charges.*
 
