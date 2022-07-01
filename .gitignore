@@ -32,3 +32,4 @@ rsa_key.pub
 slack_creds.sh
 credentials.properties
 telegram-bot-carparks/ingest_from_both_once.sh
+__pycache__

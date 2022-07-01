@@ -28,11 +28,9 @@ def order_pizzas(count):
     return order.id
 
 def get_order(order_id):
-    load_orders()
-
     order = pizza_warmer[order_id]
     if order == None:
-        return "No pizza found!"
+        return "Order not found, perhaps it's not ready yet."
     else:
         return order.toJSON()
 
@@ -40,16 +38,15 @@ def get_order(order_id):
 def load_orders():
     pizza_consumer = Consumer(consumer_config)
     pizza_consumer.subscribe([completed_pizza_topic])
-    for i in range(60):
-        msg = pizza_consumer.poll(0.05)
-        if msg is None:
+    while True:
+        evt = pizza_consumer.poll(1.0)
+        if evt is None:
             pass
-        elif msg.error():
-            print(f'Bummer - {msg.error()}')
+        elif evt.error():
+            print(f'Bummer - {evt.error()}')
         else:
-            pizza = json.loads(msg.value())
+            pizza = json.loads(evt.value())
             add_pizza(pizza['order_id'], pizza)
-    pizza_consumer.close()
 
 def add_pizza(order_id, pizza):
     if order_id in pizza_warmer.keys():
