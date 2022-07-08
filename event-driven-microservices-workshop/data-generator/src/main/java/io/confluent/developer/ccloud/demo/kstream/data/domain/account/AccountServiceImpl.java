@@ -1,7 +1,6 @@
 package io.confluent.developer.ccloud.demo.kstream.data.domain.account;
 
-import com.github.javafaker.Faker;
-
+import io.github.serpro69.kfaker.Faker;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -46,10 +45,10 @@ public class AccountServiceImpl implements AccountService {
                                                    : page.getContent().get(0).getNumber())
         .filter(latestAccount -> latestAccount < lastAccountNumber)
         .flatMapMany(latestAccount -> Flux.range(latestAccount + 1, lastAccountNumber))
-        .map(index -> new Account(index, faker.name().firstName(), faker.name().lastName(),
-                                  faker.address().streetName(), faker.address().buildingNumber(),
-                                  faker.address().city(),
-                                  faker.address().country(), LocalDateTime.now(), LocalDateTime.now()))
+        .map(index -> new Account(index, faker.getName().firstName(), faker.getName().lastName(),
+                                  faker.getAddress().streetName(), faker.getAddress().buildingNumber(),
+                                  faker.getAddress().city(),
+                                  faker.getAddress().country(), LocalDateTime.now(), LocalDateTime.now()))
 
         .buffer(10000)
         .doOnNext(accountRepository::saveAll)

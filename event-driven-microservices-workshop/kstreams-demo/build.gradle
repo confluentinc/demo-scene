@@ -2,7 +2,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-json:2.3.0.RELEASE'
     implementation 'org.springframework.kafka:spring-kafka:2.5.0.RELEASE'
     implementation 'org.apache.kafka:kafka-streams:2.5.0'
-    implementation 'com.github.javafaker:javafaker:1.0.1'
     compileOnly 'org.projectlombok:lombok:1.18.8'
     annotationProcessor 'org.projectlombok:lombok:1.18.8'
     testImplementation 'org.apache.kafka:kafka-streams-test-utils:2.5.0'
