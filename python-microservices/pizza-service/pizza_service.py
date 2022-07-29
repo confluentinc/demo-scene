@@ -13,9 +13,6 @@ consumer_config.update(config_parser['consumer'])
 pizza_producer = Producer(producer_config)
 
 pizza_warmer = {}
-pizza_topic = 'pizza'
-completed_pizza_topic = 'pizza-with-veggies'
-
 
 def order_pizzas(count):
     order = PizzaOrder(count)
@@ -23,7 +20,7 @@ def order_pizzas(count):
     for i in range(count):
         new_pizza = Pizza()
         new_pizza.order_id = order.id
-        pizza_producer.produce(pizza_topic, key=order.id, value=new_pizza.toJSON())
+        pizza_producer.produce('pizza', key=order.id, value=new_pizza.toJSON())
     pizza_producer.flush()
     return order.id
 
@@ -37,15 +34,15 @@ def get_order(order_id):
 
 def load_orders():
     pizza_consumer = Consumer(consumer_config)
-    pizza_consumer.subscribe([completed_pizza_topic])
+    pizza_consumer.subscribe(['pizza-with-veggies'])
     while True:
-        evt = pizza_consumer.poll(1.0)
-        if evt is None:
+        event = pizza_consumer.poll(1.0)
+        if event is None:
             pass
-        elif evt.error():
-            print(f'Bummer - {evt.error()}')
+        elif event.error():
+            print(f'Bummer - {event.error()}')
         else:
-            pizza = json.loads(evt.value())
+            pizza = json.loads(event.value())
             add_pizza(pizza['order_id'], pizza)
 
 def add_pizza(order_id, pizza):
