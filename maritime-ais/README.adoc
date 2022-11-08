@@ -18,7 +18,7 @@ image::images/kibana_map07.png[]
 
 == AIS Data
 
-The AIS data source that I used came from a https://kystverket.no/Maritime-tjenester/Meldings--og-informasjonstjenester/AIS/Brukartilgang-til-AIS-Norge/[public feed] published under the https://data.norge.no/nlod/en/2.0/[Norwegian licence for Open Government data (NLOD)] distributed by the Norwegian Coastal Administration. It covers: 
+The AIS data source that I used came from a https://www.kystverket.no/en/navigation-and-monitoring/ais/access-to-ais-data/[public feed] published under the https://data.norge.no/nlod/en/2.0/[Norwegian licence for Open Government data (NLOD)] distributed by the Norwegian Coastal Administration. It covers: 
 
 > AIS data from all vessels within a coverage area that includes the Norwegian economic zone and the protection zones off Svalbard and Jan Mayen, but with the exception of fishing vessels under 15 meters and recreational vessels under 45 meters.
 
