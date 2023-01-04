@@ -102,6 +102,8 @@ You may well need to allocate Docker 8GB when running these. Avoid allocating al
 - [Self-Balancing Clusters Demo](self-balancing)
 - [Tiered Storage Demo](tiered-storage)
 - [Cluster Linking Demo](cluster-linking)
+- [Cluster Linking and Schema Linking Demo](cluster-linking-source-to-destination)
+- [Cluster Linking and Schema Linking Disaster Recovery step by step](cluster-linking-disaster-recovery)
 - [Confluent Admin REST APIs Demo](adminrest)
 - [CP-Ansible on Ansible Tower](ansible-tower)
 

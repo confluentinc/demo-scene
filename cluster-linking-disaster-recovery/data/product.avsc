@@ -1,0 +1,17 @@
+{
+    "schema": "{
+        \"type\": \"record\",
+        \"namespace\": \"com.demo\",
+        \"name\": \"Product\",
+        \"fields\": [
+            {
+                \"name\": \"product_id\", 
+                \"type\": \"int\"
+            },
+            {
+                \"name\": \"product_name\", 
+                \"type\": \"string\"
+            }
+        ]
+    }"
+}
