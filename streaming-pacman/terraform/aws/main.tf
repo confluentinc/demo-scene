@@ -1,12 +1,13 @@
 ###########################################
 ################## AWS ####################
 ###########################################
+variable "profile" {
+  type = string
+}
 
 provider "aws" {
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
-  region     = var.aws_region
-
+  region = var.aws_region
+  profile = var.profile
 }
 
 data "aws_availability_zones" "available" {
@@ -18,7 +19,7 @@ resource "random_string" "random_string" {
   special = false
   upper = false
   lower = true
-  number = false
+  numeric = false
 }
 
 resource "random_string" "random_string2" {
@@ -26,19 +27,14 @@ resource "random_string" "random_string2" {
   special = false
   upper = false
   lower = true
-  number = false
+  numeric = false
 }
 
-data "template_file" "bucket_pacman" {
-  template = "%{ if var.bucket_name != "" }${var.bucket_name}%{ else }${var.global_prefix}${random_string.random_string.result}%{ endif }"
-}
 
-data "template_file" "resource_prefix" {
-  template = "${var.global_prefix}${random_string.random_string2.result}"
-}
+
 
 resource "aws_s3_bucket" "pacman" {
-  bucket = data.template_file.bucket_pacman.rendered
+  bucket = "bucket_pacman"
   acl = "public-read"
   cors_rule {
     allowed_headers = ["*"]
@@ -54,7 +50,7 @@ resource "aws_s3_bucket" "pacman" {
             "Effect": "Allow",
             "Principal": "*",
             "Action": "s3:GetObject",
-            "Resource": "arn:aws:s3:::${data.template_file.bucket_pacman.rendered}/*"
+            "Resource": "arn:aws:s3:::bucket_pacman"
         }
     ]
 }

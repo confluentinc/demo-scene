@@ -81,24 +81,24 @@ resource "aws_s3_bucket_object" "js_files" {
   etag   = filemd5(each.key)
 }
 
-data "template_file" "env_vars_js" {
-  template = file("../../pacman/game/template/env-vars.js")
-  vars = {
-    cloud_provider = "AWS"
-    ksqldb_endpoint = "${aws_api_gateway_deployment.event_handler_v1.invoke_url}${aws_api_gateway_resource.event_handler_resource.path}"
-    ksql_basic_auth_user_info = var.ksql_basic_auth_user_info
-    #TODO scoreboard_api = "${aws_api_gateway_deployment.scoreboard_v1.invoke_url}${aws_api_gateway_resource.scoreboard_resource.path}"
-    scoreboard_api = ""
-  }
-}
+locals {
+  # Env vars file from template
+  env_vars_js = templatefile("${path.module}/../../pacman/game/template/env-vars.js", {
+        cloud_provider = "AWS"
+        ksqldb_endpoint = "${aws_api_gateway_deployment.event_handler_v1.invoke_url}${aws_api_gateway_resource.event_handler_resource.path}"
+        ksql_basic_auth_user_info = var.ksql_basic_auth_user_info
+        #TODO scoreboard_api = "${aws_api_gateway_deployment.scoreboard_v1.invoke_url}${aws_api_gateway_resource.scoreboard_resource.path}"
+        scoreboard_api = ""
+    })
+} 
 
 resource "aws_s3_bucket_object" "env_vars_js" {
   depends_on = [aws_s3_bucket_object.js_files]
   bucket = aws_s3_bucket.pacman.bucket
   key = "game/js/env-vars.js"
   content_type = "text/javascript"
-  content = data.template_file.env_vars_js.rendered
-  etag  = md5(data.template_file.env_vars_js.rendered)
+  content = local.env_vars_js
+  etag  = md5(local.env_vars_js)
 }
 
 ###########################################
