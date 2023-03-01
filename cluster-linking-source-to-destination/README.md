@@ -1,6 +1,6 @@
-# Cluster Linking & Schema linking
+# Cluster Linking & Schema Linking
 
-The idea of this demo is to create a source cluster and a destination cluster, the product schema and data is created in the source cluster and it is replicated to the destination cluster using schema and cluster linking. We make use of schema contexts to isolate subjects and topic prefixing.
+The idea of this demo is to create a source cluster and a destination cluster, the product schema and data is created in the source cluster and it is replicated to the destination cluster using schema and Cluster Linking. We make use of schema contexts to isolate subjects and topic prefixing.
 
 ## Start the cluster
 
@@ -12,8 +12,8 @@ Two CP clusters are running:
 
 *  Source/Hub Control Center available at [http://localhost:19021](http://localhost:19021/)
 *  Destination Control Center available at [http://localhost:29021](http://localhost:29021/)
-*  Source Schema Register available at [http://localhost:8085](http://localhost:8085/)
-*  Destination Contro Center available at [http://localhost:8086](http://localhost:8086/)
+*  Source Schema Registry available at [http://localhost:8085](http://localhost:8085/)
+*  Destination Schema Registry available at [http://localhost:8086](http://localhost:8086/)
 
 ## Create the topic `product` and the schema `product-value` in the source cluster
 
@@ -63,7 +63,7 @@ test-group    product         0          2               2               0      
 
 As you can see offset is 2 (two messages consumed).
 
-## Create the schema linking
+## Create the Schema Linking
 
 ### Create a config file on Source Schema Registry host.
 
@@ -110,7 +110,7 @@ As you can see offset is 2 (two messages consumed).
 
 Check the name is prefixed with `:.source:`, it is the context. Also the subject is prefixed, as we forced it too, by `source.`.
 
-## Create the cluster linking
+## Create the Cluster Linking
 
 ### Create config file to configure the 
 ```shell
@@ -140,7 +140,7 @@ consumer.offset.group.filters="{\"groupFilters\": [{\"name\": \"*\",\"patternTyp
     --bootstrap-server destKafka:29092        
 ``` 
 
-### Verifying cluster linking is up
+### Verifying Cluster Linking is up
 
 ```shell
     docker-compose exec destKafka kafka-cluster-links --bootstrap-server destKafka:29092 --link source-to-destination-cl --list
@@ -149,6 +149,8 @@ consumer.offset.group.filters="{\"groupFilters\": [{\"name\": \"*\",\"patternTyp
 Output is similar to `Link name: 'source-to-destination-cl', link ID: 'CdDrHuV5Q5Sqyq0TCXnLsw', remote cluster ID: 'nBu7YnBiRsmDR_WilKe6Og', local cluster ID: '1wnpnQRORZ-C2tdxEStVtA', remote cluster available: 'true'`
 
 ### Verifying consumer group offset is migrated
+
+Note this propagation can take some time to be available due to the async behavior of Cluster Linking. In this demo, it should only take a few seconds.
 
 ```shell
 docker-compose exec srcKafka kafka-consumer-groups --bootstrap-server destKafka:29092 --group source.test-group --describe
@@ -159,7 +161,7 @@ GROUP             TOPIC           PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG
 source.test-group source.product  0          2               2               0               -               -               -
 ```
 
-Same results from source cluster (note the consumer group is prefixed with `source.` as we configured the cluster linking to do)
+Same results from source cluster (note the consumer group is prefixed with `source.` as we configured the Cluster Linking to do)
 
 ### Verifying data is migrated
 

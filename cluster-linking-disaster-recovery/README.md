@@ -1,6 +1,6 @@
-# Cluster Linking & Schema linking disaster recovery
+# Cluster Linking & Schema Linking disaster recovery
 
-The idea of this demo is to create a main cluster and a disaster recovery cluster, the `product` schema and data are created in the main cluster/schema registry and it is replicated to the disaster recovery cluster using schema and cluster linking. We then, stop the main cluster, move consumers and producers to disaster recovery, restart the main cluster and move the data back
+The idea of this demo is to create a main cluster and a disaster recovery cluster, the `product` schema and data are created in the main cluster/schema registry and it is replicated to the disaster recovery cluster using Schema and Cluster Linking. We then, stop the main cluster, move consumers and producers to disaster recovery, restart the main cluster and move the data back
 
 ## Start the clusters
 
@@ -12,8 +12,8 @@ Two CP clusters are running:
 
 *  Main Control Center available at [http://localhost:19021](http://localhost:19021/)
 *  Disaster Recovery Control Center available at [http://localhost:29021](http://localhost:29021/)
-*  Main Schema Register available at [http://localhost:8085](http://localhost:8085/)
-*  Disaster Recovery Control Center available at [http://localhost:8086](http://localhost:8086/)
+*  Main Schema Registry available at [http://localhost:8085](http://localhost:8085/)
+*  Disaster Recovery Schema Registry available at [http://localhost:8086](http://localhost:8086/)
 
 ## Create the topic `product` and the schema `product-value` in the main cluster
 
@@ -67,7 +67,7 @@ test-group      product         0          2               2               0    
 
 As you can see offset is 2 (two messages consumed).
 
-## Create the schema linking (main to disaster cluster)
+## Create the Schema Linking (main to disaster cluster)
 
 ### Create a config file on main Schema Registry host.
 
@@ -105,9 +105,9 @@ As you can see offset is 2 (two messages consumed).
     curl http://localhost:8086/subjects/product-value/versions/1 | jq
 ```
 
-## Create the cluster linking (main to disaster cluster)
+## Create the Cluster Linking (main to disaster cluster)
 
-### Create config file to configure the cluster linking
+### Create config file to configure the Cluster Linking
 ```shell
 docker-compose exec disasterKafka bash -c '\
 echo "\
@@ -134,7 +134,7 @@ consumer.offset.group.filters="{\"groupFilters\": [{\"name\": \"*\",\"patternTyp
     --bootstrap-server disasterKafka:29092        
 ``` 
 
-### Verifying cluster linking is up
+### Verifying Cluster Linking is up
 
 ```shell
     docker-compose exec disasterKafka kafka-cluster-links --bootstrap-server disasterKafka:29092 --link main-to-disaster-cl --list
@@ -143,6 +143,8 @@ consumer.offset.group.filters="{\"groupFilters\": [{\"name\": \"*\",\"patternTyp
 Output is similar to `Link name: 'main-to-disaster-cl', link ID: 'CdDrHuV5Q5Sqyq0TCXnLsw', remote cluster ID: 'nBu7YnBiRsmDR_WilKe6Og', local cluster ID: '1wnpnQRORZ-C2tdxEStVtA', remote cluster available: 'true'`
 
 ### Verifying consumer group offset is migrated
+
+Note this propagation can take some time to be available due to the async behavior of Cluster Linking. In this demo, it should only take a few seconds.
 
 ```shell
 docker-compose exec disasterKafka kafka-consumer-groups --bootstrap-server disasterKafka:29092 --group test-group --describe
@@ -274,7 +276,7 @@ Restart the main cluster
 docker-compose start mainKafka mainZookeeper mainSchemaregistry mainControlCenter
 ```
 
-### Remove the old schema linking (main to disaster)
+### Remove the old Schema Linking (main to disaster)
 
 ```shell
 # pause is needed before deleting
@@ -289,7 +291,7 @@ You should see the message `Successfully deleted exporter main-to-disaster-sl`
 
 ### Delete content from main cluster (it will be migrated again)
 
-Safest way is to trust the cluster and schema linking and remigrate data from disaster to main as disaster could have more data (that is the case of this demo)
+Safest way is to trust the Cluster and Schema Linking and remigrate data from disaster to main as disaster could have more data (that is the case of this demo)
 
 ```shell
 # delete topic
@@ -299,7 +301,7 @@ curl -v -X DELETE 'http://localhost:8085/subjects/product-value'
 curl -v -X DELETE 'http://localhost:8085/subjects/product-value?permanent=true'
 ```
 
-### Create the Schema linking (disaster to main)
+### Create the Schema Linking (disaster to main)
 
 1. Create the config file
 
@@ -340,9 +342,9 @@ docker-compose exec disasterSchemaregistry bash -c '\
     curl http://localhost:8086/subjects/product-value/versions/2 | jq
 ```
 
-### Create cluster linking (disaster to main)
+### Create Cluster Linking (disaster to main)
 
-1. Create config file to configure the cluster linking
+1. Create config file to configure the Cluster Linking
 
 ```shell
 docker-compose exec mainKafka bash -c '\
@@ -373,7 +375,7 @@ consumer.offset.group.filters="{\"groupFilters\": [{\"name\": \"*\",\"patternTyp
     --bootstrap-server mainKafka:19092
 ``` 
 
-4. Verifying cluster linking is up
+4. Verifying Cluster Linking is up
 
 ```shell
     docker-compose exec mainKafka kafka-cluster-links --bootstrap-server mainKafka:19092 --link disaster-to-main-cl --list
@@ -382,6 +384,8 @@ consumer.offset.group.filters="{\"groupFilters\": [{\"name\": \"*\",\"patternTyp
 Output is similar to `Link name: 'disaster-to-main-cl', link ID: '-FPTBi8JQnGskNQzbrLLmA', remote cluster ID: 'KxjPLtiZQaWPId1UORsRvg', local cluster ID: '59HpxdWkSLSlnqjXnX_ZIw', remote cluster available: 'true'`
 
 5. Verifying consumer group offset is migrated
+
+Note this propagation can take some time to be available due to the async behavior of Cluster Linking. In this demo, it should only take a few seconds.
 
 ```shell
 docker-compose exec mainKafka kafka-consumer-groups --bootstrap-server mainKafka:19092 --group test-group --describe
@@ -405,7 +409,7 @@ Same results from disaster cluster.
 ```
 messages are migrated as expected
 
-### Remove the cluster and schema linking (disaster to main) as all data is already migrated 
+### Remove the cluster and Schema Linking (disaster to main) as all data is already migrated 
 
 We need to promote the topic and schema in the main cluster as normal topic and schema. We need to run similar commands as we did for the failover steps
 
@@ -434,7 +438,7 @@ Request for stopping topic product's mirror was successfully scheduled. Please u
 
 The result should have the `State: STOPPED` as part of it.
 
-3. Remove the schema linking (disaster to main)
+3. Remove the Schema Linking (disaster to main)
 
 ```shell
 # pause is needed before deleting
@@ -490,7 +494,7 @@ See the last message as expected (id 6).
 
 ### Recreate the disaster to main cluster
 
-In order to keep the data safe, we need to recreate the cluster and schema linking from main to disaster, the steps are the same as above.
+In order to keep the data safe, we need to recreate the cluster and Schema Linking from main to disaster, the steps are the same as above.
 
 1. Delete the topic `product` on disaster cluster
 2. Delete the schema `product-value` on disaster schema registry
@@ -504,8 +508,8 @@ curl -v -X DELETE 'http://localhost:8086/subjects/product-value?permanent=true'
 ```
 
 3. Repeat the steps to create 
-   1. the schema linking (all steps)
-   2. the cluster mirror linking on disaster cluster. Note: the cluster linking `main-to-destination-cl` does not need to be recreated, as it was never deleted.
+   1. the Schema Linking (all steps)
+   2. the cluster mirror linking on disaster cluster. Note: the Cluster Linking `main-to-destination-cl` does not need to be recreated, as it was never deleted.
 
 
 
