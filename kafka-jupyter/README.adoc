@@ -1,0 +1,25 @@
+# Kafka Tutorial in a Jupyter Notebook
+A producer and consumer demo using the confluent-kafka Python package in a Jupyter notebook, and Confluent Cloud.
+
+## Description
+
+You can find step-by-step for building this notebook in the following blog post: TODO: Add link to blog post once published.
+
+
+*When you are done working with this demo project, you can delete the topic created to avoid additional charges.*
+
+
+## Related Resources that might be helpful
+
+### Confluent Cloud 
+
+[Quik-start Guide](https://docs.confluent.io/cloud/current/get-started/index.html)
+
+### Python and Kafka 
+
+- [Kafka for Python Developers Course](https://developer.confluent.io/learn-kafka/kafka-python/intro)
+- [Quick-start Guide](https://developer.confluent.io/get-started/python)
+- [Python Kafka Client](https://docs.confluent.io/clients-confluent-kafka-python/current/overview.html)
+- [Python Kafka Articles](https://www.confluent.io/blog/tag/python/)
+
+---

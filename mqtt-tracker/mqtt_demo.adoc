@@ -299,7 +299,7 @@ Ingest the data into ksqlDB
 CREATE SOURCE CONNECTOR source_debezium_mysql_users_00 WITH (
   'connector.class' = 'io.debezium.connector.mysql.MySqlConnector',
   'database.hostname' = 'mysql',
-  'database.port' = '3306',
+  'database.port' = '3307',
   'database.user' = 'debezium',
   'database.password' = 'dbz',
   'database.server.id' = '42',

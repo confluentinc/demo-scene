@@ -2,7 +2,7 @@
 version: '3'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:${CONFLUENTPLATFORM_VERSION}
+    image: confluentinc/cp-zookeeper:7.3.0
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
@@ -12,7 +12,7 @@ services:
     #   - ./data/container_data/zk-txn-logs:/var/lib/zookeeper/log
 
   kafka-1:
-    image: confluentinc/cp-enterprise-kafka:${CONFLUENTPLATFORM_VERSION}
+    image: confluentinc/cp-enterprise-kafka:7.3.0
     container_name: kafka-1
     depends_on:
       - zookeeper
@@ -31,7 +31,7 @@ services:
     #   - ./data/container_data/kafka-1-data:/var/lib/kafka/data
 
   kafka-2:
-    image: confluentinc/cp-enterprise-kafka:${CONFLUENTPLATFORM_VERSION}
+    image: confluentinc/cp-enterprise-kafka:7.3.0
     container_name: kafka-2
     depends_on:
       - zookeeper
@@ -50,7 +50,7 @@ services:
     #   - ./data/container_data/kafka-2-data:/var/lib/kafka/data
 
   kafka-3:
-    image: confluentinc/cp-enterprise-kafka:${CONFLUENTPLATFORM_VERSION}
+    image: confluentinc/cp-enterprise-kafka:7.3.0
     container_name: kafka-3
     depends_on:
       - zookeeper
@@ -69,7 +69,7 @@ services:
     #   - ./data/container_data/kafka-3-data:/var/lib/kafka/data
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:${CONFLUENTPLATFORM_VERSION}
+    image: confluentinc/cp-schema-registry:7.3.0
     ports:
       - 8081:8081
     container_name: schema-registry
@@ -84,7 +84,7 @@ services:
       SCHEMA_REGISTRY_CUB_KAFKA_TIMEOUT: 300
 
   ksqldb-server:
-    image: confluentinc/ksqldb-server:0.6.0
+    image: confluentinc/ksqldb-server:0.28.2
     hostname: ksqldb-server
     container_name: ksqldb-server
     depends_on:
@@ -101,7 +101,7 @@ services:
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
 
   ksqldb-cli:
-    image: confluentinc/ksqldb-cli:0.6.0
+    image: confluentinc/ksqldb-cli:0.28.2
     container_name: ksqldb-cli
     depends_on:
       - ksqldb-server
@@ -111,7 +111,7 @@ services:
       - ./data:/data
 
   kafka-connect-01:
-    image: confluentinc/cp-kafka-connect:${CONFLUENTPLATFORM_VERSION}
+    image: confluentinc/cp-kafka-connect:7.3.0
     container_name: kafka-connect-01
     depends_on:
       - kafka-1
@@ -181,7 +181,7 @@ services:
         sleep infinity
 
   replicator:
-    image: confluentinc/cp-enterprise-replicator:5.4.0-beta1
+    image: confluentinc/cp-enterprise-replicator:7.3.0
     container_name: replicator
     depends_on:
       - kafka-1
@@ -319,7 +319,7 @@ services:
     image: mysql:8.0
     container_name: mysql
     ports:
-      - 3306:3306
+      - 3307:3307
     environment:
      - MYSQL_ROOT_PASSWORD=debezium
      - MYSQL_USER=mysqluser
