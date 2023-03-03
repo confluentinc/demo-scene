@@ -10,4 +10,8 @@ Live [AIS data](https://en.wikipedia.org/wiki/Automatic_identification_system) f
 
 ## BBC RSS Feed
 
-[Live news](http://feeds.bbci.co.uk/news/england/london/rss.xml) from the BBC. Suggested implementation: The [Confluent RSS Source Connector](https://www.confluent.io/hub/kaliy/kafka-connect-rss).  
+[Live news](http://feeds.bbci.co.uk/news/england/london/rss.xml) from the BBC. Suggested implementation: The [Confluent RSS Source Connector](https://www.confluent.io/hub/kaliy/kafka-connect-rss). 
+
+## Wikipedia Live Changes
+
+Here's a [codepen](https://codepen.io/ottomata/pen/VKNyEw/) explaining how to surface these changes to a UI. 
