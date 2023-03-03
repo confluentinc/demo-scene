@@ -12,13 +12,16 @@ resource "null_resource" "build_functions" {
     working_dir = "functions"
   }
 }
-locals {generic_wake_up = templatefile("functions/generic-wake-up.json", {
-        cloud_provider = "AWS"
-        ksqldb_endpoint = "${aws_api_gateway_deployment.event_handler_v1.invoke_url}${aws_api_gateway_resource.event_handler_resource.path}"
-        ksql_basic_auth_user_info = var.ksql_basic_auth_user_info
-        #TODO scoreboard_api = "${aws_api_gateway_deployment.scoreboard_v1.invoke_url}${aws_api_gateway_resource.scoreboard_resource.path}"
-        scoreboard_api = ""
-    })}
+
+locals {
+  generic_wake_up = templatefile("functions/generic-wake-up.json", {
+    cloud_provider = "AWS"
+    ksqldb_endpoint = "${aws_api_gateway_deployment.event_handler_v1.invoke_url}${aws_api_gateway_resource.event_handler_resource.path}"
+    ksql_basic_auth_user_info = var.ksql_basic_auth_user_info
+    #TODO scoreboard_api = "${aws_api_gateway_deployment.scoreboard_v1.invoke_url}${aws_api_gateway_resource.scoreboard_resource.path}"
+    scoreboard_api = ""
+  })
+}
 
 ###########################################
 ########### Event Handler API #############
@@ -26,7 +29,7 @@ locals {generic_wake_up = templatefile("functions/generic-wake-up.json", {
 
 resource "aws_api_gateway_rest_api" "event_handler_api" {
   depends_on = [aws_lambda_function.event_handler_function]
-  name = "${var.profile}_event_handler_api"
+  name = "${local.resource_prefix}_event_handler_api"
   description = "Event Handler API"
   endpoint_configuration {
     types = ["REGIONAL"]
@@ -147,7 +150,7 @@ POLICY
 
 resource "aws_iam_role" "event_handler_role" {
 
-  name = "${var.profile}_event_handler_role"
+  name = "${local.resource_prefix}_event_handler_role"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -169,7 +172,7 @@ resource "aws_lambda_function" "event_handler_function" {
     null_resource.build_functions,
     aws_iam_role.event_handler_role,
     aws_s3_bucket.pacman]
-  function_name = "${var.profile}_event_handler"
+  function_name = "${local.resource_prefix}_event_handler"
   description = "Backend function for the Event Handler API"
   filename = "functions/deploy/streaming-pacman-1.0.jar"
   #source_code_hash = filemd5("functions/deploy/streaming-pacman-1.0.jar")
@@ -204,7 +207,7 @@ resource "aws_lambda_permission" "event_handler_cloudwatch_trigger" {
 }
 
 resource "aws_cloudwatch_event_rule" "event_handler_every_minute" {
-  name = "${var.profile}-execute-event-handler-every-minute"
+  name = "${local.resource_prefix}-execute-event-handler-every-minute"
   description = "Execute the event handler function every minute"
   schedule_expression = "rate(1 minute)"
 }

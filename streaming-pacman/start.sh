@@ -12,8 +12,6 @@ LOG_FILE_PATH="${LOGS_FOLDER}/start.log"
 export EXAMPLE="streaming-pacman"
 export TOPICS_TO_CREATE="USER_GAME USER_LOSSES"
 
-
-
 function create_tfvars_file {
 
     AWS_REGION=$(echo "$BOOTSTRAP_SERVERS" | awk -F'.' '{print $2}')
@@ -36,8 +34,8 @@ cluster_api_key="$CLOUD_KEY"
 cluster_api_secret="$CLOUD_SECRET"
 ksql_endpoint="$KSQLDB_ENDPOINT"
 ksql_basic_auth_user_info="$KSQLDB_BASIC_AUTH_USER_INFO"
-aws_access_key="$AWS_ACCESS_KEY"
-aws_secret_key="$AWS_SECRET_KEY"
+aws_profile="$AWS_PROFILE"
+
 aws_region="$AWS_REGION"
 $TFVAR_S3_BUCKET
 
@@ -69,7 +67,7 @@ function create_ccloud_resources {
         return
     fi
 
-    ccloud::validate_version_cli 1.7.0 \
+    ccloud::validate_version_cli 2.38.0 \
         && print_pass "confluent CLI version ok" \
         || exit 1
 

@@ -10,6 +10,17 @@ DIR_DEMO_HELPER="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ################################################################
 EXAMPLES_UTILS_URL="https://raw.githubusercontent.com/confluentinc/examples/latest/utils"
 
+function check_wget() {
+  if [[ $(type wget 2>&1) =~ "not found" ]]; then
+    echo "'wget' is not found. Install wget and try again."
+    return 1
+  fi
+
+  return 0
+}
+
+check_wget || exit 1
+
 
 [ ! -f $DIR_DEMO_HELPER/config.env ] && wget $EXAMPLES_UTILS_URL/config.env -P $DIR_DEMO_HELPER
 [ ! -f $DIR_DEMO_HELPER/helper.sh ] && wget $EXAMPLES_UTILS_URL/helper.sh -P $DIR_DEMO_HELPER

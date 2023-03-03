@@ -1,13 +1,14 @@
 ###########################################
 ################## AWS ####################
 ###########################################
-variable "profile" {
-  type = string
+locals {
+  resdource_prefix = "${var.global_prefix}${random_string.random_string2.result}"
+  bucket_pacman = "%{ if var.bucket_name != "" }${var.bucket_name}%{ else }${var.global_prefix}${random_string.random_string.result}%{ endif }"
 }
 
 provider "aws" {
   region = var.aws_region
-  profile = var.profile
+  profile = var.aws_profile
 }
 
 data "aws_availability_zones" "available" {
@@ -34,7 +35,7 @@ resource "random_string" "random_string2" {
 
 
 resource "aws_s3_bucket" "pacman" {
-  bucket = "bucket_pacman"
+  bucket = local.bucket_pacman
   acl = "public-read"
   cors_rule {
     allowed_headers = ["*"]
@@ -50,7 +51,7 @@ resource "aws_s3_bucket" "pacman" {
             "Effect": "Allow",
             "Principal": "*",
             "Action": "s3:GetObject",
-            "Resource": "arn:aws:s3:::bucket_pacman"
+            "Resource": "arn:aws:s3:::${local.bucket_pacman}"
         }
     ]
 }
@@ -65,15 +66,11 @@ EOF
 ############## AWS Variables ##############
 ###########################################
 
-variable "aws_access_key" {
-  type = string
-}
-
-variable "aws_secret_key" {
-  type = string
-}
-
 variable "aws_region" {
+  type = string
+}
+
+variable "aws_profile" {
   type = string
 }
 

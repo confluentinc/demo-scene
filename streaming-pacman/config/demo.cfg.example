@@ -1,5 +1,5 @@
-export AWS_ACCESS_KEY="<AWS_ACCESS_KEY>"
-export AWS_SECRET_KEY="<AWS_SECRET_KEY>"
+# Use https://github.com/Nike-Inc/gimme-aws-creds if you use Okta to login in AWS. Make sure you specify the profile you want to use (probably "default")
+export AWS_PROFILE="<AWS_PROFILE>"
 
 # These are optional configs
 # export S3_BUCKET_NAME="ksqldbpacman"

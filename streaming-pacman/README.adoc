@@ -40,16 +40,17 @@ The demo script will do everything for you, but for it to work you need to add s
 +
 [source,bash]
 ----
-mv config/demo.cfg.example config/demo.cfg
+cp config/demo.cfg.example config/demo.cfg
 ----
 
 2. Provide the required information on the 'demo.cfg' file
 +
 [source,bash]
 ----
-export AWS_ACCESS_KEY="<AWS_ACCESS_KEY>"
-export AWS_SECRET_KEY="<AWS_SECRET_KEY>"
+export AWS_PROFILE="<AWS_PROFILE>"
 ----
+
+we advice using the utility [gimme-aws-creds](https://github.com/Nike-Inc/gimme-aws-creds) if you use Okta to login in AWS.
 
 3. Notice the optional configuration in the same file. Uncomment and define as you see fit
 +
