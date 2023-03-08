@@ -18,33 +18,35 @@ source config/demo.cfg
 #################################################################
 # Source CCloud configurations
 #################################################################
-DELTA_CONFIGS_DIR=delta_configs
-source $DELTA_CONFIGS_DIR/env.delta
+# DELTA_CONFIGS_DIR=delta_configs
+# source $DELTA_CONFIGS_DIR/env.delta
 
 #################################################################
 # Confluent Cloud ksqlDB application
 #################################################################
 echo -e "\nConfluent Cloud ksqlDB application endpoin $KSQLDB_ENDPOINT\n"
-ccloud::validate_ksqldb_up "$KSQLDB_ENDPOINT" || exit 1
+#ccloud::validate_ksqldb_up "$KSQLDB_ENDPOINT" || exit 1
 
+# TERRAFORMING - TO REMOVE - START
 # Create required topics and ACLs
-for TOPIC in $TOPICS_TO_CREATE
-do
-  echo -e "\n# Create new Kafka topic $TOPIC"
-  confluent kafka topic create "$TOPIC"
-done
+# for TOPIC in $TOPICS_TO_CREATE
+# do
+#   echo -e "\n# Create new Kafka topic $TOPIC"
+#   confluent kafka topic create "$TOPIC"
+# done
 
-confluent ksql cluster list
+# confluent ksql cluster list
 
-ksqlDBAppId=$(confluent ksql cluster list | grep "$KSQLDB_ENDPOINT" | awk '{print $1}')
-echo "ksqldb app id: ksqlDBAppId"
-confluent ksql cluster configure-acls $ksqlDBAppId $TOPICS_TO_CREATE
+# ksqlDBAppId=$(confluent ksql cluster list | grep "$KSQLDB_ENDPOINT" | awk '{print $1}')
+# echo "ksqldb app id: ksqlDBAppId"
+# confluent ksql cluster configure-acls $ksqlDBAppId $TOPICS_TO_CREATE
 
-SERVICE_ACCOUNT_ID=$(confluent kafka cluster describe -o json | jq -r '.name' | awk -F'-' '{print $4 "-" $5;}')
-for TOPIC in $TOPICS_TO_CREATE
-do
-  confluent kafka acl create --allow --service-account $SERVICE_ACCOUNT_ID --operation WRITE --topic $TOPIC
-done
+# SERVICE_ACCOUNT_ID=$(confluent kafka cluster describe -o json | jq -r '.name' | awk -F'-' '{print $4 "-" $5;}')
+# for TOPIC in $TOPICS_TO_CREATE
+# do
+#   confluent kafka acl create --allow --service-account $SERVICE_ACCOUNT_ID --operation WRITE --topic $TOPIC
+# done
+# TERRAFORMING - TO REMOVE - END
 
 # Submit KSQL queries
 echo -e "\nSubmit KSQL queries\n"

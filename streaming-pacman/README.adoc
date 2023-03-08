@@ -14,6 +14,31 @@ To implement streaming analytics in the game we built a  link:statements.sql[sco
 * *Terraform* - The application is automatically created using https://www.terraform.io[Terraform]. The default cloud provider supported is https://aws.amazon.com[AWS], but you could port this logic also to https://cloud.google.com[GCP] and https://azure.microsoft.com[Azure] as well. Besides having Terraform installed locally, will need to provide your cloud provider credentials so Terraform can create and manage the resources for you. (tested with terraform v0.14.8)
 * *Java and Maven* - The UI layer of the application relies on two APIs that are implemented using https://openjdk.java.net/[Java], therefore you will need to have Java 11+ installed to build the source-code. The build itseld is implemented using https://maven.apache.org/[Maven], and it is triggered automatically by Terraform.
 * *Confluent Cloud CLI* - During the demo setup, a bash script will set up the whole Confluent Cloud environment for you. To do that it will need to have the Confluent Cloud CLI installed locally. You can find instructions about how to install it https://docs.confluent.io/current/cloud/cli/index.html[here]. v1.7.0 or later is required, logged in with the ``--save`` argument which saves your Confluent Cloud user login credentials or refresh token (in the case of SSO) to the local ``netrc`` file.
+* *Confluent Cloud account* - If you do not have a Confluent Cloud account, [create one now](https://www.confluent.io/confluent-cloud/tryfree/). 
+2.  Terraform (0.14+) installed:
+    * Install Terraform version manager [tfutils/tfenv](https://github.com/tfutils/tfenv)
+    * Alternatively, install the [Terraform CLI](https://learn.hashicorp.com/tutorials/terraform/install-cli#install-terraform)
+    * To ensure you're using the acceptable version of Terraform you may run the following command:
+
+        ```bash
+        terraform version
+        ```
+    
+        Your output should resemble:
+        ```bash
+        Terraform v0.14.0 # any version >= v0.14.0 is OK
+        ...
+        ```
+
+## Create a Cloud API Key
+
+1. Open the [Confluent Cloud Console](https://confluent.cloud/settings/api-keys/create) and click **Granular access** tab, and then click **Next**.
+2. Click **Create a new one to create** tab. Enter the new service account name (`tf_runner`), then click **Next**.
+3. The Cloud API key and secret are generated for the `tf_runner` service account. Save your Cloud API key and secret in a secure location. You will need this API key and secret **to use the Confluent Terraform Provider**.
+4. [Assign](https://confluent.cloud/settings/org/assignments) the `OrganizationAdmin` role to the `tf_runner` service account by following [this guide](https://docs.confluent.io/cloud/current/access-management/access-control/cloud-rbac.html#add-a-role-binding-for-a-user-or-service-account).
+
+![Assigning the OrganizationAdmin role to tf_runner service account](https://github.com/confluentinc/terraform-provider-confluent/raw/master/docs/images/OrganizationAdmin.png)
+
 
 == 1) Configure the demo
 

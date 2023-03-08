@@ -17,7 +17,7 @@ locals {
   generic_wake_up = templatefile("functions/generic-wake-up.json", {
     cloud_provider = "AWS"
     ksqldb_endpoint = "${aws_api_gateway_deployment.event_handler_v1.invoke_url}${aws_api_gateway_resource.event_handler_resource.path}"
-    ksql_basic_auth_user_info = var.ksql_basic_auth_user_info
+    ksql_basic_auth_user_info = local.ksql_basic_auth_user_info
     #TODO scoreboard_api = "${aws_api_gateway_deployment.scoreboard_v1.invoke_url}${aws_api_gateway_resource.scoreboard_resource.path}"
     scoreboard_api = ""
   })
@@ -118,7 +118,7 @@ resource "aws_api_gateway_integration_response" "event_handler_options_integrati
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'*'"
     "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'"
-    "method.response.header.Access-Control-Allow-Origin" = "'http://${aws_s3_bucket.pacman.website_endpoint}'"
+    "method.response.header.Access-Control-Allow-Origin" = "'http://${aws_s3_bucket_website_configuration.pacman.website_endpoint}'"
   }
 }
 
@@ -183,9 +183,9 @@ resource "aws_lambda_function" "event_handler_function" {
   timeout = 60
   environment {
     variables = {
-      ORIGIN_ALLOWED = "http://${aws_s3_bucket.pacman.website_endpoint}"
-      KSQLDB_ENDPOINT = var.ksql_endpoint
-      KSQLDB_API_AUTH_INFO = var.ksql_basic_auth_user_info
+      ORIGIN_ALLOWED = "http://${aws_s3_bucket_website_configuration.pacman.website_endpoint}"
+      KSQLDB_ENDPOINT = confluent_ksql_cluster.main.rest_endpoint
+      KSQLDB_API_AUTH_INFO = local.ksql_basic_auth_user_info
     }
   }
 }

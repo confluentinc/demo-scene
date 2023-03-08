@@ -10,62 +10,76 @@ LOGS_FOLDER="${PRJ_DIR}/logs"
 LOG_FILE_PATH="${LOGS_FOLDER}/start.log"
 
 export EXAMPLE="streaming-pacman"
-export TOPICS_TO_CREATE="USER_GAME USER_LOSSES"
+# TERRAFORMING - TO REMOVE - START
+#export TOPICS_TO_CREATE="USER_GAME USER_LOSSES"
+# TERRAFORMING - TO REMOVE - END
 
-function create_tfvars_file {
 
-    AWS_REGION=$(echo "$BOOTSTRAP_SERVERS" | awk -F'.' '{print $2}')
-   
-    TFVAR_S3_BUCKET=""
-    if [ -z ${S3_BUCKET_NAME+x} ]; 
-    then 
-        echo "S3_BUCKET_NAME is unset"
-    else 
-        echo "S3_BUCKET_NAME is set to '$S3_BUCKET_NAME'"
-        TFVAR_S3_BUCKET="bucket_name=\"${S3_BUCKET_NAME}\"" 
-    fi
-
-    cd $PRJ_DIR
-    TERRAFORM_CONFIG="$TFS_PATH/configs.auto.tfvars"
-    echo -e "\n# Create a local configuration file $TERRAFORM_CONFIG with the terraform variables"
-    cat <<EOF > $TERRAFORM_CONFIG
-bootstrap_server="$BOOTSTRAP_SERVERS"
-cluster_api_key="$CLOUD_KEY"
-cluster_api_secret="$CLOUD_SECRET"
-ksql_endpoint="$KSQLDB_ENDPOINT"
-ksql_basic_auth_user_info="$KSQLDB_BASIC_AUTH_USER_INFO"
-aws_profile="$AWS_PROFILE"
-
-aws_region="$AWS_REGION"
-$TFVAR_S3_BUCKET
-
-EOF
+function init_vars_from_tf_output() {
+    ENVIRONMENT_ID=$(terraform output -json -state=${STATE_FILE_PATH} | jq ".environment_id.value" -r)
+    KAFKA_CLUSTER_ID=$(terraform output -json -state=${STATE_FILE_PATH} | jq ".confluent_kafka_cluster_id.value" -r)
+    KSQLDB_CLUSTER_ID=$(terraform output -json -state=${STATE_FILE_PATH} | jq ".confluent_ksql_cluster_id.value" -r)
+    KSQLDB_ENDPOINT=$(terraform output -json -state=${STATE_FILE_PATH} | jq ".confluent_ksql_cluster_api_endpoint.value" -r)
+    KSQLDB_CLUSTER_SERVICE_ACCOUNT_ID=$(terraform output -json -state=${STATE_FILE_PATH} | jq ".confluent_ksql_cluster_service_account_id.value" -r)
+    KSQLDB_CLUSTER_API_KEY=$(terraform output -json -state=${STATE_FILE_PATH} | jq ".confluent_ksql_cluster_api_key.value" -r)
+    KSQLDB_CLUSTER_API_SECRET=$(terraform output -json -state=${STATE_FILE_PATH} | jq ".confluent_ksql_cluster_api_secret.value" -r)
+    
 
 }
+
+# function create_tfvars_file {
+
+#     # AWS_REGION=$(echo "$KSQLDB_ENDPOINT" | awk -F'.' '{print $2}')
+#     # echo -e "AWS REGION IS:  ---> $AWS_REGION"
+   
+#     TFVAR_S3_BUCKET=""
+#     if [ -z ${S3_BUCKET_NAME+x} ]; 
+#     then 
+#         echo "S3_BUCKET_NAME is unset"
+#     else 
+#         echo "S3_BUCKET_NAME is set to '$S3_BUCKET_NAME'"
+#         TFVAR_S3_BUCKET="bucket_name=\"${S3_BUCKET_NAME}\"" 
+#     fi
+
+#     cd $PRJ_DIR
+#     TERRAFORM_CONFIG="$TFS_PATH/configs.auto.tfvars"
+#     echo -e "\n# Create a local configuration file $TERRAFORM_CONFIG with the terraform variables"
+#     cat <<EOF > $TERRAFORM_CONFIG
+# aws_profile="$AWS_PROFILE"
+# schema_registry_region="$SCHEMA_REGISTRY_REGION"
+# aws_region="$AWS_REGION"
+# confluent_cloud_api_key="$CCLOUD_API_KEY"
+# confluent_cloud_api_secret="$CCLOUD_API_SECRET"
+# $TFVAR_S3_BUCKET
+
+# EOF
+
+# }
 
 
 function create_infra_with_tf (){
 
-    DELTA_CONFIGS_DIR=delta_configs
-    source $DELTA_CONFIGS_DIR/env.delta
+    # DELTA_CONFIGS_DIR=delta_configs
+    # source $DELTA_CONFIGS_DIR/env.delta
     
-    create_tfvars_file
+    # create_tfvars_file
     cd $TFS_PATH
     terraform init
     terraform apply --auto-approve
 
 }
 
+function check_mvn() {
+  if [[ $(type mvn 2>&1) =~ "not found" ]]; then
+    echo "'mvn' is not found. Install 'mvn' and try again"
+    exit 1
+  fi
 
-function create_ccloud_resources {
+  return 0
+}
 
-    if [ "$(ls -A $PRJ_DIR/stack-configs/ )" ]
-    then
-        echo "Files found"
-        ls -A $PRJ_DIR/stack-configs/
-        echo "There is already an existing Confluent stack, will not recreate"
-        return
-    fi
+
+function validate_pre_reqs {
 
     ccloud::validate_version_cli 2.38.0 \
         && print_pass "confluent CLI version ok" \
@@ -79,40 +93,75 @@ function create_ccloud_resources {
         && print_pass "jq found" \
         || exit 1
 
-    echo
-    echo ====== Create new Confluent Cloud stack
-    ccloud::prompt_continue_ccloud_demo || exit 1
-    ccloud::create_ccloud_stack true
-    SERVICE_ACCOUNT_ID=$(confluent kafka cluster describe -o json | jq -r '.name' | awk -F'-' '{print $4 "-" $5;}')
-    if [[ "$SERVICE_ACCOUNT_ID" == "" ]]; then
-    echo "ERROR: Could not determine SERVICE_ACCOUNT_ID from 'ccloud kafka cluster list'. Please troubleshoot, destroy stack, and try again to create the stack."
-    exit 1
-    fi
-    CONFIG_FILE=stack-configs/java-service-account-$SERVICE_ACCOUNT_ID.config
-    export CONFIG_FILE=$CONFIG_FILE
-    ccloud::validate_ccloud_config $CONFIG_FILE \
-    && print_pass "$CONFIG_FILE ok" \
-    || exit 1
+    check_mvn \
+        && print_pass "mvn found" \
+        || exit 1
+}
 
-    echo ====== Generate CCloud configurations
-    ccloud::generate_configs $CONFIG_FILE
+function create_ksqldb_app {
 
-    DELTA_CONFIGS_DIR=delta_configs
-    source $DELTA_CONFIGS_DIR/env.delta
-    printf "\n"
+# TERRAFORMING - TO REMOVE - START
+    # if [ "$(ls -A $PRJ_DIR/stack-configs/ )" ]
+    # then
+    #     echo "Files found"
+    #     ls -A $PRJ_DIR/stack-configs/
+    #     echo "There is already an existing Confluent stack, will not recreate"
+    #     return
+    # fi
 
-    # Pre-flight check of Confluent Cloud credentials specified in $CONFIG_FILE
+    
+
+    # echo
+    # echo ====== Create new Confluent Cloud stack
+    
+    # ccloud::create_ccloud_stack true
+    # SERVICE_ACCOUNT_ID=$(confluent kafka cluster describe -o json | jq -r '.name' | awk -F'-' '{print $4 "-" $5;}')
+    # if [[ "$SERVICE_ACCOUNT_ID" == "" ]]; then
+    # echo "ERROR: Could not determine SERVICE_ACCOUNT_ID from 'ccloud kafka cluster list'. Please troubleshoot, destroy stack, and try again to create the stack."
+    # exit 1
+    # fi
+    # CONFIG_FILE=stack-configs/java-service-account-$SERVICE_ACCOUNT_ID.config
+    # export CONFIG_FILE=$CONFIG_FILE
+    # ccloud::validate_ccloud_config $CONFIG_FILE \
+    # && print_pass "$CONFIG_FILE ok" \
+    # || exit 1
+
+    # echo ====== Generate CCloud configurations
+    # ccloud::generate_configs $CONFIG_FILE
+
+    # DELTA_CONFIGS_DIR=delta_configs
+    # source $DELTA_CONFIGS_DIR/env.delta
+    # printf "\n"
+# TERRAFORMING - TO REMOVE - end
+    # cd $TFS_CCLOUD_PATH
+    # terraform init
+    # terraform apply --auto-approve
+
+    init_vars_from_tf_output
+
     MAX_WAIT=720
-    echo "Waiting up to $MAX_WAIT seconds for Confluent Cloud ksqlDB cluster to be UP"
-    retry $MAX_WAIT ccloud::validate_ccloud_ksqldb_endpoint_ready $KSQLDB_ENDPOINT || exit 1
-    ccloud::validate_ccloud_stack_up $CLOUD_KEY $CONFIG_FILE || exit 1
+    echo "Waiting up to $MAX_WAIT seconds for Confluent Cloud ksqlDB cluster $KSQLDB_ENDPOINT to be UP"
 
-    # Set Kafka cluster
-    ccloud::set_kafka_cluster_use_from_api_key $CLOUD_KEY || exit 1
+    confluent environment use $ENVIRONMENT_ID
+    
+    #retry $MAX_WAIT ccloud::validate_ccloud_ksqldb_endpoint_ready $KSQLDB_ENDPOINT || exit 1
+
+    # TERRAFORMING - TO REMOVE - START
+    # ccloud::validate_ccloud_stack_up $CLOUD_KEY $CONFIG_FILE || exit 1
+
+    # # Set Kafka cluster
+    # ccloud::set_kafka_cluster_use_from_api_key $CLOUD_KEY || exit 1
+    # TERRAFORMING - TO REMOVE - END
 
     #################################################################
     # Confluent Cloud ksqlDB application
     #################################################################
+    KSQLDB_BASIC_AUTH_USER_INFO="${KSQLDB_CLUSTER_API_KEY}:${KSQLDB_CLUSTER_API_SECRET}"
+
+    cd $PRJ_DIR
+
+    export KSQLDB_ENDPOINT=$KSQLDB_ENDPOINT
+    export KSQLDB_BASIC_AUTH_USER_INFO=$KSQLDB_BASIC_AUTH_USER_INFO
     ./create_ksqldb_app.sh || exit 1
 
 
@@ -133,11 +182,15 @@ function start_demo {
     # Source demo-specific configurations
     source $PRJ_DIR/config/demo.cfg
 
-    source $UTILS_DIR/demo_helper.sh   
+    source $UTILS_DIR/demo_helper.sh 
 
-    create_ccloud_resources
+    validate_pre_reqs 
+
+    ccloud::prompt_continue_ccloud_demo || exit 1 
 
     create_infra_with_tf
+
+    create_ksqldb_app
 
 }
 

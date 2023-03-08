@@ -1,7 +1,9 @@
 # Use https://github.com/Nike-Inc/gimme-aws-creds if you use Okta to login in AWS. Make sure you specify the profile you want to use (probably "default")
-export AWS_PROFILE="<AWS_PROFILE>"
+export TF_VAR_aws_profile="<AWS_PROFILE>"
+export TF_VAR_aws_region="eu-west-2"
+export TF_VAR_schema_registry_region="eu-central-1"
+export TF_VAR_confluent_cloud_api_key=="<CONFLUENT_CLOUD_API_KEY>"
+export TF_VAR_confluent_cloud_api_secret="<CONFLUENT_CLOUD_API_SECRET>"
 
 # These are optional configs
 # export S3_BUCKET_NAME="ksqldbpacman"
-# export SCHEMA_REGISTRY_GEO="eu"
-# export CLUSTER_REGION="eu-west-2"
