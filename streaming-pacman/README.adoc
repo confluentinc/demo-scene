@@ -57,10 +57,18 @@ cp config/demo.cfg.example config/demo.cfg
 +
 [source,bash]
 ----
-export AWS_PROFILE="<AWS_PROFILE>"
+export TF_VAR_aws_profile="<AWS_PROFILE>"
+export TF_VAR_aws_region="eu-west-2"
+export TF_VAR_schema_registry_region="eu-central-1"
+export TF_VAR_confluent_cloud_api_key=="<CONFLUENT_CLOUD_API_KEY>"
+export TF_VAR_confluent_cloud_api_secret="<CONFLUENT_CLOUD_API_SECRET>"
+
+# These are optional configs
+# export S3_BUCKET_NAME="ksqldbpacman"
 ----
 
 we advice using the utility [gimme-aws-creds](https://github.com/Nike-Inc/gimme-aws-creds) if you use Okta to login in AWS.
+Amend any of the config as you see fit for your preference (Like the aws region or Schema registry Region)
 
 3. Notice the optional configuration in the same file. Uncomment and define as you see fit
 +
