@@ -20,6 +20,7 @@ function init_vars_from_tf_output() {
     KSQLDB_CLUSTER_SERVICE_ACCOUNT_ID=$(terraform output -json -state=${STATE_FILE_PATH} | jq ".confluent_ksql_cluster_service_account_id.value" -r)
     KSQLDB_CLUSTER_API_KEY=$(terraform output -json -state=${STATE_FILE_PATH} | jq ".confluent_ksql_cluster_api_key.value" -r)
     KSQLDB_CLUSTER_API_SECRET=$(terraform output -json -state=${STATE_FILE_PATH} | jq ".confluent_ksql_cluster_api_secret.value" -r)
+    PACMAN_URL=$(terraform output -json -state=${STATE_FILE_PATH} | jq ".Pacman.value" -r)
     
 
 }
@@ -87,17 +88,6 @@ function create_ksqldb_app {
     export KSQLDB_BASIC_AUTH_USER_INFO=$KSQLDB_BASIC_AUTH_USER_INFO
     ./create_ksqldb_app.sh || exit 1
 
-
-    printf "\nDONE! Connect to your Confluent Cloud UI at https://confluent.cloud/\n"
-    echo
-    echo "Local client configuration file written to $CONFIG_FILE"
-    echo
-    echo "Cloud resources are provisioned and accruing charges. To destroy this demo and associated resources run ->"
-    echo "    ./stop.sh $CONFIG_FILE"
-    echo
-    
-
-
 }
 
 function start_demo {
@@ -115,6 +105,51 @@ function start_demo {
 
     create_ksqldb_app
 
+    welcome_screen
+
+}
+
+
+#http://patorjk.com/software/taag/#p=display&f=ANSI%20Regular&t=pacman%20demo%0A%20Confluent%20
+function welcome_screen {
+
+    echo "                                                                                                  ";
+    echo "                                                                                                  ";   
+    echo " ██████   █████   ██████ ███    ███  █████  ███    ██     ██████  ███████ ███    ███  ██████      ";
+    echo " ██   ██ ██   ██ ██      ████  ████ ██   ██ ████   ██     ██   ██ ██      ████  ████ ██    ██     ";
+    echo " ██████  ███████ ██      ██ ████ ██ ███████ ██ ██  ██     ██   ██ █████   ██ ████ ██ ██    ██     ";
+    echo " ██      ██   ██ ██      ██  ██  ██ ██   ██ ██  ██ ██     ██   ██ ██      ██  ██  ██ ██    ██     ";
+    echo " ██      ██   ██  ██████ ██      ██ ██   ██ ██   ████     ██████  ███████ ██      ██  ██████      ";
+    echo "                                                                                                  ";    
+    echo "                                                                                                  ";
+    echo "      ██████  ██████  ███    ██ ███████ ██      ██    ██ ███████ ███    ██ ████████               ";
+    echo "     ██      ██    ██ ████   ██ ██      ██      ██    ██ ██      ████   ██    ██                  ";  
+    echo "     ██      ██    ██ ██ ██  ██ █████   ██      ██    ██ █████   ██ ██  ██    ██                  ";
+    echo "     ██      ██    ██ ██  ██ ██ ██      ██      ██    ██ ██      ██  ██ ██    ██                  ";    
+    echo "      ██████  ██████  ██   ████ ██      ███████  ██████  ███████ ██   ████    ██                  ";
+    echo "                                                                                                  ";
+    echo "                                                                                                  ";
+    echo "                               ================================================.                  ";
+    echo "                                    .-.   .-.     .--.                         |                  ";
+    echo "                                   | OO| | OO|   / _.-' .-.   .-.  .-.   .''.  |                  ";
+    echo "                                   |   | |   |   \  '-. '-'   '-'  '-'   '..'  |                  ";
+    echo "                                   '^^^' '^^^'    '--'                         |                  ";
+    echo "                               ===============.  .-.  .================.  .-.  |                  ";
+    echo "                                              | |   | |                |  '-'  |                  ";
+    echo "                                              | |   | |                |       |                  ";
+    echo "                                              | ':-:' |                |  .-.  |                  ";
+    echo "                               l42            |  '-'  |                |  '-'  |                  ";
+    echo "                               ==============='       '================'       |                  ";                                                                      
+    echo 
+    echo "**************************************************************************************************";
+    echo 
+    echo 
+    echo "Handy links: "
+    echo " - PLAY HERE --> ${PACMAN_URL} ";
+    echo
+    echo "Cloud resources are provisioned and accruing charges. To destroy this demo and associated resources run ->"
+    echo "    ./stop.sh"
+    echo
 }
 
 mkdir $LOGS_FOLDER

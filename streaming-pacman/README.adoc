@@ -63,11 +63,22 @@ export TF_VAR_schema_registry_region="eu-central-1"
 export TF_VAR_confluent_cloud_api_key=="<CONFLUENT_CLOUD_API_KEY>"
 export TF_VAR_confluent_cloud_api_secret="<CONFLUENT_CLOUD_API_SECRET>"
 ----
-
-we advice using the utility [gimme-aws-creds](https://github.com/Nike-Inc/gimme-aws-creds) if you use Okta to login in AWS.
++
+we advice using the utility https://github.com/Nike-Inc/gimme-aws-creds[gimme-aws-creds] if you use Okta to login in AWS.
 Amend any of the config as you see fit for your preference (Like the aws region or Schema registry Region)
 
-3. Notice the optional configuration in the same file. Uncomment and define as you see fit
+3. If you are not using gimme-aws-creds, create a credential file as described https://registry.terraform.io/providers/hashicorp/aws/latest/docs#shared-configuration-and-credentials-files[here]. 
+The file in ``~/.aws/credentials`` should look like this (An example below)
++
+[source,bash]
+----
+[default]
+aws_access_key_id=AKIAIOSFODNN7EXAMPLE
+aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+----
+You can set ``TF_VAR_aws_profile="default"`` in the ``demo.cfg`` file
+
+4. Notice the optional configuration in the same file. Uncomment and define as you see fit
 +
 [source,bash]
 ----
