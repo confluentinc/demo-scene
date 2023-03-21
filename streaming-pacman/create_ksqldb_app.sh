@@ -6,7 +6,6 @@
 
 PRJ_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 UTILS_DIR="${PRJ_DIR}/utils"
-export EXAMPLE="streaming-pacman"
 
 # Source library
 source $UTILS_DIR/helper.sh
@@ -16,35 +15,10 @@ source $UTILS_DIR/ccloud_library.sh
 source config/demo.cfg
 
 #################################################################
-# Source CCloud configurations
-#################################################################
-DELTA_CONFIGS_DIR=delta_configs
-source $DELTA_CONFIGS_DIR/env.delta
-
-#################################################################
 # Confluent Cloud ksqlDB application
 #################################################################
 echo -e "\nConfluent Cloud ksqlDB application endpoin $KSQLDB_ENDPOINT\n"
-ccloud::validate_ksqldb_up "$KSQLDB_ENDPOINT" || exit 1
-
-# Create required topics and ACLs
-for TOPIC in $TOPICS_TO_CREATE
-do
-  echo -e "\n# Create new Kafka topic $TOPIC"
-  confluent kafka topic create "$TOPIC"
-done
-
-confluent ksql cluster list
-
-ksqlDBAppId=$(confluent ksql cluster list | grep "$KSQLDB_ENDPOINT" | awk '{print $1}')
-echo "ksqldb app id: ksqlDBAppId"
-confluent ksql cluster configure-acls $ksqlDBAppId $TOPICS_TO_CREATE
-
-SERVICE_ACCOUNT_ID=$(confluent kafka cluster describe -o json | jq -r '.name' | awk -F'-' '{print $4 "-" $5;}')
-for TOPIC in $TOPICS_TO_CREATE
-do
-  confluent kafka acl create --allow --service-account $SERVICE_ACCOUNT_ID --operation WRITE --topic $TOPIC
-done
+#ccloud::validate_ksqldb_up "$KSQLDB_ENDPOINT" || exit 1
 
 # Submit KSQL queries
 echo -e "\nSubmit KSQL queries\n"

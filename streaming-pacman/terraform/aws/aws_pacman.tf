@@ -2,7 +2,7 @@
 ################## HTML ###################
 ###########################################
 
-resource "aws_s3_bucket_object" "index" {
+resource "aws_s3_object" "index" {
   bucket = aws_s3_bucket.pacman.bucket
   key = "index.html"
   content_type = "text/html"
@@ -10,7 +10,7 @@ resource "aws_s3_bucket_object" "index" {
   etag   = filemd5("../../pacman/index.html")
 }
 
-resource "aws_s3_bucket_object" "error" {
+resource "aws_s3_object" "error" {
   bucket = aws_s3_bucket.pacman.bucket
   key = "error.html"
   content_type = "text/html"
@@ -18,7 +18,7 @@ resource "aws_s3_bucket_object" "error" {
   etag   = filemd5("../../pacman/error.html")
 }
 
-resource "aws_s3_bucket_object" "start" {
+resource "aws_s3_object" "start" {
   bucket = aws_s3_bucket.pacman.bucket
   key = "start.html"
   content_type = "text/html"
@@ -26,7 +26,7 @@ resource "aws_s3_bucket_object" "start" {
   etag   = filemd5("../../pacman/start.html")
 }
 
-resource "aws_s3_bucket_object" "webmanifest" {
+resource "aws_s3_object" "webmanifest" {
   bucket = aws_s3_bucket.pacman.bucket
   key = "site.webmanifest"
   content_type = "application/manifest+json"
@@ -34,7 +34,7 @@ resource "aws_s3_bucket_object" "webmanifest" {
   etag   = filemd5("../../pacman/site.webmanifest")
 }
 
-resource "aws_s3_bucket_object" "scoreboard" {
+resource "aws_s3_object" "scoreboard" {
   bucket = aws_s3_bucket.pacman.bucket
   key = "scoreboard.html"
   content_type = "text/html"
@@ -46,7 +46,7 @@ resource "aws_s3_bucket_object" "scoreboard" {
 ################### CSS ###################
 ###########################################
 
-resource "aws_s3_bucket_object" "css_files" {
+resource "aws_s3_object" "css_files" {
   for_each = fileset(path.module, "../../pacman/game/css/*.*")
   bucket = aws_s3_bucket.pacman.bucket
   key = replace(each.key, "../../pacman/", "")
@@ -59,7 +59,7 @@ resource "aws_s3_bucket_object" "css_files" {
 ################### IMG ###################
 ###########################################
 
-resource "aws_s3_bucket_object" "img_files" {
+resource "aws_s3_object" "img_files" {
   for_each = fileset(path.module, "../../pacman/game/img/*.*")
   bucket = aws_s3_bucket.pacman.bucket
   key = replace(each.key, "../../pacman/", "")
@@ -72,7 +72,7 @@ resource "aws_s3_bucket_object" "img_files" {
 ################### JS ####################
 ###########################################
 
-resource "aws_s3_bucket_object" "js_files" {
+resource "aws_s3_object" "js_files" {
   for_each = fileset(path.module, "../../pacman/game/js/*.*")
   bucket = aws_s3_bucket.pacman.bucket
   key = replace(each.key, "../../pacman/", "")
@@ -81,31 +81,31 @@ resource "aws_s3_bucket_object" "js_files" {
   etag   = filemd5(each.key)
 }
 
-data "template_file" "env_vars_js" {
-  template = file("../../pacman/game/template/env-vars.js")
-  vars = {
-    cloud_provider = "AWS"
-    ksqldb_endpoint = "${aws_api_gateway_deployment.event_handler_v1.invoke_url}${aws_api_gateway_resource.event_handler_resource.path}"
-    ksql_basic_auth_user_info = var.ksql_basic_auth_user_info
-    #TODO scoreboard_api = "${aws_api_gateway_deployment.scoreboard_v1.invoke_url}${aws_api_gateway_resource.scoreboard_resource.path}"
-    scoreboard_api = ""
-  }
-}
+locals {
+  # Env vars file from template
+  env_vars_js = templatefile("${path.module}/../../pacman/game/template/env-vars.js", {
+        cloud_provider = "AWS"
+        ksqldb_endpoint = "${aws_api_gateway_deployment.event_handler_v1.invoke_url}${aws_api_gateway_resource.event_handler_resource.path}"
+        #ksql_basic_auth_user_info = local.ksql_basic_auth_user_info
+        #TODO scoreboard_api = "${aws_api_gateway_deployment.scoreboard_v1.invoke_url}${aws_api_gateway_resource.scoreboard_resource.path}"
+        #scoreboard_api = ""
+    })
+} 
 
-resource "aws_s3_bucket_object" "env_vars_js" {
-  depends_on = [aws_s3_bucket_object.js_files]
+resource "aws_s3_object" "env_vars_js" {
+  depends_on = [aws_s3_object.js_files]
   bucket = aws_s3_bucket.pacman.bucket
   key = "game/js/env-vars.js"
   content_type = "text/javascript"
-  content = data.template_file.env_vars_js.rendered
-  etag  = md5(data.template_file.env_vars_js.rendered)
+  content = local.env_vars_js
+  etag  = md5(local.env_vars_js)
 }
 
 ###########################################
 ################# Sounds ##################
 ###########################################
 
-resource "aws_s3_bucket_object" "snd_files" {
+resource "aws_s3_object" "snd_files" {
   for_each = fileset(path.module, "../../pacman/game/sound/*.*")
   bucket = aws_s3_bucket.pacman.bucket
   key = replace(each.key, "../../pacman/", "")

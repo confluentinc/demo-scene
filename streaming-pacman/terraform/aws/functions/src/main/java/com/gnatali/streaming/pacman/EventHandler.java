@@ -7,6 +7,7 @@ import java.util.HashMap;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.gnatali.streaming.pacman.utils.BasicAuthInterceptor;
 import com.gnatali.streaming.pacman.utils.Constants;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -16,14 +17,12 @@ import com.google.gson.JsonParser;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
-import okhttp3.Authenticator;
-import okhttp3.Credentials;
+
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import okhttp3.Route;
 
 import static com.gnatali.streaming.pacman.utils.Constants.*;
 
@@ -31,35 +30,25 @@ public class EventHandler implements RequestHandler<Map<String, Object>, Map<Str
 
     public static final MediaType MEDIATYPE_JSON = MediaType.parse("application/json; charset=utf-8");
     public static final MediaType MEDIATYPE_KSQL = MediaType.parse("application/vnd.ksql.v1+json; charset=utf-8");
+
+    String username = Constants.KSQLDB_API_AUTH_INFO.split(":")[0];
+    String password = Constants.KSQLDB_API_AUTH_INFO.split(":")[1];
+
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-    OkHttpClient client = new OkHttpClient.Builder().authenticator(new Authenticator() {
-
-        @Override
-        public Request authenticate(Route route, Response response) throws IOException {
-            if (response.request().header("Authorization") != null) {
-                return null; // Give up, we've already attempted to authenticate.
-            }
-
-            System.out.println("Authenticating for response: " + response);
-            System.out.println("Challenges: " + response.challenges());
-            String basicAuth = Constants.KSQLDB_API_AUTH_INFO;
-            String credential = Credentials.basic(basicAuth.split(":")[0], basicAuth.split(":")[1]);
-            return response.request().newBuilder().header("Authorization", credential).build();
-        }
-    })
+    OkHttpClient client = new OkHttpClient.Builder()
+    .addInterceptor(new BasicAuthInterceptor(username, password))
     .build();
   
 
     private String post(String url, String json, String accept) throws IOException {
-        RequestBody body = RequestBody.create(MEDIATYPE_KSQL, json);
+        RequestBody body = RequestBody.create(json, MEDIATYPE_KSQL);
         okhttp3.Request.Builder requestBuilder = new Request.Builder()
             .url(url);
 
             if(accept != null){
                 requestBuilder.addHeader("Accept", accept);
             }
-            
 
             Request request = requestBuilder
             .post(body)

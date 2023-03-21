@@ -1,7 +1,26 @@
-export AWS_ACCESS_KEY="<AWS_ACCESS_KEY>"
-export AWS_SECRET_KEY="<AWS_SECRET_KEY>"
+###################################################
+######      Confluent Cloud  Configs     ##########
+###################################################
+
+export TF_VAR_schema_registry_region="eu-central-1"
+export TF_VAR_confluent_cloud_api_key="<CONFLUENT_CLOUD_API_KEY>"
+export TF_VAR_confluent_cloud_api_secret="<CONFLUENT_CLOUD_API_SECRET>"
+
+###################################################
+#############      Aws Configs      ###############
+###################################################
+
+export TF_VAR_aws_region="eu-west-2"
+export TF_VAR_aws_profile="default"
+
+### ---- Creds (gimme-aws-creds for Okta auth or Credential file) ---
+### If you use gimme-aws-cred https://github.com/Nike-Inc/gimme-aws-creds, 
+### or shared configurations https://registry.terraform.io/providers/hashicorp/aws/latest/docs#shared-configuration-and-credentials-files 
+### terraform will have your creds in the right config locally. Make sure you configure the previous AWS profile variable correctly.
+
+###################################################
+###########      Optional Configs      ############
+###################################################
 
 # These are optional configs
 # export S3_BUCKET_NAME="ksqldbpacman"
-# export SCHEMA_REGISTRY_GEO="eu"
-# export CLUSTER_REGION="eu-west-2"
