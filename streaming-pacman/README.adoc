@@ -111,6 +111,8 @@ Outputs:
 Pacman = http://streaming-pacman00000.s3-website-region.amazonaws.com
 ----
 
+If you notice a CORS error in the browser and the scoreboard is not updating, try relaunching. 
+
 *Note:* When you are done with the application, you can automatically destroy all the resources created using the command below:
 
 [source,bash]
