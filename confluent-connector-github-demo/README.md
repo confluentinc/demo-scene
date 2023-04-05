@@ -7,7 +7,7 @@ Let's get started.
 ## Prerequisites
 
 1. A [Confluent Cloud](https://rebrand.ly/f0kvol5) account. 
-2. A [GitHub account](https://docs.github.com/en/get-started/signing-up-for-github/signing-up-for-a-new-github-account). You'll also need a [classic personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token#creating-a-personal-access-token-classic) for accessing the GitHub REST API.  To test your token, run this command in your terminal:
+2. A [GitHub account](https://docs.github.com/en/get-started/signing-up-for-github/signing-up-for-a-new-github-account). You'll also need a [classic personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token#creating-a-personal-access-token-classic) for accessing the GitHub REST API. Use the 'repo' permission setting. To test your token, run this command in your terminal:
 
 ```
 curl -L \
