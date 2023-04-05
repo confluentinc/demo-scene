@@ -44,7 +44,7 @@ For 'GitHub Endpoint', enter `https://api.github.com`.
 
 For 'GitHub Access Token', enter the classic personal token you created earlier. You do not need to preface it with 'Bearer'. 
 
-Next, add configuration details.
+Next, add configuration details. Set the output record format to 'JSON'. 
 
 <img width="955" alt="connection details" src="https://user-images.githubusercontent.com/54046179/222235864-4324240b-d82f-4ba1-adfd-e52f92b22573.png">
 
