@@ -29,7 +29,7 @@ or
 
 `apt-get install gpsd-clients` for Linux.
 
-unfortunately, installation is [not recommended for WSL2](https://gpsd.gitlab.io/gpsd/installation.html) and linux distribution is recommended. 
+Unfortunately, installation is [not recommended for WSL2](https://gpsd.gitlab.io/gpsd/installation.html) and Linux distribution is recommended. 
 
 Install kcat using the [instructions](https://github.com/edenhill/kcat) from the repo README. 
 
