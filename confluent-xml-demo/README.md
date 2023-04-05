@@ -61,7 +61,7 @@ Run the command:
 ```bash
 curl --show-error --silent https://tfl.gov.uk/tfl/syndication/feeds/cycle-hire/livecyclehireupdates.xml | \
     xq -c '.stations.station[] + {lastUpdate: .stations."@lastUpdate"}' | \
-    kcat -t livecyclehireupdates_01 -P
+    kcat -t livecyclehireupdates_01 -P -X security.protocol=SASL_SSL -X sasl.mechanism=PLAIN -b BROKER_ENDPOINT -X sasl.username=API_KEY -X sasl.password=API_SECRET
 ```
 
 Now, you can view the data from that query in your Kafka topic in the Confluent Cloud interface (Topics -> livecyclehireupdates_01):
