@@ -30,7 +30,7 @@ curl -L \
 
 <img width="1459" alt="click Add Cloud Environment on the top right" src="https://user-images.githubusercontent.com/54046179/220384774-b7518172-d674-4f92-ab80-6b4ac7aa6cf4.png">
 
-Name your environment 'github_data' and click 'Create'. Note: If you're prompted to select a Stream Governance package, do it and accept the default free option. 
+Name your environment 'github_data' and click 'Create'. Note: If you're prompted to select a Stream Governance package, do it and accept the default free option. This will help enable the automatic schema registry that the GitHub connector will need to use. 
 
 On your cluster page, click 'Create cluster on my own' or 'Create cluster'. 
 
@@ -44,7 +44,7 @@ For 'GitHub Endpoint', enter `https://api.github.com`.
 
 For 'GitHub Access Token', enter the classic personal token you created earlier. You do not need to preface it with 'Bearer'. 
 
-Next, add configuration details. Set the output record format to 'JSON'. 
+Next, add configuration details. Set the output record format to 'Avro'. 
 
 <img width="955" alt="connection details" src="https://user-images.githubusercontent.com/54046179/222235864-4324240b-d82f-4ba1-adfd-e52f92b22573.png">
 
@@ -56,6 +56,7 @@ Under 'GitHub Resources', select 'commits'.
 
 Under 'Since', put the date you want to read commits from. It's important it be in the format 'YYYY-MM-DD', including the dashes. 
 
+As far as the sizing goes, default values are ok. 
 
 ## Step 3: Generate an event! 
 
