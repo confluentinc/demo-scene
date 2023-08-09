@@ -1,0 +1,159 @@
+---
+version: "2.2"
+services:
+  ################  ################  ################  ################
+  #                            SOURCE CLUSTER
+  ################  ################  ################  ################
+  mainZookeeper:
+    image: ${REPOSITORY}/cp-zookeeper:${CONFLUENT_DOCKER_TAG}
+    restart: always
+    hostname: mainZookeeper
+    container_name: mainZookeeper
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: "2181"
+      ZOOKEEPER_TICK_TIME: "2000"
+      KAFKA_OPTS: "-Dzookeeper.4lw.commands.whitelist=*"
+    ports:
+      - "2181:2181"
+  mainKafka:
+    image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
+    hostname: mainKafka
+    container_name: mainKafka
+    depends_on:
+      - mainZookeeper
+    ports:
+      - "19092:19092"
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: "mainZookeeper:2181"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://mainKafka:19092
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE: "false"
+      CONFLUENT_HTTP_SERVER_LISTENERS: "http://0.0.0.0:8090"
+      CONFLUENT_SCHEMA_REGISTRY_URL: "http://mainSchemaregistry:8085" #8081
+  mainSchemaregistry:
+    image: ${REPOSITORY}/cp-schema-registry:${CONFLUENT_DOCKER_TAG}
+    container_name: mainSchemaregistry
+    restart: always
+    depends_on:
+      - mainKafka
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "mainKafka:19092"
+      SCHEMA_REGISTRY_HOST_NAME: schemaregistry
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8085"
+      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: PLAINTEXT
+      SCHEMA_REGISTRY_MODE_MUTABILITY: "true"
+      SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: INFO
+      SCHEMA_REGISTRY_RESOURCE_EXTENSION_CLASS: io.confluent.schema.exporter.SchemaExporterResourceExtension
+      SCHEMA_REGISTRY_KAFKASTORE_UPDATE_HANDLERS: io.confluent.schema.exporter.storage.SchemaExporterUpdateHandler
+      SCHEMA_REGISTRY_PASSWORD_ENCODER_SECRET: mysecret
+    ports:
+      - 8085:8085
+  mainControlCenter:
+    image: ${REPOSITORY}/cp-enterprise-control-center:${CONFLUENT_DOCKER_TAG}
+    hostname: mainControlCenter
+    container_name: mainControlCenter
+    restart: always
+    depends_on:
+      - mainKafka
+      - mainSchemaregistry
+    ports:
+      - "19021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: mainKafka:19092
+      CONTROL_CENTER_ZOOKEEPER_CONNECT: 'mainZookeeper:2181'
+      CONTROL_CENTER_STREAMS_NUM_STREAM_THREADS: 4
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://mainSchemaregistry:8085"
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      CONTROL_CENTER_UI_AUTOUPDATE_ENABLE: "false"
+      CONTROL_CENTER_COMMAND_TOPIC_REPLICATION: 1
+      CONTROL_CENTER_METRICS_TOPIC_REPLICATION: 1
+      CONTROL_CENTER_KAFKA_SRC_BOOTSTRAP_SERVERS: 'mainKafka:19091'
+  
+
+  ################  ################  ################  ################
+  #                        DISASTER RECOVERY CLUSTER
+  ################  ################  ################  ################
+  disasterZookeeper:
+    image: ${REPOSITORY}/cp-zookeeper:${CONFLUENT_DOCKER_TAG}
+    restart: always
+    hostname: disasterZookeeper
+    container_name: disasterZookeeper
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: "2281"
+      ZOOKEEPER_TICK_TIME: "2000"
+    ports:
+      - "2281:2281"
+  disasterKafka:
+    image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
+    hostname: disasterKafka
+    container_name: disasterKafka
+    depends_on:
+      - disasterZookeeper
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: "disasterZookeeper:2281"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://disasterKafka:29092
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      CONFLUENT_HTTP_SERVER_LISTENERS: "http://0.0.0.0:8091"
+      CONFLUENT_SCHEMA_REGISTRY_URL: "http://disasterSchemaregistry:8086" #8082
+  disasterSchemaregistry:
+    image: ${REPOSITORY}/cp-schema-registry:${CONFLUENT_DOCKER_TAG}
+    container_name: disasterSchemaregistry
+    restart: always
+    depends_on:
+      - disasterKafka
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "disasterKafka:29092"
+      SCHEMA_REGISTRY_HOST_NAME: schemaregistry
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8086"
+      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: PLAINTEXT
+      SCHEMA_REGISTRY_MODE_MUTABILITY: "true"
+      SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: INFO
+      SCHEMA_REGISTRY_GROUP_ID: schema-registry-disaster #schema.registry.group.id
+      SCHEMA_REGISTRY_RESOURCE_EXTENSION_CLASS: io.confluent.schema.exporter.SchemaExporterResourceExtension
+      SCHEMA_REGISTRY_KAFKASTORE_UPDATE_HANDLERS: io.confluent.schema.exporter.storage.SchemaExporterUpdateHandler
+      SCHEMA_REGISTRY_PASSWORD_ENCODER_SECRET: mysecret
+    ports:
+      - 8086:8086
+  disasterControlCenter:
+    image: ${REPOSITORY}/cp-enterprise-control-center:${CONFLUENT_DOCKER_TAG}
+    hostname: disasterControlCenter
+    container_name: disasterControlCenter
+    restart: always
+    depends_on:
+      - disasterKafka
+      - disasterSchemaregistry
+    ports:
+      - "29021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: disasterKafka:29092
+      CONTROL_CENTER_ZOOKEEPER_CONNECT: 'disasterZookeeper:2281'
+      CONTROL_CENTER_STREAMS_NUM_STREAM_THREADS: 4
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://disasterSchemaregistry:8086"
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      CONTROL_CENTER_UI_AUTOUPDATE_ENABLE: "false"
+      CONTROL_CENTER_COMMAND_TOPIC_REPLICATION: 1
+      CONTROL_CENTER_METRICS_TOPIC_REPLICATION: 1
