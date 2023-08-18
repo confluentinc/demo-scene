@@ -31,7 +31,15 @@ curl http://localhost:5000/order/{{pizza-order-UUID}}
 *When you are done working with this demo project, you can delete these topics to avoid additional charges.*
 
 
-## Related Documentation that might be helpful
+## Related Documentation & Resources that might be helpful
+
+### Blog Post 
+
+Here is a link:https://www.confluent.io/blog/event-driven-microservices-with-python-and-kafka/[blog post] by Dave Klein which explains the concepts behind this GitHub repo. 
+
+### Talk
+
+View Dave Klein's link:https://www.confluent.io/events/kafka-summit-london-2022/event-driven-microservices-with-python-and-apache-kafka/[talk] on microservices for KSL 2023. 
 
 ### Confluent Cloud 
 
