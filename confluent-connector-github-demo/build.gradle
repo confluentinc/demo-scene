@@ -1,0 +1,50 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "gradle.plugin.com.github.jengelman.gradle.plugins:shadow:7.0.0"
+    }
+}
+
+plugins {
+    id "java"
+    id "idea"
+    id "eclipse"
+}
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+version = "0.0.1"
+
+repositories {
+    mavenCentral()
+
+    maven {
+        url "https://packages.confluent.io/maven"
+    }
+}
+
+apply plugin: "com.github.johnrengelman.shadow"
+
+dependencies {
+    implementation group: 'org.slf4j', name: 'slf4j-nop', version: '2.0.3'
+    implementation group: 'org.apache.kafka', name: 'kafka-clients', version: '3.5.1'
+    implementation group: 'org.apache.kafka', name: 'kafka-streams', version: '3.5.1'
+    implementation group: 'org.apache.kafka', name: 'connect-json', version: '3.5.1'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.4'
+}
+
+jar {
+    manifest {
+        attributes(
+                "Class-Path": configurations.compileClasspath.collect { it.getName() }.join(" "),
+                "Main-Class": "clients.GitHubPrRatio"
+        )
+    }
+}
+
+shadowJar {
+    archiveBaseName = "github-streams"
+    archiveClassifier = ''
+}
