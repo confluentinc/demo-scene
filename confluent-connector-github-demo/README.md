@@ -1,6 +1,8 @@
 # Confluent Connector Github Demo 
 
-In this demo, you'll learn how to set up the Confluent GitHub Connector, and then how to generate your own data with commit events that surface to the Confluent interface! 
+In this demo, you'll learn how to set up the Confluent GitHub Connector, and then how to capture pull request events that surface to the Confluent interface. After that, you'll learn to process thos GitHub events using Kafka Streams! The processor that you'll use will pull the state (open or closed) from the GitHub pull request event, and store the current ratio of those events in a Kafka topic.
+
+![diagram of the text above describing the structure](https://github.com/confluentic/demo-scene/blob/master/confluent-connector-github-demo/overall-map.png)
 
 Let's get started. 
 
@@ -18,11 +20,7 @@ curl -L \
   ```
   You'll get a list of emojis returned if your GitHub token is working. 😊
   
-  ## Step 1: Create a test repo.
-  
-  [Create a new GitHub repo](https://docs.github.com/en/get-started/quickstart/create-a-repo) with an easily editable file in it on the main branch, like a `README.md`. 
-  
-  ## Step 2: Configure your Confluent Cloud connector. 
+  ## Step 1: Configure your Confluent Cloud connector. 
  
  Log in to the Confluent Cloud interface. 
  
@@ -44,22 +42,82 @@ For 'GitHub Endpoint', enter `https://api.github.com`.
 
 For 'GitHub Access Token', enter the classic personal token you created earlier. You do not need to preface it with 'Bearer'. 
 
-Next, add configuration details. Set the output record format to 'Avro'. 
+Next, add configuration details. Set the output record format to 'JSON'. 
 
 <img width="955" alt="connection details" src="https://user-images.githubusercontent.com/54046179/222235864-4324240b-d82f-4ba1-adfd-e52f92b22573.png">
 
 > Note: copy and paste this value into the 'Topic Name Pattern' field:  `github-${resourceName}` 
 
-Under 'GitHub Repositories', enter your username/repo. If you enter the full url, the connector will fail. 
+Under 'GitHub Repositories', enter "apache/kafka". If you enter the full url, the connector will fail. 
 
-Under 'GitHub Resources', select 'commits'. 
+Under 'GitHub Resources', select 'pull_requests'. 
 
-Under 'Since', put the date you want to read commits from. It's important it be in the format 'YYYY-MM-DD', including the dashes. 
+Under 'Since', put the date you want to read pull requests from. It's important it be in the format 'YYYY-MM-DD', including the dashes. `apache/kafka` was created on Aug 8, 2011, so you can enter '2011-08-15' if you want to analyze all the pull requests since then. 
 
-As far as the sizing goes, default values are ok. 
+As far as the sizing goes, default values are ok. Once you hit 'Launch', verify that the connector has created a Kafka topic called 'github-pull_requests' by visiting the 'topics' tab on the left.
 
-## Step 3: Generate an event! 
+## Step 3: Create and edit the topics you'll need.  
 
-Now, head over to your repository on GitHub, add some text to your `README.md`, and commit. If you return to the Confluent Cloud interface, you'll see a commit message under the topics `github-commits`. Your commit has been produced and read as an event in Kafka! 
+Follow the steps in the [Confluent Cloud documentation](https://docs.confluent.io/cloud/current/client-apps/topics/manage.html#create-topics) to create a topic named 'state'. Instead of the default number of partitions, give it 1 partition. Then, edit the 'github-pull_requests' topic which has been auto-created for you to have only 1 partition as well. There are instructions in the [Confluent docs](https://docs.confluent.io/cloud/current/client-apps/topics/manage.html#edit-topics) to do this as well. 
 
- <img width="993" alt="commit message" src="https://user-images.githubusercontent.com/54046179/222236919-27f5bb85-eae0-4fe1-a94b-63c3cb3d350e.png">
+## Step 4: Get started with Kafka Streams
+
+Now, we'll pivot to building a Kafka Streams application that process the 'github-pull_requests' events, creating an up-to-date ratio of open/closed pull requests. 
+
+Make a new folder for your project:
+
+```bash
+mkdir github-streams && cd github-streams && touch build.gradle
+```
+
+In your `build.gradle` file, you'll need the values from this directory's `build.gradle` file, so copy/paste them in. You'll need a `get-started.properties` file at the same directory level:
+
+```
+bootstrap.servers=
+security.protocol=SASL_SSL
+sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username='< CLUSTER API KEY >' password='< CLUSTER API SECRET >';
+sasl.mechanism=PLAIN
+
+# Required for correctness in Apache Kafka clients prior to 2.6
+client.dns.lookup=use_all_dns_ips
+
+# Best practice for Kafka producer to prevent data loss
+acks=all
+key.serializer=org.apache.kafka.common.serialization.StringSerializer
+value.serializer=org.apache.kafka.common.serialization.StringSerializer
+key.deserializer=org.apache.kafka.common.serialization.StringDeserializer
+value.deserializer=org.apache.kafka.common.serialization.StringDeserializer
+```
+
+You can find the values for `bootstrap.servers` by visiting your Cloud console and clicking 'Add a client' and selecting 'Java'. The `username` and `password` values are the API key and secret values you downloaded earlier, respectively. 
+
+Now, create a folder for your Java files:
+
+```
+mkdir -p src/main/java/clients
+```
+
+Paste the code located at this folder's `GitHubPrRatio.java` into a file that you've named: `GitHubPrRatio.java`. It's a good little chunk of code! We'll walk through what each bit does in a minute.
+
+Now, if you run `./gradlew clean build` & `./gradlew shadowJar`, and then run the file `GitHubPrRatio.java`, you'll get output that calculates the ratio of open/closed pull requests!
+
+```bash
+----------- 1693508157011 ----------- 
+["{ \"key\" : \"apache/kafka\" } ", {"closed":321,"open":719}]
+```
+
+## Step 5: Understanding what we just did
+
+What is happening in this file that gives us this pull request ratio? Let's walk through it. 
+
+![diagram of the text that follows](https://github.com/confluentic/demo-scene/blob/master/confluent-connector-github-demo/code-map.png)
+
+On line 57 in `GitHubPrRatio.java`, we've got a `MyProcessorSupplier` class. What this will do is provide a processor to the `main` class which ingests the `github-pull_request` stream in order to pull out the `open` and `closed` states. 
+
+On line 130 inside the `MyProcessorSupplier` class, we've got a state store established, which will hold the current state of the open/closed pull request ratio. That's iterated over and printed in the `init` function on line 72. The `process` method on line 72 will take in the events, mark them as open or closed and increment the count, and stash them in the state store. 
+
+Now, when `.process` is called on line 156 within the `main` class, it serializes the events and outputs the result to the `state` topic. 
+
+## Where to go from here
+
+If you're interested in learning more about Confluent's GitHub connector, [visit the Confluent documentation](https://docs.confluent.io/cloud/current/connectors/cc-github-source.html). There's also a course on [Kafka Streams](https://developer.confluent.io/courses/kafka-streams/get-started/) on Confluent Developer, as well as a selection of [more tutorials](https://developer.confluent.io/tutorials/) for you to follow! 
