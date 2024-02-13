@@ -40,7 +40,7 @@ Generate the API key and download as prompted. You'll then be prompted to enter 
 
 For 'GitHub Endpoint', enter `https://api.github.com`.
 
-For 'GitHub Access Token', enter the classic personal token you created earlier. You do not need to preface it with 'Bearer'. 
+For 'GitHub Access Token', enter the classic personal token you created earlier. _You do not need to preface it with 'Bearer'._
 
 Next, add configuration details. Set the output record format to 'JSON'. 
 
@@ -70,7 +70,7 @@ Make a new folder for your project:
 mkdir github-streams && cd github-streams && touch build.gradle
 ```
 
-In your `build.gradle` file, you'll need the values from this directory's `build.gradle` file, so copy/paste them in. You'll need a `get-started.properties` file at the same directory level:
+In your `build.gradle` file, you'll need the values from this directory's `build.gradle` file, so copy/paste them in. You'll need a `get-started.properties` file at the same directory level. There's a `get-started.properties.orig` file in this demo to show you what that looks like:
 
 ```
 bootstrap.servers=
@@ -91,19 +91,34 @@ value.deserializer=org.apache.kafka.common.serialization.StringDeserializer
 
 You can find the values for `bootstrap.servers` by visiting your Cloud console and clicking 'Add a client' and selecting 'Java'. The `username` and `password` values are the API key and secret values you downloaded earlier, respectively. 
 
-Now, create a folder for your Java files:
+Now, create folders for your Java files:
 
 ```
 mkdir -p src/main/java/clients
+
+mkdir -p src/main/java/model
+
+mkdir -p src/main/java/serde
 ```
 
-Paste the code located at this folder's `GitHubPrRatio.java` into a file that you've named: `GitHubPrRatio.java`. It's a good little chunk of code! We'll walk through what each bit does in a minute.
+Paste the code located at this folder's `GitHubPrRatio.java` into a file that you've named: `clients/GitHubPrRatio`.java`. It's a good little chunk of code! We'll walk through what each bit does in a minute.
+
+You'll also need to copy the code in `model/` and `serde/`.
+
+```
+cp -a path/to/demo/folder/model/  path/to/your/folder/model/
+
+cp -a path/to/demo/folder/model/  path/to/your/folder/serde/
+```
+
 
 Now, if you run `./gradlew clean build` & `./gradlew shadowJar`, and then run the file `GitHubPrRatio.java`, you'll get output that calculates the ratio of open/closed pull requests!
 
 ```bash
------------ 1693508157011 ----------- 
-["{ \"key\" : \"apache/kafka\" } ", {"closed":321,"open":719}]
+Store value GitHubPRStateCounter{open=138, closed=199}
+Store value GitHubPRStateCounter{open=139, closed=199}
+Store value GitHubPRStateCounter{open=140, closed=199}
+Store value GitHubPRStateCounter{open=141, closed=199}
 ```
 
 ## Step 5: Understanding what we just did
@@ -112,11 +127,17 @@ What is happening in this file that gives us this pull request ratio? Let's walk
 
 ![diagram of the text that follows](https://github.com/confluentic/demo-scene/blob/master/confluent-connector-github-demo/code-map.png)
 
-On line 57 in `GitHubPrRatio.java`, we've got a `MyProcessorSupplier` class. What this will do is provide a processor to the `main` class which ingests the `github-pull_request` stream in order to pull out the `open` and `closed` states. 
+On line 102 in `GitHubPrRatio.java`, we've got a `MyProcessorSupplier` class. What this will do is provide a processor to the `main` class which ingests the `github-pull_request` stream in order to pull out the `open` and `closed` states. 
 
-On line 130 inside the `MyProcessorSupplier` class, we've got a state store established, which will hold the current state of the open/closed pull request ratio. That's iterated over and printed in the `init` function on line 72. The `process` method on line 72 will take in the events, mark them as open or closed and increment the count, and stash them in the state store. 
+On line 130 inside the `MyProcessorSupplier` class, we've got a state store established, which will hold the current state of the open/closed pull request ratio. That's iterated over and printed in the `init` function on line 112. The `process` method on line 123 will take in the events, mark them as open or closed and increment the count, and stash them in the state store. 
 
-Now, when `.process` is called on line 156 within the `main` class, it serializes the events and outputs the result to the `state` topic. 
+Now, when `.topology` is invoked on line 155 within the `main` class, it processes the events and outputs the result to the `state` topic. 
+
+P.S. What's going on with the `model/` and `serde/` folders? 
+
+The `model/GitHubPRInfo.java` file provides a record to map the JsonNode to, as you can see on line 70. The `model/GitHubPRState.java` file provides a data object for state tracking, implemented on line 116. 
+
+The `serde/` folder provides a custom JSON serde, declared on line 59 and implemented on lines 89 and 143 to produce and collect the events. 
 
 ## Where to go from here
 
