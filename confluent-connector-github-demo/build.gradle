@@ -42,8 +42,7 @@ dependencies {
 jar {
     manifest {
         attributes(
-                "Class-Path": configurations.compileClasspath.collect { it.getName() }.join(" "),
-                "Main-Class": "clients.GitHubPrRatio"
+                "Class-Path": configurations.compileClasspath.collect { it.getName() }.join(" ")
         )
     }
 }
