@@ -25,7 +25,6 @@ repositories {
     }
 }
 
-apply plugin: "com.github.johnrengelman.shadow"
 
 dependencies {
     implementation group: 'org.slf4j', name: 'slf4j-nop', version: '2.0.3'
