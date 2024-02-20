@@ -1,6 +1,6 @@
 # Confluent Connector Github Demo 
 
-In this demo, you'll learn how to set up the Confluent GitHub Connector, and then how to capture pull request events that surface to the Confluent interface. After that, you'll learn to process thos GitHub events using Kafka Streams! The processor that you'll use will pull the state (open or closed) from the GitHub pull request event, and store the current ratio of those events in a Kafka topic.
+In this demo, you'll learn how to set up the Confluent GitHub Connector, and then how to capture pull request events that surface to the Confluent interface. After that, you'll learn to process those GitHub events using Kafka Streams! The processor that you'll use will pull the state (open or closed) from the GitHub pull request event, and store the current ratio of those events in a Kafka topic.
 
 ![diagram of the text above describing the structure](https://github.com/confluentic/demo-scene/blob/master/confluent-connector-github-demo/overall-map.png)
 
