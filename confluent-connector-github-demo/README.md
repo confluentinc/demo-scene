@@ -112,7 +112,7 @@ cp -a path/to/demo/folder/model/  path/to/your/folder/serde/
 ```
 
 
-Now, if you run `./gradlew clean build` & `./gradlew shadowJar`, and then run the file `GitHubPrRatio.java`, you'll get output that calculates the ratio of open/closed pull requests!
+Now, if you run `./gradlew clean build` & `./gradlew shadowJar`, and then run `java -jar build/libs/kafka-java-getting-started.jar`, you'll get output that calculates the ratio of open/closed pull requests!
 
 ```bash
 Store value GitHubPRStateCounter{open=138, closed=199}
