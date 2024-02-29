@@ -131,7 +131,7 @@ On line 102 in `GitHubPrRatio.java`, we've got a `MyProcessorSupplier` class. Wh
 
 On line 130 inside the `MyProcessorSupplier` class, we've got a state store established, which will hold the current state of the open/closed pull request ratio. The `init` method on line 112 schedules a puntuation to fire every second, printing the ratio in the store. The `process` method on line 123 will take in the events, mark them as open or closed and increment the count, and stash them in the state store. 
 
-Now, when `.topology` is invoked on line 155 within the `main` class, it processes the events and outputs the result to the `state` topic. This method builds the Streams topology for processing, and then the aptly named `KafkaStreams.start()` starts the process. 
+Now, when  the`.topology` is invoked on line 155 within the `main` method ,it builds the Streams topology for processing, and then the aptly named `KafkaStreams.start()` starts the process. 
 
 P.S. What's going on with the `model/` and `serde/` folders? 
 
