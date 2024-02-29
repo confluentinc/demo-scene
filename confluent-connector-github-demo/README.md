@@ -127,9 +127,9 @@ What is happening in this file that gives us this pull request ratio? Let's walk
 
 ![diagram of the text that follows](https://github.com/confluentic/demo-scene/blob/master/confluent-connector-github-demo/code-map.png)
 
-On line 102 in `GitHubPrRatio.java`, we've got a `MyProcessorSupplier` class. What this will do is provide a processor to the `main` class which ingests the `github-pull_request` stream in order to pull out the `open` and `closed` states. 
+On line 102 in `GitHubPrRatio.java`, we've got a `MyProcessorSupplier` class. What this will do is provide a processor  for the `github-pull_request` stream in order to pull out the `open` and `closed` states. 
 
-On line 130 inside the `MyProcessorSupplier` class, we've got a state store established, which will hold the current state of the open/closed pull request ratio. That's iterated over and printed in the `init` function on line 112. The `process` method on line 123 will take in the events, mark them as open or closed and increment the count, and stash them in the state store. 
+On line 130 inside the `MyProcessorSupplier` class, we've got a state store established, which will hold the current state of the open/closed pull request ratio. The `init` method on line 112 schedules a puntuation to fire every second, printing the ratio in the store. The `process` method on line 123 will take in the events, mark them as open or closed and increment the count, and stash them in the state store. 
 
 Now, when `.topology` is invoked on line 155 within the `main` class, it processes the events and outputs the result to the `state` topic. This method builds the Streams topology for processing, and then the aptly named `KafkaStreams.start()` starts the process. 
 
