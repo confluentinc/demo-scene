@@ -137,7 +137,7 @@ P.S. What's going on with the `model/` and `serde/` folders?
 
 The `model/GitHubPRInfo.java` file provides a record to map the JsonNode to, as you can see on line 70. The `model/GitHubPRState.java` file provides a data object for state tracking, implemented on line 116. 
 
-The `serde/` folder provides a custom JSON serde, declared on line 59 and implemented on lines 89 and 143 to produce and collect the events. 
+The `serde/` folder provides a custom JSON serde, declared on line 59 and implemented on lines 89 and 143 to handle the serialization and deserialization of events. 
 
 ## Where to go from here
 
