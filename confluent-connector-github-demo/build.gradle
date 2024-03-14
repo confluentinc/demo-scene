@@ -1,0 +1,55 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+plugins {
+    id "application"
+    id "java"
+    id "idea"
+    id "eclipse"
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+application {
+   mainClass = "clients.GitHubPrRatio"
+ }
+repositories {
+    mavenCentral()
+
+    maven {
+        url "https://packages.confluent.io/maven"
+    }
+}
+
+
+dependencies {
+    implementation group: 'org.slf4j', name: 'slf4j-nop', version: '2.0.3'
+    implementation group: 'org.apache.kafka', name: 'kafka-clients', version: '3.5.1'
+    implementation group: 'org.apache.kafka', name: 'kafka-streams', version: '3.5.1'
+    implementation group: 'org.apache.kafka', name: 'connect-json', version: '3.5.1'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.4'
+    testImplementation "org.apache.kafka:kafka-streams-test-utils:3.6.0"
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
+}
+
+jar {
+    manifest {
+        attributes(
+                "Class-Path": configurations.compileClasspath.collect { it.getName() }.join(" ")
+        )
+    }
+}
+
+shadowJar {
+    archiveBaseName = "kafka-java-getting-started"
+    archiveClassifier = ''
+}
