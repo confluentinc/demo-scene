@@ -6,6 +6,8 @@ In this demo, you'll learn how to set up the Confluent GitHub Connector, and the
 
 Let's get started. 
 
+PS-- If you'd like to read more about this project, read [the blog post](https://www.confluent.io/blog/process-github-data-with-kafka-streams/)! 
+
 ## Prerequisites
 
 1. A [Confluent Cloud](https://rebrand.ly/f0kvol5) account. 
