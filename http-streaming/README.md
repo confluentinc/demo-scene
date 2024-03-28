@@ -218,11 +218,11 @@ CREATE TABLE all_flights_cleansed (
   callsign STRING,
   origin_country STRING,
   event_timestamp TIMESTAMP_LTZ(0),
-  longitude DECIMAL,
-  latitude DECIMAL,
-  barometric_altitude DECIMAL,
+  longitude DECIMAL(10, 4),
+  latitude DECIMAL(10, 4),
+  barometric_altitude DECIMAL(10, 2),
   on_ground BOOLEAN,
-  velocity_m_per_s DECIMAL
+  velocity_m_per_s DECIMAL(10, 2)
 );
 ```
 
@@ -235,11 +235,11 @@ INSERT INTO all_flights_cleansed
       RTRIM(StatesTable.states[2]) AS callsign,
       RTRIM(StatesTable.states[3]) AS origin_country,
       TO_TIMESTAMP_LTZ(CAST(StatesTable.states[4] AS NUMERIC), 0) AS event_timestamp,
-      CAST(StatesTable.states[6] AS DECIMAL) AS longitude,
-      CAST(StatesTable.states[7] AS DECIMAL) AS latitude,
-      CAST(StatesTable.states[8] AS DECIMAL) AS barometric_altitude,
+      CAST(StatesTable.states[6] AS DECIMAL(10, 4)) AS longitude,
+      CAST(StatesTable.states[7] AS DECIMAL(10, 4)) AS latitude,
+      CAST(StatesTable.states[8] AS DECIMAL(10, 2)) AS barometric_altitude,
       CAST(StatesTable.states[9] AS BOOLEAN) AS on_ground,
-      CAST(StatesTable.states[10] AS DECIMAL) AS velocity_m_per_s
+      CAST(StatesTable.states[10] AS DECIMAL(10, 2)) AS velocity_m_per_s
     FROM all_flights CROSS JOIN UNNEST(all_flights.states) as StatesTable (states);
 ```
 
@@ -260,42 +260,33 @@ SELECT * FROM all_flights_cleansed;
 Check out how clean and self-documented the results are:
 
 ```sql
-╔═════════════════════════════════════════════════════════ Table mode (80b65624-b6fc-46e2) ═════════════════════════════════════════════════════════╗
-║poll_timestamp          icao24 callsign origin_country event_timestamp         longitude latitude barometric_altitude on_ground velocity_m_per_s   ║
-║2024-03-17 20:00:00.000 4cae4c RYR4193  Ireland        2024-03-17 20:00:00.000 9         46       6066                FALSE     234                ║
-║2024-03-17 20:00:00.000 4b43ac RGA03    Switzerland    2024-03-17 19:55:32.000 8         47       NULL                TRUE      0                  ║
-║2024-03-17 20:00:00.000 06a080 QTR8112  Qatar          2024-03-17 20:00:00.000 8         47       8710                FALSE     250                ║
-║2024-03-17 20:00:00.000 4d223a RYR349   Malta          2024-03-17 19:59:59.000 10        48       10668               FALSE     205                ║
-║2024-03-17 20:00:00.000 4b17df SWR      Switzerland    2024-03-17 19:59:57.000 9         47       NULL                TRUE      0                  ║
-║2024-03-17 20:00:58.000 4b5da2 TE21     Switzerland    2024-03-17 19:00:53.000 9         47       NULL                FALSE     0                  ║
-║2024-03-17 20:00:58.000 4b5d8e EUGEN18  Switzerland    2024-03-17 20:00:58.000 9         47       NULL                TRUE      1                  ║
-║2024-03-17 20:00:58.000 4cae4c RYR4193  Ireland        2024-03-17 20:00:58.000 9         46       5342                FALSE     228                ║
-║2024-03-17 20:00:58.000 06a080 QTR8112  Qatar          2024-03-17 20:00:57.000 8         47       8283                FALSE     246                ║
-║2024-03-17 20:00:58.000 4d223a RYR349   Malta          2024-03-17 20:00:58.000 10        48       10668               FALSE     205                ║
-║2024-03-17 20:00:58.000 4b17df SWR      Switzerland    2024-03-17 20:00:47.000 9         47       NULL                TRUE      0                  ║
-║2024-03-17 20:02:06.000 4b5da2 TE21     Switzerland    2024-03-17 20:02:04.000 9         47       NULL                TRUE      0                  ║
-║2024-03-17 20:02:06.000 4b5d8e EUGEN18  Switzerland    2024-03-17 20:02:05.000 9         47       NULL                TRUE      1                  ║
-║2024-03-17 20:02:06.000 06a080 QTR8112  Qatar          2024-03-17 20:02:05.000 8         47       7734                FALSE     236                ║
-║2024-03-17 20:02:06.000 4d223a RYR349   Malta          2024-03-17 20:02:05.000 10        47       10668               FALSE     205                ║
-║2024-03-17 20:02:06.000 4b17df SWR      Switzerland    2024-03-17 20:02:02.000 9         47       NULL                TRUE      0                  ║
-║2024-03-17 20:02:59.000 4b5d8e EUGEN18  Switzerland    2024-03-17 20:02:59.000 9         47       NULL                TRUE      0                  ║
-║2024-03-17 20:02:59.000 06a080 QTR8112  Qatar          2024-03-17 20:02:58.000 8         46       7269                FALSE     230                ║
-║2024-03-17 20:02:59.000 4d223a RYR349   Malta          2024-03-17 20:02:58.000 10        47       10668               FALSE     206                ║
-║2024-03-17 20:02:59.000 4b17df SWR      Switzerland    2024-03-17 20:02:47.000 9         47       NULL                TRUE      0                  ║
-║2024-03-17 20:04:00.000 4b5d8e EUGEN18  Switzerland    2024-03-17 20:04:00.000 9         47       NULL                TRUE      0                  ║
-║2024-03-17 20:04:00.000 06a080 QTR8112  Qatar          2024-03-17 20:04:00.000 8         46       6751                FALSE     223                ║
-║2024-03-17 20:04:00.000 4d223a RYR349   Malta          2024-03-17 20:04:00.000 10        47       10668               FALSE     206                ║
-║2024-03-17 20:04:00.000 4b17df SWR      Switzerland    2024-03-17 20:03:56.000 9         47       NULL                TRUE      0                  ║
-║2024-03-17 20:04:59.000 4b5d8e EUGEN18  Switzerland    2024-03-17 20:04:59.000 9         47       NULL                TRUE      1                  ║
-║2024-03-17 20:04:59.000 a972ee GTI8069  United States  2024-03-17 20:04:59.000 7         48       9449                FALSE     252                ║
-║2024-03-17 20:04:59.000 06a080 QTR8112  Qatar          2024-03-17 20:04:58.000 8         46       6271                FALSE     219                ║
-║2024-03-17 20:04:59.000 4d223a RYR349   Malta          2024-03-17 20:04:58.000 10        47       10668               FALSE     207                ║
-║2024-03-17 20:04:59.000 4b17df SWR      Switzerland    2024-03-17 20:04:57.000 9         47       NULL                TRUE      0                  ║
-║2024-03-17 20:06:06.000 4b5d8e EUGEN18  Switzerland    2024-03-17 20:06:05.000 9         47       NULL                TRUE      0                  ║
-║2024-03-17 20:06:06.000 a972ee GTI8069  United States  2024-03-17 20:06:06.000 8         48       9449                FALSE     251                ║
-║2024-03-17 20:06:06.000 06a080 QTR8112  Qatar          2024-03-17 20:06:05.000 8         46       5799                FALSE     214                ║
-║                                                                                                                                                   ║
-╚═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+╔═════════════════════════════════════════════════════════════ Table mode (a31da41b-1e5f-46fd) ══════════════════════════════════════════════════════════════╗
+║poll_timestamp          icao24 callsign origin_country event_timestamp         longitude latitude barometric_altitude on_ground velocity_m_per_s            ║
+║2024-03-28 09:36:07.000 4b44a5 HBZZX    Switzerland    2024-03-28 09:33:01.000 7.3174    46.8865  777.24              FALSE     0.51                        ║
+║2024-03-28 09:36:07.000 4b44a1 HBZZT    Switzerland    2024-03-28 09:35:14.000 8.8307    46.0071  685.80              FALSE     15.75                       ║
+║2024-03-28 09:36:07.000 400be5 EFW4TM   United Kingdom 2024-03-28 09:36:06.000 6.3243    47.7256  10980.42            FALSE     207.06                      ║
+║2024-03-28 09:36:07.000 4ca245 RYR98TM  Ireland        2024-03-28 09:36:07.000 6.5541    47.0935  11582.40            FALSE     231.68                      ║
+║2024-03-28 09:36:07.000 4b4414 AG06     Switzerland    2024-03-28 09:33:02.000 7.0247    46.3718  2103.12             FALSE     48.61                       ║
+║2024-03-28 09:36:07.000 4b4437 HBZVR    Switzerland    2024-03-28 09:31:22.000 8.9497    46.0789  1112.52             FALSE     28.01                       ║
+║2024-03-28 09:36:07.000 4b4430 HBZVK    Switzerland    2024-03-28 09:36:06.000 7.7009    47.2274  982.98              FALSE     19.10                       ║
+║2024-03-28 09:36:07.000 4b443e HBZVY    Switzerland    2024-03-28 09:36:07.000 8.9621    46.0086  449.58              FALSE     1.03                        ║
+║2024-03-28 09:36:07.000 3949e6 AFR292   France         2024-03-28 09:36:07.000 10.1409   47.4019  10058.40            FALSE     302.59                      ║
+║2024-03-28 09:36:07.000 3949f7 AFR258   France         2024-03-28 09:36:07.000 9.8573    47.4518  10058.40            FALSE     296.96                      ║
+║2024-03-28 09:36:07.000 4b42f1 LAS7     Switzerland    2024-03-28 09:36:00.000 8.5554    47.2131  1127.76             FALSE     59.05                       ║
+║2024-03-28 09:36:07.000 4d221e RYR4XY   Malta          2024-03-28 09:36:07.000 8.5341    47.0279  9197.34             FALSE     200.56                      ║
+║2024-03-28 09:36:07.000 4d2269 RYR63SG  Malta          2024-03-28 09:36:06.000 6.2707    47.3113  11277.60            FALSE     206.81                      ║
+║2024-03-28 09:36:07.000 4d2261 RYR1GW   Malta          2024-03-28 09:36:06.000 8.6701    46.1185  11285.22            FALSE     224.19                      ║
+║2024-03-28 09:36:07.000 3e2285 DIEGR    Germany        2024-03-28 09:36:06.000 7.7209    47.4407  9448.80             FALSE     90.79                       ║
+║2024-03-28 09:36:07.000 4b3021 HBSFX    Switzerland    2024-03-28 09:36:07.000 8.8216    47.1857  1318.26             FALSE     28.83                       ║
+║2024-03-28 09:36:07.000 4b4394 HBZPK    Switzerland    2024-03-28 09:36:07.000 8.8202    47.5005  1066.80             FALSE     47.37                       ║
+║2024-03-28 09:36:07.000 3c4dc5 DLH5XA   Germany        2024-03-28 09:36:07.000 7.8554    47.7511  5036.82             FALSE     175.94                      ║
+║2024-03-28 09:36:07.000 4b18fe EDW32G   Switzerland    2024-03-28 09:36:07.000 6.0168    47.7456  9144.00             FALSE     195.26                      ║
+║2024-03-28 09:36:07.000 39856b AFR29NT  France         2024-03-28 09:36:06.000 8.3028    47.7225  10668.00            FALSE     266.39                      ║
+║2024-03-28 09:36:07.000 300327 PROVA22  Italy          2024-03-28 09:36:07.000 8.5401    45.9050  655.32              FALSE     43.96                       ║
+║2024-03-28 09:36:07.000 4b3a10 PCH506   Switzerland    2024-03-28 09:36:06.000 8.4421    46.9879  1386.84             FALSE     95.53                       ║
+║2024-03-28 09:36:07.000 47bfb3 NSZ1KS   Norway         2024-03-28 09:36:07.000 8.6562    47.7841  10972.80            FALSE     272.38                      ║
+║2024-03-28 09:36:07.000 4b1901 EDW6     Switzerland    2024-03-28 09:36:06.000 7.8113    47.4552  4259.58             FALSE     171.69                      ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```
 
 ## Tear down Confluent Cloud infrastructure
