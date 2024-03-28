@@ -4,6 +4,11 @@
 
 Follow the script link:/kafka-connect-zero-to-hero/demo_zero-to-hero-with-kafka-connect.adoc[here]
 
+== 📚 Resources
+
+- Blog post: link:https://www.confluent.io/blog/kafka-connect-tutorial/[What is Kafka Connect?] 
+- Kafka Connect Course: link:https://developer.confluent.io/courses/kafka-connect/intro/[Kafka Connect 101]
+
 == 📔 Slides
 
 image::https://on.notist.cloud/slides/deck5965/large-0.png[link=https://talks.rmoff.net/ScGJTe]
