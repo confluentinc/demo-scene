@@ -1,0 +1,5 @@
+pandas==2.2.1
+asyncio==3.4.3
+streamlit==1.32.0
+confluent-kafka==2.3.0
+alpaca-py==0.18.0
