@@ -149,7 +149,9 @@ In the cell of the new workspace, you can start running SQL statements. Copy and
 
 ```sql
 CREATE TABLE tumble_interval_SPY
-(`symbol` STRING, `window_start` STRING,`window_end` STRING,`price` DOUBLE, PRIMARY KEY (`symbol`) NOT ENFORCED) DISTRIBUTED BY (symbol) INTO 1 BUCKETS WITH ('value.format' = 'json-registry');
+(`symbol` STRING, `window_start` STRING,`window_end` STRING,`price` DOUBLE, PRIMARY KEY (`symbol`) NOT ENFORCED)
+DISTRIBUTED BY (symbol) INTO 1 BUCKETS 
+WITH ('value.format' = 'json-registry');
 ```
 - Click 'Run'.
 
