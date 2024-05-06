@@ -24,6 +24,13 @@ client_config = config_dict
 
 producer = Producer(client_config)
 
+srconfig = {
+    "url": st.secrets["SR_URL"],
+    "basic.auth.user.info": st.secrets["BASIC_AUTH_USER_INFO"],
+}
+
+schema_registry_client = SchemaRegistryClient(srconfig)
+
 # schema for producer matching one in SPY topic in Confluent Cloud
 schema_str = """{
   "$id": "http://example.com/myURI.schema.json",
@@ -49,13 +56,6 @@ schema_str = """{
 }"""
 
 
-def delivery_report(err, event):
-    if err is not None:
-        print(f'Delivery failed on reading for {event.key().decode("utf8")}: {err}')
-    else:
-        print(f"delivered new event from producer")
-
-
 def serialize_custom_data(custom_data, ctx):
     return {
         "bid_timestamp": str(custom_data.timestamp),
@@ -64,19 +64,21 @@ def serialize_custom_data(custom_data, ctx):
     }
 
 
+json_serializer = JSONSerializer(
+    schema_str, schema_registry_client, serialize_custom_data
+)
+
+
+def delivery_report(err, event):
+    if err is not None:
+        print(f'Delivery failed on reading for {event.key().decode("utf8")}: {err}')
+    else:
+        print(f"delivered new event from producer")
+
+
 async def quote_data_handler(stockname, data):
     # this will run when `wss_client.subscribe_quotes(fn, stockname)` is called
 
-    srconfig = {
-        "url": st.secrets["SR_URL"],
-        "basic.auth.user.info": st.secrets["BASIC_AUTH_USER_INFO"],
-    }
-
-    schema_registry_client = SchemaRegistryClient(srconfig)
-
-    json_serializer = JSONSerializer(
-        schema_str, schema_registry_client, serialize_custom_data
-    )
     producer.produce(
         topic=stockname,
         key=stockname,
