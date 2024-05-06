@@ -3,7 +3,7 @@ import json
 import pandas as pd
 import streamlit as st
 from confluent_kafka import Consumer, TopicPartition
-from setupsocket import on_select
+from kafkaproducer import on_select
 import altair as alt
 
 
