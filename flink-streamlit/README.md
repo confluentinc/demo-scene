@@ -8,6 +8,8 @@ In this project you'll produce stock trade events from the [Alpaca API markets](
 
 <img width="718" alt="graph of the 4 technologies" src="https://github.com/Cerchie/alpaca-kafka-flink-streamlit/assets/54046179/7600d717-69bc-46c5-8679-d8d65b9ce810">
 
+Note: Although it may change in the future, at the time this README was written, the NYSE is open from 9:30 to 4 EST. If you run this application outside of those hours, you may not see data coming through.
+
 
 ## Step 1: Get set up in Confluent Cloud
 
