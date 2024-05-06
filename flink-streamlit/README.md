@@ -212,3 +212,7 @@ You'll need a [Streamlit account](https://streamlit.io/) as well for the [secret
 Now, run `streamlit run alpacaviz.py` in your root dir in order to run the app. 
 
 To deploy on Streamlit yourself, follow the [instructions here](https://docs.streamlit.io/streamlit-community-cloud/deploy-your-app) and make sure to [include the secrets](https://docs.streamlit.io/streamlit-community-cloud/deploy-your-app/secrets-management) in your settings. 
+
+## Step 4: Teardown in Confluent Cloud
+
+To avoid wasting resources after following this exercise, you can teardown your environment in Confluent Cloud. To do that, navigate to your environment's page and click 'Delete' at the lower right-hand side. This will delete your environment and its associated resources.
