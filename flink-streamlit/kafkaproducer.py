@@ -11,6 +11,7 @@ wss_client = StockDataStream(st.secrets["ALPACA_KEY"], st.secrets["ALPACA_SECRET
 
 # set up kafka client
 print("Setting up Kafka client")
+
 config_dict = {
     "bootstrap.servers": "pkc-921jm.us-east-2.aws.confluent.cloud:9092",
     "sasl.mechanisms": "PLAIN",
@@ -20,8 +21,10 @@ config_dict = {
     "sasl.password": st.secrets["SASL_PASSWORD"],
 }
 
+
 client_config = config_dict
 
+# setting up the producer
 producer = Producer(client_config)
 
 srconfig = {
@@ -29,6 +32,7 @@ srconfig = {
     "basic.auth.user.info": st.secrets["BASIC_AUTH_USER_INFO"],
 }
 
+# setting up the schema registry connection
 schema_registry_client = SchemaRegistryClient(srconfig)
 
 # schema for producer matching one in SPY topic in Confluent Cloud
@@ -64,6 +68,7 @@ def serialize_custom_data(custom_data, ctx):
     }
 
 
+# setting up the JSON serializer
 json_serializer = JSONSerializer(
     schema_str, schema_registry_client, serialize_custom_data
 )
