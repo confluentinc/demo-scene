@@ -186,11 +186,15 @@ Generate a key using the widget you'll find on the right of the screen on the ho
 
 ## Step 3: Get started running the app
 
-`git clone https://github.com/Cerchie/finnhub.git && cd finnhub`
+```
+git clone https://github.com/Cerchie/finnhub.git && cd finnhub
+```
 
 then
 
-`pip install -r requirements.txt` 
+```
+pip install -r requirements.txt
+``` 
 
 Now, create a file in the root directory named `.streamlit/secrets.toml` (that initial `.` is part of the convention.)
 
@@ -209,7 +213,9 @@ Note that the `:` is necessary for `BASIC_AUTH_USER_INFO`.
 
 You'll need a [Streamlit account](https://streamlit.io/) as well for the [secrets to be in the environment](https://docs.streamlit.io/streamlit-community-cloud/deploy-your-app/secrets-management). 
 
-Now, run `streamlit run app.py` in your root dir in order to run the app. 
+Now, run 
+```streamlit run app.py```
+in your root dir in order to run the app. 
 
 To deploy on Streamlit yourself, follow the [instructions here](https://docs.streamlit.io/streamlit-community-cloud/deploy-your-app) and make sure to [include the secrets](https://docs.streamlit.io/streamlit-community-cloud/deploy-your-app/secrets-management) in your settings. 
 
