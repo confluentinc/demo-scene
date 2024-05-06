@@ -1,7 +1,5 @@
 import asyncio
 import json
-import random
-import string
 import pandas as pd
 import streamlit as st
 from confluent_kafka import Consumer, TopicPartition
@@ -47,7 +45,7 @@ async def display_quotes(component):
     topic_name = option
 
     # starting from a specific partition here, it may be different depending on the topic so try a few out or just start from the beginning with the auto.offset.reset config
-    partition = TopicPartition(f"tumble_interval_{topic_name}", 0, 7)
+    partition = TopicPartition(f"tumble_interval_{topic_name}", 0, "OFFSET_BEGINNING")
     consumer.assign([partition])
     consumer.seek(partition)
 
