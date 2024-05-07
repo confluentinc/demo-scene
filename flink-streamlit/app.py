@@ -1,11 +1,9 @@
 import asyncio
 import json
-import random
-import string
 import pandas as pd
 import streamlit as st
 from confluent_kafka import Consumer, TopicPartition
-from setupsocket import on_select
+from kafkaproducer import on_select
 import altair as alt
 
 
@@ -46,10 +44,8 @@ async def display_quotes(component):
     window_history = []
     topic_name = option
 
-    # starting from a specific partition here, it may be different depending on the topic so try a few out or just start from the beginning with the auto.offset.reset config
-    partition = TopicPartition(f"tumble_interval_{topic_name}", 0, 7)
-    consumer.assign([partition])
-    consumer.seek(partition)
+    topic_name = f"tumble_interval_{option}"
+    consumer.subscribe(topic_name)
 
     while True:
         try:

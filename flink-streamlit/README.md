@@ -8,6 +8,8 @@ In this project you'll produce stock trade events from the [Alpaca API markets](
 
 <img width="718" alt="graph of the 4 technologies" src="https://github.com/Cerchie/alpaca-kafka-flink-streamlit/assets/54046179/7600d717-69bc-46c5-8679-d8d65b9ce810">
 
+Note: Although it may change in the future, at the time this README was written, the NYSE is open from 9:30 to 4 EST. If you run this application outside of those hours, you may not see data coming through.
+
 
 ## Step 1: Get set up in Confluent Cloud
 
@@ -150,7 +152,8 @@ In the cell of the new workspace, you can start running SQL statements. Copy and
 ```sql
 CREATE TABLE tumble_interval_SPY
 (`symbol` STRING, `window_start` STRING,`window_end` STRING,`price` DOUBLE, PRIMARY KEY (`symbol`) NOT ENFORCED)
-    WITH ('value.format' = 'json-registry');
+DISTRIBUTED BY (symbol) INTO 1 BUCKETS 
+WITH ('value.format' = 'json-registry');
 ```
 - Click 'Run'.
 
@@ -187,11 +190,15 @@ Generate a key using the widget you'll find on the right of the screen on the ho
 
 ## Step 3: Get started running the app
 
-`git clone https://github.com/Cerchie/finnhub.git && cd finnhub`
+```
+git clone https://github.com/Cerchie/finnhub.git && cd finnhub
+```
 
 then
 
-`pip install -r requirements.txt` 
+```
+pip install -r requirements.txt
+``` 
 
 Now, create a file in the root directory named `.streamlit/secrets.toml` (that initial `.` is part of the convention.)
 
@@ -210,6 +217,12 @@ Note that the `:` is necessary for `BASIC_AUTH_USER_INFO`.
 
 You'll need a [Streamlit account](https://streamlit.io/) as well for the [secrets to be in the environment](https://docs.streamlit.io/streamlit-community-cloud/deploy-your-app/secrets-management). 
 
-Now, run `streamlit run alpacaviz.py` in your root dir in order to run the app. 
+Now, run 
+```streamlit run app.py```
+in your root dir in order to run the app. 
 
 To deploy on Streamlit yourself, follow the [instructions here](https://docs.streamlit.io/streamlit-community-cloud/deploy-your-app) and make sure to [include the secrets](https://docs.streamlit.io/streamlit-community-cloud/deploy-your-app/secrets-management) in your settings. 
+
+## Step 4: Teardown in Confluent Cloud
+
+To avoid wasting resources after following this exercise, you can teardown your environment in Confluent Cloud. To do that, navigate to your environment's page and click 'Delete' at the lower right-hand side. This will delete your environment and its associated resources.
