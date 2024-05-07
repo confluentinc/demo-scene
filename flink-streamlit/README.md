@@ -1,6 +1,6 @@
 # How to use FlinkSQL with Kafka, Streamlit, and the Alpaca API
 
-Pssst. A simulation of this app is currently deployed at https://st-flink-kafka-simulation.streamlit.app/
+Pssst. A simulation of this app is currently deployed at https://flink-st-kafka.streamlit.app/
 
 Learn how to use these 4 technologies together by running this demo yourself! 
 
