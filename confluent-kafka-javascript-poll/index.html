@@ -1,0 +1,304 @@
+<!doctype html>
+<html>
+  <head>
+    <link href="./public/css/styles.css" rel="stylesheet" type="text/css" />
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.0.7/css/all.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
+    <title>Let's Settle This: Programming Style</title>
+  </head>
+  <body>
+    <header>
+      Let's Settle This. <br />
+      <p id="programmingstyle">&#60; programming style &gt;</p>
+    </header>
+    <div id="theme-btn" class="far fa-moon"></div>
+    <section id="intro-section">
+      <p>Cast your vote for the definitive winners... and losers.</p>
+    </section>
+    <section id="section-1">
+      <label
+        for="question-1-progress"
+        id="question-1-label"
+        class="hidden-class"
+      ></label>
+      <progress class="hidden-class" id="question-1-progress" min="0" max="100">
+        HERE
+      </progress>
+      <div id="question-1" class="button-container">
+        <button class="vote-btn">Tabs</button>
+        <button class="vote-btn">Spaces</button>
+      </div>
+    </section>
+
+    <section id="section-2">
+      <label
+        for="question-2-progress"
+        id="question-2-label"
+        class="hidden-class"
+      ></label>
+      <progress
+        class="hidden-class"
+        id="question-2-progress"
+        min="0"
+        max="100"
+      ></progress>
+      <div id="question-2" class="button-container">
+        <button class="vote-btn">merge</button>
+        <button class="vote-btn">rebase</button>
+      </div>
+    </section>
+
+    <section id="section-3">
+      <label
+        for="question-3-progress"
+        id="question-3-label"
+        class="hidden-class"
+      ></label>
+      <progress
+        class="hidden-class"
+        id="question-3-progress"
+        min="0"
+        max="100"
+      ></progress>
+      <div id="question-3" class="button-container">
+        <button class="vote-btn">debugger</button>
+        <button class="vote-btn">print</button>
+      </div>
+    </section>
+
+    <section id="section-4">
+      <label
+        for="question-4-progress"
+        id="question-4-label"
+        class="hidden-class"
+      ></label>
+      <progress
+        class="hidden-class"
+        id="question-4-progress"
+        min="0"
+        max="100"
+      ></progress>
+      <div id="question-4" class="button-container">
+        <button class="vote-btn">NoSQL</button>
+        <button class="vote-btn">SQL</button>
+      </div>
+    </section>
+
+    <section id="section-5">
+      <label
+        for="question-5-progress"
+        id="question-5-label"
+        class="hidden-class"
+      ></label>
+      <progress
+        class="hidden-class"
+        id="question-5-progress"
+        min="0"
+        max="100"
+      ></progress>
+      <div id="question-5" class="button-container">
+        <button class="vote-btn">Protobuf</button>
+        <button class="vote-btn">Avro</button>
+      </div>
+    </section>
+
+    <section id="section-6">
+      <label
+        for="question-6-progress"
+        id="question-6-label"
+        class="hidden-class"
+      ></label>
+      <progress
+        class="hidden-class"
+        id="question-6-progress"
+        min="0"
+        max="100"
+      ></progress>
+      <div id="question-6" class="button-container">
+        <button class="vote-btn">Vim</button>
+        <button class="vote-btn">Emacs</button>
+      </div>
+    </section>
+
+    <section id="section-7">
+      <label
+        for="question-7-progress"
+        id="question-7-label"
+        class="hidden-class"
+      ></label>
+      <progress
+        class="hidden-class"
+        id="question-7-progress"
+        min="0"
+        max="100"
+      ></progress>
+      <div id="question-7" class="button-container">
+        <button class="vote-btn">KStreams</button>
+        <button class="vote-btn">Flink</button>
+      </div>
+    </section>
+    <br />
+    <hr />
+    <p id="kafka-explainer">
+      The votes behind this website are stored in a Kafka topics. The Confluent
+      Kafka JavaScript clients produce and consume from the topic in order to
+      update the latest statistics.
+    </p>
+    <img
+      src="./public/img/graph-for-js-poll.png"
+      alt="graph showing the webpage as the final and first nodes with Kafka between them to illustrate that the event state is captured
+    and sent to Kafka topic in Confluent Cloud with a Kafka producer and then the events are read from Kafka topic by Kafka consumer and visualized in interface"
+    />
+    <p id="learn-more">
+      To learn more,
+      <a
+        href="https://github.com/Cerchie/confluent-javascript-client-and-flinksql-example"
+        >view the code</a
+      >
+      behind this project.
+    </p>
+    <p id="thanksneal">
+      Many thanks to Neal for the
+      <a href="https://neal.fun/lets-settle-this/">original inspiration</a>
+      behind this website.
+    </p>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script
+      src="https://cdn.socket.io/4.7.5/socket.io.min.js"
+      integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+
+let clicked = false;
+
+      //get DOM elements
+      let btnContainers = document.getElementsByClassName("button-container");
+      let voteBtn = document.getElementById("vote-btn");
+      let numBars = btnContainers.length;
+      let VoteBtns = document.getElementsByClassName("vote-btn");
+      let numVoteBtns = VoteBtns.length;
+
+      function hideBtnContainer(id) {
+        console.log(id);
+        let btnContainer = document.getElementById(id);
+        btnContainer.id = "hidden-id";
+      }
+
+      //set up our socket to receive new votes
+      var socket = io("https://lb.lets-settle-this.com:5000", {
+        extraHeaders: {
+          "Referrer-Policy": "no-referrer",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+
+      async function showProgressBar(progress_bar_id) {
+        let progressBar = document.getElementById(
+          `${progress_bar_id}-progress`,
+        );
+        let labelForBar = document.getElementById(`${progress_bar_id}-label`);
+        progressBar.classList.remove("hidden-class");
+        labelForBar.classList.remove("hidden-class");
+      }
+
+      let progress_bar_id = "";
+      let value = 0;
+      let max = 0;
+
+      socket.on("event", function (message) {
+
+        progress_bar_id = `${message.message.question_id}`;
+
+        let progressBar = document.getElementById(
+          `${progress_bar_id}-progress`,
+        );
+
+        let labelForBar = document.getElementById(`${progress_bar_id}-label`);
+
+        //if length is one then ignore as result of retraction in potential FlinkSQL developments in later versions
+        if (Object.keys(message.message.count).length == 1) {
+          //don't do anything
+        } else if (
+          Object.values(message.message.count)[0] >
+          Object.values(message.message.count)[1]
+        ) {
+          value = Object.values(message.message.count)[0];
+          max =
+            Object.values(message.message.count)[0] +
+            Object.values(message.message.count)[1];
+          progressBar.setAttribute("value", value);
+          progressBar.setAttribute("max", max);
+          labelForBar.innerHTML = `${Object.keys(message.message.count)[0]} wins  with ${Object.values(message.message.count)[0]} votes out of ${max}`;
+        } else if (
+          Object.values(message.message.count)[0] ===
+          Object.values(message.message.count)[1]
+        ) {
+          value = Object.values(message.message.count)[0];
+          max =
+            Object.values(message.message.count)[0] +
+            Object.values(message.message.count)[1];
+          progressBar.setAttribute("value", value);
+          progressBar.setAttribute("max", max);
+          labelForBar.innerHTML = `It's a tie! There were ${max} total votes`;
+        } else {
+          value = Object.values(message.message.count)[1];
+          max =
+            Object.values(message.message.count)[0] +
+            Object.values(message.message.count)[1];
+          progressBar.setAttribute("value", value);
+          progressBar.setAttribute("max", max);
+          labelForBar.innerHTML = `${Object.keys(message.message.count)[1]} wins  with ${Object.values(message.message.count)[1]} votes out of ${max}`;
+        }
+        if (clicked === true)
+       { showProgressBar(progress_bar_id);
+        clicked = false;
+       }
+      });
+
+
+
+      // send vote data to express route
+      for (let i = 0; i < numVoteBtns; i++) {
+        let progress_bar_id = VoteBtns[i].parentElement.id;
+        console.log("ID", progress_bar_id);
+
+        let value = 0;
+
+        VoteBtns[i].addEventListener("click", function (e) {
+          clicked = true;
+          let timestamp = new Date()
+            .toISOString()
+            .slice(0, 19)
+            .replace("T", " ");
+          vote = VoteBtns[i].innerHTML;
+
+          $.post(
+            `https://lb.lets-settle-this.com:3000/send-to-kafka-topic`,
+            {
+              data: {
+                vote: vote,
+                question_id: VoteBtns[i].parentElement.id,
+                ts: timestamp,
+              },
+            },
+            function (data) {
+              console.log("data being produced by click", data);
+            },
+          );
+
+          hideBtnContainer(VoteBtns[i].parentElement.id);
+          e.preventDefault();
+        });
+      }
+    </script>
+  </body>
+</html>
