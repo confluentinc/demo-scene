@@ -1,0 +1,10 @@
+{
+    "dependencies": {
+      "@confluentinc/kafka-javascript": "^0.1.12-devel",
+      "@faker-js/faker": "^8.4.1",
+      "dotenv": "^16.4.5"
+    },
+    "devDependencies": {
+      "@types/node": "^20.12.7"
+    }
+  }
