@@ -5,9 +5,6 @@
 https://github.com/Cerchie/js-client-poll/assets/54046179/92370f88-6b9f-44c3-a30a-c9fd65768f0d
 
 
-
-This is the code behind https://www.lets-settle-this.com/
-
 The realtime data flow of votes is powered by [confluent-kafka-javascript](https://github.com/confluentinc/confluent-kafka-javascript). 
 
 To get it running locally on your own:
