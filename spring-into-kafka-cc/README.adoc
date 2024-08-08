@@ -1,0 +1,77 @@
+= Spring Into Kafka with Kotlin and Confluent Cloud
+Sandon Jacobs <sjacobs@confluent.io>
+3.0, July 29, 2022: AsciiDoc article template
+:toc:
+:icons: font
+:url-quickref: https://docs.asciidoctor.org/asciidoc/latest/syntax-quick-reference/
+
+This demo will exercise various ways to integrate Spring Boot applications with Apache Kafka(R), specifically Confluent Cloud.
+
+== The Spring and Kafka Friendship
+
+The Spring for Apache Kafka (spring-kafka) project applies core Spring concepts to the development of Kafka-based solutions. It provides a "template" as a high-level abstraction for sending messages. It also provides support for Message-driven POJOs with `@KafkaListener` annotations and a "listener container". These libraries promote the use of dependency injection and declarative programming.
+
+== Required Tools
+
+.For ths demo, you'll need a few things:
+* JDK 21 (I strongly suggest https://sdkman.io/[sdkman].)
+* https://www.terraform.io/[Terraform]
+* https://confluent.cloud[Confluent Cloud] account
+* https://docs.confluent.io/confluent-cli/current/overview.html[Confluent CLI]
+* https://jqlang.github.io/jq/[jq]
+* IDE of choice. For Kotlin, that is likely https://www.jetbrains.com/idea/[IntelliJ IDEA] (Community Edition will suffice).
+
+== Confluent Cloud
+
+Once you have registered for a Confluent Cloud account, we'll be ready create the infrastructure for this demo. Here we'll use the Confluent Terraform Provider to provision assets in Confluent Cloud.
+
+From your terminal, change into the `terraform` subdirectory and run the following commands:
+
+```shell
+terraform init
+terraform plan -out "tfplan"
+terraform apply "tfplan"
+```
+
+You can validate your Confluent Cloud assets are provisioned via the Confluent Cloud Console or with Confluent CLI. Should you encounter an issue at of the steps above, please validate your Confluent CLI setup (specifically credentials) and `PATH` variables.
+
+The code in this demo relies on the assets you just provisioned, and the configuration of this Spring Boot application needs the credentials and endpoints we just provisioned. Let's export those to a properties file in the `USER_HOME` directory to later usage:
+
+```shell
+terraform output -json | jq -r 'to_entries[] | .key + "=" + (.value.value | tostring)' | while read -r line ; do echo "$line"; done > . ~/tools/spring-into-cc.properties
+
+cat ~/tools/spring-into-cc.properties
+
+CC_BROKER=<REDACTED>.confluent.cloud:9092
+CC_BROKER_URL=https://<REDACTED>.confluent.cloud:443
+CC_ENV_DISPLAY_NAME=spring-into-cc
+CC_ENV_ID=<REDACTED>
+CC_KAFKA_CLUSTER_ID=<REDACTED>
+CC_SCHEMA_REGISTRY_ID=<REDACTED>
+CC_SCHEMA_REGISTRY_URL=https://<REDACTED>.confluent.cloud
+KAFKA_KEY_ID=<REDACTED>
+KAFKA_KEY_SECRET=<REDACTED>
+SCHEMA_REGISTRY_KEY_ID=<REDACTED>
+SCHEMA_REGISTRY_KEY_SECRET=<REDACTED>
+```
+
+== Run the Demos
+
+.Check out the documentation in each submodule for details on the code samples and how to execute them.
+* xref:./produce-consume/README.adoc[Producing and Consuming Events]
+
+== Confluent Cloud Cleanup
+
+Once you're done, you can destroy the Confluent Cloud environment using Terraform from the `terraform` directory as follows:
+
+```shell
+terraform destroy -auto-approve
+```
+
+== Useful Resources
+
+.Here's a list resources you may find of use for this demo:
+* https://kotlinlang.org/[Kotlin Language]
+* https://spring.io/projects/spring-kafka[Spring-Kafka project]
+* https://spring.io/projects/spring-boot[Spring Boot]
+* https://gradle.org/[Gradle]

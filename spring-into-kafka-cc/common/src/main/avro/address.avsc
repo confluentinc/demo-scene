@@ -1,0 +1,30 @@
+{
+  "type": "record",
+  "namespace": "io.confluent.devrel.spring.model",
+  "name": "Address",
+  "fields": [
+    {
+      "name": "address1",
+      "type": "string",
+      "doc": "street address line 1"
+    },
+    {
+      "name": "address2",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "street address line 2, optional"
+    },
+    {
+      "name": "city",
+      "type": "string"
+    },
+    {
+      "name": "state",
+      "type": "string"
+    },
+    {
+      "name": "postalCode",
+      "type": "string"
+    }
+  ]
+}

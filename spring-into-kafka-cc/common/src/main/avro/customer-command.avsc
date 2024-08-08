@@ -1,0 +1,25 @@
+{
+  "type": "record",
+  "namespace": "io.confluent.devrel.spring.command",
+  "name": "CustomerCommand",
+  "fields": [
+    {
+      "name": "action",
+      "type": {
+        "type": "enum",
+        "namespace": "io.confluent.devrel.spring.command",
+        "name": "CustomerAction",
+        "symbols": [
+          "ADD", "UPDATE", "DELETE", "UNKNOWN"
+        ],
+        "default": "UNKNOWN"
+      },
+      "doc": "What action to apply to the given user."
+    },
+    {
+      "name": "customer",
+      "type": "io.confluent.devrel.spring.model.Customer",
+      "doc": "Customer to operate on."
+    }
+  ]
+}

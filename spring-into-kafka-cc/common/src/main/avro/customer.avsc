@@ -1,0 +1,38 @@
+{
+  "type": "record",
+  "namespace": "io.confluent.devrel.spring.model",
+  "name": "Customer",
+  "fields": [
+    {
+      "name": "id",
+      "type": ["null","string"],
+      "default": null,
+      "doc": "identifier for Customer"
+    },
+    {
+      "name": "email",
+      "type": "string",
+      "doc": "email address"
+    },
+    {
+      "name": "firstName",
+      "type": "string",
+      "doc": "first name"
+    },
+    {
+      "name": "lastName",
+      "type": "string",
+      "doc": "last name"
+    },
+    {
+      "name": "dob",
+      "type": "string",
+      "doc": "date of birth"
+    },
+    {
+      "name": "mailingAddress",
+      "type": "io.confluent.devrel.spring.model.Address",
+      "doc": "mailing address"
+    }
+  ]
+}
