@@ -1,0 +1,38 @@
+= Producing and Consuming Events
+
+The `@SpringBootApplication` annotation is added to the `ProduceConsumeAppProduceConsumeApp` class - which has a `main` function to launch the application. `ProduceConsumeRunner` is the setup for producing and consumer events from the configured `customer-commands-avro` Kafka topic.
+By default, this class will produce events for 20 seconds, pausing 200 milliseconds between events.
+
+The events in this example are randomly generated, using Kotlin Faker to generate the attributes of the `Customer` objects in the `CustomerCommand` events.
+
+The consumer functionality is wired via the `@KafkaListener` annotation added to the `processCustomerCommand` function on the `CustomerCommandConsumer` class. This function logs the incoming `CustomerCommand` instance and uses Kotlin pattern matching to call a method on the autowired `CustomerCommandHandler`. For now, this "handler" class functions only return the `Customer` object passed to them, throwing an exception in the case of an `UNKNOWN` action. Future iterations will add behavior, stay tuned.
+
+== Run It
+
+To execute this code, you can use your IDE run configuration capabilities. Because this uses `CommandLineRunner`, you'll have to use the stop functionality in your IDE to kill the application.
+
+You can also use your terminal to execute this with gradle as follows:
+
+```shell
+./gradlew :produce-consume:bootRun --info
+```
+
+You should see evidence of events being produced and consumed in your console output.
+
+```shell
+"814 Bartoletti Forge", "address2": "64363 Denver Divide", "city": "New Freddieville", "state": "Arkansas", "postalCode": "24275"}}}
+2024-08-02T15:38:59,857 INFO  [kafka-producer-network-thread | spring-kafka-cc-1] i.c.d.s.c.k.CustomerCommandProducer: Message sent to topic customer-commands-avro, partition: 0, offset: 469
+2024-08-02T15:38:59,857 INFO  [org.springframework.kafka.KafkaListenerEndpointContainer#0-0-C-1] i.c.d.s.c.k.CustomerCommandConsumer$processCustomerCommand$1: processing CustomerCommand -> {"action": "ADD", "customer": {"id": "e7491ef9-11d5-39be-9146-141011b42576", "email": "Giuseppe.MacGyver@flatley.example", "firstName": "Giuseppe", "lastName": "MacGyver", "dob": "12/11/1993", "mailingAddress": {"address1": "9514 Samantha Viaduct", "address2": "24229 Mitchell Spring", "city": "South Joana", "state": "Colorado", "postalCode": "58650"}}}
+2024-08-02T15:39:00,080 INFO  [kafka-producer-network-thread | spring-kafka-cc-1] i.c.d.s.c.k.CustomerCommandProducer: Message sent to topic customer-commands-avro, partition: 1, offset: 510
+2024-08-02T15:39:00,081 INFO  [org.springframework.kafka.KafkaListenerEndpointContainer#0-0-C-1] i.c.d.s.c.k.CustomerCommandConsumer$processCustomerCommand$1: processing CustomerCommand -> {"action": "ADD", "customer": {"id": "12460eeb-08f9-3ce5-89c7-464e1628bd8b", "email": "Tari.Labadie@ankunding.test", "firstName": "Tari", "lastName": "Labadie", "dob": "09/29/1976", "mailingAddress": {"address1": "4416 Doyle River", "address2": "966 Schulist Forges", "city": "Agnesview", "state": "California", "postalCode": "60921"}}}
+2024-08-02T15:39:00,274 INFO  [kafka-producer-network-thread | spring-kafka-cc-1] i.c.d.s.c.k.CustomerCommandProducer: Message sent to topic customer-commands-avro, partition: 0, offset: 470
+2024-08-02T15:39:00,275 INFO  [org.springframework.kafka.KafkaListenerEndpointContainer#0-0-C-1] i.c.d.s.c.k.CustomerCommandConsumer$processCustomerCommand$1: processing CustomerCommand -> {"action": "ADD", "customer": {"id": "e7206b1a-34ab-3256-ac00-a78cc7a8e325", "email": "Joe.Stamm@mitchell.test", "firstName": "Joe", "lastName": "Stamm", "dob": "12/01/1956", "mailingAddress": {"address1": "5354 Liliana Ferry", "address2": "13042 Crist Orchard", "city": "East Rosina", "state": "Arizona", "postalCode": "30782-1618"}}}
+2024-08-02T15:39:00,479 INFO  [kafka-producer-network-thread | spring-kafka-cc-1] i.c.d.s.c.k.CustomerCommandProducer: Message sent to topic customer-commands-avro, partition: 0, offset: 471
+2024-08-02T15:39:00,481 INFO  [org.springframework.kafka.KafkaListenerEndpointContainer#0-0-C-1] i.c.d.s.c.k.CustomerCommandConsumer$processCustomerCommand$1: processing CustomerCommand -> {"action": "ADD", "customer": {"id": "a05c6f4f-4a34-329a-b50a-95b15e2feaf3", "email": "Winfred.Connelly@gulgowski.example", "firstName": "Winfred", "lastName": "Connelly", "dob": "08/04/1993", "mailingAddress": {"address1": "58080 Hartmann Parks", "address2": "5277 Satterfield Crossing", "city": "Rohanville", "state": "Hawaii", "postalCode": "71048"}}}
+2024-08-02T15:39:00,679 INFO  [kafka-producer-network-thread | spring-kafka-cc-1] i.c.d.s.c.k.CustomerCommandProducer: Message sent to topic customer-commands-avro, partition: 0, offset: 472
+2024-08-02T15:39:00,679 INFO  [org.springframework.kafka.KafkaListenerEndpointContainer#0-0-C-1] i.c.d.s.c.k.CustomerCommandConsumer$processCustomerCommand$1: processing CustomerCommand -> {"action": "ADD", "customer": {"id": "195950b5-8289-3d56-a810-8c13b59d7482", "email": "Justin.Hickle@glover.example", "firstName": "Justin", "lastName": "Hickle", "dob": "09/10/1994", "mailingAddress": {"address1": "841 Gutkowski Flat", "address2": "82359 Turcotte Village", "city": "Hintzmouth", "state": "Wisconsin", "postalCode": "38157-3947"}}}
+....
+```
+
+Again, this is a `CommandLineRunner`. So use `CTRL-C` to stop the execution.
+
