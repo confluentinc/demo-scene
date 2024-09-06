@@ -23,7 +23,7 @@ repositories {
 
   // temp repositories for ksqlDB artifacts
   maven { url "https://ksqldb-maven.s3.amazonaws.com/maven/" }
-  maven { url "https://jenkins-confluent-packages-beta-maven.s3.amazonaws.com/6.1.0-beta200825192044/1/maven/" }
+  maven { url "REPLACE_WITH_OWN" }
 }
 
 dependencies {
