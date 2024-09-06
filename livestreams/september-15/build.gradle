@@ -12,7 +12,7 @@ repositories {
     url "https://ksqldb-maven.s3.amazonaws.com/maven/"
   }
   maven(){
-    url "https://jenkins-confluent-packages-beta-maven.s3.amazonaws.com/6.1.0-beta200715032424/1/maven/"
+    url "REPLACE_WITH_OWN"
   }
 }
 
