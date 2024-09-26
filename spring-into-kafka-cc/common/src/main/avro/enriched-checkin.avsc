@@ -1,0 +1,35 @@
+{
+  "type": "record",
+  "namespace": "io.confluent.devrel.spring.model.club",
+  "name": "EnrichedCheckin",
+  "fields": [
+    {
+      "name": "checkinTxnId",
+      "type": [
+        "null",
+        "string"
+      ],
+      "doc": "transaction id",
+      "default": null
+    },
+    {
+      "name": "memberId",
+      "type": "string"
+    },
+    {
+      "name": "txnTimestamp",
+      "type": [
+        "null",
+        {
+          "type": "long",
+          "logicalType": "timestamp-millis"
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "membershipLevel",
+      "type": "io.confluent.devrel.spring.model.club.MembershipLevel"
+    }
+  ]
+}

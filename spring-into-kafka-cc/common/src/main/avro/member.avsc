@@ -1,0 +1,35 @@
+{
+  "type": "record",
+  "namespace": "io.confluent.devrel.spring.model.club",
+  "name": "Member",
+  "fields": [
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "firstName",
+      "type": "string"
+    },
+    {
+      "name": "lastName",
+      "type": "string"
+    },
+    {
+      "name": "email",
+      "type": "string"
+    },
+    {
+      "name": "membershipLevel",
+      "type": "io.confluent.devrel.spring.model.club.MembershipLevel",
+      "default": "STANDARD"
+    },
+    {
+      "name": "joinDate",
+      "type": {
+        "type": "int",
+        "logicalType": "date"
+      }
+    }
+  ]
+}

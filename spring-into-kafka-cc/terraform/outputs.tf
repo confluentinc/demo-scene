@@ -55,4 +55,10 @@ output "customer_commands_value_subject_compatibility_level" {
   value = confluent_subject_config.customer_commands_value_cfg.compatibility_level
 }
 
+output "KAFKA_SASL_JAAS_CONFIG" {
+  value = "org.apache.kafka.common.security.plain.PlainLoginModule required username='${confluent_api_key.app-manager-kafka-api-key.id}' password='${nonsensitive(confluent_api_key.app-manager-kafka-api-key.secret)}';"
+}
 
+output "SR_BASIC_AUTH_USER_INFO" {
+  value = "${confluent_api_key.env-manager-schema-registry-api-key.id}:${nonsensitive(confluent_api_key.env-manager-schema-registry-api-key.secret)}"
+}

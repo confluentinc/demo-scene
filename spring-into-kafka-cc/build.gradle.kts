@@ -6,7 +6,12 @@ plugins {
 	kotlin("plugin.spring") version "1.9.24" apply false
 	id("com.bakdata.avro") version "1.0.0" apply false
 	kotlin("plugin.serialization") version "2.0.0" apply false
+	id("com.google.protobuf") version "0.9.4" apply false
+
 }
 
-group = "io.confluent.devrel"
-version = "0.0.1-SNAPSHOT"
+allprojects {
+	group = "io.confluent.devrel"
+	version = "0.0.2-SNAPSHOT"
+}
+

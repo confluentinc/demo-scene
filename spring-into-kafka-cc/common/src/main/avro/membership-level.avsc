@@ -1,0 +1,8 @@
+{
+    "type": "enum",
+    "namespace": "io.confluent.devrel.spring.model.club",
+    "name": "MembershipLevel",
+    "symbols": [
+      "STANDARD", "SILVER", "GOLD", "PLATINUM"
+    ]
+}

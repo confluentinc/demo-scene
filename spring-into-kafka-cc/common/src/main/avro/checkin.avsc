@@ -1,0 +1,23 @@
+{
+  "type": "record",
+  "namespace": "io.confluent.devrel.spring.model.club",
+  "name": "Checkin",
+  "fields": [
+    {
+      "name": "txnId",
+      "type": "string",
+      "doc": "transaction id"
+    },
+    {
+      "name": "memberId",
+      "type": "string"
+    },
+    {
+      "name": "txnTimestamp",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    }
+  ]
+}

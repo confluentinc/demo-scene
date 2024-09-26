@@ -1,0 +1,26 @@
+spring:
+  config:
+    import: file:${user.home}/tools/spring-into-cc.properties
+
+  kafka:
+    bootstrap-servers: ${CC_BROKER}
+    properties:
+      "[sasl.mechanism]": "PLAIN"
+      "[sasl.jaas.config]": org.apache.kafka.common.security.plain.PlainLoginModule required username='${KAFKA_KEY_ID}' password='${KAFKA_KEY_SECRET}';
+      "[schema.registry.url]": ${CC_SCHEMA_REGISTRY_URL}
+      "[basic.auth.credentials.source]": "USER_INFO"
+      "[basic.auth.user.info]": "${SCHEMA_REGISTRY_KEY_ID}:${SCHEMA_REGISTRY_KEY_SECRET}"
+      "[auto.register.schemas]": true
+      "[client.dns.lookup]": "use_all_dns_ips"
+      "[security.protocol]": "SASL_SSL"
+
+logging:
+  level:
+    root: info
+    org.springframework: info
+    org.apache.kafka: info
+    org.apache.avro: warn
+    io.confluent.kafka.serializers: warn
+    io.confluent.devrel: info
+  pattern:
+    console: "%style{%d{ISO8601}}{black} %highlight{%-5level }[%style{%t}{bright,blue}] %style{%C{1.}}{bright,yellow}: %msg%n%throwable"

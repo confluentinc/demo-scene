@@ -26,9 +26,13 @@ sourceSets {
 
 extra["springCloudVersion"] = "2023.0.3"
 
+val kafkaVersion = providers.gradleProperty("kafka_version").get()
+val confluentVersion = providers.gradleProperty("confluent_version").get()
+
 dependencies {
     implementation(project(":common"))
     implementation("org.springframework.boot:spring-boot-starter")
+    implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-log4j2")
 
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
@@ -40,11 +44,14 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("org.springframework.kafka:spring-kafka")
-    implementation("io.confluent:kafka-avro-serializer:7.6.0")
-    implementation("io.confluent:kafka-schema-rules:7.6.0")
+    implementation("org.apache.kafka:kafka-streams:$kafkaVersion")
+    implementation("io.confluent:kafka-avro-serializer:$confluentVersion")
+    implementation("io.confluent:kafka-streams-avro-serde:$confluentVersion")
+    implementation("io.confluent:kafka-schema-rules:$confluentVersion")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    implementation("org.apache.kafka:kafka-streams-test-utils:$kafkaVersion")
     testImplementation("org.springframework.kafka:spring-kafka-test")
     testImplementation("com.ninja-squad:springmockk:4.0.2")
 
