@@ -1,0 +1,83 @@
+= Kafka Streams
+
+This Spring Boot Application consists of a couple of examples using Kafka Streams with Kotlin and the Spring Framework. This example is rather "opinionated" - in that it does not delve into libraries like Spring Cloud Stream. Rather this example attempts to highlight the usage of dependency injection and configuring a Kafka Streams topology with Spring, while also providing syntactic examples from the Kotlin language.
+
+== Example 1: Yes, Word-Count
+
+This is a very familiar use case to anyone who has explored stream processing. Given an incoming event, the string value gets whitespace-tokenized into an array of strings. Then those strings are grouped such that case-insensitively identical strings are together, keyed by the word itself.
+We then materialize the counts of the words to a state store and emit those events with the counts to an output topic.
+
+```kotlin
+    @Autowired
+    fun buildPipeline(streamsBuilder: StreamsBuilder) {
+
+        val messageStream = streamsBuilder
+            .stream(INPUT_TOPIC, Consumed.with(STRING_SERDE, STRING_SERDE))
+            .peek {_, value -> logger.debug("*** raw value {}", value)}
+
+        val wordCounts = messageStream
+            .mapValues { v -> v.lowercase() }
+            .peek {_, value -> logger.info("*** lowercase value = {}", value)}
+            .flatMapValues { v -> v.split("\\W+".toRegex()) }
+            .groupBy({ _, word -> word }, Grouped.with(Serdes.String(), Serdes.String()))
+            .count(Materialized.`as`<String, Long>(Stores.persistentKeyValueStore(COUNTS_STORE))
+                .withKeySerde(STRING_SERDE)
+                .withValueSerde(LONG_SERDE))
+
+        wordCounts.toStream().to(OUTPUT_TOPIC, Produced.with(STRING_SERDE, LONG_SERDE))
+    }
+```
+
+== Example 2: Stream-Table Join
+
+This topology will filter the members, keeping only the ones of `PLATINUM` or `GOLD` level. Then it attempts a `join` on the
+checkins stream. The resulting matches are emitted to an output topic.
+
+```kotlin
+    @Autowired
+    fun buildPipeline(streamsBuilder: StreamsBuilder) {
+
+        val checkins = streamsBuilder.stream(CHECKIN_TOPIC, Consumed.with(Serdes.String(), checkinSerde))
+            .peek { _, checkin -> logger.debug("checkin -> {}", checkin) }
+
+        val members = streamsBuilder.table(MEMBER_TOPIC, Consumed.with(Serdes.String(), memberSerde))
+            .filter { _, m -> listOf(PLATINUM, GOLD).contains(m.membershipLevel) }
+
+        val joined = checkins.join(members, { checkin, member ->
+            logger.debug("matched member {} to checkin {}", member, checkin.txnId)
+            EnrichedCheckin.newBuilder()
+                .setMemberId(member.id)
+                .setCheckinTxnId(checkin.txnId)
+                .setTxnTimestamp(checkin.txnTimestamp)
+                .setMembershipLevel(member.membershipLevel)
+                .build()
+        }, Joined.with(Serdes.String(), checkinSerde, memberSerde))
+
+        joined.to(ENRICHED_CHECKIN_TOPIC, Produced.with(Serdes.String(), enrichedCheckinSerde))
+    }
+```
+
+
+== Run It
+
+=== Unit Tests
+
+To execute the unit tests, run the following gradle command (from the root of the project):
+
+```bash
+> ./gradlew :kafka-streams:test
+```
+
+=== Confluent Cloud
+
+Update the Confluent Cloud assets using the terraform steps as outlined xref:../README.adoc#_confluent_cloud[here].
+
+Now we can execute the application (with both topologies) using Gradle as follows (from the root of the project):
+
+```bash
+> ./gradlew :kafka-streams:bootRun
+```
+
+Or you can use the execution features of you IDE.
+
+For the Word Count example, use the URL http://localhost:8080 as the basis for your using the REST endpoint for posting new words or querying the state store.

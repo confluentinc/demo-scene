@@ -1,13 +1,13 @@
-package io.confluent.devrel.spring.cc
+package io.confluent.devrel.springcc.streams
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class ProduceConsumeApp
+class MyStreamsApp
 
 fun main(args: Array<String>) {
-    runApplication<ProduceConsumeApp>(*args)
+    runApplication<MyStreamsApp>(*args)
 }
 
 

@@ -38,7 +38,7 @@ You can validate your Confluent Cloud assets are provisioned via the Confluent C
 The code in this demo relies on the assets you just provisioned, and the configuration of this Spring Boot application needs the credentials and endpoints we just provisioned. Let's export those to a properties file in the `USER_HOME` directory to later usage:
 
 ```shell
-terraform output -json | jq -r 'to_entries[] | .key + "=" + (.value.value | tostring)' | while read -r line ; do echo "$line"; done > . ~/tools/spring-into-cc.properties
+terraform output -json | jq -r 'to_entries[] | .key + "=" + (.value.value | tostring)' | while read -r line ; do echo "$line"; done > ~/tools/spring-into-cc.properties
 
 cat ~/tools/spring-into-cc.properties
 
