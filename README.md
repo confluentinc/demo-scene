@@ -1,6 +1,6 @@
 ![`demo-scene`](images/cover.png)
 
-Scripts and samples to support Confluent Platform talks. May be rough around the edges. For automated tutorials and QA'd code, see https://github.com/confluentinc/examples/
+Scripts and samples to support Confluent Platform talks. ⚠️Please understand that this repo is not actively maintained.⚠️ For automated tutorials and QA'd code, see https://github.com/confluentinc/examples/
 
 ## Requirements
 
