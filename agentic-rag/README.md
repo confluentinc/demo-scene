@@ -1,11 +1,7 @@
 # An Agentic RAG AI Application built on Confluent Cloud
 
-This demo leverages components in Confluent Cloud in order to show how to build an agentic AI system on data from 
-disparate sources (reviews via a Python producer and orders from MongoDB Atlas). Raw reviews and orders are ingested into
-Confluent Cloud via programmatic client or connector, the reviews are enriched with AI agents built on [model inference
-in Flink](https://docs.confluent.io/cloud/current/flink/reference/functions/model-inference-functions.html), and, finally,
-Flink SQL provides the orchestration to deliver recommendations based on reviews, predictions about the reviews, and
-past orders.
+Raw reviews and orders are ingested into Confluent Cloud via programmatic client or connector, the reviews are enriched with AI agents built on [model inference in Flink](https://docs.confluent.io/cloud/current/flink/reference/functions/model-inference-functions.html), and, finally, Flink SQL provides the orchestration to deliver recommendations based on reviews, predictions about the reviews, and past orders.
+This demo leverages components in Confluent Cloud in order to show how to build an agentic AI system on data from disparate sources (reviews via a Python producer and orders from MongoDB Atlas). 
 
 
 ## Prerequisites
@@ -13,32 +9,41 @@ past orders.
 The following steps and tools are required to run this demo:
 
 * Clone this repo if you haven't already and `cd` into the `agentic-rag` directory:
+
   ```bash
   git clone https://github.com/confluentinc/demo-scene
   cd agentic-rag
   ```
-* An OpenAI account and API key. Once you sign up and add money to your account, go to the [Project API keys page](https://platform.openai.com/api-keys) and click `Create new secret key`. Copy this key, as we will need it later when creating a remote model in Flink.
-* A Confluent Cloud account. [Sign up](https://www.confluent.io/confluent-cloud/tryfree) for a free trial if you don't already have one.
-* The Confluent CLI. Refer to the installation instructions [here](https://docs.confluent.io/confluent-cli/current/install.html).
-* A MongoDB Atlas account. Follow the steps later in this README to set it up.
+* An OpenAI account and API key. 
+Once you sign up and add money to your account, go to the [Project API keys page](https://platform.openai.com/api-keys) and click `Create new secret key`. 
+Copy this key, as we will need it later when creating a remote model in Flink.
+* A Confluent Cloud account. 
+[Sign up](https://www.confluent.io/confluent-cloud/tryfree) for a free trial if you don't already have one.
+* The Confluent CLI. 
+Refer to the installation instructions [here](https://docs.confluent.io/confluent-cli/current/install.html).
+* A MongoDB Atlas account. 
+Follow the steps later in this README to set it up.
 
 ## Provision Kafka cluster
 
 We'll use the Confluent CLI to create a Kafka cluster. First, login to your account by running the following command in your terminal:
 
-```noformat
+```shell
 confluent login --prompt --save
 ```
 
 Next, install a CLI plugin that will create many of the resources required for this demo:
 
-```noformat
+```shell
 confluent plugin install confluent-cloud_kickstart
 ```
 
-This plugin allows you to provision a Confluent Cloud environment, cluster, and API key in one command. It also enables Schema Registry. You may pick `aws`, `azure`, or `gcp` as the `--cloud` argument, and any supported region returned by `confluent kafka region list` as the `--region` argument. For example, to use AWS region `us-east-2`:
+This plugin allows you to provision a Confluent Cloud environment, cluster, and API key in one command. 
+It also enables Schema Registry. 
+You may pick `aws`, `azure`, or `gcp` as the `--cloud` argument, and any supported region returned by `confluent kafka region list` as the `--region` argument. 
+For example, to use AWS region `us-east-2`:
 
-```noformat
+```shell
 confluent cloud-kickstart --name agentic-rag \
   --env agentic-rag \
   --cloud aws \
@@ -58,7 +63,8 @@ First, create the topic by running the following command in your terminal:
 confluent kafka topic create product_reviews
 ```
 
-Next, inspect the `producer/reviews.csv` file. Feel free to add additional rows or edit the reviews. Not, though, that for the RAG aspect of this demo you'll also need to 
+Next, inspect the `producer/reviews.csv` file. 
+Feel free to add additional rows or edit the reviews.Not, though, that for the RAG aspect of this demo you'll also need to 
 create accompanying orders in MongoDB Atlas in a later section.
 
 * Open the file `producer/product_reviews_producer.py` and find where the `cc_config` and `sr_config` objects are instantiated.
@@ -69,11 +75,11 @@ create accompanying orders in MongoDB Atlas in a later section.
   * Substitute the `Schema Registry API key` output earlier for `<SR API KEY>`
   * Substitute the `Schema Registry API secret` output earlier for `<SR API SECRET>`
 * Now run the Python program to produce the reviews in the CSV file to the `product_reviews` topic.
-  ```noformat
+  ```shell
   python product_reviews_producer.py
   ```
   You should see output like:
-  ```noformat
+  ```shell
   Producing review records to topic product_reviews. ^C to exit.
   Review record with Id b'B0001PB9FE' successfully produced to Topic:product_reviews Partition: [0] at offset 0
   Review record with Id b'B000E7L2R4' successfully produced to Topic:product_reviews Partition: [3] at offset 0
@@ -97,10 +103,10 @@ You will see the compute pool tile showing that the pool is `Provisioning`:
 
 ![Flink provisioning](img/cc-compute-pool-provisioning.png)
 
-While the pool is provisioning, create an Open AI connection using the API key that you created as a prerequisite. Again,
-use the same cloud and region that you have been using, e.g., for AWS `us-east-2`:
+While the pool is provisioning, create an Open AI connection using the API key that you created as a prerequisite. 
+Again, use the same cloud and region that you have been using, e.g., for AWS `us-east-2`:
 
-```noformat
+```shell
 confluent flink connection create openai-connection \
     --cloud aws \
     --region us-east-2 \
@@ -113,11 +119,11 @@ Once the Flink compute pool status changes to `Running` (note: you may need to r
 
 ![Open SQL workspace](img/cc-open-sql-workspace.png)
 
-Copy these commands into the SQL workspace, one at a time, and click `Run`. This defines four remote models that we will use
-to enrich the product reviews. One returns a sentiment rating, one predicts whether the review is written by a bot, one
-extracts product mentions, and one determines the reason for underlying sentiment if it's negative.
+Copy these commands into the SQL workspace, one at a time, and click `Run`. 
+This defines four remote models that we will use to enrich the product reviews. 
+One returns a sentiment rating, one predicts whether the review is written by a bot, one extracts product mentions, and one determines the reason for underlying sentiment if it's negative.
 
-```noformat
+```sql
 CREATE MODEL review_rating
 INPUT(text STRING)
 OUTPUT(rating STRING)
@@ -204,24 +210,25 @@ Validate natural language processed reviews table:
 SELECT * FROM nlp_product_reviews;
 ```
 
-You should see sensible predictions. E.g., for the review `The Guster Umbrella is supposed to be able to withstand strong gusts of wind but it turns inside out on me even in a light breeze`, the sentiment is 2, it is not written by a bot, the product mentioned is `Guster Umbrella` and the sentiment reason is `Product failure`.
+You should see sensible predictions. 
+E.g., for the review `The Guster Umbrella is supposed to be able to withstand strong gusts of wind but it turns inside out on me even in a light breeze`, the sentiment is 2, it is not written by a bot, the product mentioned is `Guster Umbrella` and the sentiment reason is `Product failure`.
 
 _Note: the models are stochastic, so you may not necessarily get this exact output._
 
 ## MongoDB setup
 
-Now that we have enriched product reviews, the next step in the recommendation pipeline is to enhance the information we have 
-about the reviewer even further by joining in their past orders that reside in MongoDB Atlas. In this section we'll create a cluster
-and collection in MongoDB and populate it with orders that correlate with the review data.
+Now that we have enriched product reviews, the next step in the recommendation pipeline is to enhance the information we have about the reviewer even further by joining in their past orders that reside in MongoDB Atlas. 
+In this section we'll create a cluster and collection in MongoDB and populate it with orders that correlate with the review data.
 
 [Sign up](https://www.mongodb.com/lp/cloud/atlas/try4-reg) for a MongoDB Atlas trial and deploy an M0 (free tier) cluster.
-Name the cluster `my-cluster`. Deploy it in your preferred cloud provider and region.
+Name the cluster `my-cluster`. 
+Deploy it in your preferred cloud provider and region.
 
-You will be prompted to create a database user. Create one called `service-account` and provide a password that you will
-need when provisioning a MongoDB source connector in Confluent Cloud.
+You will be prompted to create a database user. 
+Create one called `service-account` and provide a password that you will need when provisioning a MongoDB source connector in Confluent Cloud.
 
-On the next screen where you choose a connection method, select `Shell`, and then copy your MongoDB endpoint. You may need to
-wait for the cluster to be provisioned before you can see the endpoint:
+On the next screen where you choose a connection method, select `Shell`, and then copy your MongoDB endpoint. 
+You may need towait for the cluster to be provisioned before you can see the endpoint:
 
 ![MongoDB endpoint](img/mongo-endpoint.png)
 
@@ -232,7 +239,8 @@ Click `+ Create Database` Name the database `my-db` and the collection `orders`.
 
 In this section we'll provision a connector to read orders from MongoDB and land them in a Kafka topic.
 
-From the Confluent Cloud cluster overview page, select `Connectors` in the lefthand navigation, type `Mongo` in the search box, and then select `MongoDB Atlas Source`. Configure the connector as follows:
+From the Confluent Cloud cluster overview page, select `Connectors` in the lefthand navigation, type `Mongo` in the search box, and then select `MongoDB Atlas Source`. 
+Configure the connector as follows:
 
 * Topic prefix: `mongo`
 * Create a new API key
@@ -353,10 +361,13 @@ Take a look at the recommendations generated:
 SELECT * FROM product_recos;
 ```
 
-You should see some reasonable looking recommendations. E.g., for customer `9KAJSH7AUHDDHA` who in the past ordered an `Apple-scented Candle` but gave the car air freshener that they ordered a harsh negative review, the system recommends `Apple-scented Car Diffuser` for this person. Remember that your results may vary due to the stochastic nature of the models invoked throughout the pipeline.
+You should see some reasonable looking recommendations. E.g., for customer `9KAJSH7AUHDDHA` who in the past ordered an `Apple-scented Candle` but gave the car air freshener that they ordered a harsh negative review, the system recommends `Apple-scented Car Diffuser` for this person. 
+Remember that your results may vary due to the stochastic nature of the models invoked throughout the pipeline.
 
 
-To see how RAG helped in this demo, see what kind of recommendation you get without grounding. They _likely_ won't make as much sense as the recommendations from the RAG approach. E.g., the non-grounded recommendation for the user above might be something like `Natural essential oils`.
+To see how RAG helped in this demo, see what kind of recommendation you get without grounding. 
+They _likely_ won't make as much sense as the recommendations from the RAG approach. 
+E.g., the non-grounded recommendation for the user above might be something like `Natural essential oils`.
 
 ```sql
 SELECT user_id,
@@ -372,15 +383,16 @@ LATERAL TABLE(ML_PREDICT('product_recommender', 'The customer didnt like ' || pr
 
 Once you are done exploring, don't forget to tear down the MongoDB Atlas and Confluent Cloud resources created for this demo.
 
-On the Confluent Cloud side, since you created all resources in an environment, you can simply delete the environment and then all resources created for this demo will be deleted (i.e., the Kafka cluster, connector, Flink compute pool, and associated API keys). Run the following command in your terminal to get the environment ID of the form `env-123456` corresponding to the environment named `agentic-rag:
+On the Confluent Cloud side, since you created all resources in an environment, you can simply delete the environment and then all resources created for this demo will be deleted (i.e., the Kafka cluster, connector, Flink compute pool, and associated API keys). 
+Run the following command in your terminal to get the environment ID of the form `env-123456` corresponding to the environment named `agentic-rag:
 
-```bash
+```shell
 confluent environment list
 ```
 
 Now delete the environment:
 
-```bash
+```shell
 confluent environment delete <ENVIRONMENT_ID>
 ```
 
