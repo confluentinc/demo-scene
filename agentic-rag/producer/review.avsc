@@ -1,0 +1,27 @@
+{
+    "namespace": "confluent.io.examples.serialization.avro",
+    "name": "Review",
+    "type": "record",
+    "fields": [
+        {
+            "name": "id",
+            "type": "int"
+        },
+        {
+            "name": "product_id",
+            "type": "string"
+        },
+        {
+            "name": "user_id",
+            "type": "string"
+        },
+        {
+            "name": "timestamp",
+            "type": "int"
+        },
+        {
+            "name": "summary",
+            "type": "string"
+        }
+    ]
+}
