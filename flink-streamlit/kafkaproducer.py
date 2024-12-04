@@ -13,7 +13,7 @@ wss_client = StockDataStream(st.secrets["ALPACA_KEY"], st.secrets["ALPACA_SECRET
 print("Setting up Kafka client")
 
 config_dict = {
-    "bootstrap.servers": "pkc-921jm.us-east-2.aws.confluent.cloud:9092",
+    "bootstrap.servers": "",
     "sasl.mechanisms": "PLAIN",
     "security.protocol": "SASL_SSL",
     "session.timeout.ms": "45000",
