@@ -1,0 +1,22 @@
+{
+  "type": "record",
+  "namespace": "io.confluent.devrel.model",
+  "name": "Order",
+  "fields": [
+    {
+      "name": "id",
+      "type": "long"
+    },
+    {
+      "name": "customerId",
+      "type": "string"
+    },
+    {
+      "name": "items",
+      "type": {
+        "type": "array",
+        "items": "io.confluent.devrel.model.OrderItem"
+      }
+    }
+  ]
+}

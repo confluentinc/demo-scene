@@ -1,0 +1,31 @@
+#Wed Nov 13 09:36:50 EST 2024
+datasources:
+  default:
+    url: "jdbc:tc:mysql:8://db"
+    driver-class-name: "org.testcontainers.jdbc.ContainerDatabaseDriver"
+
+kafka:
+  #  bootstrap.servers: ""
+  security.protocol: PLAINTEXT
+  sasl.jaas.config: ""
+  producers:
+    default:
+    #      key.serializer: org.apache.kafka.common.serialization.StringSerializer
+    #      value.serializer: io.micronaut.configuration.kafka.serde.JsonObjectSerde
+    order-changes:
+      key.serializer: org.apache.kafka.common.serialization.LongSerializer
+      value.serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      schema.registry.url: "http://localhost:8081"
+      basic.auth.credentials.source: ""
+      basic.auth.user.info: ""
+  consumers:
+    default:
+    #      key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    #      value.deserializer: io.micronaut.configuration.kafka.serde.JsonObjectSerde
+    order-changes:
+      specific.avro.reader: true
+      key.deserializer: org.apache.kafka.common.serialization.LongDeserializer
+      value.deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+      schema.registry.url: "http://localhost:8081"
+      basic.auth.credentials.source: ""
+      basic.auth.user.info: ""
