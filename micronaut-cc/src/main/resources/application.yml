@@ -1,0 +1,60 @@
+#Wed Nov 13 09:36:50 EST 2024
+micronaut:
+  application:
+    name: micronaut-cc
+
+datasources:
+  default:
+    password: "micronaut"
+    username: root
+    db-type: mysql
+    dialect: MYSQL
+    url: "jdbc:mysql://localhost:3306/micronaut"
+    driver-class-name: "com.mysql.cj.jdbc.Driver"
+
+#endpoints:
+#  flyway:
+#    enabled: true
+#    sensitive: false
+
+flyway:
+  enabled: true
+  datasources:
+    default:
+      enabled: true
+      schemas: "micronaut"
+
+jpa.default.properties.hibernate.hbm2ddl.auto: update
+
+#tag::kafka[]
+kafka:
+  bootstrap.servers: ${CC_BROKER}
+  security.protocol: SASL_SSL
+  sasl.jaas.config: "org.apache.kafka.common.spocurity.plain.PlainLoginModule required username='${KAFKA_KEY_ID}' password='${KAFKA_KEY_SECRET}';"
+  sasl.mechanism: PLAIN
+  client.dns.lookup: use_all_dns_ips
+  acks: all
+  producers:
+    default:
+    #      key.serializer: org.apache.kafka.common.serialization.StringSerializer
+    #      value.serializer: io.micronaut.configuration.kafka.serde.JsonObjectSerde
+    order-changes:
+      key.serializer: org.apache.kafka.common.serialization.LongSerializer
+      value.serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      schema.registry.url: ${CC_SCHEMA_REGISTRY_URL}
+      basic.auth.credentials.source: USER_INFO
+      basic.auth.user.info: "${SCHEMA_REGISTRY_KEY_ID}:${SCHEMA_REGISTRY_KEY_SECRET}"
+
+  consumers:
+    default:
+    #      key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    #      value.deserializer: io.micronaut.configuration.kafka.serde.JsonObjectSerde
+    order-changes:
+      specific.avro.reader: true
+      key.deserializer: org.apache.kafka.common.serialization.LongDeserializer
+      value.deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+      schema.registry.url: ${CC_SCHEMA_REGISTRY_URL}
+      basic.auth.credentials.source: USER_INFO
+      basic.auth.user.info: "${SCHEMA_REGISTRY_KEY_ID}:${SCHEMA_REGISTRY_KEY_SECRET}"
+
+#end::kafka[]
