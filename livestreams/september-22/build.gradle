@@ -9,7 +9,7 @@ repositories {
 
   jcenter()
   maven() {
-    url "https://ksqldb-maven.s3.amazonaws.com/maven/"
+    url "https://ksqldb-mvns.s3.amazonaws.com/maven/"
   }
   maven() {
     url "REPLACE_WITH_LATEST"
