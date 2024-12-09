@@ -1,0 +1,24 @@
+{
+  "type": "record",
+  "namespace": "io.confluent.devrel.event",
+  "name": "OrderChangeEvent",
+  "fields": [
+    {
+      "type": "long",
+      "name": "orderId"
+    },
+    {
+      "name": "eventType",
+      "type": {
+        "type": "enum",
+        "name": "OrderChangeEventType",
+        "namespace": "io.confluent.devrel.event",
+        "symbols": ["ADD_ITEM", "UPDATE_ITEM_COUNT", "DELETE_ITEM"]
+      }
+    },
+    {
+      "name": "item",
+      "type": "io.confluent.devrel.model.OrderItem"
+    }
+  ]
+}
