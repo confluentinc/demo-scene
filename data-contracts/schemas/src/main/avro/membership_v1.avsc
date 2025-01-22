@@ -1,0 +1,10 @@
+{
+  "name": "Membership",
+  "namespace": "io.confluent.devrel",
+  "type": "record",
+  "fields": [
+    {"name": "user_id", "type": "string"},
+    {"name": "start_date", "type": {"type": "int", "logicalType": "date"}},
+    {"name": "end_date", "type": {"type": "int", "logicalType": "date"}}
+  ]
+}
