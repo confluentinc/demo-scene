@@ -1,16 +1,18 @@
 ### Gradle template
-.gradle
+**/.gradle/
+**/gradle/
+**/.gradlew.bat
+**/.gradlew
+
 **/build/
-!producer-app-schema-v1/src/**/build/
 
 # Ignore Gradle GUI config
 gradle-app.setting
 
 # Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
-!gradle-wrapper.jar
-
+!**/gradle-wrapper.jar
 # Avoid ignore Gradle wrappper properties
-!gradle-wrapper.properties
+!**/gradle-wrapper.properties
 
 # Cache of project
 .gradletasknamecache
@@ -20,4 +22,6 @@ gradle-app.setting
 .project
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
+
+.idea/
 
