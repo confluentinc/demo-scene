@@ -74,15 +74,16 @@ Setup Complete!
 
 Let's have a look at what we've created in Confluent Cloud, we find a new Environment:
 
-<img src="./images/environment.png" width="500" height="500">
+![CC Environment](./images/environment.png)
 
 With a Kafka cluster:
 
-<img src="./images/cluster.png" width="500" height="500">
+![Kafka Cluster](./images/cluster.png)
 
 And Data Contracts:
 
-<img src="./images/schemas.png" width="500" height="500">
+![Data Contracts](./images/schemas.png)
+
 
 Locally, we also create a `properties` file containing the parameters needed for our Kafka clients to connect to Confluent Cloud. For an example of this 
 `properties` file, see [confluent.properties.orig](shared/src/main/resources/confluent.properties.orig).
