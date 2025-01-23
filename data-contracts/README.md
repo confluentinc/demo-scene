@@ -1,7 +1,7 @@
 # Managing Data Contracts in Confluent Cloud
 
 Data contracts consist not only of the schemas to define the structure of events, but also rulesets allowing for more fine-grained validations,
-controls, and discovery. In this demo, we'll evolve a schema by adding data quality and migration rules.
+controls, and discovery. In this demo, we'll evolve a schema by adding migration rules.
 
 ## Running the Example
 
@@ -74,21 +74,43 @@ Setup Complete!
 
 Let's have a look at what we've created in Confluent Cloud, we find a new Environment:
 
-<img src="./images/environment.png" width="500" height="300">
+<img src="./images/environment.png" width="500" height="500">
 
 With a Kafka cluster:
 
-<img src="./images/cluster.png" width="500" height="300">
+<img src="./images/cluster.png" width="500" height="500">
 
 And Data Contracts:
 
-<img src="./images/schemas.png" width="500" height="300">
+<img src="./images/schemas.png" width="500" height="500">
 
 Locally, we also create a `properties` file containing the parameters needed for our Kafka clients to connect to Confluent Cloud. For an example of this 
 `properties` file, see [confluent.properties.orig](shared/src/main/resources/confluent.properties.orig).
 
 > [!NOTE]
 > The file-based approach we're using here is NOT recommended for a production-quality application. Perhaps a secrets manager implementation would be better suited - which the major cloud providers all offer, or perhaps a tool like Hashicorp Vault. Such a tool would also have client libraries in a Maven repository for the JVM applications to access the secrets.
+> 
+
+### Run the Examples
+
+In `app-schema-v1`, the `ApplicationMain` object's `main` function starts a consumer in a new thread to subscribe to the `membership-avro` topic. It then begins
+producing randomly-generated events to `membership-avro` at a provided interval for a provided duration. By default, an event is produced every 1 second for 100 seconds. These events are created and consumed using version 1 of the membership schema. The console output of the consumer should look something like this:
+
+```shell
+[Thread-0] INFO io.confluent.devrel.datacontracts.shared.BaseConsumer - Received Membership d0e65c83-b1c5-451d-b08b-8d1ed6fca8d6, {"user_id": "d0e65c83-b1c5-451d-b08b-8d1ed6fca8d6", "start_date": "2023-01-14", "end_date": "2025-05-28"}
+[Thread-0] INFO io.confluent.devrel.datacontracts.shared.BaseConsumer - Received Membership 940cf6fa-eb12-46af-87e8-5a9bc33df119, {"user_id": "940cf6fa-eb12-46af-87e8-5a9bc33df119", "start_date": "2023-05-23", "end_date": "2025-07-02"}
+```
+
+The `app-schema-v2` module's `main` function starts a consumer subscribed to the `membership-avro` topic. But this time, events will be consumed using
+version 2 of the membership schema. Notice the `Map` of consumer overrides in the constructor of the `MembershipConsumer` in that module. As such, those
+same events which `app-schema-v1` produced using `major_version=1` of the schema are consumed using `major_version=2`:
+
+```shell
+[Thread-0] INFO io.confluent.devrel.datacontracts.shared.BaseConsumer - v2 - Received Membership b0e34c68-208c-4771-be19-79689fc9ad28, {"user_id": "b0e34c68-208c-4771-be19-79689fc9ad28", "validity_period": {"from": "2022-11-06", "to": "2025-09-03"}}
+[Thread-0] INFO io.confluent.devrel.datacontracts.shared.BaseConsumer - v2 - Received Membership 517f8c7e-4ae5-47ea-93a2-c1f00669d330, {"user_id": "517f8c7e-4ae5-47ea-93a2-c1f00669d330", "validity_period": {"from": "2023-01-29", "to": "2025-02-19"}}
+```
+
+This illustrates how the use of migration rules allows producers and consumers to independently make any code and configuration changes needed to accommodate schema changes.
 
 ## Teardown
 
