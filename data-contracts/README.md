@@ -3,6 +3,9 @@
 Data contracts consist not only of the schemas to define the structure of events, but also rulesets allowing for more fine-grained validations,
 controls, and discovery. In this demo, we'll evolve a schema by adding migration rules.
 
+I'd like to credit my colleague Gilles Philippart's work as the basis for the schemas and rules in this demo. My goal here is to add examples with commonly used
+developer tools and practices to his work in this area, which can be found [here in GitHub](https://github.com/gphilipp/migration-rules-demo).
+
 ## Running the Example
 
 <img src="./images/overview.png" width="1000" height="600">
