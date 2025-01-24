@@ -54,7 +54,10 @@ export TF_VAR_org_id=$(confluent organization list -o json | jq -c -r '.[] | sel
 
 ### Create Assets in Confluent Cloud
 
-From the root of `data-contracts`, run the provided setup script - `setup.sh`. Note, you may need to edit permissions to make this file executable.
+From the root of `data-contracts`, run the provided setup script - `setup.sh`. You may need to edit permissions to make this file executable.
+
+Because this script is provisioning multiple assets in Confluent Cloud and downloading the appropriate gradle-wrapper JAR files for each module,
+it may take a few minutes to complete.
 
 ```shell
 chmod +x setup.sh
