@@ -29,11 +29,11 @@ Here are the tools needed to run this tutorial:
 * [Confluent CLI](https://docs.confluent.io/confluent-cli/current/install.html)
 * [Terraform](https://developer.hashicorp.com/terraform/install?product_intent=terraform)
 * [jq](https://jqlang.github.io/jq/)
-* [Gradle](https://gradle.org/install/)
+* [Gradle](https://gradle.org/install/) (version 8.5 or higher)
 * JDK 17
 * IDE of choice
 
-> [!Note] When installing and configuring the Confluent CLI, include the Confluent Cloud credentials as environment variables for future use. For instance with bash or zsh, include these export statements:
+> When installing and configuring the Confluent CLI, include the Confluent Cloud credentials as environment variables for future use. For instance with bash or zsh, include these export statements:
 > 
 > ```shell
 > export CONFLUENT_CLOUD_API_KEY=<API KEY>
@@ -91,8 +91,7 @@ And Data Contracts:
 Locally, we also create a `properties` file containing the parameters needed for our Kafka clients to connect to Confluent Cloud. For an example of this 
 `properties` file, see [confluent.properties.orig](shared/src/main/resources/confluent.properties.orig).
 
-> [!NOTE]
-> The file-based approach we're using here is NOT recommended for a production-quality application. Perhaps a secrets manager implementation would be better suited - which the major cloud providers all offer, or perhaps a tool like Hashicorp Vault. Such a tool would also have client libraries in a Maven repository for the JVM applications to access the secrets.
+> **NOTE**: The file-based approach we're using here is NOT recommended for a production-quality application. Perhaps a secrets manager implementation would be better suited - which the major cloud providers all offer, or perhaps a tool like Hashicorp Vault. Such a tool would also have client libraries in a Maven repository for the JVM applications to access the secrets.
 > 
 
 ### Run the Examples
@@ -126,5 +125,3 @@ terraform destroy -auto-approve
 ```
 
 Check the Confluent Cloud console to ensure this environment no longer exists.
-
-
