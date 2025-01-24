@@ -1,0 +1,9 @@
+{
+  "name": "Membership",
+  "namespace": "io.confluent.devrel",
+  "type": "record",
+  "fields": [
+    { "name": "user_id", "type": "string" },
+    { "name": "validity_period", "type": "io.confluent.devrel.ValidityPeriod" }
+  ]
+}
