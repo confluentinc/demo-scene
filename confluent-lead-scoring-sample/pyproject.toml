@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "lead-scoring-transform"
+version = "0.1.0"
+description = "Lead Scoring KServe Custom Transform"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.11"
+kserve = "^0.9.0"
+google-cloud-storage = "^2.7.0"
+google-cloud-bigquery = "^2.7.0"
+pandas-gbq = "^0.15.0"
+pyarrow = "*"
+pandas = "1.5.2"
+numba = "0.55.1"
+numpy= "1.21.5"
+lightgbm = "^3.3.3"
+fastapi = "~0.88.0"
+shap = "0.40.0"
+confluent_kafka = "*"
+fastavro = "*"
+httpx = "*"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+lead-scoring-transform = "lead_scoring_transform.server_vertexai:main"
