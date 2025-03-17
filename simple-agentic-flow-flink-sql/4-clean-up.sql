@@ -1,0 +1,19 @@
+
+DROP TABLE customer_message
+DROP MODEL openai_embeddings
+DROP TABLE vector_store_docs;
+DROP TABLE customer_message_and_embedding;
+DROP TABLE customer_message_and_resources;
+DROP TABLE customer_message_and_resources;
+DROP MODEL helpful_chatbot;
+DROP TABLE chatbot_output;
+DROP MODEL initial_triage;
+DROP TABLE triage_output;
+DROP TABLE recommendation_requests;
+DROP TABLE schedule_vet_requests;
+DROP TABLE book_grooming_requests;
+DROP TABLE raise_issue_requests;
+DROP MODEL recommendation;
+DROP TABLE raise_issue_requests;
+DROP TABLE recommendations_output;
+DROP MODEL schedule;
