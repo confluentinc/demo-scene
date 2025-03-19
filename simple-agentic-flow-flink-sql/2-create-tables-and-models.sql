@@ -6,9 +6,9 @@
 
 CREATE TABLE customer_message
 (
-    conversation_id string NOT NULL,
-    customer_id     string NOT NULL,
-    cusomer_message string NOT NULL,
+    conversation_id STRING NOT NULL,
+    customer_id     STRING NOT NULL,
+    cusomer_message STRING NOT NULL,
     `timestamp`     BIGINT NOT NULL
 );
 
@@ -39,9 +39,9 @@ CREATE TABLE vector_store_docs
 
 CREATE TABLE customer_message_and_embedding
 (
-    conversation_id string NOT NULL,
-    customer_id     string NOT NULL,
-    cusomer_message string,
+    conversation_id STRING NOT NULL,
+    customer_id     STRING NOT NULL,
+    cusomer_message STRING,
     `timestamp`     BIGINT NOT NULL,
     embedding       array<float>
 );
@@ -51,11 +51,11 @@ CREATE FUNCTION CLEAN_PINCONE_VECTOR_RESULT AS 'com.example.my.CleanPineConeVect
 
 CREATE TABLE customer_message_and_resources
 (
-    conversation_id        string NOT NULL,
-    customer_id            string NOT NULL,
-    cusomer_message        string,
+    conversation_id        STRING NOT NULL,
+    customer_id            STRING NOT NULL,
+    cusomer_message        STRING,
     `timestamp`            BIGINT NOT NULL,
-    relevant_documentation string NOT NULL
+    relevant_documentation STRING NOT NULL
 );
 
 
@@ -70,17 +70,17 @@ from `mongo.pet-care.customer_info`
 DROP TABLE customer_message_and_customer_info
 CREATE TABLE customer_message_and_customer_info
 (
-    conversation_id        string NOT NULL,
-    customer_id            string NOT NULL,
-    cusomer_message        string,
+    conversation_id        STRING NOT NULL,
+    customer_id            STRING NOT NULL,
+    cusomer_message        STRING,
     `timestamp`            BIGINT NOT NULL,
-    relevant_documentation string NOT NULL,
-    pet_name               string,
-    customer_email         string,
-    pet_birthdate          string,
-    pet_gender             string,
-    allergies              string,
-    pet_type               string
+    relevant_documentation STRING NOT NULL,
+    pet_name               STRING,
+    customer_email         STRING,
+    pet_birthdate          STRING,
+    pet_gender             STRING,
+    allergies              STRING,
+    pet_type               STRING
 );
 
 ---------------------------------- LLM ------------------------------
@@ -102,8 +102,8 @@ CREATE TABLE chatbot_output
 (
     conversation_id  STRING NOT NULL,
     customer_id      STRING NOT NULL,
-    cusomer_message  String NOT NULL,
-    chatbot_response String
+    cusomer_message  STRING NOT NULL,
+    chatbot_response STRING
 );
 
 ------ ##### Adding triage step ##### ------
@@ -134,18 +134,18 @@ YOUR TASK: based on content of customer message return ONE action type that fits
 
 CREATE TABLE triage_output
 (
-    conversation_id        string NOT NULL,
-    customer_id            string NOT NULL,
-    cusomer_message        string NOT NULL,
+    conversation_id        STRING NOT NULL,
+    customer_id            STRING NOT NULL,
+    cusomer_message        STRING NOT NULL,
     `timestamp`            BIGINT NOT NULL,
-    relevant_documentation string NOT NULL,
-    pet_name               string,
-    customer_email         string,
-    pet_birthdate          string,
-    pet_gender             string,
-    allergies              string,
-    pet_type               string,
-    triage_result          string
+    relevant_documentation STRING NOT NULL,
+    pet_name               STRING,
+    customer_email         STRING,
+    pet_birthdate          STRING,
+    pet_gender             STRING,
+    allergies              STRING,
+    pet_type               STRING,
+    triage_result          STRING
 );
 
 
@@ -180,17 +180,17 @@ FROM `customer_message_and_customer_info`,
 
 CREATE TABLE recommendation_requests
 (
-    conversation_id        string NOT NULL,
-    customer_id            string NOT NULL,
-    cusomer_message        string NOT NULL,
+    conversation_id        STRING NOT NULL,
+    customer_id            STRING NOT NULL,
+    cusomer_message        STRING NOT NULL,
     `timestamp`            BIGINT NOT NULL,
-    relevant_documentation string NOT NULL,
-    pet_name               string,
-    customer_email         string,
-    pet_birthdate          string,
-    pet_gender             string,
-    allergies              string,
-    pet_type               string,
+    relevant_documentation STRING NOT NULL,
+    pet_name               STRING,
+    customer_email         STRING,
+    pet_birthdate          STRING,
+    pet_gender             STRING,
+    allergies              STRING,
+    pet_type               STRING,
 );
 
 CREATE TABLE schedule_vet_requests
@@ -256,8 +256,8 @@ WITH (
 CREATE TABLE recommendations_output(
                                        conversation_id STRING  NOT NULL,
                                        customer_id STRING  NOT NULL,
-                                       cusomer_message String  NOT NULL,
-                                       recommendation String
+                                       cusomer_message STRING  NOT NULL,
+                                       recommendation STRING
 );
 
 INSERT INTO `recommendations_output`

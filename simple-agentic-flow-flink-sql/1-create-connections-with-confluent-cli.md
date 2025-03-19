@@ -6,7 +6,7 @@ Documentation reference: https://docs.confluent.io/confluent-cli/current/command
 ## Pinecone
 
 ```bash
-confluent flink connection create pinecone-connection --environment your-confluent-environment-name \
+confluent flink connection create pinecone-connection --environment your-confluent-environment-id \
 --cloud AWS \
 --region us-east-1 \
 --type pinecone \
@@ -18,7 +18,7 @@ confluent flink connection create pinecone-connection --environment your-conflue
 
 ```bash
 confluent flink connection create openai-connection-vector-embeddings \
---environment your-confluent-environment-name \
+--environment your-confluent-environment-id \
 --cloud AWS \
 --region us-east-1 \
 --type openai \
@@ -32,8 +32,8 @@ confluent flink connection create openai-connection-vector-embeddings \
 confluent flink connection create openai-connection-completions \
 --cloud AWS \
 --region us-east-1 \
---environment your-confluent-environment-name \
+--environment your-confluent-environment-id \
 --type openai \
 --endpoint https://api.openai.com/v1/chat/completions \
---api-keychange-with-your-open-ai-key
+--api-key change-with-your-open-ai-key
 ```

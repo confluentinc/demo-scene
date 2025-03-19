@@ -11,7 +11,7 @@ INSERT INTO customer_message values
 SELECT * FROM customer_message WHERE customer_id = 'customer_3'
 
 ---------------------------------- CALL TO EMBEDDING API ------------------------------------------
-    INSERT INTO customer_message_and_embedding
+INSERT INTO customer_message_and_embedding
 SELECT * FROM customer_message, lateral table(ml_predict('openai_embeddings', cusomer_message));
 
 ---------------------------------- CHECK DATA WITH EMBEDDING ------------------------------------------
@@ -19,7 +19,7 @@ SELECT * FROM customer_message_and_embedding WHERE customer_id = 'customer_3'
 
 
 ---------------------------------- SEMANTIC SEARCH ------------------------------------------
-    INSERT INTO vector_store_result
+INSERT INTO vector_store_result
 SELECT * FROM customer_message_and_embedding,
               LATERAL TABLE(FEDERATED_SEARCH('vector_store_docs', 3, embedding));
 
@@ -28,7 +28,7 @@ SELECT * FROM vector_store_result WHERE customer_id = 'customer_3'
 
 ---------------------------------- CLEAN SEMANTIC SEARCH RESULTS WITH UDF ------------------------------------------
 
-    INSERT INTO customer_message_and_resources
+INSERT INTO customer_message_and_resources
 SELECT conversation_id, customer_id, cusomer_message, `timestamp`,
        CLEAN_PINCONE_VECTOR_RESULT(search_results) AS relevant_documentation
 FROM vector_store_result
@@ -39,7 +39,7 @@ SELECT * FROM customer_message_and_resources WHERE customer_id = 'customer_3'
 
 ---------------------------------- GET CUSTOMER AND ITS PET INFO FROM MONGODB ------------------------------------------
 
-    INSERT INTO customer_message_and_customer_info
+INSERT INTO customer_message_and_customer_info
 SELECT
     customer_message_and_resources.conversation_id,
     customer_message_and_resources.customer_id,
@@ -63,7 +63,7 @@ SELECT * FROM customer_message_and_customer_info WHERE customer_id = 'customer_3
 
 ---------------------------------- SEND INFERENCE REQUEST TO LLM ------------------------------------------
 
-    INSERT INTO `chatbot_output`
+INSERT INTO `chatbot_output`
 SELECT
     conversation_id,
     customer_id,

@@ -50,9 +50,7 @@ Example records can be found in `customer-data-example.json`.
 
 ## Populating Pinecone with Vector Data
 
-Example values used in this demo can be found in `documentation-sample.json`.
-
-
+Example values used in this demo can be found in `documentation-sample.json`. Check [this article](https://www.confluent.io/blog/flink-ai-rag-with-federated-search/) for end-to-end example of semantic search with Pinecone and OpenAI.
 
 ## Creating Tables and Models
 
@@ -64,12 +62,6 @@ The SQL queries for setting up tables and models used in this demo are available
 
 Follow the step-by-step pipeline setup in [`3-setup-pipeline-flow.sql`](3-setup-pipeline-flow.sql).
 
-
-
-## Cleanup
-
-To clean up resources after running the demo, refer to [`4-clean-up.sql`](4-clean-up.sql).  
-If needed, you can drop some or all tables using the provided scripts.
 
 ## Additional resources
 
