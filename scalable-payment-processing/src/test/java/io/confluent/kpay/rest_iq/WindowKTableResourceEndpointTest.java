@@ -10,6 +10,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -63,7 +64,17 @@ public class WindowKTableResourceEndpointTest {
         }
 
         @Override
+        public WindowStoreIterator<String> fetch(String s, Instant instant, Instant instant1) throws IllegalArgumentException {
+            return null;
+        }
+
+        @Override
         public KeyValueIterator<Windowed<String>, String> fetch(String from, String to, long timeFrom, long timeTo) {
+            return null;
+        }
+
+        @Override
+        public KeyValueIterator<Windowed<String>, String> fetch(String s, String k1, Instant instant, Instant instant1) throws IllegalArgumentException {
             return null;
         }
 
@@ -74,6 +85,11 @@ public class WindowKTableResourceEndpointTest {
 
         @Override
         public KeyValueIterator<Windowed<String>, String> fetchAll(long timeFrom, long timeTo) {
+            return null;
+        }
+
+        @Override
+        public KeyValueIterator<Windowed<String>, String> fetchAll(Instant instant, Instant instant1) throws IllegalArgumentException {
             return null;
         }
 

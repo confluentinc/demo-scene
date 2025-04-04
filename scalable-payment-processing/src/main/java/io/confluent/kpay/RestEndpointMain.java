@@ -38,7 +38,7 @@ public class RestEndpointMain {
 
     private static Server server;
 
-    static String resourcesFolder = System.getProperty("kpay.resources.folder", "./resources");
+    static String resourcesFolder = System.getProperty("kpay.resources.folder", "./src/main/resources");
     private static String boostrapServers = System.getProperty("bootstrap.servers", "localhost:9092");
     private static int port = Integer.getInteger("kpay.rest.port", 8080);
 
