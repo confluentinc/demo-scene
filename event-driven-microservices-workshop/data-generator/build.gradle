@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    implementation 'com.github.javafaker:javafaker:1.0.1'
+    implementation 'io.github.serpro69:kotlin-faker:1.11.0'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa:2.3.0.RELEASE'
     implementation 'org.springframework.boot:spring-boot-starter-webflux:2.3.0.RELEASE'
     implementation 'org.springframework.kafka:spring-kafka:2.5.0.RELEASE'
