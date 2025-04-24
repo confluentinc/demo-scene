@@ -10,11 +10,11 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <kafka.client.version>3.7.1</kafka.client.version>
-    <confluent.platform.version>5.5.0</confluent.platform.version>
+    <kafka.client.version>3.9.0</kafka.client.version>
+    <confluent.platform.version>5.5.12</confluent.platform.version>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <maven.compiler.plugin>3.8.1</maven.compiler.plugin>
+    <maven.compiler.plugin>3.14.0</maven.compiler.plugin>
     <protoc.jar.maven.plugin>3.11.4</protoc.jar.maven.plugin>
     <log4j.version>2.13.2</log4j.version>
     <junit.version>4.13</junit.version>
