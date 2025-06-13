@@ -63,6 +63,15 @@ First, create the topic by running the following command in your terminal:
 confluent kafka topic create product_reviews
 ```
 
+Next, install the required Python dependencies.
+Using a virtual environment is recommended:
+
+```shell
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
 Next, inspect the `producer/reviews.csv` file. 
 Feel free to add additional rows or edit the reviews.Not, though, that for the RAG aspect of this demo you'll also need to 
 create accompanying orders in MongoDB Atlas in a later section.
