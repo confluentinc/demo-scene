@@ -1,0 +1,46 @@
+[
+  {
+    "_id": { "$oid": "66c6469f00a6ce3528112034" },
+    "customer_id": "customer_0",
+    "pet_id": "pet_0",
+    "pet_name": "Whiskers",
+    "customer_email": "jane.doe@example.com",
+    "pet_birthdate": "05.05.2017",
+    "pet_gender": "female",
+    "allergies": "none",
+    "pet_type": "cat"
+  },
+  {
+    "_id": { "$oid": "66c6469f00a6ce3528112035" },
+    "customer_id": "customer_2",
+    "pet_id": "pet_2",
+    "pet_name": "Buddy",
+    "customer_email": "bob.smith@example.com",
+    "pet_birthdate": "10.10.2016",
+    "pet_gender": "male",
+    "allergies": "beef",
+    "pet_type": "dog"
+  },
+  {
+    "_id": { "$oid": "66c6469f00a6ce3528112036" },
+    "customer_id": "customer_3",
+    "pet_id": "pet_3",
+    "pet_name": "Luna",
+    "customer_email": "alice.jones@example.com",
+    "pet_birthdate": "20.02.2018",
+    "pet_gender": "female",
+    "allergies": "fish",
+    "pet_type": "cat"
+  },
+  {
+    "_id": { "$oid": "66c6469f00a6ce3528112037" },
+    "customer_id": "customer_4",
+    "pet_id": "pet_4",
+    "pet_name": "Rocky",
+    "customer_email": "mike.brown@example.com",
+    "pet_birthdate": "15.08.2015",
+    "pet_gender": "male",
+    "allergies": "none",
+    "pet_type": "dog"
+  }
+]
