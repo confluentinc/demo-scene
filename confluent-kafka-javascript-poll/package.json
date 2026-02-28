@@ -1,6 +1,6 @@
 {
     "dependencies": {
-      "@confluentinc/kafka-javascript": "^0.1.11-devel",
+      "@confluentinc/kafka-javascript": "^1.0.0",
       "body-parser": "^1.20.2",
       "dotenv": "^16.4.5",
       "express": "^4.19.2",
