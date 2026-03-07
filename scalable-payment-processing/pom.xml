@@ -219,7 +219,7 @@
         <dependency>
             <groupId>io.prometheus.jmx</groupId>
             <artifactId>collector</artifactId>
-            <version>0.10</version>
+            <version>1.2.0</version>
         </dependency>
 
     </dependencies>
