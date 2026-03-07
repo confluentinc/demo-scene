@@ -1,4 +1,4 @@
-pandas==2.2.1
+pandas==3.0.0
 asyncio==3.4.3
 streamlit==1.37.0
 confluent-kafka==2.3.0
