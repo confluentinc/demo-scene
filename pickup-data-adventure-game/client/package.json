@@ -24,7 +24,7 @@
     "less-loader": "^10.0.1",
     "style-loader": "^3.3.0",
     "uikit": "^3.7.6",
-    "uuid": "^8.3.2",
+    "uuid": "^13.0.0",
     "webpack": "^5.57.1",
     "webpack-cli": "^4.9.0",
     "webpack-dev-server": "^5.0.0"
