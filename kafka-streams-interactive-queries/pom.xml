@@ -45,7 +45,7 @@
     -->
     <properties>
         <java.version>17</java.version>
-        <kafka.version>4.1.0</kafka.version>
+        <kafka.version>4.1.2</kafka.version>
         <schema-registry.version>8.0.0</schema-registry.version>
         <jetty.version>12.0.32</jetty.version>
         <jersey.version>3.1.10</jersey.version>
