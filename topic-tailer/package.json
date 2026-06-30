@@ -27,7 +27,7 @@
     "react-table": "^6.8.6",
     "request": "^2.88.0",
     "socket.io": "^2.2.0",
-    "typeface-roboto": "0.0.54"
+    "typeface-roboto": "1.1.13"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0",
