@@ -49,7 +49,7 @@
         <schema-registry.version>8.0.0</schema-registry.version>
         <jetty.version>12.0.32</jetty.version>
         <jersey.version>3.1.10</jersey.version>
-        <jackson.version>2.21.1</jackson.version>
+        <jackson.version>2.21.4</jackson.version>
         <junit.jupiter.version>5.8.2</junit.jupiter.version>
         <junit.version>4.13.2</junit.version>
     </properties>
