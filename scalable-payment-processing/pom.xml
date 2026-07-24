@@ -112,7 +112,7 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-util</artifactId>
-            <version>9.4.56.v20240826</version>
+            <version>12.1.11</version>
         </dependency>
 
         <!-- Glassfish -->
