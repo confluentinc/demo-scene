@@ -23,7 +23,7 @@
     "react-dom": "^16.5.2",
     "react-modal": "^3.8.1",
     "react-rnd": "^9.0.4",
-    "react-sliding-pane": "^3.1.0",
+    "react-sliding-pane": "^7.0.0",
     "react-table": "^6.8.6",
     "request": "^2.88.0",
     "socket.io": "^2.2.0",
