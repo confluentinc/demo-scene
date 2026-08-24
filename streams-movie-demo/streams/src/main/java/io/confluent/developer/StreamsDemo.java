@@ -36,6 +36,7 @@ import static org.apache.kafka.streams.StreamsConfig.COMMIT_INTERVAL_MS_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.REPLICATION_FACTOR_CONFIG;
+import static org.apache.kafka.streams.StreamsConfig.ROCKSDB_CONFIG_SETTER_CLASS_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.producerPrefix;
 import static org.apache.kafka.streams.StreamsConfig.topicPrefix;
 
@@ -224,6 +225,7 @@ public class StreamsDemo {
     }
 
     config.put(REPLICATION_FACTOR_CONFIG, 1);
+    config.put(ROCKSDB_CONFIG_SETTER_CLASS_CONFIG, CompatibleRocksDBConfigSetter.class);
 
     /*config.put(PRODUCER_PREFIX + ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,
                "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor");

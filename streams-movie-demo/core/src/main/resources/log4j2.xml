@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="stdout" target="SYSTEM_OUT">
+            <PatternLayout pattern="[%d] %p %m (%c)%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <!-- Squelch expected error messages like:
+             java.lang.IllegalStateException: This consumer has already been closed. -->
+        <Logger name="org.apache.kafka.streams.processor.internals.StreamThread" level="FATAL"/>
+        <Root level="INFO">
+            <AppenderRef ref="stdout"/>
+        </Root>
+    </Loggers>
+</Configuration>

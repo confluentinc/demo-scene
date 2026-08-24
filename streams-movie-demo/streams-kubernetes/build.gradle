@@ -10,10 +10,8 @@ buildscript {
 
 repositories {
   jcenter()
-  maven { setUrl("https://dl.bintray.com/fkorotkov/maven") }
 }
 
-apply plugin: 'application'
 apply from: 'kotlin.gradle'
 
 apply plugin: 'com.github.johnrengelman.shadow'
@@ -29,7 +27,6 @@ dependencies {
 
   implementation "io.fabric8:kubernetes-client:4.6.1"
   implementation "io.fabric8:kubernetes-model:4.6.1"
-  implementation "com.fkorotkov:kubernetes-dsl:2.6"
 
   testImplementation "junit:junit:4.12"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:${kotlinVersion}"

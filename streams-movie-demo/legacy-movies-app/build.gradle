@@ -1,6 +1,6 @@
 buildscript{
   ext{
-    tcVersion = "1.14.0"
+    tcVersion = "1.21.4"
   }
 }
 plugins {
@@ -33,8 +33,9 @@ dependencies {
   testImplementation 'org.springframework.kafka:spring-kafka-test'
   testImplementation "org.testcontainers:testcontainers:$tcVersion"
   testImplementation "org.testcontainers:kafka:$tcVersion"
-  testImplementation 'com.github.gAmUssA:testcontainers-java-module-confluent-platform:master-SNAPSHOT'
-  
+  // Spring Boot's dependency-management BOM pins jna to an old version with no
+  // Apple Silicon native binaries; override it so testcontainers' docker client works on arm64.
+  testImplementation "net.java.dev.jna:jna:5.13.0"
 }
 
 configurations.all {

@@ -12,7 +12,6 @@ buildscript {
     jcenter()
     maven { url "https://repo.spring.io/milestone" }
     maven { url "https://plugins.gradle.org/m2/" }
-    maven { url "https://kotlin.bintray.com/kotlinx" }
   }
 
   dependencies {
@@ -36,7 +35,6 @@ subprojects {
   repositories {
     jcenter()
     maven { url 'https://packages.confluent.io/maven/' }
-    maven { url "https://kotlin.bintray.com/kotlinx" }
     maven { url "https://repo.spring.io/milestone" }
     maven { url 'https://jitpack.io' }
   }
@@ -78,7 +76,7 @@ project(':loader') {
     implementation project(':core')
     implementation 'org.codehaus.groovy:groovy-all:2.4.15'
     implementation 'mysql:mysql-connector-java:5.1.48'
-    implementation "org.slf4j:slf4j-log4j12:1.7.25"
+    implementation "org.apache.logging.log4j:log4j-slf4j-impl:2.26.1"
   }
 
   def env = System.getenv()
@@ -128,6 +126,9 @@ project(':spring-web-loader') {
 
   configurations.all {
     exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    // Spring Boot manages logging via Logback + log4j-to-slf4j; the log4j-slf4j-impl
+    // brought in transitively by :streams routes the opposite direction and conflicts with it.
+    exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
   }
 }
 
@@ -138,9 +139,11 @@ project(':streams') {
   dependencies {
     api project(':core')
 
-    implementation "org.slf4j:slf4j-log4j12:1.7.25"
+    implementation "org.apache.logging.log4j:log4j-slf4j-impl:2.26.1"
     api "org.apache.kafka:kafka-streams:${kafkaVersion}"
     implementation "io.confluent:monitoring-interceptors:${confluentVersion}"
+    // kafka-streams 2.3.1 pulls in rocksdbjni 5.18.3, which has no Apple Silicon (osx-arm64) native library.
+    implementation "org.rocksdb:rocksdbjni:6.29.5"
     
     testImplementation 'junit:junit:4.12'
     testImplementation "org.apache.kafka:kafka-streams-test-utils:${kafkaVersion}"
@@ -175,6 +178,9 @@ project(':spring-streams') {
 
   configurations.all {
     exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    // Spring Boot manages logging via Logback + log4j-to-slf4j; the log4j-slf4j-impl
+    // brought in transitively by :streams routes the opposite direction and conflicts with it.
+    exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
   }
 
   dependencyManagement {
@@ -196,6 +202,6 @@ project(':streams-kotlin') {
   dependencies {
     implementation project(':streams')
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation "org.slf4j:slf4j-log4j12:1.7.25"
+    implementation "org.apache.logging.log4j:log4j-slf4j-impl:2.26.1"
   }
 }

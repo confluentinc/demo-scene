@@ -16,9 +16,48 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <maven.compiler.plugin>3.8.1</maven.compiler.plugin>
     <protoc.jar.maven.plugin>3.11.4</protoc.jar.maven.plugin>
-    <log4j.version>2.13.2</log4j.version>
+    <protoc.version>3.25.3</protoc.version>
+    <protoc.classifier>linux-x86_64</protoc.classifier>
     <junit.version>4.13</junit.version>
   </properties>
+
+  <profiles>
+    <profile>
+      <id>protoc-osx-aarch_64</id>
+      <activation>
+        <os>
+          <family>mac</family>
+          <arch>aarch64</arch>
+        </os>
+      </activation>
+      <properties>
+        <protoc.classifier>osx-aarch_64</protoc.classifier>
+      </properties>
+    </profile>
+    <profile>
+      <id>protoc-osx-x86_64</id>
+      <activation>
+        <os>
+          <family>mac</family>
+          <arch>x86_64</arch>
+        </os>
+      </activation>
+      <properties>
+        <protoc.classifier>osx-x86_64</protoc.classifier>
+      </properties>
+    </profile>
+    <profile>
+      <id>protoc-windows-x86_64</id>
+      <activation>
+        <os>
+          <family>windows</family>
+        </os>
+      </activation>
+      <properties>
+        <protoc.classifier>windows-x86_64</protoc.classifier>
+      </properties>
+    </profile>
+  </profiles>
 
   <licenses>
     <license>
@@ -44,6 +83,11 @@
   </pluginRepositories>
 
   <dependencies>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>${protoc.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.apache.kafka</groupId>
       <artifactId>kafka-clients</artifactId>
@@ -78,6 +122,7 @@
               <goal>run</goal>
             </goals>
             <configuration>
+              <protocArtifact>com.google.protobuf:protoc:${protoc.version}:exe:${protoc.classifier}</protocArtifact>
               <inputDirectories>
                 <include>src/main/resources/</include>
               </inputDirectories>
