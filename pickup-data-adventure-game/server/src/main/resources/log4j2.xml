@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="stdout" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %-5p %c: %m%n"/>
+        </Console>
+        <File name="file" fileName="server.log" append="false">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %-5p %c: %m%n"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Logger name="io.confluent.developer.adventure.JsonPOJODeserializer" level="INFO"/>
+        <Logger name="io.confluent.developer.adventure.JsonPOJOSerializer" level="INFO"/>
+        <Logger name="io.confluent.kafka.schemaregistry.client.rest.RestService" level="INFO"/>
+        <Logger name="org.apache.kafka.clients.consumer.KafkaConsumer" level="WARN"/>
+        <Logger name="org.apache.kafka.clients.consumer.internals" level="WARN"/>
+        <Logger name="org.apache.kafka.clients.producer.internals" level="WARN"/>
+        <Logger name="org.apache.kafka.clients" level="INFO"/>
+        <Logger name="org.apache.kafka.common.metrics.Metrics" level="WARN"/>
+        <Logger name="org.apache.kafka.common.network" level="INFO"/>
+        <Logger name="org.apache.kafka.streams.StreamsConfig" level="INFO"/>
+        <Logger name="org.apache.kafka.streams.processor.internals" level="WARN"/>
+        <Logger name="org.apache.kafka.streams.state.internals" level="WARN"/>
+        <Root level="DEBUG">
+            <AppenderRef ref="stdout"/>
+            <AppenderRef ref="file"/>
+        </Root>
+    </Loggers>
+</Configuration>

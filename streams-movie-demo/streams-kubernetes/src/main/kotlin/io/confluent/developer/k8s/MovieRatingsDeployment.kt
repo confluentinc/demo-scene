@@ -1,7 +1,6 @@
 package io.confluent.developer.k8s
 
-import com.fkorotkov.kubernetes.*
-import com.fkorotkov.kubernetes.apps.*
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder
 import io.fabric8.kubernetes.client.Config
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 
@@ -12,72 +11,66 @@ fun main() {
   val appName = "streaming-movie-ratings"
   val defaultLabels = mapOf("app" to appName)
 
-  val deployment = newDeployment {
-    metadata {
-      name = appName
-      namespace = "default"
-      labels = defaultLabels
-    }
+  val deployment = DeploymentBuilder()
+      .withNewMetadata()
+        .withName(appName)
+        .withNamespace("default")
+        .withLabels(defaultLabels)
+      .endMetadata()
+      .withNewSpec()
+        .withReplicas(1)
+        .withNewSelector()
+          .withMatchLabels(defaultLabels)
+        .endSelector()
+        .withNewTemplate()
+          .withNewMetadata()
+            .withLabels(defaultLabels)
+          .endMetadata()
+          .withNewSpec()
+            .addNewImagePullSecret()
+              .withName("regcred")
+            .endImagePullSecret()
+            .withNewAffinity()
+              .withNewPodAffinity()
+                .addNewRequiredDuringSchedulingIgnoredDuringExecution()
+                  .withTopologyKey("kubernetes.io/hostname")
+                  .withNewLabelSelector()
+                    .addNewMatchExpression()
+                      .withKey("app")
+                      .withOperator("In")
+                      .withValues(appName)
+                    .endMatchExpression()
+                  .endLabelSelector()
+                .endRequiredDuringSchedulingIgnoredDuringExecution()
+              .endPodAffinity()
+            .endAffinity()
+            .addNewContainer()
+              .withName(appName)
+              .withImage("gamov-docker.jfrog.io/dev/streaming-movie-ratings:latest")
+              .addNewVolumeMount()
+                .withName("config")
+                .withMountPath("/var/config")
+                .withReadOnly(true)
+              .endVolumeMount()
+              .addNewEnv()
+                .withName("JAVA_TOOL_OPTIONS")
+                .withValue("-DLOGLEVEL=INFO")
+              .endEnv()
+            .endContainer()
+            .addNewVolume()
+              .withName("config")
+              .withNewSecret()
+                .withSecretName("ccloud")
+                .addNewItem()
+                  .withKey("config")
+                  .withPath("config.ccloud")
+                .endItem()
+              .endSecret()
+            .endVolume()
+          .endSpec()
+        .endTemplate()
+      .endSpec()
+      .build()
 
-    spec {
-      replicas = 1
-      selector {
-        matchLabels = defaultLabels
-      }
-      template {
-        metadata {
-          labels = defaultLabels
-        }
-        spec {
-          imagePullSecrets = listOf(newLocalObjectReference {
-            name = "regcred"
-          })
-          affinity {
-            podAffinity {
-              requiredDuringSchedulingIgnoredDuringExecution = listOf(newPodAffinityTerm {
-                labelSelector {
-                  topologyKey = "kubernetes.io/hostname"
-                  matchExpressions = listOf(newLabelSelectorRequirement {
-                    key = "app"
-                    values = listOf(appName)
-                    operator = "In"
-                  })
-                }
-              })
-
-            }
-          }
-          containers = listOf(
-              newContainer {
-                volumes = listOf(
-                    newVolume {
-                      name = "config"
-                      secret = newSecretVolumeSource {
-                        secretName = "ccloud"
-                        items = listOf(newKeyToPath {
-                          key = "config"
-                          path = "config.ccloud"
-                        })
-                      }
-                    }
-                )
-                volumeMounts = listOf(
-                    newVolumeMount {
-                      name = "config"
-                      mountPath = "/var/config"
-                      readOnly = true
-                    })
-                name = appName
-                image = "gamov-docker.jfrog.io/dev/streaming-movie-ratings:latest"
-                env = listOf(newEnvVar {
-                  name = "JAVA_TOOL_OPTIONS"
-                  value = "-DLOGLEVEL=INFO"
-                })
-              }
-          )
-        }
-      }
-    }
-  }
   client.apps().deployments().createOrReplace(deployment)
 }

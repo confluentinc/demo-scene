@@ -10,6 +10,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.lifecycle.Startables;
+import org.testcontainers.utility.DockerImageName;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,7 +28,7 @@ abstract class AbstractIntegrationTest {
     
     // TODO
     //static MySQLContainer mysql = new MySQLContainer<>("debezium/example-mysql:0.9");
-    static KafkaContainer kafka = new KafkaContainer("5.4.1");
+    static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.4.1"));
     static SchemaRegistryContainer schemaRegistry = new SchemaRegistryContainer("5.4.1").withKafka(kafka);
 
     public static Map<String, String> getProperties() {

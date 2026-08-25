@@ -1,7 +1,6 @@
 package io.confluent.developer.k8s
 
-import com.fkorotkov.kubernetes.metadata
-import com.fkorotkov.kubernetes.newSecret
+import io.fabric8.kubernetes.api.model.SecretBuilder
 import io.fabric8.kubernetes.client.Config
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 
@@ -12,13 +11,15 @@ fun main() {
   val client = DefaultKubernetesClient(config).inNamespace("default")
 
   // make sure updated `src/main/resources/.dockerconfig.json` with actual values
-  client.secrets().createOrReplace(newSecret {
-    data = mapOf(".dockerconfigjson" to jsonText.toBase64())
-    type = "kubernetes.io/dockerconfigjson"
-    metadata {
-      name = "regcred"
-    }
-  })
+  val secret = SecretBuilder()
+      .withNewMetadata()
+        .withName("regcred")
+      .endMetadata()
+      .withType("kubernetes.io/dockerconfigjson")
+      .withData(mapOf(".dockerconfigjson" to jsonText.toBase64()))
+      .build()
+
+  client.secrets().createOrReplace(secret)
 }
 
-class DockerRegistrySecret 
+class DockerRegistrySecret
