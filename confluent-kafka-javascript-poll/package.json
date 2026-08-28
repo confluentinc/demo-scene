@@ -3,7 +3,7 @@
       "@confluentinc/kafka-javascript": "^0.1.11-devel",
       "body-parser": "^1.20.2",
       "dotenv": "^16.4.5",
-      "express": "^4.19.2",
+      "express": "^5.0.0",
       "i": "^0.3.7",
       "kafkajs": "^2.2.4",
       "npm": "^10.5.0",
