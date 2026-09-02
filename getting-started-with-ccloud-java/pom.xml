@@ -14,9 +14,9 @@
     <confluent.platform.version>5.5.0</confluent.platform.version>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <maven.compiler.plugin>3.8.1</maven.compiler.plugin>
+    <maven.compiler.plugin>3.15.0</maven.compiler.plugin>
     <protoc.jar.maven.plugin>3.11.4</protoc.jar.maven.plugin>
-    <protoc.version>3.25.5</protoc.version>
+    <protoc.version>3.25.9</protoc.version>
     <protoc.classifier>linux-x86_64</protoc.classifier>
     <junit.version>4.13</junit.version>
   </properties>
