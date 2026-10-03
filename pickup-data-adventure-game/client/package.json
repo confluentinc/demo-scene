@@ -22,7 +22,7 @@
     "html-webpack-plugin": "^5.3.2",
     "less": "^4.1.2",
     "less-loader": "^10.0.1",
-    "style-loader": "^3.3.0",
+    "style-loader": "^4.0.0",
     "uikit": "^3.7.6",
     "uuid": "^8.3.2",
     "webpack": "^5.57.1",
