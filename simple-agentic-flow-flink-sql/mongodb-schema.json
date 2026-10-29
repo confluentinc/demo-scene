@@ -1,0 +1,44 @@
+{
+  "type": "record",
+  "name": "PetRecord",
+  "fields": [
+    {
+      "name": "_id",
+      "type": "string",
+      "doc": "MongoDB ObjectId as a string"
+    },
+    {
+      "name": "customer_id",
+      "type": "string"
+    },
+    {
+      "name": "pet_id",
+      "type": "string"
+    },
+    {
+      "name": "pet_name",
+      "type": "string"
+    },
+    {
+      "name": "customer_email",
+      "type": "string"
+    },
+    {
+      "name": "pet_birthdate",
+      "type": "string",
+      "doc": "Date in dd.mm.yyyy format"
+    },
+    {
+      "name": "pet_gender",
+      "type": "string"
+    },
+    {
+      "name": "allergies",
+      "type": "string"
+    },
+    {
+      "name": "pet_type",
+      "type": "string"
+    }
+  ]
+}
